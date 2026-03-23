@@ -1,88 +1,75 @@
 # code-music — project state
 
-## Status: v0.5.0 — wobble bass, formant vowels, generative melody, 3 new songs, 156 tests
+## Status: v0.7.0 — album system, 11 genre albums, The Anthology
 
 ## What's done
 
-### New synth presets (code_music/synth.py)
-- `wobble` — LFO-swept lowpass filter over sawtooth, the dubstep bass sound
-- `portamento` — sawtooth with glide (pitch slide) character
-- `fm_bell` — 2-operator FM synthesis, metallic bell tones
-- `formant_a / formant_o / formant_e` — vowel-shaped bandpass filter chain over saw
-- `taiko` — deep pitched drum with noise attack (cinematic hits)
-- `tabla`, `djembe` — ethnic percussion with noise transient
-- `moog_bass` — ladder-filter style bass with fast rolloff
-- `sub_bass` — pure sine sub (808-adjacent but cleaner)
+### Album system (`albums/`)
+- `_album.py` — AlbumDef schema, render_album(), liner_notes, M3U playlists
+- `render.py` — CLI: `python -m albums.render <stem>` / `--all` / `--list`
+- Makefile: `make album-<name>`, `make albums`, `make list-albums`
+- Output: `dist/albums/<name>/01 - Title.{wav,flac,mp3}` + `liner_notes.txt` + `playlist*.m3u`
 
-### Per-note effects wired into synth
-- Wobble: LFO filter sweeps per note (rate, min/max cutoff configurable in preset)
-- Formant: three bandpass resonators per note (F1/F2/F3 for each vowel)
-- Taiko/djembe/tabla: noise burst on attack transient
+### 11 genre albums
+| Album file | Title | Genre |
+|---|---|---|
+| `edm_progressive` | Machine Dreams | Progressive House (deadmau5) |
+| `edm_festival` | Clarity Drive | Big Room / Festival EDM (Zedd) |
+| `cosmic_electro` | Neon Lollipop | Cosmic Electro / Disco House (Mord Fustang) |
+| `jazz_neosoul` | After Hours | Jazz / Neo-Soul (Cowboy Bebop, Herbie Hancock) |
+| `drum_and_bass` | Liquid State | Liquid Drum & Bass (Hospital Records) |
+| `ambient_cinematic` | Deep Space Drift | Ambient / Cinematic (Eno, Zimmer) |
+| `classical_orchestral` | Symphony No. 1 in C Minor | Classical / Orchestral |
+| `rock_prog` | Dorian Excursion | Progressive Rock (Floyd, Tool, Rush) |
+| `hiphop_lofi` | 3am Study Session | Lo-Fi Hip-Hop (Nujabes, J Dilla) |
+| `videogame_anime` | Loading Screen | Video Game / Anime OST (Kanno, Mitsuda) |
+| `anthology` | The Anthology | Compilation — 11 genres, 1 per genre |
 
-### New engine helpers
-- `staccato(notes, factor)` — shorten notes, add silence gap
-- `legato(notes, overlap)` — extend notes for smooth slur feel
-- `pizzicato(notes)` — very short staccato (plucked strings)
-- `prob(note, p)` — play note with probability p, else rest
-- `chord_prog(roots, shapes, ...)` — build chord progression from parallel lists
-- `generate_melody(scale, mode, bars, density, seed)` — procedural melody generator
+### make help reorganized
+Four audience sections: [VIBE] [CREATE] [EXPLORE] [DEV]
+Albums listed with descriptions in [CREATE] section.
 
-### Songs
-- `liquid_dnb.py` — Liquid DnB, 174 BPM, D Dorian, warm + jazzy
-- `cinematic_rise.py` — Hans Zimmer hybrid orchestral, 100 BPM, Cm, taiko + brass
-- `deadmau5_house.py` — deadmau5 progressive house, 128 BPM, Fm, slow filter evolution
-
-### Samples
-- `samples/edm/wobble_bass.py` — dubstep wobble bass demo
-- `samples/edm/fm_bell_arp.py` — FM bell arpeggios
-- `samples/voices/formant_vowels.py` — A/O/E vowel synthesis comparison
-- `samples/orchestral/taiko_impact.py` — taiko + djembe + tabla
-- `samples/techniques/generative_melody.py` — procedural melody in 3 modes
-- `samples/techniques/articulations.py` — legato vs normal vs staccato comparison
-
-### Tests: 156 passing
-- `test_articulations.py` — staccato, legato, pizzicato, prob, chord_prog, generate_melody (36 tests)
-- `test_new_presets.py` — wobble, formant, taiko, moog, fm_bell, sub, all 11 new presets (14 tests)
+## All songs (13)
+hello_world, lo_fi_loop, prog_rock, clarity_drive, lollipop_laser,
+deep_space_drift, trance_odyssey, tank_bebop, symphony_no1, cinematic_rise,
+deadmau5_house, liquid_dnb, future_bass
 
 ## Roadmap
 
-### Next priorities
-- [ ] Dubstep full song (heavy wobble bass, half-time drops)
-- [ ] Moombahton / reggaeton influenced song (100 BPM, tropical EDM)
-- [ ] Autumn Leaves jazz arrangement (jazz standard, walking bass + comp + solo)
-- [ ] Generative / procedural full song (whole track from seed + mood)
+### Albums — next
+- [ ] Dubstep album (heavy wobble bass, half-time — Skrillex, Excision era)
+- [ ] Future Bass / Melodic Dubstep album (Illenium, Marshmello, Flume)
+- [ ] Classical Piano album (Chopin nocturnes, Debussy impressionism)
+- [ ] World Music album (flamenco, arabic maqam, Japanese traditional)
+- [ ] Metal / Symphonic Metal album (Rammstein energy, Nightwish orchestration)
+- [ ] R&B / Neo-Soul album (D'Angelo, Frank Ocean influence)
+- [ ] Each album needs more tracks — expand to 5-8 tracks minimum
+
+### Songs needed
+- [ ] Dubstep song (wobble bass, half-time drops)
+- [ ] Flamenco-influenced song (phrygian dominant, guitar + percussion)
+- [ ] Neo-soul song (Rhodes, walking bass, jazz-funk hybrid)
+- [ ] Chiptune / 8-bit song (square waves, NES-era feel)
+- [ ] Drum & Bass — harder (Pendulum-style, distorted bass)
 
 ### Engine
-- [ ] Chord progression suggester: given root + mood → chord progression
-- [ ] Velocity-to-timbre (louder hit = brighter on piano/drums)
-- [ ] Arp with probability (random note dropout for live-feel arps)
-- [ ] Polyphonic Track (notes sound simultaneously, not sequentially)
-- [ ] Time signature support beyond 4/4 (3/4, 6/8, 7/8)
+- [ ] Chord progression suggester: root + mood → progression
+- [ ] Velocity-to-timbre (louder = brighter)
+- [ ] Polyphonic Track (simultaneous notes, not sequential)
+- [ ] Bitcrusher / lo-fi effect
+- [ ] Ring modulator
+- [ ] Tape saturation
+- [ ] Karplus-Strong string synthesis
 
-### Synth/Sound
-- [ ] Granular synthesis wave (scattered grain texture)
-- [ ] Additive organ preset with drawbar controls
-- [ ] Better piano: string resonance, damper pedal simulation
-- [ ] Karplus-Strong string synthesis (more realistic plucked strings)
+### Distribution
+- [ ] Spotify upload guide per album (DistroKid / TuneCore)
+- [ ] GitHub Pages album browser (web player)
+- [ ] Batch CI render to dist/ on push
+- [ ] Album artwork generation (matplotlib? or AI image)
 
-### Effects
-- [ ] Bitcrusher / lo-fi downsampler (chiptune / lo-fi texture)
-- [ ] Ring modulator (metallic / robot voice)
-- [ ] Tape saturation (warm analog simulation)
-- [ ] Multi-band compressor (mastering chain)
-- [ ] Convolution reverb with real IR files
-
-### Voice / AI
-- [ ] Bark integration guide + async render helper
-- [ ] Autotune: snap voice track to nearest scale note
-
-### Export / Distribution
-- [ ] Batch CI render (render all songs to dist/ on push)
-- [ ] Spotify distributor guide (DistroKid / TuneCore steps)
-- [ ] GitHub Pages web player
-
-### Ideas  
-- [ ] Live performance mode: real-time parameter control via keyboard
-- [ ] Song export as Python snippet (compress a song to minimal code)
-- [ ] BPM tap detection utility
-- [ ] Album concept: release the 10 songs as a coherent album
+### Ideas from sessions
+- [ ] Generative album: seed + genre → full album procedurally
+- [ ] Live coding mode: --watch auto-plays on save
+- [ ] Collaborative: multiple song files merged into one song
+- [ ] BPM tap utility
+- [ ] Autotune post-processing for voice tracks

@@ -223,17 +223,44 @@ dist/notation/xml/%.xml: songs/%.py
 	@echo "  → $@  (open in MuseScore, Sibelius, Dorico, Finale)"
 
 # =============================================================================
+# [ALBUMS]  Genre albums + The Anthology
+# =============================================================================
+
+ALBUM_STEMS := ambient_cinematic anthology classical_orchestral cosmic_electro \
+               drum_and_bass edm_festival edm_progressive hiphop_lofi \
+               jazz_neosoul rock_prog videogame_anime
+
+# Render one album (WAV + FLAC + MP3 + liner notes + M3U playlist)
+# Usage: make album-edm_progressive
+define ALBUM_RULE
+album-$(1):
+	$(BIN)/python -m albums.render $(1)
+endef
+$(foreach a,$(ALBUM_STEMS),$(eval $(call ALBUM_RULE,$(a))))
+
+# Render all albums
+albums:
+	$(BIN)/python -m albums.render --all
+
+# List albums with render status
+list-albums:
+	$(BIN)/python -m albums.render --list
+
+.PHONY: albums list-albums \
+        $(addprefix album-, $(ALBUM_STEMS))
+
+# =============================================================================
 # [DEV]  Build, test, lint, export everything.
 # =============================================================================
 
 lint:
-	$(BIN)/ruff check code_music tests songs samples scales scripts
+	$(BIN)/ruff check code_music tests songs samples scales scripts albums
 
 test:
 	$(BIN)/pytest tests/ -v
 
 # Render everything to every format
-all: songs-all samples scales notation-all
+all: songs-all samples scales notation-all albums
 
 clean:
 	rm -rf dist/ .pytest_cache .ruff_cache
@@ -275,6 +302,21 @@ help:
 	@echo "│  make preview-<sample>      Hear an instrument or technique"
 	@echo "│  make samples               Render all 100+ sample previews"
 	@echo "│  make list-samples          List every available sample"
+	@echo "│"
+	@echo "│  make list-albums           List all 11 genre albums"
+	@echo "│  make album-<name>          Render one album (WAV+FLAC+MP3+liner notes)"
+	@echo "│    album-edm_progressive    Machine Dreams (deadmau5 style)"
+	@echo "│    album-edm_festival       Clarity Drive (Zedd / festival EDM)"
+	@echo "│    album-cosmic_electro     Neon Lollipop (Mord Fustang / disco)"
+	@echo "│    album-jazz_neosoul       After Hours (Cowboy Bebop / jazz)"
+	@echo "│    album-drum_and_bass      Liquid State (Hospital Records)"
+	@echo "│    album-ambient_cinematic  Deep Space Drift (Eno / Zimmer)"
+	@echo "│    album-classical_orchestral  Symphony No. 1 in C Minor"
+	@echo "│    album-rock_prog          Dorian Excursion (Pink Floyd / Tool)"
+	@echo "│    album-hiphop_lofi        3am Study Session (Nujabes / Dilla)"
+	@echo "│    album-videogame_anime    Loading Screen (Kanno / Mitsuda)"
+	@echo "│    album-anthology          The Anthology — one track per genre"
+	@echo "│  make albums                Render all 11 albums"
 	@echo "│"
 	@echo "├─ [EXPLORE] Scales, samples & sheet music ────────────────────────"
 	@echo "│"
