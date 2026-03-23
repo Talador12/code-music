@@ -1,55 +1,50 @@
 # code-music Makefile
+# Run `make help` to see commands grouped by audience.
 # Requires: Python 3.11+  |  MP3/OGG/FLAC: brew install ffmpeg
-#
-# Output directories (gitignored):
-#   dist/wav/       lossless PCM — DAW import, archival
-#   dist/flac/      lossless compressed — Spotify preferred ingest
-#   dist/mp3/       lossy 320kbps — sharing, streaming
-#   dist/samples/   rendered sample previews (WAV, short)
-#
-# Quick start:
-#   make dev                   # setup venv
-#   make play-hello_world      # render + play a song immediately
-#   make preview-notturno_rhodes  # render + play a sample
-#   make songs-wav             # render all songs to dist/wav/
-#   make spotify               # render all songs to dist/flac/ for upload
 
 PYTHON  ?= python3
 VENV    := .venv
 BIN     := $(VENV)/bin
 CM      := $(BIN)/python -m code_music.cli
-PLAY    := afplay          # macOS built-in. Linux: aplay. Replace as needed.
+PLAY    := afplay   # macOS. Linux: swap to `aplay`
 
-# ── Discover songs automatically ──────────────────────────────────────────────
-SONGS      := $(wildcard songs/*.py)
-SONG_NAMES := $(notdir $(basename $(SONGS)))
+# ── Auto-discovery ────────────────────────────────────────────────────────────
+SONGS        := $(wildcard songs/*.py)
+SONG_NAMES   := $(notdir $(basename $(SONGS)))
 
-# ── Discover scales ───────────────────────────────────────────────────────────
-SCALES      := $(wildcard scales/*.py)
-SCALE_NAMES := $(notdir $(basename $(SCALES)))
+SCALES_PY    := $(wildcard scales/*.py)
+SCALE_NAMES  := $(notdir $(basename $(SCALES_PY)))
 
-# ── Discover samples across all subdirs ───────────────────────────────────────
-SAMPLE_DIRS := bass brass chords drums edm ensemble highs instruments \
-               jazz keyboards mood orchestral solo strings synths \
-               techniques voices waves woodwinds
-SAMPLE_PYS  := $(foreach d,$(SAMPLE_DIRS),$(wildcard samples/$(d)/*.py))
+SAMPLE_DIRS  := bass brass chords drums edm ensemble highs instruments \
+                jazz keyboards mood orchestral solo strings synths \
+                techniques voices waves woodwinds
+SAMPLE_PYS   := $(foreach d,$(SAMPLE_DIRS),$(wildcard samples/$(d)/*.py))
 SAMPLE_NAMES := $(notdir $(basename $(SAMPLE_PYS)))
 
-# ── Output path lists ─────────────────────────────────────────────────────────
-WAV_SONGS    := $(addprefix dist/wav/,    $(addsuffix .wav,  $(SONG_NAMES)))
-FLAC_SONGS   := $(addprefix dist/flac/,   $(addsuffix .flac, $(SONG_NAMES)))
-MP3_SONGS    := $(addprefix dist/mp3/,    $(addsuffix .mp3,  $(SONG_NAMES)))
-WAV_SCALES   := $(addprefix dist/scales/, $(addsuffix .wav,  $(SCALE_NAMES)))
-WAV_SAMPLES  := $(addprefix dist/samples/, $(addsuffix .wav, $(SAMPLE_NAMES)))
+# ── Output paths ──────────────────────────────────────────────────────────────
+WAV_SONGS    := $(addprefix dist/wav/,         $(addsuffix .wav,  $(SONG_NAMES)))
+FLAC_SONGS   := $(addprefix dist/flac/,        $(addsuffix .flac, $(SONG_NAMES)))
+MP3_SONGS    := $(addprefix dist/mp3/,         $(addsuffix .mp3,  $(SONG_NAMES)))
+WAV_SCALES   := $(addprefix dist/scales/,      $(addsuffix .wav,  $(SCALE_NAMES)))
+WAV_SAMPLES  := $(addprefix dist/samples/,     $(addsuffix .wav,  $(SAMPLE_NAMES)))
+LY_SONGS     := $(addprefix dist/notation/lily/, $(addsuffix .ly,  $(SONG_NAMES)))
+ABC_SONGS    := $(addprefix dist/notation/abc/,  $(addsuffix .abc, $(SONG_NAMES)))
+XML_SONGS    := $(addprefix dist/notation/xml/,  $(addsuffix .xml, $(SONG_NAMES)))
 
-.PHONY: all install dev lint test \
+.PHONY: all install dev lint test clean help \
         songs-wav songs-flac songs-mp3 songs-all \
-        samples scales spotify clean help \
-        $(addprefix play-, $(SONG_NAMES)) \
-        $(addprefix play-scale-, $(SCALE_NAMES)) \
-        $(addprefix preview-, $(SAMPLE_NAMES))
+        samples scales spotify \
+        notation-lily notation-abc notation-xml notation-all \
+        vibe vibe-chill vibe-energizing vibe-alluring vibe-powerful \
+        play-scales play-scales-arp play-scales-group play-scales-arp-group \
+        list-scales list-samples list-songs \
+        $(addprefix play-,         $(SONG_NAMES)) \
+        $(addprefix play-scale-,   $(SCALE_NAMES)) \
+        $(addprefix preview-,      $(SAMPLE_NAMES))
 
-# ── Setup ─────────────────────────────────────────────────────────────────────
+# =============================================================================
+# [SETUP]  First-time setup
+# =============================================================================
 
 install:
 	$(PYTHON) -m venv $(VENV)
@@ -58,182 +53,13 @@ install:
 dev: install
 	@command -v ffmpeg >/dev/null 2>&1 \
 		&& echo "ffmpeg found — MP3/OGG/FLAC export enabled" \
-		|| echo "WARNING: ffmpeg not found — WAV only. Run: brew install ffmpeg"
+		|| echo "WARNING: ffmpeg not found — WAV only. Fix: brew install ffmpeg"
 
-# ── Quality ───────────────────────────────────────────────────────────────────
+# =============================================================================
+# [VIBE]  Just listen. No music knowledge needed.
+# =============================================================================
 
-lint:
-	$(BIN)/ruff check code_music tests songs samples scales
-
-test:
-	$(BIN)/pytest tests/ -v
-
-# ── Render: songs ─────────────────────────────────────────────────────────────
-
-dist/wav/%.wav: songs/%.py
-	@mkdir -p dist/wav
-	$(CM) $< -o $@
-
-dist/flac/%.flac: songs/%.py
-	@mkdir -p dist/flac
-	$(CM) $< --flac -o $@
-
-dist/mp3/%.mp3: songs/%.py
-	@mkdir -p dist/mp3
-	$(CM) $< --mp3 -o $@
-
-songs-wav:  $(WAV_SONGS)
-songs-flac: $(FLAC_SONGS)
-songs-mp3:  $(MP3_SONGS)
-songs-all:  songs-wav songs-flac songs-mp3
-
-# ── Notation export ───────────────────────────────────────────────────────────
-# LilyPond (.ly): compile to PDF with: lilypond dist/notation/<song>.ly
-# ABC (.abc): paste into https://abc.rectanglered.com to render
-# MusicXML (.xml): open in MuseScore, Sibelius, Dorico, Finale, Noteflight
-
-LY_SONGS  := $(addprefix dist/notation/lily/, $(addsuffix .ly,  $(SONG_NAMES)))
-ABC_SONGS := $(addprefix dist/notation/abc/,  $(addsuffix .abc, $(SONG_NAMES)))
-XML_SONGS := $(addprefix dist/notation/xml/,  $(addsuffix .xml, $(SONG_NAMES)))
-
-dist/notation/lily/%.ly: songs/%.py
-	@mkdir -p dist/notation/lily
-	$(BIN)/python -c "import importlib.util,sys; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_lilypond; export_lilypond(m.song,'$@')"
-	@echo "Wrote $@  (compile: lilypond $@)"
-
-dist/notation/abc/%.abc: songs/%.py
-	@mkdir -p dist/notation/abc
-	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_abc; export_abc(m.song,'$@')"
-	@echo "Wrote $@  (preview: https://abc.rectanglered.com)"
-
-dist/notation/xml/%.xml: songs/%.py
-	@mkdir -p dist/notation/xml
-	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_musicxml; export_musicxml(m.song,'$@')"
-	@echo "Wrote $@  (open in MuseScore, Sibelius, Dorico, Finale)"
-
-notation-lily: $(LY_SONGS)
-notation-abc:  $(ABC_SONGS)
-notation-xml:  $(XML_SONGS)
-notation-all:  notation-lily notation-abc notation-xml
-
-.PHONY: notation-lily notation-abc notation-xml notation-all
-
-# ── Render: scales ───────────────────────────────────────────────────────────
-
-dist/scales/%.wav: scales/%.py
-	@mkdir -p dist/scales
-	$(CM) $< -o $@
-
-scales: $(WAV_SCALES)
-
-# ── Play scales ───────────────────────────────────────────────────────────────
-# Usage: make play-scale-major   make play-scale-blues_minor   etc.
-
-define PLAY_SCALE_RULE
-play-scale-$(1): dist/scales/$(1).wav
-	$(PLAY) dist/scales/$(1).wav
-endef
-$(foreach s,$(SCALE_NAMES),$(eval $(call PLAY_SCALE_RULE,$(s))))
-
-# ── Play songs ────────────────────────────────────────────────────────────────
-# Render a song to dist/wav/ then play it immediately.
-# Usage: make play-<song_name>   e.g.  make play-trance_odyssey
-#
-define PLAY_SONG_RULE
-play-$(1): dist/wav/$(1).wav
-	$(PLAY) dist/wav/$(1).wav
-endef
-$(foreach s,$(SONG_NAMES),$(eval $(call PLAY_SONG_RULE,$(s))))
-
-# ── Render: samples ───────────────────────────────────────────────────────────
-# One pattern rule per subdir — make needs explicit paths, not globs.
-
-define SAMPLE_RENDER_RULE
-dist/samples/%.wav: samples/$(1)/%.py
-	@mkdir -p dist/samples
-	$(CM) $$< -o $$@
-endef
-$(foreach d,$(SAMPLE_DIRS),$(eval $(call SAMPLE_RENDER_RULE,$(d))))
-
-samples: $(WAV_SAMPLES)
-
-# ── Preview samples ───────────────────────────────────────────────────────────
-# Render a sample to dist/samples/ then play it immediately.
-# Usage: make preview-<sample_name>   e.g.  make preview-notturno_rhodes
-#
-define PREVIEW_RULE
-preview-$(1): dist/samples/$(1).wav
-	$(PLAY) dist/samples/$(1).wav
-endef
-$(foreach s,$(SAMPLE_NAMES),$(eval $(call PREVIEW_RULE,$(s))))
-
-# ── Spotify ───────────────────────────────────────────────────────────────────
-
-spotify: songs-flac
-	@echo ""
-	@echo "Spotify-ready files in dist/flac/:"
-	@ls -lh dist/flac/*.flac 2>/dev/null || echo "  (none — run: make songs-flac)"
-	@echo ""
-	@echo "Upload at https://artists.spotify.com  (min 30s, 44100 Hz stereo)"
-
-# ── Convenience ───────────────────────────────────────────────────────────────
-
-all: songs-all samples scales notation-all
-
-clean:
-	rm -rf dist/ .pytest_cache .ruff_cache
-	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null; true
-	find . -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null; true
-
-# ── Help ──────────────────────────────────────────────────────────────────────
-
-help:
-	@echo ""
-	@echo "code-music"
-	@echo ""
-	@echo "SETUP"
-	@echo "  make install            create .venv, install deps"
-	@echo "  make dev                install + check ffmpeg"
-	@echo ""
-	@echo "PLAY (render then play immediately)"
-	@echo "  make play-<song>        render song to dist/wav/ and play"
-	@echo "  make play-scale-<name>  render scale to dist/scales/ and play"
-	@echo "  make preview-<sample>   render sample to dist/samples/ and play"
-	@echo ""
-	@echo "  Songs available:"
-	@$(foreach s,$(SONG_NAMES),echo "    make play-$(s)";)
-	@echo ""
-	@echo "  Sample categories (use tab-complete or list-samples):"
-	@echo "    make list-samples"
-	@echo ""
-	@echo "EXPORT"
-	@echo "  make songs-wav          dist/wav/*.wav   (lossless PCM)"
-	@echo "  make songs-flac         dist/flac/*.flac (lossless, Spotify)"
-	@echo "  make songs-mp3          dist/mp3/*.mp3   (320kbps)"
-	@echo "  make songs-all          all three formats"
-	@echo "  make samples            dist/samples/*.wav (all samples)"
-	@echo "  make scales             dist/scales/*.wav  (all scales, all keys)"
-	@echo "  make notation-lily      dist/notation/lily/*.ly   (LilyPond source)"
-	@echo "  make notation-abc       dist/notation/abc/*.abc   (ABC notation)"
-	@echo "  make notation-xml       dist/notation/xml/*.xml   (MusicXML)"
-	@echo "  make notation-all       all three notation formats"
-	@echo "  make spotify            songs-flac + upload instructions"
-	@echo "  make all                everything"
-	@echo ""
-	@echo "QUALITY"
-	@echo "  make lint               ruff check"
-	@echo "  make test               pytest"
-	@echo "  make clean              remove dist/ and caches"
-	@echo ""
-
-list-samples:
-	@$(foreach s,$(SAMPLE_NAMES),echo "  make preview-$(s)";)
-	@echo ""
-
-# ── Scale player ──────────────────────────────────────────────────────────────
-# Plays every scale with name + progress bar in the terminal.
-# Requires: make scales first (or it will render on demand)
-
+# Play all songs grouped by mood — chill / energizing / alluring / powerful
 vibe:
 	$(BIN)/python -m scripts.play_vibe
 
@@ -249,23 +75,244 @@ vibe-alluring:
 vibe-powerful:
 	$(BIN)/python -m scripts.play_vibe --vibe powerful
 
-.PHONY: vibe vibe-chill vibe-energizing vibe-alluring vibe-powerful
+# Play one specific song (renders first if needed)
+define PLAY_SONG_RULE
+play-$(1): dist/wav/$(1).wav
+	$(PLAY) dist/wav/$(1).wav
+endef
+$(foreach s,$(SONG_NAMES),$(eval $(call PLAY_SONG_RULE,$(s))))
 
+# List all songs with their vibe tag
+list-songs:
+	$(BIN)/python -m scripts.play_vibe --list
+
+# =============================================================================
+# [CREATE]  Make music. Start here if you're new.
+# =============================================================================
+
+# Copy the beginner template and open it
+new-song:
+	@read -p "Song name (no spaces, e.g. my_track): " name; \
+	cp songs/_template_beginner.py songs/$$name.py; \
+	echo "Created songs/$$name.py — edit it, then: make play-$$name"
+
+# Render + play — re-renders every time you save the file (live coding)
+watch:
+	@test -n "$(SONG)" || (echo "Usage: make watch SONG=my_track"; exit 1)
+	$(CM) songs/$(SONG).py --watch
+
+# Render a song to WAV and play it
+dist/wav/%.wav: songs/%.py
+	@mkdir -p dist/wav
+	$(CM) $< -o $@
+
+# Export a single song to all formats
+export-song:
+	@test -n "$(SONG)" || (echo "Usage: make export-song SONG=trance_odyssey"; exit 1)
+	$(CM) songs/$(SONG).py           -o dist/wav/$(SONG).wav
+	$(CM) songs/$(SONG).py --flac    -o dist/flac/$(SONG).flac
+	$(CM) songs/$(SONG).py --mp3     -o dist/mp3/$(SONG).mp3
+	@echo ""
+	@echo "Exported to dist/wav/, dist/flac/, dist/mp3/"
+
+# Render all songs (three formats)
+dist/flac/%.flac: songs/%.py
+	@mkdir -p dist/flac
+	$(CM) $< --flac -o $@
+
+dist/mp3/%.mp3: songs/%.py
+	@mkdir -p dist/mp3
+	$(CM) $< --mp3 -o $@
+
+songs-wav:  $(WAV_SONGS)
+songs-flac: $(FLAC_SONGS)
+songs-mp3:  $(MP3_SONGS)
+songs-all:  songs-wav songs-flac songs-mp3
+
+# Upload to Spotify (renders FLAC + shows instructions)
+spotify: songs-flac
+	@echo ""
+	@echo "Spotify-ready files in dist/flac/:"
+	@ls -lh dist/flac/*.flac 2>/dev/null || echo "  (none)"
+	@echo ""
+	@echo "Upload at: https://artists.spotify.com  (Music → Upload Track)"
+	@echo "Min requirements: 30s duration, 44100 Hz, stereo. FLAC preferred."
+
+# Preview an instrument sample — hear what a preset sounds like
+define PREVIEW_RULE
+preview-$(1): dist/samples/$(1).wav
+	$(PLAY) dist/samples/$(1).wav
+endef
+$(foreach s,$(SAMPLE_NAMES),$(eval $(call PREVIEW_RULE,$(s))))
+
+# Render all samples
+define SAMPLE_RENDER_RULE
+dist/samples/%.wav: samples/$(1)/%.py
+	@mkdir -p dist/samples
+	$(CM) $$< -o $$@
+endef
+$(foreach d,$(SAMPLE_DIRS),$(eval $(call SAMPLE_RENDER_RULE,$(d))))
+
+samples: $(WAV_SAMPLES)
+
+# List all available samples
+list-samples:
+	@echo ""
+	@$(foreach s,$(SAMPLE_NAMES),echo "  make preview-$(s)";)
+	@echo ""
+
+# =============================================================================
+# [EXPLORE]  Scales, arpeggios, samples — expand your musical vocabulary.
+# =============================================================================
+
+# Render all scales (32 types × 12 keys)
+dist/scales/%.wav: scales/%.py
+	@mkdir -p dist/scales
+	$(CM) $< -o $@
+
+scales: $(WAV_SCALES)
+
+# Play one scale by name
+define PLAY_SCALE_RULE
+play-scale-$(1): dist/scales/$(1).wav
+	$(PLAY) dist/scales/$(1).wav
+endef
+$(foreach s,$(SCALE_NAMES),$(eval $(call PLAY_SCALE_RULE,$(s))))
+
+# Play all scales with name + in-place progress bar
 play-scales: scales
 	$(BIN)/python -m scripts.play_scales
 
+# Play all scales as arpeggios (1-3-5-8 broken chord pattern)
 play-scales-arp:
 	$(BIN)/python -m scripts.play_scales --arp
 
+# Play one group of scales  (GROUP=blues|world|bebop|symmetric|diatonic|...)
 play-scales-group:
 	@test -n "$(GROUP)" || (echo "Usage: make play-scales-group GROUP=world"; exit 1)
 	$(BIN)/python -m scripts.play_scales --group $(GROUP)
 
+# Same group, arpeggio mode
 play-scales-arp-group:
-	@test -n "$(GROUP)" || (echo "Usage: make play-scales-arp-group GROUP=world"; exit 1)
+	@test -n "$(GROUP)" || (echo "Usage: make play-scales-arp-group GROUP=blues"; exit 1)
 	$(BIN)/python -m scripts.play_scales --group $(GROUP) --arp
 
+# List all scales with render status
 list-scales:
 	$(BIN)/python -m scripts.play_scales --list
 
-.PHONY: list-samples list-scales play-scales play-scales-arp play-scales-group play-scales-arp-group
+# Export sheet music for all songs
+notation-lily: $(LY_SONGS)
+notation-abc:  $(ABC_SONGS)
+notation-xml:  $(XML_SONGS)
+notation-all:  notation-lily notation-abc notation-xml
+
+dist/notation/lily/%.ly: songs/%.py
+	@mkdir -p dist/notation/lily
+	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_lilypond; export_lilypond(m.song,'$@')"
+	@echo "  → $@  (compile: lilypond $@)"
+
+dist/notation/abc/%.abc: songs/%.py
+	@mkdir -p dist/notation/abc
+	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_abc; export_abc(m.song,'$@')"
+	@echo "  → $@  (preview: https://abc.rectanglered.com)"
+
+dist/notation/xml/%.xml: songs/%.py
+	@mkdir -p dist/notation/xml
+	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_musicxml; export_musicxml(m.song,'$@')"
+	@echo "  → $@  (open in MuseScore, Sibelius, Dorico, Finale)"
+
+# =============================================================================
+# [DEV]  Build, test, lint, export everything.
+# =============================================================================
+
+lint:
+	$(BIN)/ruff check code_music tests songs samples scales scripts
+
+test:
+	$(BIN)/pytest tests/ -v
+
+# Render everything to every format
+all: songs-all samples scales notation-all
+
+clean:
+	rm -rf dist/ .pytest_cache .ruff_cache
+	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null; true
+	find . -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null; true
+
+# =============================================================================
+# HELP
+# =============================================================================
+
+help:
+	@echo ""
+	@echo "╔══════════════════════════════════════════════════════════════════╗"
+	@echo "║                        code-music                               ║"
+	@echo "║          Code-generated music. Run make help for anything.      ║"
+	@echo "╚══════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "  First time?  →  make dev"
+	@echo ""
+	@echo "┌─ [VIBE] Just listen ──────────────────────────────────────────────"
+	@echo "│"
+	@echo "│  make vibe                  Play all songs grouped by mood"
+	@echo "│  make vibe-chill            Slow, atmospheric, late night"
+	@echo "│  make vibe-energizing       Driving, uplifting, forward motion"
+	@echo "│  make vibe-alluring         Dark, mysterious, pulls you in"
+	@echo "│  make vibe-powerful         Heavy, orchestral, impact"
+	@echo "│  make list-songs            See all songs with descriptions"
+	@echo "│"
+	@echo "│  make play-<song>           Play one song directly"
+	@$(foreach s,$(filter-out _template_beginner,$(SONG_NAMES)),echo "│    make play-$(s)";)
+	@echo "│"
+	@echo "├─ [CREATE] Make music ─────────────────────────────────────────────"
+	@echo "│"
+	@echo "│  make new-song              Copy beginner template, ready to edit"
+	@echo "│  make watch SONG=my_track   Live coding — re-renders on each save"
+	@echo "│  make export-song SONG=x    Export one song to WAV + FLAC + MP3"
+	@echo "│  make spotify               Render all songs → Spotify-ready FLAC"
+	@echo "│"
+	@echo "│  make preview-<sample>      Hear an instrument or technique"
+	@echo "│  make samples               Render all 100+ sample previews"
+	@echo "│  make list-samples          List every available sample"
+	@echo "│"
+	@echo "├─ [EXPLORE] Scales, samples & sheet music ────────────────────────"
+	@echo "│"
+	@echo "│  make play-scales           All 32 scales, all 12 keys, with labels"
+	@echo "│  make play-scales-arp       Same scales as 1-3-5-8 arpeggios"
+	@echo "│  make play-scales-group GROUP=<g>   One group of scales"
+	@echo "│    Groups: diatonic  minor  pentatonic  blues  symmetric"
+	@echo "│            bebop  modal_jazz  world  reference"
+	@echo "│  make play-scale-<name>     One scale by name"
+	@echo "│  make list-scales           List all 32 scales with status"
+	@echo "│"
+	@echo "│  make notation-abc          Sheet music → ABC (browser preview)"
+	@echo "│  make notation-lily         Sheet music → LilyPond (→ PDF)"
+	@echo "│  make notation-xml          Sheet music → MusicXML (MuseScore etc)"
+	@echo "│  make notation-all          All three notation formats"
+	@echo "│"
+	@echo "│  make play-scale-major           make play-scale-blues_minor"
+	@echo "│  make play-scale-dorian          make play-scale-hungarian_minor"
+	@echo "│  make play-scale-whole_tone      make play-scale-super_locrian"
+	@echo "│"
+	@echo "├─ [DEV] Build & test ──────────────────────────────────────────────"
+	@echo "│"
+	@echo "│  make dev                   Create .venv, install deps, check ffmpeg"
+	@echo "│  make install               Create .venv and install deps only"
+	@echo "│  make lint                  ruff check all Python"
+	@echo "│  make test                  pytest (213 tests)"
+	@echo "│  make songs-wav             Render all songs → dist/wav/"
+	@echo "│  make songs-flac            Render all songs → dist/flac/"
+	@echo "│  make songs-mp3             Render all songs → dist/mp3/"
+	@echo "│  make songs-all             All three audio formats"
+	@echo "│  make scales                Render all 32 scales → dist/scales/"
+	@echo "│  make samples               Render all samples → dist/samples/"
+	@echo "│  make all                   Everything: audio + scales + notation"
+	@echo "│  make clean                 Remove dist/ and caches"
+	@echo "│"
+	@echo "│  Docs:  docs/for_developers.md"
+	@echo "│  Tests: .venv/bin/pytest tests/ -v"
+	@echo "│  CI:    .github/workflows/ci.yml"
+	@echo "│"
+	@echo "└───────────────────────────────────────────────────────────────────"
+	@echo ""
