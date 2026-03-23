@@ -1,10 +1,16 @@
 # code-music
 
 Code-generated music: write Python blocks, export Spotify-ready audio.
-Style inspiration: Zedd (big-room electro), Mord Fustang (cosmic disco-house),
-Brian Eno (ambient), and whatever else sounds good.
 
-## Quick start
+**Audience docs** (these are the primary user-facing entry points):
+- `docs/for_listeners.md` — just press play, no code
+- `docs/for_creators.md` — make your first song in 5 minutes
+- `docs/for_theory_heads.md` — full reference: scales, ornaments, effects
+- `docs/for_developers.md` — architecture, extension points, CI
+
+**Beginner template:** `songs/_template_beginner.py`
+
+## Quick start (developer)
 
 ```bash
 make dev          # create .venv, install deps, check ffmpeg

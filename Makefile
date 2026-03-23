@@ -227,8 +227,45 @@ help:
 	@echo ""
 
 list-samples:
-	@echo ""
 	@$(foreach s,$(SAMPLE_NAMES),echo "  make preview-$(s)";)
 	@echo ""
 
-.PHONY: list-samples
+# ── Scale player ──────────────────────────────────────────────────────────────
+# Plays every scale with name + progress bar in the terminal.
+# Requires: make scales first (or it will render on demand)
+
+vibe:
+	$(BIN)/python -m scripts.play_vibe
+
+vibe-chill:
+	$(BIN)/python -m scripts.play_vibe --vibe chill
+
+vibe-energizing:
+	$(BIN)/python -m scripts.play_vibe --vibe energizing
+
+vibe-alluring:
+	$(BIN)/python -m scripts.play_vibe --vibe alluring
+
+vibe-powerful:
+	$(BIN)/python -m scripts.play_vibe --vibe powerful
+
+.PHONY: vibe vibe-chill vibe-energizing vibe-alluring vibe-powerful
+
+play-scales: scales
+	$(BIN)/python -m scripts.play_scales
+
+play-scales-arp:
+	$(BIN)/python -m scripts.play_scales --arp
+
+play-scales-group:
+	@test -n "$(GROUP)" || (echo "Usage: make play-scales-group GROUP=world"; exit 1)
+	$(BIN)/python -m scripts.play_scales --group $(GROUP)
+
+play-scales-arp-group:
+	@test -n "$(GROUP)" || (echo "Usage: make play-scales-arp-group GROUP=world"; exit 1)
+	$(BIN)/python -m scripts.play_scales --group $(GROUP) --arp
+
+list-scales:
+	$(BIN)/python -m scripts.play_scales --list
+
+.PHONY: list-samples list-scales play-scales play-scales-arp play-scales-group play-scales-arp-group

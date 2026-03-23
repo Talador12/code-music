@@ -1,0 +1,99 @@
+# code-music
+
+Code-generated music. Write Python, hear sound, export to Spotify.
+
+---
+
+**Who are you?**
+
+| | |
+|---|---|
+| 🎧 **Just want to listen** | [Start here →](docs/for_listeners.md) |
+| 🎹 **Want to make music (no theory needed)** | [Start here →](docs/for_creators.md) |
+| 🎼 **Know your modes and want full control** | [Start here →](docs/for_theory_heads.md) |
+| 💻 **Want to understand or extend the code** | [Start here →](docs/for_developers.md) |
+
+---
+
+## What is this?
+
+A Python library and tool set for generating music programmatically — from
+a single scale all the way to full multi-track songs with orchestral
+instruments, EDM synthesis, jazz arpeggios, and effects chains.
+
+```python
+from code_music import Song, Track, Note, Chord, scale, reverb
+
+song = Song(title="My Track", bpm=120)
+
+pad  = song.add_track(Track(instrument="pad",    volume=0.5))
+lead = song.add_track(Track(instrument="piano",  volume=0.8))
+
+pad.add(Chord("A", "min7", 3, duration=8.0))
+lead.extend(scale("A", "pentatonic", octave=5))
+
+song._effects = {"pad": lambda s, sr: reverb(s, sr, wet=0.4)}
+```
+
+```bash
+code-music my_track.py --flac    # → Spotify-ready FLAC
+```
+
+## Quick setup
+
+```bash
+git clone https://github.com/Talador12/code-music
+cd code-music
+make dev          # creates .venv, installs deps, checks ffmpeg
+make test         # 213 tests, all green
+```
+
+Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
+
+## What's in the box
+
+| Directory | What's there |
+|---|---|
+| `songs/` | 13 full songs — lo-fi, trance, bebop, symphony, ambient, EDM |
+| `samples/` | 100+ short instrument and technique demos |
+| `scales/` | 32 scale types × all 12 keys, straight and arpeggio modes |
+| `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
+| `scripts/` | Interactive scale/arp player with progress bar |
+| `code_music/` | The engine, synth, effects, export, notation, voice |
+
+## Play something right now
+
+```bash
+make play-trance_odyssey      # 90s uplifting trance
+make play-tank_bebop          # Cowboy Bebop big-band jazz
+make play-deep_space_drift    # Brian Eno ambient
+make play-clarity_drive       # Zedd-style festival EDM
+make play-symphony_no1        # original orchestral movement
+
+# Hear every scale with in-place progress bar
+make play-scales
+make play-scales-arp          # same scales as arpeggios
+```
+
+## Export to Spotify
+
+```bash
+make spotify     # renders all songs to dist/flac/ + prints upload link
+```
+
+Upload at **https://artists.spotify.com** → Music → Upload Track.
+Minimum: 30s, 44100 Hz stereo. FLAC preferred.
+
+## Sheet music
+
+```bash
+make notation-all   # LilyPond (.ly), ABC (.abc), MusicXML (.xml) for every song
+```
+
+- **LilyPond**: `lilypond dist/notation/lily/trance_odyssey.ly` → PDF
+- **ABC**: paste `dist/notation/abc/tank_bebop.abc` into https://abc.rectanglered.com
+- **MusicXML**: open in MuseScore, Sibelius, Dorico, Finale
+
+---
+
+*See [docs/](docs/) for audience-specific guides.*
