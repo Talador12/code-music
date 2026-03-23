@@ -41,17 +41,54 @@ CHORD_SHAPES = {
     "sus4": [0, 5, 7],
 }
 
-# Scale patterns (semitone steps)
+# Scale patterns (semitone intervals from root)
 SCALES = {
-    "major": [0, 2, 4, 5, 7, 9, 11],
-    "minor": [0, 2, 3, 5, 7, 8, 10],
+    # ── Diatonic modes ────────────────────────────────────────────────────────
+    "major": [0, 2, 4, 5, 7, 9, 11],  # Ionian
+    "minor": [0, 2, 3, 5, 7, 8, 10],  # Natural / Aeolian
     "dorian": [0, 2, 3, 5, 7, 9, 10],
     "phrygian": [0, 1, 3, 5, 7, 8, 10],
     "lydian": [0, 2, 4, 6, 7, 9, 11],
     "mixolydian": [0, 2, 4, 5, 7, 9, 10],
     "locrian": [0, 1, 3, 5, 6, 8, 10],
-    "pentatonic": [0, 2, 4, 7, 9],
-    "blues": [0, 3, 5, 6, 7, 10],
+    # ── Minor variants ────────────────────────────────────────────────────────
+    "harmonic_minor": [0, 2, 3, 5, 7, 8, 11],  # raised 7th
+    "melodic_minor": [0, 2, 3, 5, 7, 9, 11],  # raised 6th and 7th (ascending)
+    "phrygian_dominant": [0, 1, 4, 5, 7, 8, 10],  # Spanish / flamenco
+    # ── Pentatonic ────────────────────────────────────────────────────────────
+    "pentatonic": [0, 2, 4, 7, 9],  # Major pentatonic
+    "pentatonic_minor": [0, 3, 5, 7, 10],  # Minor pentatonic
+    "pentatonic_blues": [0, 3, 5, 6, 7, 10],  # Minor pentatonic + blue note
+    # ── Blues ─────────────────────────────────────────────────────────────────
+    "blues": [0, 3, 5, 6, 7, 10],  # Classic blues hexatonic
+    "blues_major": [0, 2, 3, 4, 7, 9],  # Major blues
+    # ── Symmetric scales ──────────────────────────────────────────────────────
+    "whole_tone": [0, 2, 4, 6, 8, 10],  # 6 notes, all whole steps
+    "diminished": [0, 2, 3, 5, 6, 8, 9, 11],  # Half-whole diminished (8 notes)
+    "diminished_hw": [0, 1, 3, 4, 6, 7, 9, 10],  # Whole-half diminished
+    "augmented": [0, 3, 4, 7, 8, 11],  # Augmented / hexatonic
+    # ── Bebop scales ─────────────────────────────────────────────────────────
+    "bebop_major": [0, 2, 4, 5, 7, 8, 9, 11],  # Major + chromatic passing tone
+    "bebop_dominant": [0, 2, 4, 5, 7, 9, 10, 11],  # Mixolydian + maj 7
+    "bebop_minor": [0, 2, 3, 4, 5, 7, 9, 10],  # Dorian + maj 3
+    # ── World / ethnic scales ─────────────────────────────────────────────────
+    "hungarian_minor": [0, 2, 3, 6, 7, 8, 11],  # Gypsy minor
+    "hungarian_major": [0, 3, 4, 6, 7, 9, 10],
+    "arabic": [0, 1, 4, 5, 7, 8, 11],  # Double harmonic / Byzantine
+    "japanese": [0, 1, 5, 7, 8],  # Hirajoshi
+    "hirajoshi": [0, 2, 3, 7, 8],  # Pentatonic variant
+    "in_sen": [0, 1, 5, 7, 10],  # Japanese in-sen
+    "yo": [0, 2, 5, 7, 9],  # Japanese yo scale
+    "persian": [0, 1, 4, 5, 6, 8, 11],
+    "enigmatic": [0, 1, 4, 6, 8, 10, 11],  # Verdi's enigmatic scale
+    "neapolitan_major": [0, 1, 3, 5, 7, 9, 11],
+    "neapolitan_minor": [0, 1, 3, 5, 7, 8, 11],
+    # ── Modal jazz ────────────────────────────────────────────────────────────
+    "lydian_dominant": [0, 2, 4, 6, 7, 9, 10],  # Lydian b7 — jazz / fusion
+    "super_locrian": [0, 1, 3, 4, 6, 8, 10],  # Altered scale (7th mode melodic minor)
+    "lydian_augmented": [0, 2, 4, 6, 8, 9, 11],  # 3rd mode melodic minor
+    "locrian_natural2": [0, 2, 3, 5, 6, 8, 10],  # Half-diminished / 6th mode mel. minor
+    # ── Chromatic ─────────────────────────────────────────────────────────────
     "chromatic": list(range(12)),
 }
 
