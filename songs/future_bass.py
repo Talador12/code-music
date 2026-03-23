@@ -25,7 +25,7 @@ from code_music import (
     stereo_width,
 )
 
-song = Song(title="Halflight", bpm=150)
+song = Song(title="Between", bpm=150)
 
 BAR = 4.0
 r = Note.rest

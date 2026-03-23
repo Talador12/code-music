@@ -1,7 +1,7 @@
 """Ambient & Cinematic — space, patience, texture over melody."""
 
 ALBUM = {
-    "title": "Dead Air",
+    "title": "Carrier",
     "artist": "code-music",
     "genre": "Ambient / Cinematic",
     "year": 2026,
@@ -24,7 +24,7 @@ ALBUM = {
         "Hans Zimmer — Inception OST, Interstellar OST",
     ],
     "tracks": [
-        {"title": "Dead Air", "song": "deep_space_drift", "bpm": 60},
+        {"title": "Carrier", "song": "deep_space_drift", "bpm": 60},
         {"title": "Weight", "song": "cinematic_rise", "bpm": 100},
     ],
 }

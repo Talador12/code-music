@@ -227,8 +227,10 @@ dist/notation/xml/%.xml: songs/%.py
 # =============================================================================
 
 ALBUM_STEMS := ambient_cinematic anthology classical_orchestral cosmic_electro \
-               drum_and_bass edm_festival edm_progressive hiphop_lofi \
-               jazz_neosoul rock_prog videogame_anime
+               country_americana drum_and_bass dubstep edm_festival edm_progressive \
+               folk_acoustic funk_disco hiphop_lofi indie_alternative jazz_neosoul \
+               latin metal parody pop rnb_soul rock_prog techno videogame_anime \
+               world_experimental
 
 # Render one album (WAV + FLAC + MP3 + liner notes + M3U playlist)
 # Usage: make album-edm_progressive
@@ -303,20 +305,19 @@ help:
 	@echo "│  make samples               Render all 100+ sample previews"
 	@echo "│  make list-samples          List every available sample"
 	@echo "│"
-	@echo "│  make list-albums           List all 11 genre albums"
+	@echo "│  make list-albums           List all 22 genre albums"
 	@echo "│  make album-<name>          Render one album (WAV+FLAC+MP3+liner notes)"
-	@echo "│    album-edm_progressive    Machine Dreams (deadmau5 style)"
-	@echo "│    album-edm_festival       Clarity Drive (Zedd / festival EDM)"
-	@echo "│    album-cosmic_electro     Neon Lollipop (Mord Fustang / disco)"
-	@echo "│    album-jazz_neosoul       After Hours (Cowboy Bebop / jazz)"
-	@echo "│    album-drum_and_bass      Liquid State (Hospital Records)"
-	@echo "│    album-ambient_cinematic  Deep Space Drift (Eno / Zimmer)"
-	@echo "│    album-classical_orchestral  Symphony No. 1 in C Minor"
-	@echo "│    album-rock_prog          Dorian Excursion (Pink Floyd / Tool)"
-	@echo "│    album-hiphop_lofi        3am Study Session (Nujabes / Dilla)"
-	@echo "│    album-videogame_anime    Loading Screen (Kanno / Mitsuda)"
-	@echo "│    album-anthology          The Anthology — one track per genre"
-	@echo "│  make albums                Render all 11 albums"
+	@echo "│"
+	@echo "│  Electronic:  edm_progressive  edm_festival  cosmic_electro"
+	@echo "│               techno  dubstep  drum_and_bass  ambient_cinematic"
+	@echo "│  Jazz/Soul:   jazz_neosoul  rnb_soul  funk_disco"
+	@echo "│  Rock:        rock_prog  indie_alternative  metal"
+	@echo "│  Classical:   classical_orchestral"
+	@echo "│  Other:       hiphop_lofi  folk_acoustic  latin  pop"
+	@echo "│               world_experimental  country_americana"
+	@echo "│  Special:     videogame_anime  anthology  parody"
+	@echo "│"
+	@echo "│  make albums                Render all 22 albums"
 	@echo "│"
 	@echo "├─ [EXPLORE] Scales, samples & sheet music ────────────────────────"
 	@echo "│"

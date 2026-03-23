@@ -22,7 +22,7 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Offshore", "song": "clarity_drive", "bpm": 128},
-        {"title": "Freefall", "song": "trance_odyssey", "bpm": 138},
-        {"title": "Halflight", "song": "future_bass", "bpm": 150},
+        {"title": "Drop", "song": "trance_odyssey", "bpm": 138},
+        {"title": "Between", "song": "future_bass", "bpm": 150},
     ],
 }
