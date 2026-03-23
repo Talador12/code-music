@@ -1,65 +1,87 @@
 # code-music — project state
 
-## Status: v0.3.0 — voice synthesis, LFO modulation, sidechain, 90 tests
+## Status: v0.4.0 — arp helper, MIDI export, 4 new songs, 119 tests, --watch mode
 
 ## What's done
 
-### Voice system (`code_music/voice.py`)
-- `VoiceClip` — text + voice + backend spec (rate, pitch, volume, pan)
-- `VoiceTrack` — sequence of (VoiceClip, beat_offset) pairs
-- `Song.add_voice_track()` — mix voice clips alongside instrument tracks
-- `generate(clip)` — render one clip to stereo numpy array
-- `render_voice_track()` — render full track aligned to song timeline
+### Engine helpers (`code_music/engine.py`)
+- `arp(chord, pattern, rate, octaves)` — 8 named patterns: up, down, up_down, down_up, random, outside_in, skip, pinky
+- `crescendo(notes, start_vel, end_vel)` — linear velocity ramp up (works on Notes and Chords)
+- `decrescendo(notes, start_vel, end_vel)` — linear velocity ramp down
+- `transpose(notes, semitones)` — shift pitch up/down
+- `humanize(notes, vel_spread, timing_spread)` — organic random micro-variation
+- `repeat(events, n)` — convenience repeat helper
+- `Section` dataclass — named song blocks for arrangement docs
+- Extended chord shapes: 9, min9, add9, maj9, 6, min6, 6/9, 11, 13, power, flat5, aug7
 
-**Backends (auto-detected, in priority order):**
-- `say` — macOS built-in, 184 voices, zero install. Musical voices: Cellos,
-  Organ, Zarvox, Trinoids, Bells, Bubbles, Whisper, Wobble, Boing
-- `bark` — Suno Bark AI (transformers + torch), realistic speech + ♪ singing ♪
-- `elevenlabs` — ElevenLabs API (ELEVENLABS_API_KEY env var)
-- `openai` — OpenAI TTS API (OPENAI_API_KEY env var), voices: alloy/echo/fable/onyx/nova/shimmer
+### MIDI export (`code_music/midi.py`)
+- `export_midi(song, path)` — pure-stdlib SMF type 1 (.mid) file
+- General MIDI program mapping for all 60 instruments
+- Drum track auto-routes to channel 10
+- `code-music song.py --midi` from CLI
 
-### New effects
-- `tremolo(rate_hz, depth)` — amplitude LFO
-- `vibrato(rate_hz, depth_cents)` — pitch LFO via time-warp
-- `lfo_filter(rate_hz, min_cutoff, max_cutoff)` — swept filter (EDM filter-open)
-- `sidechain(target, trigger, ...)` — classic EDM pumping / kick-duck
+### CLI additions (`code_music/cli.py`)
+- `--midi` flag: export as MIDI
+- `--watch` flag: poll for file changes, re-render on save (live coding mode)
 
-### Voice samples (`samples/voices/`)
-- `robot_choir.py` — Zarvox + Trinoids + Cellos "ah/ooh" choir over Cm pad
-- `daft_punk_vocoder.py` — Cellos + Organ funk vocoder over disco beat
-- `singing_demo.py` — all 11 musical say voices back-to-back demo
-- `spoken_word_beat.py` — Whisper poetry over lo-fi hip-hop beat
-- `operatic_drama.py` — Cellos operatic "aaaah" over string orchestra swell
-- `edm_vocal_chop.py` — Bubbles + Junior syllable chops over 128bpm EDM
+### Effects additions (`code_music/effects.py`)
+- `gate(rate_hz, shape, duty)` — rhythmic amplitude chop: square/ramp_up/ramp_down/trapezoid
+- `limiter(ceiling, release_ms)` — brick-wall peak limiter (mastering)
+- `stereo_width(width)` — M/S stereo widening (0=mono, 2=extra wide)
+- `noise_sweep(n_samples, start_cutoff, end_cutoff)` — EDM build-up effect
+- `phaser(rate_hz, depth, stages)` — multi-stage all-pass LFO phaser
+- `flanger(rate_hz, depth_ms, feedback)` — LFO delay flanger (jet-engine sweep)
 
-### Tests: 90 passing
-- `test_voice.py` — backend detection, clip generation, pan/volume, VoiceTrack render
-- `test_lfo_sidechain.py` — tremolo, vibrato, lfo_filter, sidechain
+### Songs (in `songs/`)
+- `trance_odyssey.py` — uplifting trance, 138 BPM, A minor, 36 bars, gated strings + supersaw
+- `tank_bebop.py` — Cowboy Bebop inspired big-band jazz, 168 BPM, Bb, full orchestra
+- `symphony_no1.py` — original symphony movement, C minor, sonata form, 108 BPM
+- `future_bass.py` — future bass / melodic dubstep, 150 BPM, F# major, 808 bass
+
+### Samples additions (`samples/techniques/`)
+- `arp_patterns.py` — all 8 arp patterns showcased on Am7
+- `gate_effects.py` — gate shapes: square / ramp_up / trapezoid
+- `trance_gate_strings.py` — trance gated strings texture
+- `crescendo_showcase.py` — strings swell in/out with humanize
+- `noise_build.py` — noise sweep reference
+
+### Tests: 119 passing
+- `test_engine_helpers.py` — arp, crescendo, decrescendo, transpose, humanize, repeat (31 tests)
+- `test_midi.py` — MIDI export, file structure, drum routing, multi-track (8 tests)
 
 ## Roadmap
 
-### Voice / AI
-- [ ] Bark integration test (needs GPU or patience)
-- [ ] ElevenLabs singing mode (v3 API)
-- [ ] `VoiceClip.phonemes` — explicit phoneme timing for robotic stutter effects
-- [ ] Pitch-correct voice to scale (autotune-style post-processing)
+### Engine
+- [ ] LFO modulation on synth params at note level (filter cutoff sweep per note)
+- [ ] Portamento / glide between notes (pitch slide)
+- [ ] Velocity curves per track (humanize at track level, not note level)
+- [ ] Note probability / generative randomness (p=0.7 to play a note)
 
 ### EDM
-- [ ] LFO on synth parameters at note level (per-note filter sweep)
-- [ ] Arpeggiator helper: `arp(chord, pattern, rate)` sugar
-- [ ] Song sections API (verse/chorus/bridge markers)
-- [ ] Tank!/Bebop-style full song with brass + sax + voice
+- [ ] Future house / moombahton song
+- [ ] DnB / liquid DnB song (174 BPM, Reese bass, amen break-style drums)
+- [ ] Deadmau5-style progressive house full song (8+ minute structure)
+- [ ] Dubstep wobble bass (LFO on filter cutoff synced to BPM)
 
-### Orchestral
-- [ ] Dynamic velocity curves (crescendo/decrescendo helpers)
-- [ ] Instrument articulations (staccato, legato, pizz toggle)
+### Orchestral / Jazz
+- [ ] Cinematic trailer music song (Hans Zimmer inspired)
+- [ ] Full jazz standards arrangement (Autumn Leaves / Giant Steps style)
+- [ ] String pizzicato toggle helper (easy pizz/arco switching)
+- [ ] Dynamics automation over bars (not just per-note)
+
+### Voice / AI
+- [ ] Bark integration test + install guide
+- [ ] ElevenLabs v3 singing mode exploration
+- [ ] Phoneme stutter/glitch effect for robotic vocal chops
+- [ ] Autotune post-processing (snap voice pitch to scale)
 
 ### Export / Distribution
-- [ ] MIDI export (`.mid`) for DAW import
-- [ ] Spotify distributor notes (DistroKid / TuneCore guide)
-- [ ] GitHub Pages web player
+- [ ] Spotify distributor guide (DistroKid / TuneCore upload steps)
+- [ ] GitHub Pages web player for previewing songs
+- [ ] Batch render all songs to dist/ in CI
 
-### Ideas from roadmap sessions
-- [ ] Generative composition: scale + mood → auto-generated melody
-- [ ] Song remix: take an existing song script and transpose/retempo it
-- [ ] Live coding mode: `--watch` flag that re-renders on file save
+### Ideas
+- [ ] Generative mood-based composition (mood + scale → auto-melody)
+- [ ] Song remix helper (transpose + retempo existing song)
+- [ ] BPM tap utility (figure out BPM from listening)
+- [ ] Chord progression suggester (given root + mood → progression)

@@ -429,3 +429,247 @@ def sidechain(
     blended_gain = 1.0 - depth * (1.0 - gain)
     result = target * blended_gain[:, np.newaxis]
     return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Gate — rhythmic amplitude chop (trance gate / stutter)
+# ---------------------------------------------------------------------------
+
+
+def gate(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 8.0,
+    shape: str = "square",
+    duty: float = 0.5,
+) -> FloatArray:
+    """Rhythmic amplitude gate — chops signal on/off at rate_hz.
+
+    The classic trance gate / stutter effect. Use on pads, strings, or vocals.
+
+    Args:
+        rate_hz: Gate frequency in Hz (e.g. 8.0 = 8th notes at 120 BPM).
+        shape:   "square" (hard on/off), "ramp_up", "ramp_down", "trapezoid".
+        duty:    Fraction of each cycle that is open (0.0–1.0).
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    phase = (t * rate_hz) % 1.0  # 0..1 within each cycle
+
+    if shape == "square":
+        env = np.where(phase < duty, 1.0, 0.0)
+    elif shape == "ramp_up":
+        env = np.where(phase < duty, phase / max(duty, 1e-6), 0.0)
+    elif shape == "ramp_down":
+        env = np.where(phase < duty, 1.0 - phase / max(duty, 1e-6), 0.0)
+    elif shape == "trapezoid":
+        ramp = 0.1
+        env = np.where(
+            phase < ramp,
+            phase / ramp,
+            np.where(phase < duty - ramp, 1.0, np.where(phase < duty, (duty - phase) / ramp, 0.0)),
+        )
+    else:
+        env = np.where(phase < duty, 1.0, 0.0)
+
+    return (samples * env[:, np.newaxis]).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Limiter — transparent brick-wall peak limiter
+# ---------------------------------------------------------------------------
+
+
+def limiter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    ceiling: float = 0.98,
+    release_ms: float = 50.0,
+) -> FloatArray:
+    """Brick-wall limiter — prevents clipping above ceiling.
+
+    Faster than compress for mastering: no attack (instant catch),
+    smooth release. Use as the last effect on the master bus.
+
+    Args:
+        ceiling:    Peak level to not exceed (0.0–1.0, typically 0.95–0.99).
+        release_ms: How fast the limiter lets go after a peak.
+    """
+    peak = np.max(np.abs(samples), axis=1)
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+    # Hold-and-release envelope: take max of current peak and decayed previous
+    env = sig.lfilter([1.0 - r_coef], [1.0, -r_coef], peak)
+    env = np.maximum(env, peak)  # instant attack
+
+    gain = np.where(env > ceiling, ceiling / np.maximum(env, 1e-9), 1.0)
+    result = samples * gain[:, np.newaxis]
+    return np.clip(result, -ceiling, ceiling).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Stereo width — mid/side processing
+# ---------------------------------------------------------------------------
+
+
+def stereo_width(samples: FloatArray, width: float = 1.5) -> FloatArray:
+    """Adjust stereo width using M/S processing.
+
+    Args:
+        width: 0.0 = mono, 1.0 = unchanged, 2.0 = double width, >2.0 = very wide.
+               Values > 1.5 can cause phase issues on mono systems.
+    """
+    mid = (samples[:, 0] + samples[:, 1]) * 0.5
+    side = (samples[:, 0] - samples[:, 1]) * 0.5 * width
+    left = mid + side
+    right = mid - side
+    return np.column_stack([left, right]).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Noise sweep — filtered white noise swell (EDM build-up effect)
+# ---------------------------------------------------------------------------
+
+
+def noise_sweep(
+    n_samples: int,
+    sample_rate: int = 44100,
+    start_cutoff: float = 200.0,
+    end_cutoff: float = 18000.0,
+    volume: float = 0.3,
+    pan: float = 0.0,
+) -> FloatArray:
+    """Generate a rising filtered noise sweep — classic EDM build-up.
+
+    Args:
+        n_samples:    Length of output in samples.
+        start_cutoff: LP filter start frequency (Hz).
+        end_cutoff:   LP filter end frequency (Hz).
+        volume:       Output amplitude.
+        pan:          Stereo position (-1..1).
+    """
+    rng = np.random.default_rng(42)
+    noise = rng.standard_normal(n_samples)
+
+    # Linearly interpolate cutoff across blocks
+    block = 512
+    out = np.zeros(n_samples)
+    for i in range(0, n_samples, block):
+        frac = i / n_samples
+        cutoff = start_cutoff + frac * (end_cutoff - start_cutoff)
+        cutoff = np.clip(cutoff, 20.0, sample_rate / 2 - 1)
+        sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        end_i = min(i + block, n_samples)
+        out[i:end_i] = sig.sosfilt(sos, noise[i:end_i])
+
+    # Amplitude envelope: ramp up over the sweep
+    t = np.linspace(0, 1, n_samples)
+    env = t**2  # quadratic ramp = feels like energy building
+    out *= env * volume
+
+    # Pan
+    angle = (pan + 1) / 2 * math.pi / 2
+    l_gain = math.cos(angle)
+    r_gain = math.sin(angle)
+    stereo = np.column_stack([out * l_gain, out * r_gain])
+    return np.clip(stereo, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Phaser — all-pass chain with LFO sweep (swirling texture)
+# ---------------------------------------------------------------------------
+
+
+def phaser(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 0.5,
+    depth: float = 0.7,
+    stages: int = 4,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Multi-stage all-pass phaser with LFO.
+
+    Args:
+        rate_hz: LFO frequency (slow = smooth sweep, fast = wah-like).
+        depth:   Modulation depth.
+        stages:  Number of all-pass stages (more = richer phasing).
+        wet:     Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rate_hz * t)
+
+    out = samples.copy()
+    for _ in range(stages):
+        # All-pass coefficient varies with LFO
+        coeffs = depth * lfo
+
+        def _ap_channel(x: np.ndarray, c: np.ndarray) -> np.ndarray:
+            y = np.zeros_like(x)
+            z = 0.0
+            for i in range(len(x)):
+                ci = c[i]
+                y[i] = -ci * x[i] + z + ci * (z if i > 0 else 0)
+                z = x[i] + ci * y[i]
+            return y
+
+        # Vectorised approximation: apply as time-varying 1st-order AP
+        # Use block processing for speed
+        block = 256
+        ap_l = np.zeros(n)
+        ap_r = np.zeros(n)
+        for start in range(0, n, block):
+            end_b = min(start + block, n)
+            c_avg = float(np.mean(coeffs[start:end_b]))
+            # 1st-order all-pass: y[n] = -c*x[n] + x[n-1] + c*y[n-1]
+            b_ap = [-c_avg, 1.0]
+            a_ap = [1.0, -c_avg]
+            ap_l[start:end_b] = sig.lfilter(b_ap, a_ap, out[start:end_b, 0])
+            ap_r[start:end_b] = sig.lfilter(b_ap, a_ap, out[start:end_b, 1])
+
+        phased = np.column_stack([ap_l, ap_r])
+        out = samples * (1 - wet) + phased * wet
+
+    return out.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Flanger — short delay + LFO (jet engine sweep)
+# ---------------------------------------------------------------------------
+
+
+def flanger(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 0.3,
+    depth_ms: float = 5.0,
+    feedback: float = 0.5,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Flanger — very short LFO-modulated delay with feedback.
+
+    More dramatic than chorus — produces that jet-engine sweep sound
+    heard on Daft Punk leads, Mord Fustang arps, and classic rock guitars.
+
+    Args:
+        rate_hz:   LFO speed.
+        depth_ms:  Max delay depth in milliseconds (0.1–10ms typical).
+        feedback:  Feedback amount (0–0.9).
+        wet:       Wet/dry mix.
+    """
+    # Use the chorus effect with short depth and add feedback character
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    max_d = int(depth_ms * sample_rate / 1000) + 2
+    lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rate_hz * t)
+    delays = (lfo * depth_ms * sample_rate / 1000).astype(int)
+
+    out = samples.copy()
+    buf = np.zeros((max_d, 2))
+    for i in range(n):
+        d = max(1, delays[i])
+        idx = (i - d) % max_d
+        flanged = buf[idx] * feedback
+        out[i] = samples[i] * (1 - wet) + (samples[i] + flanged) * wet
+        buf[i % max_d] = samples[i] + flanged * feedback
+    return out.astype(np.float64)

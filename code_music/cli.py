@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import sys
+import time
 from pathlib import Path
 
 
@@ -20,47 +21,32 @@ def _load_song(script: Path):
     return mod.song
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="code-music",
-        description="Render a code-music script to WAV, MP3, OGG, or FLAC.",
-    )
-    parser.add_argument("script", type=Path, help="Python song script (must define `song`)")
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        default=None,
-        help="Output file path (default: <title>.<fmt> next to script)",
-    )
-    fmt_group = parser.add_mutually_exclusive_group()
-    fmt_group.add_argument("--mp3", action="store_true", help="Export as MP3 (lossy, 320kbps)")
-    fmt_group.add_argument("--ogg", action="store_true", help="Export as OGG Vorbis (lossy)")
-    fmt_group.add_argument("--flac", action="store_true", help="Export as FLAC (lossless)")
-    parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
-    args = parser.parse_args(argv)
+def _render_once(script: Path, args) -> int:
+    """Load, render, and export a single song. Returns exit code."""
+    from .export import export_flac, export_mp3, export_ogg, export_wav
+    from .midi import export_midi
+    from .synth import Synth
 
-    script: Path = args.script.resolve()
-    if not script.exists():
-        print(f"error: {script} not found", file=sys.stderr)
+    try:
+        song = _load_song(script)
+    except Exception as e:
+        print(f"error loading {script.name}: {e}", file=sys.stderr)
         return 1
-
-    print(f"Loading {script.name}...")
-    song = _load_song(script)
 
     if args.bpm is not None:
         song.bpm = args.bpm
-        print(f"BPM overridden to {song.bpm}")
 
-    from .export import export_flac, export_mp3, export_ogg, export_wav
-    from .synth import Synth
-
-    print(f"Rendering '{song.title}' — {song.duration_sec:.1f}s at {song.bpm} BPM ...")
+    print(f"  Rendering '{song.title}' — {song.duration_sec:.1f}s @ {song.bpm} BPM ...")
+    t0 = time.monotonic()
     synth = Synth(sample_rate=song.sample_rate)
     samples = synth.render_song(song)
+    elapsed = time.monotonic() - t0
+    print(f"  Rendered in {elapsed:.1f}s")
 
-    # Determine output suffix
-    if args.mp3:
+    # Determine format + path
+    if args.midi:
+        suffix = ".mid"
+    elif args.mp3:
         suffix = ".mp3"
     elif args.ogg:
         suffix = ".ogg"
@@ -74,7 +60,9 @@ def main(argv: list[str] | None = None) -> int:
         safe = song.title.lower().replace(" ", "_")
         out_path = script.parent / f"{safe}{suffix}"
 
-    if args.mp3:
+    if args.midi:
+        result = export_midi(song, out_path)
+    elif args.mp3:
         result = export_mp3(samples, out_path, song.sample_rate)
     elif args.ogg:
         result = export_ogg(samples, out_path, song.sample_rate)
@@ -83,8 +71,58 @@ def main(argv: list[str] | None = None) -> int:
     else:
         result = export_wav(samples, out_path, song.sample_rate)
 
-    print(f"Exported: {result}")
+    print(f"  Exported: {result}")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="code-music",
+        description="Render a code-music script to WAV, MP3, OGG, FLAC, or MIDI.",
+    )
+    parser.add_argument("script", type=Path, help="Python song script (must define `song`)")
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=None,
+        help="Output file path (default: <title>.<fmt> next to script)",
+    )
+    fmt_group = parser.add_mutually_exclusive_group()
+    fmt_group.add_argument("--mp3", action="store_true", help="Export as MP3 (lossy, 320kbps)")
+    fmt_group.add_argument("--ogg", action="store_true", help="Export as OGG Vorbis (lossy)")
+    fmt_group.add_argument("--flac", action="store_true", help="Export as FLAC (lossless)")
+    fmt_group.add_argument("--midi", action="store_true", help="Export as MIDI (.mid)")
+    parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="Re-render on file save (live coding mode). Polls every second.",
+    )
+    args = parser.parse_args(argv)
+
+    script: Path = args.script.resolve()
+    if not script.exists():
+        print(f"error: {script} not found", file=sys.stderr)
+        return 1
+
+    if args.watch:
+        print(f"Watching {script.name} — will re-render on save. Ctrl+C to stop.")
+        last_mtime = 0.0
+        try:
+            while True:
+                mtime = script.stat().st_mtime
+                if mtime != last_mtime:
+                    last_mtime = mtime
+                    print(f"\n[{time.strftime('%H:%M:%S')}] Change detected — rendering ...")
+                    _render_once(script, args)
+                time.sleep(1.0)
+        except KeyboardInterrupt:
+            print("\nWatch mode stopped.")
+            return 0
+    else:
+        print(f"Loading {script.name}...")
+        return _render_once(script, args)
 
 
 if __name__ == "__main__":

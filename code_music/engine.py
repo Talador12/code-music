@@ -56,6 +56,25 @@ SCALES = {
 }
 
 
+# Chord shape additions
+CHORD_SHAPES.update(
+    {
+        "9": [0, 4, 7, 10, 14],
+        "min9": [0, 3, 7, 10, 14],
+        "add9": [0, 4, 7, 14],
+        "maj9": [0, 4, 7, 11, 14],
+        "6": [0, 4, 7, 9],
+        "min6": [0, 3, 7, 9],
+        "6/9": [0, 4, 7, 9, 14],
+        "11": [0, 4, 7, 10, 14, 17],
+        "13": [0, 4, 7, 10, 14, 17, 21],
+        "power": [0, 7],
+        "flat5": [0, 4, 6],
+        "aug7": [0, 4, 8, 10],
+    }
+)
+
+
 def midi_to_freq(midi: int) -> float:
     """Convert MIDI note number to frequency in Hz."""
     return A4_FREQ * (2.0 ** ((midi - A4_MIDI) / 12.0))
@@ -183,6 +202,181 @@ def scale(root: str, mode: str = "major", octave: int = 4, length: int | None = 
         extra_octave = i // len(intervals)
         notes.append(Note(pitch=root_midi + intervals[idx] + extra_octave * 12))
     return notes
+
+
+# ---------------------------------------------------------------------------
+# Composition helpers
+# ---------------------------------------------------------------------------
+
+ARP_PATTERNS: dict[str, list[int]] = {
+    "up": [0, 1, 2, 3],
+    "down": [3, 2, 1, 0],
+    "up_down": [0, 1, 2, 3, 2, 1],
+    "down_up": [3, 2, 1, 0, 1, 2],
+    "random": [0, 2, 1, 3],
+    "outside_in": [0, 3, 1, 2],
+    "skip": [0, 2, 1, 3],
+    "pinky": [0, 1, 2, 3, 2, 3, 2, 1],  # piano pinky technique
+}
+
+
+def arp(
+    chord: Chord,
+    pattern: str | list[int] = "up",
+    rate: float = 0.25,
+    octaves: int = 1,
+) -> list[Note]:
+    """Generate an arpeggio from a Chord.
+
+    Args:
+        chord:   Source chord to arpeggiate.
+        pattern: Named pattern (see ARP_PATTERNS) or list of note indices.
+        rate:    Duration of each arpeggiated note in beats.
+        octaves: How many octaves to span (stacks the chord notes upward).
+
+    Returns:
+        List of Note objects ready to add to a Track.
+
+    Example::
+
+        tr.extend(arp(Chord("A", "min7", 4), pattern="up_down", rate=0.25))
+    """
+    base_notes = chord.notes
+    # Build multi-octave note pool
+    all_notes = []
+    for oct_offset in range(octaves):
+        for note in base_notes:
+            all_notes.append(
+                Note(
+                    pitch=note.midi + oct_offset * 12 if note.midi is not None else None,
+                    duration=rate,
+                    velocity=note.velocity,
+                )
+            )
+
+    raw_indices: list[int] = (
+        ARP_PATTERNS.get(pattern, []) if isinstance(pattern, str) else list(pattern)
+    )
+    result = []
+    for idx in raw_indices:
+        if isinstance(idx, int) and 0 <= idx < len(all_notes):
+            n = all_notes[idx]
+            result.append(Note(pitch=n.pitch, duration=rate, velocity=n.velocity))
+    return result
+
+
+def crescendo(notes: list, start_vel: float = 0.2, end_vel: float = 1.0) -> list:
+    """Apply a linear velocity crescendo across a list of Notes or Chords.
+
+    Args:
+        notes:     Notes or Chords to apply velocity ramp to.
+        start_vel: Velocity at the start (0.0–1.0).
+        end_vel:   Velocity at the end (0.0–1.0).
+    """
+    if not notes:
+        return notes
+    result = []
+    n = len(notes)
+    for i, item in enumerate(notes):
+        v = round(start_vel + (end_vel - start_vel) * (i / max(n - 1, 1)), 3)
+        if isinstance(item, Note):
+            result.append(
+                Note(pitch=item.pitch, octave=item.octave, duration=item.duration, velocity=v)
+            )
+        elif isinstance(item, Chord):
+            result.append(
+                Chord(
+                    root=item.root,
+                    shape=item.shape,
+                    octave=item.octave,
+                    duration=item.duration,
+                    velocity=v,
+                )
+            )
+        else:
+            result.append(item)
+    return result
+
+
+def decrescendo(notes: list, start_vel: float = 1.0, end_vel: float = 0.1) -> list:
+    """Apply a linear velocity decrescendo (diminuendo) across a list of Notes or Chords."""
+    return crescendo(notes, start_vel, end_vel)
+
+
+def transpose(notes: list[Note], semitones: int) -> list[Note]:
+    """Shift a list of notes up or down by a number of semitones.
+
+    Args:
+        notes:     Input notes.
+        semitones: Positive = up, negative = down.
+    """
+    result = []
+    for note in notes:
+        if note.pitch is None:
+            result.append(Note.rest(note.duration))
+        elif isinstance(note.pitch, int):
+            result.append(
+                Note(pitch=note.pitch + semitones, duration=note.duration, velocity=note.velocity)
+            )
+        else:
+            midi = note_name_to_midi(note.pitch, note.octave) + semitones
+            result.append(Note(pitch=midi, duration=note.duration, velocity=note.velocity))
+    return result
+
+
+def humanize(
+    notes: list[Note], vel_spread: float = 0.08, timing_spread: float = 0.02
+) -> list[Note]:
+    """Add small random variations to velocity and duration for a human feel.
+
+    Args:
+        vel_spread:    Max velocity variation (+/-).
+        timing_spread: Max duration variation (+/- fraction of beat).
+    """
+    import random
+
+    result = []
+    for note in notes:
+        dv = random.uniform(-vel_spread, vel_spread)
+        dt = random.uniform(-timing_spread, timing_spread)
+        new_vel = max(0.05, min(1.0, note.velocity + dv))
+        new_dur = max(0.05, note.duration + dt)
+        result.append(
+            Note(pitch=note.pitch, octave=note.octave, duration=new_dur, velocity=new_vel)
+        )
+    return result
+
+
+def repeat(events: list, n: int) -> list:
+    """Repeat a list of notes/chords/events n times."""
+    result = []
+    for _ in range(n):
+        result.extend(events)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Song Sections — arrange a Song in named blocks
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Section:
+    """A named block of beats that can be referenced in an arrangement.
+
+    Attributes:
+        name:    Label (e.g. 'intro', 'verse', 'chorus', 'bridge', 'outro').
+        tracks:  Dict of track_name → list of Note/Chord events for this section.
+        bars:    How many bars this section lasts (for documentation).
+    """
+
+    name: str
+    tracks: dict[str, list] = field(default_factory=dict)
+    bars: int = 4
+
+    def add_track(self, track_name: str, events: list) -> "Section":
+        self.tracks[track_name] = events
+        return self
 
 
 @dataclass
