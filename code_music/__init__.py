@@ -22,10 +22,26 @@ from .effects import (
     vibrato,
 )
 from .engine import (
+    # composition helpers
     ARP_PATTERNS,
     CHORD_SHAPES,
+    DOTTED_EIGHTH,
+    DOTTED_HALF,
+    DOTTED_QUARTER,
+    DOTTED_SIXTEENTH,
+    DOTTED_WHOLE,
+    DOUBLE_DOTTED_HALF,
+    DOUBLE_DOTTED_QUARTER,
+    EIGHTH,
+    HALF,
     INTERVALS,
+    QUARTER,
     SCALES,
+    SIXTEENTH,
+    SIXTY_FOURTH,
+    THIRTY_SECOND,
+    # durations
+    WHOLE,
     Beat,
     Chord,
     Note,
@@ -36,23 +52,74 @@ from .engine import (
     chord_prog,
     crescendo,
     decrescendo,
+    doit,
+    fall,
+    flip,
     generate_melody,
+    grace_note,
     humanize,
     legato,
+    mordent,
     pizzicato,
     prob,
     repeat,
     scale,
+    shake,
+    # articulations
     staccato,
     transpose,
+    # ornaments
+    trill,
+    # tuplets
+    triplet,
+    triplets,
+    tuplet,
+    tuplets,
+    turn,
+    upper_mordent,
 )
 from .export import export_flac, export_mp3, export_ogg, export_wav
 from .midi import export_midi
+from .notation import export_abc, export_lilypond, export_musicxml
 from .synth import Synth
 from .voice import VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
 
 __all__ = [
+    # durations
+    "WHOLE",
+    "HALF",
+    "QUARTER",
+    "EIGHTH",
+    "SIXTEENTH",
+    "THIRTY_SECOND",
+    "SIXTY_FOURTH",
+    "DOTTED_WHOLE",
+    "DOTTED_HALF",
+    "DOTTED_QUARTER",
+    "DOTTED_EIGHTH",
+    "DOTTED_SIXTEENTH",
+    "DOUBLE_DOTTED_HALF",
+    "DOUBLE_DOTTED_QUARTER",
+    # tuplets
+    "triplet",
+    "tuplet",
+    "triplets",
+    "tuplets",
+    # ornaments
+    "trill",
+    "mordent",
+    "upper_mordent",
+    "turn",
+    "grace_note",
+    "doit",
+    "fall",
+    "flip",
+    "shake",
+    # articulations
+    "staccato",
+    "legato",
+    "pizzicato",
     # engine
     "Note",
     "Chord",
@@ -67,8 +134,6 @@ __all__ = [
     "decrescendo",
     "generate_melody",
     "humanize",
-    "legato",
-    "pizzicato",
     "prob",
     "repeat",
     "staccato",
@@ -79,12 +144,16 @@ __all__ = [
     "ARP_PATTERNS",
     # synth
     "Synth",
-    # export
+    # audio export
     "export_wav",
     "export_mp3",
     "export_ogg",
     "export_flac",
     "export_midi",
+    # notation export
+    "export_lilypond",
+    "export_abc",
+    "export_musicxml",
     # effects
     "reverb",
     "delay",

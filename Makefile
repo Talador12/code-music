@@ -63,7 +63,7 @@ dev: install
 # ── Quality ───────────────────────────────────────────────────────────────────
 
 lint:
-	$(BIN)/ruff check code_music tests songs samples
+	$(BIN)/ruff check code_music tests songs samples scales
 
 test:
 	$(BIN)/pytest tests/ -v
@@ -86,6 +86,37 @@ songs-wav:  $(WAV_SONGS)
 songs-flac: $(FLAC_SONGS)
 songs-mp3:  $(MP3_SONGS)
 songs-all:  songs-wav songs-flac songs-mp3
+
+# ── Notation export ───────────────────────────────────────────────────────────
+# LilyPond (.ly): compile to PDF with: lilypond dist/notation/<song>.ly
+# ABC (.abc): paste into https://abc.rectanglered.com to render
+# MusicXML (.xml): open in MuseScore, Sibelius, Dorico, Finale, Noteflight
+
+LY_SONGS  := $(addprefix dist/notation/lily/, $(addsuffix .ly,  $(SONG_NAMES)))
+ABC_SONGS := $(addprefix dist/notation/abc/,  $(addsuffix .abc, $(SONG_NAMES)))
+XML_SONGS := $(addprefix dist/notation/xml/,  $(addsuffix .xml, $(SONG_NAMES)))
+
+dist/notation/lily/%.ly: songs/%.py
+	@mkdir -p dist/notation/lily
+	$(BIN)/python -c "import importlib.util,sys; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_lilypond; export_lilypond(m.song,'$@')"
+	@echo "Wrote $@  (compile: lilypond $@)"
+
+dist/notation/abc/%.abc: songs/%.py
+	@mkdir -p dist/notation/abc
+	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_abc; export_abc(m.song,'$@')"
+	@echo "Wrote $@  (preview: https://abc.rectanglered.com)"
+
+dist/notation/xml/%.xml: songs/%.py
+	@mkdir -p dist/notation/xml
+	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_musicxml; export_musicxml(m.song,'$@')"
+	@echo "Wrote $@  (open in MuseScore, Sibelius, Dorico, Finale)"
+
+notation-lily: $(LY_SONGS)
+notation-abc:  $(ABC_SONGS)
+notation-xml:  $(XML_SONGS)
+notation-all:  notation-lily notation-abc notation-xml
+
+.PHONY: notation-lily notation-abc notation-xml notation-all
 
 # ── Render: scales ───────────────────────────────────────────────────────────
 
@@ -147,7 +178,7 @@ spotify: songs-flac
 
 # ── Convenience ───────────────────────────────────────────────────────────────
 
-all: songs-all samples scales
+all: songs-all samples scales notation-all
 
 clean:
 	rm -rf dist/ .pytest_cache .ruff_cache
@@ -182,6 +213,10 @@ help:
 	@echo "  make songs-all          all three formats"
 	@echo "  make samples            dist/samples/*.wav (all samples)"
 	@echo "  make scales             dist/scales/*.wav  (all scales, all keys)"
+	@echo "  make notation-lily      dist/notation/lily/*.ly   (LilyPond source)"
+	@echo "  make notation-abc       dist/notation/abc/*.abc   (ABC notation)"
+	@echo "  make notation-xml       dist/notation/xml/*.xml   (MusicXML)"
+	@echo "  make notation-all       all three notation formats"
 	@echo "  make spotify            songs-flac + upload instructions"
 	@echo "  make all                everything"
 	@echo ""

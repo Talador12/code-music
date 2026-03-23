@@ -9,6 +9,50 @@ from typing import Sequence
 A4_FREQ = 440.0
 A4_MIDI = 69
 
+# ---------------------------------------------------------------------------
+# Note duration constants  (1 beat = quarter note at any BPM)
+# ---------------------------------------------------------------------------
+WHOLE = 4.0
+HALF = 2.0
+QUARTER = 1.0
+EIGHTH = 0.5
+SIXTEENTH = 0.25
+THIRTY_SECOND = 0.125
+SIXTY_FOURTH = 0.0625
+
+DOTTED_WHOLE = 6.0
+DOTTED_HALF = 3.0
+DOTTED_QUARTER = 1.5
+DOTTED_EIGHTH = 0.75
+DOTTED_SIXTEENTH = 0.375
+
+DOUBLE_DOTTED_HALF = 3.5
+DOUBLE_DOTTED_QUARTER = 1.75
+
+# ---------------------------------------------------------------------------
+# Note duration constants — all relative to one beat (quarter note = 1.0)
+# ---------------------------------------------------------------------------
+
+WHOLE = 4.0  # whole note
+HALF = 2.0  # half note
+QUARTER = 1.0  # quarter note (the reference beat)
+EIGHTH = 0.5  # eighth note
+SIXTEENTH = 0.25  # sixteenth note
+THIRTY_SECOND = 0.125  # 32nd note
+SIXTY_FOURTH = 0.0625  # 64th note
+
+# Dotted values (1.5× the base duration)
+DOTTED_WHOLE = 6.0
+DOTTED_HALF = 3.0
+DOTTED_QUARTER = 1.5
+DOTTED_EIGHTH = 0.75
+DOTTED_SIXTEENTH = 0.375
+
+# Double-dotted (1.75× the base)
+DOUBLE_DOTTED_QUARTER = 1.75
+DOUBLE_DOTTED_HALF = 3.5
+
+
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 # Interval shortcuts (semitones from root)
@@ -460,11 +504,269 @@ def legato(notes: list[Note], overlap: float = 0.1) -> list[Note]:
 def pizzicato(notes: list[Note]) -> list[Note]:
     """Convert notes to pizzicato articulation: very short, plucked feel.
 
-    Equivalent to staccato(notes, factor=0.15) — makes each note extremely short.
-    Use on string instrument tracks for a plucked character without changing
-    the instrument preset.
+    Equivalent to staccato(notes, factor=0.15).
     """
     return staccato(notes, factor=0.15)
+
+
+# ---------------------------------------------------------------------------
+# Tuplet helpers
+# ---------------------------------------------------------------------------
+
+
+def triplet(base: float = QUARTER) -> float:
+    """Duration of one note in a triplet filling `base` beats (default: QUARTER).
+
+    Three triplet notes fit in the space of two normal notes.
+    triplet(QUARTER) = 0.333  →  three notes per beat
+    triplet(HALF)    = 0.667  →  three notes per half note
+    """
+    return base * 2 / 3
+
+
+def tuplet(base: float, n: int) -> float:
+    """Duration of one note in an n-tuplet filling `base` beats.
+
+    triplet   = tuplet(QUARTER, 3)   → 0.333
+    quintuplet= tuplet(QUARTER, 5)   → 0.200
+    sextuplet = tuplet(QUARTER, 6)   → 0.167
+    septuplet = tuplet(HALF,    7)   → 0.286
+    """
+    return base / n
+
+
+def triplets(
+    pitches: list, octave: int = 4, base: float = QUARTER, velocity: float = 0.75
+) -> list[Note]:
+    """Build a list of triplet Notes from pitch names (None = rest).
+
+    Example::
+
+        tr.extend(triplets(['C', 'E', 'G'], octave=4))
+    """
+    dur = triplet(base)
+    return [
+        Note(pitch=p, octave=octave, duration=dur, velocity=velocity)
+        if p is not None
+        else Note.rest(dur)
+        for p in pitches
+    ]
+
+
+def tuplets(
+    pitches: list, n: int, octave: int = 4, base: float = QUARTER, velocity: float = 0.75
+) -> list[Note]:
+    """Build a list of n-tuplet Notes from pitch names (None = rest).
+
+    Example::
+
+        tr.extend(tuplets(['C','D','E','F','G'], n=5))   # quintuplet
+    """
+    dur = tuplet(base, n)
+    return [
+        Note(pitch=p, octave=octave, duration=dur, velocity=velocity)
+        if p is not None
+        else Note.rest(dur)
+        for p in pitches
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Ornaments — rendered as rapid note sequences, idiomatic to jazz/classical
+# ---------------------------------------------------------------------------
+
+
+def trill(
+    note: Note, semitones: int = 1, speed: float = THIRTY_SECOND, count: int = 8
+) -> list[Note]:
+    """Rapid alternation between the note and an auxiliary note above.
+
+    Args:
+        note:      Principal note. Its total duration = speed * count.
+        semitones: Interval to auxiliary (1 = half-step, 2 = whole-step).
+        speed:     Duration of each trill note.
+        count:     Number of alternations.
+
+    Example::
+
+        tr.extend(trill(Note('A', 4, HALF), semitones=2, count=8))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    aux = base + semitones
+    return [
+        Note(pitch=(base if i % 2 == 0 else aux), duration=speed, velocity=note.velocity)
+        for i in range(count)
+    ]
+
+
+def mordent(note: Note, semitones: int = 1, speed: float = THIRTY_SECOND) -> list[Note]:
+    """Lower mordent: principal → step-below → principal.
+
+    Common Baroque ornament. The two ornament notes steal time from the main.
+
+    Example::
+
+        tr.extend(mordent(Note('E', 5, QUARTER)))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * 2)
+    return [
+        Note(pitch=base, duration=speed, velocity=note.velocity),
+        Note(pitch=base - semitones, duration=speed, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=main_dur, velocity=note.velocity),
+    ]
+
+
+def upper_mordent(note: Note, semitones: int = 1, speed: float = THIRTY_SECOND) -> list[Note]:
+    """Upper mordent (Pralltriller): principal → step-above → principal."""
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * 2)
+    return [
+        Note(pitch=base, duration=speed, velocity=note.velocity),
+        Note(pitch=base + semitones, duration=speed, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=main_dur, velocity=note.velocity),
+    ]
+
+
+def turn(note: Note, semitones: int = 1, speed: float = THIRTY_SECOND) -> list[Note]:
+    """Turn ornament (~): upper → principal → lower → principal.
+
+    Classic 4-note Classical ornament. Common in Mozart, Haydn.
+
+    Example::
+
+        tr.extend(turn(Note('G', 5, QUARTER)))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * 3)
+    return [
+        Note(pitch=base + semitones, duration=speed, velocity=note.velocity * 0.9),
+        Note(pitch=base, duration=speed, velocity=note.velocity),
+        Note(pitch=base - semitones, duration=speed, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=main_dur, velocity=note.velocity),
+    ]
+
+
+def grace_note(
+    grace_pitch: str | int, main_note: Note, grace_dur: float = THIRTY_SECOND, grace_octave: int = 4
+) -> list[Note]:
+    """Acciaccatura (crushed grace note) before the main note.
+
+    The grace note steals its duration from the main note.
+
+    Example::
+
+        tr.extend(grace_note('B', Note('C', 5, QUARTER)))
+    """
+    stolen = min(grace_dur, main_note.duration * 0.5)
+    main_dur = max(SIXTY_FOURTH, main_note.duration - stolen)
+    return [
+        Note(
+            pitch=grace_pitch,
+            octave=grace_octave,
+            duration=stolen,
+            velocity=main_note.velocity * 0.8,
+        ),
+        Note(
+            pitch=main_note.pitch,
+            octave=main_note.octave,
+            duration=main_dur,
+            velocity=main_note.velocity,
+        ),
+    ]
+
+
+def doit(
+    note: Note, semitones: int = 2, steps: int = 4, speed: float = THIRTY_SECOND
+) -> list[Note]:
+    """Jazz doit: note bends upward after the attack.
+
+    Common in jazz brass. The pitch rises through chromatic steps after
+    the initial attack.
+
+    Example::
+
+        tr.extend(doit(Note('Bb', 4, QUARTER)))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
+    result = [Note(pitch=base, duration=main_dur, velocity=note.velocity)]
+    for i in range(1, steps + 1):
+        result.append(
+            Note(
+                pitch=base + round(semitones * i / steps),
+                duration=speed,
+                velocity=note.velocity * max(0.2, 1.0 - i / steps),
+            )
+        )
+    return result
+
+
+def fall(
+    note: Note, semitones: int = 3, steps: int = 4, speed: float = THIRTY_SECOND
+) -> list[Note]:
+    """Jazz fall: note bends downward after the attack.
+
+    Opposite of doit — the pitch drops after the initial attack.
+
+    Example::
+
+        tr.extend(fall(Note('G', 5, QUARTER)))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
+    result = [Note(pitch=base, duration=main_dur, velocity=note.velocity)]
+    for i in range(1, steps + 1):
+        result.append(
+            Note(
+                pitch=base - round(semitones * i / steps),
+                duration=speed,
+                velocity=note.velocity * max(0.2, 1.0 - i / steps),
+            )
+        )
+    return result
+
+
+def flip(note: Note, semitones: int = 2, speed: float = THIRTY_SECOND) -> list[Note]:
+    """Jazz flip: quick upward scoop into the note from below.
+
+    Example::
+
+        tr.extend(flip(Note('D', 5, QUARTER)))
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * 2)
+    return [
+        Note(pitch=base - semitones, duration=speed, velocity=note.velocity * 0.7),
+        Note(pitch=base - 1, duration=speed, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=main_dur, velocity=note.velocity),
+    ]
+
+
+def shake(note: Note, semitones: int = 2, speed: float = SIXTEENTH, count: int = 4) -> list[Note]:
+    """Jazz shake: wide rapid alternation, idiomatic for brass.
+
+    Like a trill but wider (typically a major 2nd+) and more aggressive.
+
+    Example::
+
+        tr.extend(shake(Note('Bb', 4, HALF), semitones=2, count=6))
+    """
+    return trill(note, semitones=semitones, speed=speed, count=count)
 
 
 def prob(note: "Note | Chord | None", p: float = 0.8) -> "Note | Chord | None":
@@ -676,6 +978,9 @@ class Song:
     sample_rate: int = 44100
     tracks: list[Track] = field(default_factory=list)
     voice_tracks: list = field(default_factory=list)  # list[VoiceTrack]
+    time_sig: tuple[int, int] = (4, 4)  # (numerator, denominator) e.g. (3,4), (6,8), (7,8)
+    composer: str = ""
+    key_sig: str = "C"  # root note for sheet music export (e.g. "G", "Bb", "F#")
 
     def add_track(self, track: Track) -> "Track":
         self.tracks.append(track)
