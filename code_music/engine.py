@@ -221,23 +221,46 @@ class Beat:
         return self.event.duration
 
 
-def scale(root: str, mode: str = "major", octave: int = 4, length: int | None = None) -> list[Note]:
+def scale(
+    root: str,
+    mode: str = "major",
+    octave: int = 4,
+    length: int | None = None,
+    octaves: int = 1,
+) -> list[Note]:
     """Return scale as a list of Notes.
 
     Args:
-        root: Root note name.
-        mode: Scale mode key from SCALES.
-        octave: Starting octave.
-        length: How many notes to return; wraps to next octave if needed.
+        root:    Root note name (e.g. 'C', 'F#').
+        mode:    Scale mode key from SCALES.
+        octave:  Starting octave.
+        length:  Exact number of notes to return (overrides octaves if set).
+        octaves: How many octaves to span, ending on the top root note.
+                 octaves=1 → C D E F G A B C  (8 notes for major)
+                 octaves=2 → C D E F G A B C D E F G A B C (15 notes)
+                 The final root note at the top is always included.
     """
     intervals = SCALES[mode]
     root_midi = note_name_to_midi(root, octave)
     notes = []
-    target = length if length is not None else len(intervals)
-    for i in range(target):
-        idx = i % len(intervals)
-        extra_octave = i // len(intervals)
-        notes.append(Note(pitch=root_midi + intervals[idx] + extra_octave * 12))
+
+    if length is not None:
+        # Explicit length requested — fill exactly that many notes
+        for i in range(length):
+            idx = i % len(intervals)
+            extra_oct = i // len(intervals)
+            notes.append(Note(pitch=root_midi + intervals[idx] + extra_oct * 12))
+    else:
+        # Play `octaves` complete octaves, always ending on the top root
+        steps_per_octave = len(intervals)
+        total_steps = steps_per_octave * octaves
+        for i in range(total_steps):
+            idx = i % steps_per_octave
+            extra_oct = i // steps_per_octave
+            notes.append(Note(pitch=root_midi + intervals[idx] + extra_oct * 12))
+        # Append the final top root note
+        notes.append(Note(pitch=root_midi + octaves * 12))
+
     return notes
 
 

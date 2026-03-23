@@ -75,19 +75,47 @@ class TestChord:
 
 
 class TestScale:
-    def test_major_scale_length(self):
+    def test_major_scale_one_octave(self):
+        # Default octaves=1: 7 intervals + top root = 8 notes
         s = scale("C", "major", 4)
-        assert len(s) == 7
+        assert len(s) == 8
+        assert s[0].midi == 60  # C4
+        assert s[-1].midi == 72  # C5
 
-    def test_pentatonic_length(self):
+    def test_pentatonic_one_octave(self):
         s = scale("A", "pentatonic", 4)
-        assert len(s) == 5
+        assert len(s) == 6  # 5 intervals + top root
+        assert s[-1].midi == s[0].midi + 12
 
-    def test_custom_length_wraps_octave(self):
-        s = scale("C", "major", 4, length=14)
-        assert len(s) == 14
-        # 15th note (index 7) should be an octave higher than root
-        assert s[7].midi == s[0].midi + 12
+    def test_two_octaves(self):
+        s = scale("C", "major", 4, octaves=2)
+        assert len(s) == 15  # 7*2 + 1 top root
+        assert s[-1].midi == 60 + 24  # C6
+
+    def test_three_octaves(self):
+        s = scale("C", "minor", 4, octaves=3)
+        assert len(s) == 22  # 7*3 + 1
+        assert s[-1].midi == 60 + 36  # C7
+
+    def test_chromatic_one_octave(self):
+        s = scale("C", "chromatic", 4)
+        assert len(s) == 13  # 12 semitones + top root
+
+    def test_pentatonic_two_octaves(self):
+        s = scale("A", "pentatonic", 4, octaves=2)
+        assert len(s) == 11  # 5*2 + 1
+
+    def test_explicit_length_overrides_octaves(self):
+        s = scale("C", "major", 4, length=7)
+        assert len(s) == 7
+        s14 = scale("C", "major", 4, length=14)
+        assert len(s14) == 14
+        assert s14[7].midi == s14[0].midi + 12
+
+    def test_top_root_is_octave_above(self):
+        for mode in ["major", "minor", "dorian", "pentatonic", "blues"]:
+            s = scale("D", mode, 4)
+            assert s[-1].midi == s[0].midi + 12, f"failed for {mode}"
 
 
 class TestTrack:
