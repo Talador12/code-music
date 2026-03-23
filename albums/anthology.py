@@ -1,7 +1,7 @@
 """The Anthology — one track from every genre. The full spectrum in one listen."""
 
 ALBUM = {
-    "title": "The Anthology",
+    "title": "The Survey",
     "artist": "code-music",
     "genre": "Compilation / All Genres",
     "year": 2026,
@@ -22,16 +22,16 @@ ALBUM = {
     ],
     "tracks": [
         # Arc: void → warmth → energy → peak → space
-        {"title": "I. Void", "song": "deep_space_drift", "bpm": 60},
-        {"title": "II. Late Night", "song": "lo_fi_loop", "bpm": 90},
-        {"title": "III. After Hours", "song": "tank_bebop", "bpm": 168},
-        {"title": "IV. Rising", "song": "cinematic_rise", "bpm": 100},
-        {"title": "V. Dorian", "song": "prog_rock", "bpm": 130},
-        {"title": "VI. Symphony", "song": "symphony_no1", "bpm": 108},
-        {"title": "VII. Machine", "song": "deadmau5_house", "bpm": 128},
-        {"title": "VIII. Neon", "song": "lollipop_laser", "bpm": 128},
-        {"title": "IX. Anthem", "song": "clarity_drive", "bpm": 128},
-        {"title": "X. Liquid", "song": "liquid_dnb", "bpm": 174},
-        {"title": "XI. Return to Space", "song": "deep_space_drift", "bpm": 55},
+        {"title": "I. Dead Channel", "song": "deep_space_drift", "bpm": 60},
+        {"title": "II. Still Life", "song": "lo_fi_loop", "bpm": 90},
+        {"title": "III. The Count", "song": "tank_bebop", "bpm": 168},
+        {"title": "IV. Weight", "song": "cinematic_rise", "bpm": 100},
+        {"title": "V. Teeth", "song": "prog_rock", "bpm": 130},
+        {"title": "VI. The Hall", "song": "symphony_no1", "bpm": 108},
+        {"title": "VII. Phantom Signal", "song": "deadmau5_house", "bpm": 128},
+        {"title": "VIII. Lollipop Laser", "song": "lollipop_laser", "bpm": 128},
+        {"title": "IX. Freefall", "song": "clarity_drive", "bpm": 128},
+        {"title": "X. Upstream", "song": "liquid_dnb", "bpm": 174},
+        {"title": "XI. Drift", "song": "deep_space_drift", "bpm": 55},
     ],
 }

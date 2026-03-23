@@ -22,7 +22,7 @@ ALBUM = {
         "D'Angelo — Voodoo, Brown Sugar",
     ],
     "tracks": [
-        {"title": "Tank (Bebop)", "song": "tank_bebop", "bpm": 168},
-        {"title": "Lo-Fi Sessions", "song": "lo_fi_loop", "bpm": 90},
+        {"title": "The Count", "song": "tank_bebop", "bpm": 168},
+        {"title": "Still Life", "song": "lo_fi_loop", "bpm": 90},
     ],
 }

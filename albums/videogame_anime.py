@@ -1,7 +1,7 @@
 """Video Game & Anime OST — melodic, cinematic, emotionally precise."""
 
 ALBUM = {
-    "title": "Loading Screen",
+    "title": "Respawn",
     "artist": "code-music",
     "genre": "Video Game / Anime OST",
     "year": 2026,
@@ -23,7 +23,7 @@ ALBUM = {
         "Joe Hisaishi — Princess Mononoke, Spirited Away OSTs",
     ],
     "tracks": [
-        {"title": "Tank! (Bebop)", "song": "tank_bebop", "bpm": 168},
-        {"title": "Deep Space", "song": "deep_space_drift", "bpm": 60},
+        {"title": "The Count", "song": "tank_bebop", "bpm": 168},
+        {"title": "Dead Channel", "song": "deep_space_drift", "bpm": 60},
     ],
 }

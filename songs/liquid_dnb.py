@@ -32,7 +32,7 @@ from code_music import (
     stereo_width,
 )
 
-song = Song(title="Liquid DnB", bpm=174)
+song = Song(title="Upstream", bpm=174)
 
 BAR = 4.0
 r = Note.rest

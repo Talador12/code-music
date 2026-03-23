@@ -1,7 +1,7 @@
 """Hip-Hop & Lo-Fi — sampled feel, swung hats, dusty warmth."""
 
 ALBUM = {
-    "title": "3am Study Session",
+    "title": "Small Hours",
     "artist": "code-music",
     "genre": "Lo-Fi Hip-Hop",
     "year": 2026,
@@ -23,6 +23,6 @@ ALBUM = {
         "MF DOOM — Madvillainy, MM.. FOOD",
     ],
     "tracks": [
-        {"title": "3am Study Session", "song": "lo_fi_loop", "bpm": 90},
+        {"title": "Small Hours", "song": "lo_fi_loop", "bpm": 90},
     ],
 }

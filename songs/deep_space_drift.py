@@ -15,7 +15,7 @@ Structure (all very loose, 60 BPM):
 
 from code_music import Chord, Note, Song, Track, chorus, delay, lowpass, reverb
 
-song = Song(title="Deep Space Drift", bpm=60)
+song = Song(title="Dead Air", bpm=60)
 
 BAR = 4.0
 r = Note.rest

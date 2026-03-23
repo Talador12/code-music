@@ -1,7 +1,7 @@
 """Drum & Bass — liquid, warm, jazz-inflected, 174 BPM."""
 
 ALBUM = {
-    "title": "Liquid State",
+    "title": "Upstream",
     "artist": "code-music",
     "genre": "Liquid Drum & Bass",
     "year": 2026,
@@ -22,6 +22,6 @@ ALBUM = {
         "Hybrid Minds — What We Had, Sirens",
     ],
     "tracks": [
-        {"title": "Liquid State", "song": "liquid_dnb", "bpm": 174},
+        {"title": "Upstream", "song": "liquid_dnb", "bpm": 174},
     ],
 }

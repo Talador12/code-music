@@ -30,7 +30,7 @@ from code_music import (
     stereo_width,
 )
 
-song = Song(title="Trance Odyssey", bpm=138)
+song = Song(title="Freefall", bpm=138)
 
 BAR = 4.0
 r = Note.rest

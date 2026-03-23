@@ -21,7 +21,7 @@ Structure (bars):
 
 from code_music import Chord, Note, Song, Track, compress, delay, reverb
 
-song = Song(title="Clarity Drive", bpm=128)
+song = Song(title="Offshore", bpm=128)
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 BAR = 4.0  # beats per bar

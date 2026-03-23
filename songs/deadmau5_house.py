@@ -37,7 +37,7 @@ from code_music import (
     stereo_width,
 )
 
-song = Song(title="Deadmau5 House", bpm=128)
+song = Song(title="Machine Dreams", bpm=128)
 
 BAR = 4.0
 r = Note.rest

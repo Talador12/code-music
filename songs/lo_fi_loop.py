@@ -14,7 +14,7 @@ from code_music import Chord, Note, Song, Track
 
 BARS = 4  # repeat the pattern this many times
 
-song = Song(title="Lo-Fi Loop", bpm=90)
+song = Song(title="Small Hours", bpm=90)
 
 # ---- Bass ----
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.7))

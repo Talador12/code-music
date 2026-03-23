@@ -1,7 +1,7 @@
 """Rock & Prog Rock — Dorian mode, complex time, guitar-forward."""
 
 ALBUM = {
-    "title": "Dorian Excursion",
+    "title": "Teeth",
     "artist": "code-music",
     "genre": "Progressive Rock",
     "year": 2026,
@@ -23,6 +23,6 @@ ALBUM = {
         "Santana — Evil Ways, Oye Como Va",
     ],
     "tracks": [
-        {"title": "Dorian Excursion", "song": "prog_rock", "bpm": 130},
+        {"title": "Teeth", "song": "prog_rock", "bpm": 130},
     ],
 }

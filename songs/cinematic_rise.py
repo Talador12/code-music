@@ -34,7 +34,7 @@ from code_music import (
     stereo_width,
 )
 
-song = Song(title="Cinematic Rise", bpm=100)
+song = Song(title="Weight", bpm=100)
 
 BAR = 4.0
 r = Note.rest

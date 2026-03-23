@@ -12,7 +12,7 @@ Run:
 
 from code_music import Chord, Note, Song, Track
 
-song = Song(title="Prog Rock", bpm=130)
+song = Song(title="Teeth", bpm=130)
 
 # ---- Intro organ riff (Dorian feel: D E F G A B C) ----
 organ = song.add_track(Track(name="organ", instrument="organ", volume=0.7))

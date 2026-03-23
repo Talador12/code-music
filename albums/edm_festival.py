@@ -1,7 +1,7 @@
 """Big Room / Festival EDM — anthemic drops, supersaw walls, stadium energy."""
 
 ALBUM = {
-    "title": "Clarity Drive",
+    "title": "Offshore",
     "artist": "code-music",
     "genre": "Big Room / Festival EDM",
     "year": 2026,
@@ -21,8 +21,8 @@ ALBUM = {
         "Knife Party — Internet Friends, LRAD",
     ],
     "tracks": [
-        {"title": "Clarity Drive", "song": "clarity_drive", "bpm": 128},
-        {"title": "Trance Odyssey", "song": "trance_odyssey", "bpm": 138},
-        {"title": "Future Bass", "song": "future_bass", "bpm": 150},
+        {"title": "Offshore", "song": "clarity_drive", "bpm": 128},
+        {"title": "Freefall", "song": "trance_odyssey", "bpm": 138},
+        {"title": "Halflight", "song": "future_bass", "bpm": 150},
     ],
 }

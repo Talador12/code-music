@@ -20,7 +20,7 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Machine Dreams", "song": "deadmau5_house", "bpm": 128},
-        {"title": "Filter Open", "song": "lo_fi_loop", "bpm": 98},
-        {"title": "Late Night Protocol", "song": "deep_space_drift", "bpm": 64},
+        {"title": "Bloom", "song": "lo_fi_loop", "bpm": 98},
+        {"title": "Phantom Signal", "song": "deep_space_drift", "bpm": 64},
     ],
 }

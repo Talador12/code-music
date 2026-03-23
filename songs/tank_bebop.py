@@ -24,7 +24,7 @@ from code_music import (
     reverb,
 )
 
-song = Song(title="Tank Bebop", bpm=168)
+song = Song(title="The Count", bpm=168)
 r = Note.rest
 
 SWING = 0.52
