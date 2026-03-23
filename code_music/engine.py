@@ -347,6 +347,190 @@ def humanize(
     return result
 
 
+def staccato(notes: list[Note], factor: float = 0.5) -> list[Note]:
+    """Shorten note durations to create staccato articulation.
+
+    Each note's sounding duration is shortened to `factor` of its original,
+    with the remaining time becoming silence (rest). This creates the detached,
+    clipped feel of staccato playing.
+
+    Args:
+        notes:  List of Notes to articulate.
+        factor: 0.0–1.0 — fraction of note duration that sounds (0.5 = half).
+    """
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+            continue
+        sound_dur = max(0.05, n.duration * factor)
+        rest_dur = n.duration - sound_dur
+        result.append(Note(pitch=n.pitch, octave=n.octave, duration=sound_dur, velocity=n.velocity))
+        if rest_dur > 0.01:
+            result.append(Note.rest(rest_dur))
+    return result
+
+
+def legato(notes: list[Note], overlap: float = 0.1) -> list[Note]:
+    """Extend note durations slightly for legato (slurred) articulation.
+
+    Each note is lengthened by `overlap` beats so it slightly overlaps the next.
+    This creates the connected, smooth feel of legato playing.
+
+    Args:
+        notes:   List of Notes to articulate.
+        overlap: Extra duration in beats added to each note.
+    """
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+        else:
+            result.append(
+                Note(
+                    pitch=n.pitch,
+                    octave=n.octave,
+                    duration=n.duration + overlap,
+                    velocity=n.velocity,
+                )
+            )
+    return result
+
+
+def pizzicato(notes: list[Note]) -> list[Note]:
+    """Convert notes to pizzicato articulation: very short, plucked feel.
+
+    Equivalent to staccato(notes, factor=0.15) — makes each note extremely short.
+    Use on string instrument tracks for a plucked character without changing
+    the instrument preset.
+    """
+    return staccato(notes, factor=0.15)
+
+
+def prob(note: "Note | Chord | None", p: float = 0.8) -> "Note | Chord | None":
+    """Return `note` with probability `p`, otherwise return a rest.
+
+    Useful for generative patterns where notes randomly drop out.
+
+    Args:
+        note: Note, Chord, or None to potentially play.
+        p:    Probability of playing (0.0–1.0).
+
+    Example::
+
+        tr.extend([prob(Note("A", 4), 0.7) for _ in range(16)])
+    """
+    import random
+
+    if random.random() < p:
+        return note
+    dur: float = getattr(note, "duration", 1.0) or 1.0
+    return Note.rest(dur)
+
+
+def chord_prog(
+    roots: list[str],
+    shapes: list[str],
+    octave: int = 3,
+    duration: float = 4.0,
+    velocity: float = 0.65,
+) -> list[Chord]:
+    """Build a chord progression from parallel lists of roots and shapes.
+
+    Args:
+        roots:    List of root note names (e.g. ["A", "F", "C", "G"]).
+        shapes:   List of chord shapes (e.g. ["min7", "maj7", "maj", "dom7"]).
+        octave:   Base octave for all chords.
+        duration: Duration in beats for each chord.
+        velocity: Velocity for all chords.
+
+    Example::
+
+        prog = chord_prog(["A","F","C","G"], ["min7","maj7","maj","dom7"])
+        pad.extend(prog * 4)  # repeat 4 times
+    """
+    return [
+        Chord(r, s, octave=octave, duration=duration, velocity=velocity)
+        for r, s in zip(roots, shapes)
+    ]
+
+
+def generate_melody(
+    scale_root: str,
+    scale_mode: str = "pentatonic",
+    octave: int = 4,
+    bars: int = 4,
+    bpm: float = 120.0,
+    density: float = 0.65,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a simple procedural melody from a scale.
+
+    Uses a random walk algorithm with melodic constraints:
+    - Prefers stepwise motion (small intervals)
+    - Occasionally leaps (wider intervals for interest)
+    - Density controls how many 8th-note slots have notes vs rests
+    - Phrase endings tend toward longer notes
+
+    Args:
+        scale_root:  Root note name.
+        scale_mode:  Scale mode (pentatonic, major, minor, dorian, blues, etc.)
+        octave:      Central octave for melody.
+        bars:        How many bars to generate (4/4).
+        bpm:         BPM (used to decide phrase lengths).
+        density:     0.0–1.0 — fraction of 8th-note slots that have notes.
+        seed:        Random seed for reproducibility.
+    """
+    import random
+
+    if seed is not None:
+        random.seed(seed)
+
+    scale_notes = scale(scale_root, scale_mode, octave)
+    # Extend one octave up and one down
+    low = [Note(pitch=n.midi - 12) for n in scale_notes if n.midi is not None]
+    high = [Note(pitch=n.midi + 12) for n in scale_notes if n.midi is not None]
+    pool = low + scale_notes + high
+
+    total_8ths = bars * 8  # 8 eighth notes per bar
+    result = []
+    pos = len(scale_notes)  # start in the middle register
+
+    i = 0
+    while i < total_8ths:
+        # Phrase ending: last 2 slots of each bar → longer note
+        is_bar_end = (i % 8) >= 6
+        if is_bar_end and i < total_8ths - 1:
+            # Long note (2–4 8th notes)
+            dur_8ths = random.choice([2, 3, 4])
+            dur_8ths = min(dur_8ths, total_8ths - i)
+            if random.random() < density:
+                note = pool[min(max(0, pos), len(pool) - 1)]
+                result.append(
+                    Note(
+                        pitch=note.pitch,
+                        duration=dur_8ths * 0.5,
+                        velocity=random.uniform(0.55, 0.9),
+                    )
+                )
+            else:
+                result.append(Note.rest(dur_8ths * 0.5))
+            i += dur_8ths
+        elif random.random() > density:
+            # Rest
+            result.append(Note.rest(0.5))
+            i += 1
+        else:
+            # Play a note — random walk
+            step = random.choice([-2, -1, -1, 0, 1, 1, 2, 3])
+            pos = max(0, min(len(pool) - 1, pos + step))
+            vel = random.uniform(0.5, 0.85)
+            result.append(Note(pitch=pool[pos].pitch, duration=0.5, velocity=vel))
+            i += 1
+
+    return result
+
+
 def repeat(events: list, n: int) -> list:
     """Repeat a list of notes/chords/events n times."""
     result = []

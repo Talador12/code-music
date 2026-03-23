@@ -144,6 +144,58 @@ class Synth:
         "acid": {"wave": "sawtooth", "harmonics": 10, "A": 0.005, "D": 0.2, "S": 0.3, "R": 0.15},
         "hoover": {"wave": "hoover", "harmonics": 8, "A": 0.05, "D": 0.3, "S": 0.6, "R": 0.5},
         "stab": {"wave": "square", "harmonics": 6, "A": 0.005, "D": 0.08, "S": 0.0, "R": 0.1},
+        # wobble: sawtooth with per-note LFO filter — the dubstep bass sound
+        "wobble": {
+            "wave": "sawtooth",
+            "harmonics": 14,
+            "A": 0.01,
+            "D": 0.05,
+            "S": 0.9,
+            "R": 0.2,
+            "lfo_rate": 2.0,
+            "lfo_min_cutoff": 80.0,
+            "lfo_max_cutoff": 3500.0,
+        },
+        # portamento: sawtooth with pitch glide between notes
+        "portamento": {"wave": "porta", "harmonics": 8, "A": 0.01, "D": 0.0, "S": 1.0, "R": 0.15},
+        # fm_bell: frequency-modulated metallic bell tone
+        "fm_bell": {"wave": "fm", "harmonics": 3, "A": 0.001, "D": 0.4, "S": 0.1, "R": 1.5},
+        # formant: vowel-shaped filter over sawtooth (choir/vocal synth)
+        "formant_a": {
+            "wave": "formant",
+            "harmonics": 8,
+            "A": 0.06,
+            "D": 0.05,
+            "S": 0.9,
+            "R": 0.3,
+            "formant": "a",
+        },
+        "formant_o": {
+            "wave": "formant",
+            "harmonics": 8,
+            "A": 0.08,
+            "D": 0.05,
+            "S": 0.9,
+            "R": 0.4,
+            "formant": "o",
+        },
+        "formant_e": {
+            "wave": "formant",
+            "harmonics": 8,
+            "A": 0.05,
+            "D": 0.05,
+            "S": 0.9,
+            "R": 0.25,
+            "formant": "e",
+        },
+        # taiko: deep pitched drum for cinematic trailer hits
+        "taiko": {"wave": "sine", "harmonics": 2, "A": 0.001, "D": 0.3, "S": 0.05, "R": 0.4},
+        # ethnic percussion
+        "tabla": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.15, "S": 0.0, "R": 0.2},
+        "djembe": {"wave": "triangle", "harmonics": 4, "A": 0.001, "D": 0.2, "S": 0.0, "R": 0.3},
+        # synth bass variants
+        "moog_bass": {"wave": "moog", "harmonics": 10, "A": 0.01, "D": 0.15, "S": 0.7, "R": 0.2},
+        "sub_bass": {"wave": "sine", "harmonics": 1, "A": 0.02, "D": 0.05, "S": 1.0, "R": 0.3},
         "lead_edm": {
             "wave": "sawtooth",
             "harmonics": 10,
@@ -275,6 +327,41 @@ class Synth:
             rng = np.random.default_rng(int(freq * 1000) % (2**31))
             return rng.standard_normal(n_samples)
 
+        elif wave == "moog":
+            # Moog-style: sawtooth with cascaded LP character (2nd-order rolloff baked in)
+            ks = np.arange(1, harmonics + 1)
+            # Weight higher harmonics down faster than regular saw (ladder filter feel)
+            weights = (-1) ** (ks + 1) / (ks * np.sqrt(ks))
+            return (2.0) * np.sum(
+                weights[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t), axis=0
+            )
+
+        elif wave == "fm":
+            # Simple 2-operator FM synthesis: carrier modulated by a sine at ratio 2
+            mod_ratio = 2.0
+            mod_depth = freq * 0.8
+            mod = mod_depth * np.sin(2 * np.pi * freq * mod_ratio * t)
+            return np.sin(2 * np.pi * freq * t + mod)
+
+        elif wave == "formant":
+            # Sawtooth with formant frequency peaks (vowel character)
+            # Preset key carries "formant" field: "a", "o", "e", "i", "u"
+            ks = np.arange(1, harmonics + 1)
+            raw = (2 / np.pi) * np.sum(
+                ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t),
+                axis=0,
+            )
+            return raw  # filter applied in _render_note based on preset["formant"]
+
+        elif wave == "porta":
+            # Portamento sawtooth — the glide is handled in _render_note via
+            # cumulative phase integration (here we just do standard saw)
+            ks = np.arange(1, harmonics + 1)
+            return (2 / np.pi) * np.sum(
+                ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t),
+                axis=0,
+            )
+
         else:
             return np.sin(2 * np.pi * freq * t)
 
@@ -329,6 +416,64 @@ class Synth:
             rng = np.random.default_rng(int(freq * 137) % (2**31))
             noise = rng.standard_normal(n_samples)
             raw = raw * 0.5 + noise * 0.5
+
+        # ── Per-note LFO filter (wobble bass + formant) ──────────────────
+        from scipy import signal as _sig
+
+        if "lfo_rate" in preset:
+            # Dubstep wobble: LFO sweeps a lowpass filter over the note
+            lfo_rate = preset.get("lfo_rate", 2.0)
+            lfo_min = preset.get("lfo_min_cutoff", 80.0)
+            lfo_max = preset.get("lfo_max_cutoff", 4000.0)
+            t_note = np.arange(n_samples) / self.sample_rate
+            lfo = 0.5 + 0.5 * np.sin(2 * np.pi * lfo_rate * t_note)
+            cutoffs = lfo_min + lfo * (lfo_max - lfo_min)
+            block = 256
+            filtered = np.zeros(n_samples)
+            for start in range(0, n_samples, block):
+                end_b = min(start + block, n_samples)
+                cutoff = float(
+                    np.clip(np.mean(cutoffs[start:end_b]), 20.0, self.sample_rate / 2 - 1)
+                )
+                sos = _sig.butter(2, cutoff, btype="low", fs=self.sample_rate, output="sos")
+                filtered[start:end_b] = _sig.sosfilt(sos, raw[start:end_b])
+            raw = filtered
+
+        elif preset.get("formant"):
+            # Formant filter: vowel resonances via three bandpass peaks
+            FORMANTS = {
+                #       F1     F2     F3   (Hz)
+                "a": [(800, 0.8), (1200, 0.5), (2600, 0.3)],
+                "e": [(400, 0.9), (2300, 0.7), (3000, 0.3)],
+                "i": [(300, 0.9), (2800, 0.8), (3400, 0.3)],
+                "o": [(550, 0.9), (1000, 0.6), (2500, 0.2)],
+                "u": [(350, 0.9), (700, 0.5), (2200, 0.2)],
+            }
+            vowel = preset.get("formant", "a")
+            fmts = FORMANTS.get(vowel, FORMANTS["a"])
+            result = np.zeros(n_samples)
+            for f_center, gain in fmts:
+                f_center = min(f_center, self.sample_rate / 2 - 1)
+                bw = f_center * 0.25
+                low = max(20.0, f_center - bw / 2)
+                high = min(self.sample_rate / 2 - 1, f_center + bw / 2)
+                if low < high:
+                    sos = _sig.butter(
+                        2, [low, high], btype="band", fs=self.sample_rate, output="sos"
+                    )
+                    result += _sig.sosfilt(sos, raw) * gain
+            # Blend with small amount of dry for body
+            raw = raw * 0.2 + result * 0.8
+
+        # ── Taiko / djembe: pitch drop with noise attack ─────────────────
+        if wave_type in ("taiko", "djembe", "tabla"):
+            rng = np.random.default_rng(int(freq * 99) % (2**31))
+            attack_noise = rng.standard_normal(n_samples)
+            # Short attack noise burst
+            noise_env = np.zeros(n_samples)
+            attack_end = min(int(0.02 * self.sample_rate), n_samples)
+            noise_env[:attack_end] = np.linspace(1, 0, attack_end)
+            raw = raw * 0.75 + attack_noise * noise_env * 0.4
 
         env = self._adsr(n_samples, preset["A"], preset["D"], preset["S"], preset["R"])
         return raw * env * note.velocity

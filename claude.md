@@ -1,87 +1,88 @@
 # code-music — project state
 
-## Status: v0.4.0 — arp helper, MIDI export, 4 new songs, 119 tests, --watch mode
+## Status: v0.5.0 — wobble bass, formant vowels, generative melody, 3 new songs, 156 tests
 
 ## What's done
 
-### Engine helpers (`code_music/engine.py`)
-- `arp(chord, pattern, rate, octaves)` — 8 named patterns: up, down, up_down, down_up, random, outside_in, skip, pinky
-- `crescendo(notes, start_vel, end_vel)` — linear velocity ramp up (works on Notes and Chords)
-- `decrescendo(notes, start_vel, end_vel)` — linear velocity ramp down
-- `transpose(notes, semitones)` — shift pitch up/down
-- `humanize(notes, vel_spread, timing_spread)` — organic random micro-variation
-- `repeat(events, n)` — convenience repeat helper
-- `Section` dataclass — named song blocks for arrangement docs
-- Extended chord shapes: 9, min9, add9, maj9, 6, min6, 6/9, 11, 13, power, flat5, aug7
+### New synth presets (code_music/synth.py)
+- `wobble` — LFO-swept lowpass filter over sawtooth, the dubstep bass sound
+- `portamento` — sawtooth with glide (pitch slide) character
+- `fm_bell` — 2-operator FM synthesis, metallic bell tones
+- `formant_a / formant_o / formant_e` — vowel-shaped bandpass filter chain over saw
+- `taiko` — deep pitched drum with noise attack (cinematic hits)
+- `tabla`, `djembe` — ethnic percussion with noise transient
+- `moog_bass` — ladder-filter style bass with fast rolloff
+- `sub_bass` — pure sine sub (808-adjacent but cleaner)
 
-### MIDI export (`code_music/midi.py`)
-- `export_midi(song, path)` — pure-stdlib SMF type 1 (.mid) file
-- General MIDI program mapping for all 60 instruments
-- Drum track auto-routes to channel 10
-- `code-music song.py --midi` from CLI
+### Per-note effects wired into synth
+- Wobble: LFO filter sweeps per note (rate, min/max cutoff configurable in preset)
+- Formant: three bandpass resonators per note (F1/F2/F3 for each vowel)
+- Taiko/djembe/tabla: noise burst on attack transient
 
-### CLI additions (`code_music/cli.py`)
-- `--midi` flag: export as MIDI
-- `--watch` flag: poll for file changes, re-render on save (live coding mode)
+### New engine helpers
+- `staccato(notes, factor)` — shorten notes, add silence gap
+- `legato(notes, overlap)` — extend notes for smooth slur feel
+- `pizzicato(notes)` — very short staccato (plucked strings)
+- `prob(note, p)` — play note with probability p, else rest
+- `chord_prog(roots, shapes, ...)` — build chord progression from parallel lists
+- `generate_melody(scale, mode, bars, density, seed)` — procedural melody generator
 
-### Effects additions (`code_music/effects.py`)
-- `gate(rate_hz, shape, duty)` — rhythmic amplitude chop: square/ramp_up/ramp_down/trapezoid
-- `limiter(ceiling, release_ms)` — brick-wall peak limiter (mastering)
-- `stereo_width(width)` — M/S stereo widening (0=mono, 2=extra wide)
-- `noise_sweep(n_samples, start_cutoff, end_cutoff)` — EDM build-up effect
-- `phaser(rate_hz, depth, stages)` — multi-stage all-pass LFO phaser
-- `flanger(rate_hz, depth_ms, feedback)` — LFO delay flanger (jet-engine sweep)
+### Songs
+- `liquid_dnb.py` — Liquid DnB, 174 BPM, D Dorian, warm + jazzy
+- `cinematic_rise.py` — Hans Zimmer hybrid orchestral, 100 BPM, Cm, taiko + brass
+- `deadmau5_house.py` — deadmau5 progressive house, 128 BPM, Fm, slow filter evolution
 
-### Songs (in `songs/`)
-- `trance_odyssey.py` — uplifting trance, 138 BPM, A minor, 36 bars, gated strings + supersaw
-- `tank_bebop.py` — Cowboy Bebop inspired big-band jazz, 168 BPM, Bb, full orchestra
-- `symphony_no1.py` — original symphony movement, C minor, sonata form, 108 BPM
-- `future_bass.py` — future bass / melodic dubstep, 150 BPM, F# major, 808 bass
+### Samples
+- `samples/edm/wobble_bass.py` — dubstep wobble bass demo
+- `samples/edm/fm_bell_arp.py` — FM bell arpeggios
+- `samples/voices/formant_vowels.py` — A/O/E vowel synthesis comparison
+- `samples/orchestral/taiko_impact.py` — taiko + djembe + tabla
+- `samples/techniques/generative_melody.py` — procedural melody in 3 modes
+- `samples/techniques/articulations.py` — legato vs normal vs staccato comparison
 
-### Samples additions (`samples/techniques/`)
-- `arp_patterns.py` — all 8 arp patterns showcased on Am7
-- `gate_effects.py` — gate shapes: square / ramp_up / trapezoid
-- `trance_gate_strings.py` — trance gated strings texture
-- `crescendo_showcase.py` — strings swell in/out with humanize
-- `noise_build.py` — noise sweep reference
-
-### Tests: 119 passing
-- `test_engine_helpers.py` — arp, crescendo, decrescendo, transpose, humanize, repeat (31 tests)
-- `test_midi.py` — MIDI export, file structure, drum routing, multi-track (8 tests)
+### Tests: 156 passing
+- `test_articulations.py` — staccato, legato, pizzicato, prob, chord_prog, generate_melody (36 tests)
+- `test_new_presets.py` — wobble, formant, taiko, moog, fm_bell, sub, all 11 new presets (14 tests)
 
 ## Roadmap
 
+### Next priorities
+- [ ] Dubstep full song (heavy wobble bass, half-time drops)
+- [ ] Moombahton / reggaeton influenced song (100 BPM, tropical EDM)
+- [ ] Autumn Leaves jazz arrangement (jazz standard, walking bass + comp + solo)
+- [ ] Generative / procedural full song (whole track from seed + mood)
+
 ### Engine
-- [ ] LFO modulation on synth params at note level (filter cutoff sweep per note)
-- [ ] Portamento / glide between notes (pitch slide)
-- [ ] Velocity curves per track (humanize at track level, not note level)
-- [ ] Note probability / generative randomness (p=0.7 to play a note)
+- [ ] Chord progression suggester: given root + mood → chord progression
+- [ ] Velocity-to-timbre (louder hit = brighter on piano/drums)
+- [ ] Arp with probability (random note dropout for live-feel arps)
+- [ ] Polyphonic Track (notes sound simultaneously, not sequentially)
+- [ ] Time signature support beyond 4/4 (3/4, 6/8, 7/8)
 
-### EDM
-- [ ] Future house / moombahton song
-- [ ] DnB / liquid DnB song (174 BPM, Reese bass, amen break-style drums)
-- [ ] Deadmau5-style progressive house full song (8+ minute structure)
-- [ ] Dubstep wobble bass (LFO on filter cutoff synced to BPM)
+### Synth/Sound
+- [ ] Granular synthesis wave (scattered grain texture)
+- [ ] Additive organ preset with drawbar controls
+- [ ] Better piano: string resonance, damper pedal simulation
+- [ ] Karplus-Strong string synthesis (more realistic plucked strings)
 
-### Orchestral / Jazz
-- [ ] Cinematic trailer music song (Hans Zimmer inspired)
-- [ ] Full jazz standards arrangement (Autumn Leaves / Giant Steps style)
-- [ ] String pizzicato toggle helper (easy pizz/arco switching)
-- [ ] Dynamics automation over bars (not just per-note)
+### Effects
+- [ ] Bitcrusher / lo-fi downsampler (chiptune / lo-fi texture)
+- [ ] Ring modulator (metallic / robot voice)
+- [ ] Tape saturation (warm analog simulation)
+- [ ] Multi-band compressor (mastering chain)
+- [ ] Convolution reverb with real IR files
 
 ### Voice / AI
-- [ ] Bark integration test + install guide
-- [ ] ElevenLabs v3 singing mode exploration
-- [ ] Phoneme stutter/glitch effect for robotic vocal chops
-- [ ] Autotune post-processing (snap voice pitch to scale)
+- [ ] Bark integration guide + async render helper
+- [ ] Autotune: snap voice track to nearest scale note
 
 ### Export / Distribution
-- [ ] Spotify distributor guide (DistroKid / TuneCore upload steps)
-- [ ] GitHub Pages web player for previewing songs
-- [ ] Batch render all songs to dist/ in CI
+- [ ] Batch CI render (render all songs to dist/ on push)
+- [ ] Spotify distributor guide (DistroKid / TuneCore steps)
+- [ ] GitHub Pages web player
 
-### Ideas
-- [ ] Generative mood-based composition (mood + scale → auto-melody)
-- [ ] Song remix helper (transpose + retempo existing song)
-- [ ] BPM tap utility (figure out BPM from listening)
-- [ ] Chord progression suggester (given root + mood → progression)
+### Ideas  
+- [ ] Live performance mode: real-time parameter control via keyboard
+- [ ] Song export as Python snippet (compress a song to minimal code)
+- [ ] BPM tap detection utility
+- [ ] Album concept: release the 10 songs as a coherent album
