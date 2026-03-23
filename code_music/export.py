@@ -1,8 +1,10 @@
-"""Export rendered audio to WAV or MP3.
+"""Export rendered audio to WAV, MP3, OGG, or FLAC.
 
 Requires:
-    WAV: scipy (stdlib-adjacent, always available)
-    MP3: pydub + ffmpeg installed on PATH
+    WAV:  stdlib wave module (always available)
+    MP3:  pydub + ffmpeg on PATH
+    OGG:  pydub + ffmpeg on PATH
+    FLAC: pydub + ffmpeg on PATH (lossless, preferred for mastering)
 """
 
 from __future__ import annotations
@@ -21,6 +23,18 @@ def _float_to_int16(samples: FloatArray) -> NDArray[np.int16]:
     """Clip and convert float64 [-1, 1] to int16."""
     clipped = np.clip(samples, -1.0, 1.0)
     return (clipped * 32767).astype(np.int16)
+
+
+def _float_to_int24_bytes(samples: FloatArray) -> bytes:
+    """Convert float64 [-1,1] to raw 24-bit PCM bytes (little-endian)."""
+    clipped = np.clip(samples, -1.0, 1.0)
+    ints = (clipped * 8388607).astype(np.int32)
+    # Pack each int32 as 3 bytes LE
+    flat = ints.flatten()
+    buf = bytearray()
+    for v in flat:
+        buf += v.to_bytes(3, byteorder="little", signed=True)
+    return bytes(buf)
 
 
 def export_wav(samples: FloatArray, path: str | Path, sample_rate: int = 44100) -> Path:
@@ -85,4 +99,55 @@ def export_mp3(
 
     segment = AudioSegment.from_wav(wav_buf)
     segment.export(str(out), format="mp3", bitrate=bitrate)
+    return out
+
+
+def _wav_buf(samples: FloatArray, sample_rate: int) -> io.BytesIO:
+    """Build an in-memory WAV buffer from float64 stereo samples."""
+    buf = io.BytesIO()
+    int_samples = _float_to_int16(samples)
+    with wave.open(buf, "w") as wf:
+        wf.setnchannels(2)
+        wf.setsampwidth(2)
+        wf.setframerate(sample_rate)
+        wf.writeframes(int_samples.tobytes())
+    buf.seek(0)
+    return buf
+
+
+def export_ogg(
+    samples: FloatArray, path: str | Path, sample_rate: int = 44100, quality: float = 8.0
+) -> Path:
+    """Write stereo float64 samples to an OGG Vorbis file via pydub + ffmpeg.
+
+    Args:
+        quality: Vorbis quality 0–10 (default 8 ≈ ~256kbps). Spotify accepts OGG.
+    """
+    try:
+        from pydub import AudioSegment
+    except ImportError as e:
+        raise ImportError("pydub is required for OGG export: pip install pydub") from e
+
+    out = Path(path).with_suffix(".ogg")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    segment = AudioSegment.from_wav(_wav_buf(samples, sample_rate))
+    segment.export(str(out), format="ogg", codec="libvorbis", parameters=["-q:a", str(quality)])
+    return out
+
+
+def export_flac(samples: FloatArray, path: str | Path, sample_rate: int = 44100) -> Path:
+    """Write stereo float64 samples to a FLAC file (lossless) via pydub + ffmpeg.
+
+    FLAC is lossless and the best option for archival / DAW round-tripping.
+    Spotify accepts FLAC for upload via Spotify for Artists.
+    """
+    try:
+        from pydub import AudioSegment
+    except ImportError as e:
+        raise ImportError("pydub is required for FLAC export: pip install pydub") from e
+
+    out = Path(path).with_suffix(".flac")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    segment = AudioSegment.from_wav(_wav_buf(samples, sample_rate))
+    segment.export(str(out), format="flac")
     return out

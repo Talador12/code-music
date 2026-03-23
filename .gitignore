@@ -10,10 +10,13 @@ venv/
 .ruff_cache/
 *.pyc
 
-# Output audio files (not committed — render locally)
+# Rendered audio output — generate locally with `make`
+dist/
 output/
 *.wav
 *.mp3
+*.flac
+*.ogg
 
 # macOS
 .DS_Store

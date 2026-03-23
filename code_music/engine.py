@@ -194,12 +194,17 @@ class Track:
         beats: Ordered sequence of Beat objects.
         instrument: Synth preset name (e.g. 'sine', 'square', 'sawtooth', 'piano').
         volume: Track-level gain 0.0–1.0.
+        pan: Stereo position -1.0 (hard left) to 1.0 (hard right), 0.0 = center.
+        swing: Swing ratio 0.0 (straight) to 0.67 (heavy swing). Delays every
+               2nd 8th note by this fraction of one 8th note duration.
     """
 
     name: str = "track"
     beats: list[Beat] = field(default_factory=list)
     instrument: str = "sine"
     volume: float = 0.8
+    pan: float = 0.0  # -1.0 (L) to 1.0 (R)
+    swing: float = 0.0  # 0.0 = straight, 0.5 = medium swing, 0.67 = heavy
 
     def add(self, event: Note | Chord | None) -> "Track":
         """Append a note, chord, or rest beat. Returns self for chaining."""

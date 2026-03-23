@@ -19,8 +19,14 @@ jobs:
       - name: Install
         run: pip install -e ".[dev]"
       - name: Lint
-        run: ruff check code_music tests examples
+        run: ruff check code_music tests songs samples
       - name: Test
         run: pytest tests/ -v
-      - name: Smoke render (hello world)
-        run: python -m code_music.cli examples/hello_world.py -o /tmp/hello_world.wav
+      - name: Smoke render — hello world (WAV)
+        run: python -m code_music.cli songs/hello_world.py -o /tmp/hello_world.wav
+      - name: Smoke render — clarity drive (WAV)
+        run: python -m code_music.cli songs/clarity_drive.py -o /tmp/clarity_drive.wav
+      - name: Smoke render — lollipop laser (WAV)
+        run: python -m code_music.cli songs/lollipop_laser.py -o /tmp/lollipop_laser.wav
+      - name: Smoke render — deep space drift (WAV)
+        run: python -m code_music.cli songs/deep_space_drift.py -o /tmp/deep_space_drift.wav

@@ -18,16 +18,142 @@ class Synth:
     """
 
     PRESETS: dict[str, dict] = {
-        # (wave_func, harmonics, attack, decay, sustain, release)
+        # ── Basic waveforms ───────────────────────────────────────────────────
         "sine": {"wave": "sine", "harmonics": 1, "A": 0.01, "D": 0.1, "S": 0.9, "R": 0.3},
         "square": {"wave": "square", "harmonics": 8, "A": 0.01, "D": 0.05, "S": 0.8, "R": 0.2},
         "sawtooth": {"wave": "sawtooth", "harmonics": 12, "A": 0.02, "D": 0.1, "S": 0.7, "R": 0.4},
         "triangle": {"wave": "triangle", "harmonics": 6, "A": 0.02, "D": 0.08, "S": 0.85, "R": 0.3},
+        # ── Keyboards ─────────────────────────────────────────────────────────
         "piano": {"wave": "sine", "harmonics": 5, "A": 0.005, "D": 0.3, "S": 0.4, "R": 0.8},
         "organ": {"wave": "sine", "harmonics": 4, "A": 0.01, "D": 0.0, "S": 1.0, "R": 0.1},
+        "harpsichord": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.001,
+            "D": 0.15,
+            "S": 0.0,
+            "R": 0.2,
+        },
+        "rhodes": {"wave": "triangle", "harmonics": 4, "A": 0.005, "D": 0.2, "S": 0.5, "R": 1.0},
+        "wurlitzer": {
+            "wave": "triangle",
+            "harmonics": 5,
+            "A": 0.005,
+            "D": 0.25,
+            "S": 0.45,
+            "R": 0.9,
+        },
+        "celesta": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.08, "S": 0.0, "R": 0.6},
+        # ── Strings ───────────────────────────────────────────────────────────
+        "strings": {"wave": "sawtooth", "harmonics": 10, "A": 0.12, "D": 0.05, "S": 0.9, "R": 0.4},
+        "violin": {"wave": "sawtooth", "harmonics": 14, "A": 0.08, "D": 0.02, "S": 0.95, "R": 0.3},
+        "cello": {"wave": "sawtooth", "harmonics": 10, "A": 0.1, "D": 0.03, "S": 0.9, "R": 0.5},
+        "contrabass": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "A": 0.12,
+            "D": 0.04,
+            "S": 0.85,
+            "R": 0.6,
+        },
+        "pizzicato": {
+            "wave": "sawtooth",
+            "harmonics": 6,
+            "A": 0.001,
+            "D": 0.12,
+            "S": 0.0,
+            "R": 0.3,
+        },
+        # ── Brass ─────────────────────────────────────────────────────────────
+        "trumpet": {"wave": "square", "harmonics": 12, "A": 0.04, "D": 0.05, "S": 0.85, "R": 0.15},
+        "trombone": {"wave": "square", "harmonics": 10, "A": 0.06, "D": 0.04, "S": 0.85, "R": 0.2},
+        "french_horn": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.1,
+            "D": 0.05,
+            "S": 0.8,
+            "R": 0.3,
+        },
+        "tuba": {"wave": "square", "harmonics": 8, "A": 0.08, "D": 0.05, "S": 0.8, "R": 0.25},
+        "brass_section": {
+            "wave": "square",
+            "harmonics": 10,
+            "A": 0.05,
+            "D": 0.04,
+            "S": 0.88,
+            "R": 0.18,
+        },
+        # ── Woodwinds ─────────────────────────────────────────────────────────
+        "flute": {"wave": "sine", "harmonics": 2, "A": 0.06, "D": 0.02, "S": 0.9, "R": 0.2},
+        "oboe": {"wave": "square", "harmonics": 8, "A": 0.04, "D": 0.02, "S": 0.88, "R": 0.15},
+        "clarinet": {"wave": "square", "harmonics": 6, "A": 0.05, "D": 0.02, "S": 0.9, "R": 0.18},
+        "bassoon": {"wave": "sawtooth", "harmonics": 8, "A": 0.06, "D": 0.03, "S": 0.85, "R": 0.2},
+        "saxophone": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.04,
+            "D": 0.03,
+            "S": 0.88,
+            "R": 0.2,
+        },
+        "piccolo": {"wave": "sine", "harmonics": 2, "A": 0.03, "D": 0.01, "S": 0.9, "R": 0.15},
+        # ── Plucked / Struck ──────────────────────────────────────────────────
+        "guitar_acoustic": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "A": 0.002,
+            "D": 0.3,
+            "S": 0.2,
+            "R": 0.7,
+        },
+        "guitar_electric": {
+            "wave": "sawtooth",
+            "harmonics": 14,
+            "A": 0.005,
+            "D": 0.15,
+            "S": 0.5,
+            "R": 0.5,
+        },
+        "harp": {"wave": "triangle", "harmonics": 7, "A": 0.002, "D": 0.25, "S": 0.1, "R": 1.0},
+        "marimba": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.2, "S": 0.0, "R": 0.5},
+        "vibraphone": {"wave": "sine", "harmonics": 3, "A": 0.002, "D": 0.3, "S": 0.2, "R": 1.2},
+        "xylophone": {
+            "wave": "triangle",
+            "harmonics": 4,
+            "A": 0.001,
+            "D": 0.12,
+            "S": 0.0,
+            "R": 0.3,
+        },
+        # ── Orchestral percussion ─────────────────────────────────────────────
+        "timpani": {"wave": "sine", "harmonics": 2, "A": 0.005, "D": 0.4, "S": 0.1, "R": 1.0},
+        "gong": {"wave": "triangle", "harmonics": 5, "A": 0.01, "D": 0.5, "S": 0.3, "R": 2.0},
+        "snare_orch": {"wave": "square", "harmonics": 3, "A": 0.001, "D": 0.12, "S": 0.0, "R": 0.1},
+        "cymbals": {"wave": "square", "harmonics": 20, "A": 0.005, "D": 0.8, "S": 0.1, "R": 1.5},
+        # ── Choir / Vocal ─────────────────────────────────────────────────────
+        "choir_aah": {"wave": "sawtooth", "harmonics": 6, "A": 0.15, "D": 0.1, "S": 0.85, "R": 0.5},
+        "choir_ooh": {"wave": "sine", "harmonics": 4, "A": 0.2, "D": 0.08, "S": 0.9, "R": 0.6},
+        "vox_pad": {"wave": "triangle", "harmonics": 5, "A": 0.35, "D": 0.1, "S": 0.85, "R": 0.8},
+        # ── EDM synths ────────────────────────────────────────────────────────
         "bass": {"wave": "sawtooth", "harmonics": 6, "A": 0.02, "D": 0.2, "S": 0.6, "R": 0.3},
         "pad": {"wave": "sine", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 0.8},
         "pluck": {"wave": "sawtooth", "harmonics": 8, "A": 0.001, "D": 0.4, "S": 0.1, "R": 0.5},
+        "supersaw": {"wave": "supersaw", "harmonics": 7, "A": 0.02, "D": 0.05, "S": 0.9, "R": 0.3},
+        "reese_bass": {"wave": "reese", "harmonics": 6, "A": 0.03, "D": 0.1, "S": 0.8, "R": 0.4},
+        "acid": {"wave": "sawtooth", "harmonics": 10, "A": 0.005, "D": 0.2, "S": 0.3, "R": 0.15},
+        "hoover": {"wave": "hoover", "harmonics": 8, "A": 0.05, "D": 0.3, "S": 0.6, "R": 0.5},
+        "stab": {"wave": "square", "harmonics": 6, "A": 0.005, "D": 0.08, "S": 0.0, "R": 0.1},
+        "lead_edm": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.01,
+            "D": 0.05,
+            "S": 0.85,
+            "R": 0.2,
+        },
+        "noise_sweep": {"wave": "noise", "harmonics": 1, "A": 1.0, "D": 0.0, "S": 1.0, "R": 0.5},
+        # ── Drum kit ──────────────────────────────────────────────────────────
         "drums_kick": {"wave": "sine", "harmonics": 1, "A": 0.001, "D": 0.15, "S": 0.0, "R": 0.1},
         "drums_snare": {
             "wave": "square",
@@ -45,6 +171,25 @@ class Synth:
             "S": 0.0,
             "R": 0.03,
         },
+        "drums_clap": {"wave": "noise", "harmonics": 1, "A": 0.001, "D": 0.06, "S": 0.0, "R": 0.05},
+        "drums_tom": {"wave": "sine", "harmonics": 2, "A": 0.003, "D": 0.2, "S": 0.0, "R": 0.3},
+        "drums_ride": {
+            "wave": "square",
+            "harmonics": 12,
+            "A": 0.002,
+            "D": 0.6,
+            "S": 0.05,
+            "R": 1.0,
+        },
+        "drums_crash": {
+            "wave": "square",
+            "harmonics": 18,
+            "A": 0.003,
+            "D": 0.8,
+            "S": 0.05,
+            "R": 2.0,
+        },
+        "drums_808": {"wave": "sine", "harmonics": 1, "A": 0.001, "D": 0.6, "S": 0.0, "R": 0.5},
     }
 
     def __init__(self, sample_rate: int = 44100):
@@ -55,28 +200,81 @@ class Synth:
     # ------------------------------------------------------------------
 
     def _wave(self, wave: str, freq: float, n_samples: int) -> FloatArray:
-        """Generate one-cycle-aligned waveform using additive synthesis."""
+        """Generate waveform using additive/spectral synthesis (fully vectorised)."""
         t = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
-        harmonics = self.PRESETS.get(wave, {}).get("harmonics", 1)
-        # Dispatch
+        # Look up harmonics from ANY matching preset key that uses this wave name
+        harmonics = next(
+            (p["harmonics"] for p in self.PRESETS.values() if p.get("wave") == wave),
+            8,
+        )
+
         if wave == "sine":
             return np.sin(2 * np.pi * freq * t)
+
         elif wave == "square":
-            sig = np.zeros(n_samples)
-            for k in range(1, harmonics + 1, 2):
-                sig += (1 / k) * np.sin(2 * np.pi * freq * k * t)
-            return sig * (4 / np.pi)
+            ks = np.arange(1, harmonics + 1, 2)
+            return (4 / np.pi) * np.sum(
+                (1 / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t), axis=0
+            )
+
         elif wave == "sawtooth":
-            sig = np.zeros(n_samples)
-            for k in range(1, harmonics + 1):
-                sig += ((-1) ** (k + 1) / k) * np.sin(2 * np.pi * freq * k * t)
-            return sig * (2 / np.pi)
+            ks = np.arange(1, harmonics + 1)
+            signs = (-1) ** (ks + 1)
+            return (2 / np.pi) * np.sum(
+                (signs / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t), axis=0
+            )
+
         elif wave == "triangle":
-            sig = np.zeros(n_samples)
-            for k in range(0, harmonics):
-                n = 2 * k + 1
-                sig += ((-1) ** k / n**2) * np.sin(2 * np.pi * freq * n * t)
-            return sig * (8 / (np.pi**2))
+            ks = np.arange(0, harmonics)
+            ns = 2 * ks + 1
+            signs = (-1) ** ks
+            return (8 / np.pi**2) * np.sum(
+                (signs / ns**2)[:, None] * np.sin(2 * np.pi * freq * ns[:, None] * t), axis=0
+            )
+
+        elif wave == "supersaw":
+            # Detune 7 sawtooths ±25 cents around centre freq for the Zedd/trance wall sound
+            detune_cents = np.array([-25, -17, -8, 0, 8, 17, 25])
+            result = np.zeros(n_samples)
+            for dc in detune_cents:
+                f_det = freq * (2 ** (dc / 1200))
+                ks = np.arange(1, harmonics + 1)
+                result += (2 / np.pi) * np.sum(
+                    ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * f_det * ks[:, None] * t),
+                    axis=0,
+                )
+            return result / len(detune_cents)
+
+        elif wave == "reese":
+            # Two slightly detuned sawtooths — classic DnB/techno Reese bass
+            f1 = freq * (2 ** (-7 / 1200))
+            f2 = freq * (2 ** (7 / 1200))
+            ks = np.arange(1, harmonics + 1)
+            saw1 = (2 / np.pi) * np.sum(
+                ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * f1 * ks[:, None] * t), axis=0
+            )
+            saw2 = (2 / np.pi) * np.sum(
+                ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * f2 * ks[:, None] * t), axis=0
+            )
+            return (saw1 + saw2) * 0.5
+
+        elif wave == "hoover":
+            # Hoover: detuned square waves — iconic rave/gabber/Mord Fustang sound
+            detune = np.array([-12, -5, 0, 5, 12])
+            result = np.zeros(n_samples)
+            for dc in detune:
+                f_det = freq * (2 ** (dc / 1200))
+                ks = np.arange(1, harmonics + 1, 2)
+                result += (4 / np.pi) * np.sum(
+                    (1 / ks)[:, None] * np.sin(2 * np.pi * f_det * ks[:, None] * t), axis=0
+                )
+            return result / len(detune)
+
+        elif wave == "noise":
+            # White noise — for sweeps, snare body, cymbals
+            rng = np.random.default_rng(int(freq * 1000) % (2**31))
+            return rng.standard_normal(n_samples)
+
         else:
             return np.sin(2 * np.pi * freq * t)
 
@@ -110,18 +308,27 @@ class Synth:
         if freq is None or freq <= 0:
             return np.zeros(n_samples)
 
-        # Pitch-drop for kick drum feel
-        if preset.get("wave") == "sine" and preset.get("A", 0.01) < 0.005:
+        wave_type = preset.get("wave", "sine")
+        # Pitch-drop envelope: kick drums, 808, timpani, tom
+        pitch_drop_presets = {"drums_kick", "drums_808", "drums_tom", "timpani"}
+        is_pitch_drop = any(k in str(preset) for k in pitch_drop_presets) or (
+            wave_type == "sine" and preset.get("A", 0.01) < 0.005
+        )
+
+        if is_pitch_drop:
             t = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
-            freq_env = freq * np.exp(-30 * t)
+            drop_rate = 30.0 if "808" in str(preset) else 50.0
+            freq_env = freq * np.exp(-drop_rate * t)
             raw = np.sin(2 * np.pi * np.cumsum(freq_env) / self.sample_rate)
         else:
-            raw = self._wave(preset["wave"], freq, n_samples)
+            raw = self._wave(wave_type, freq, n_samples)
 
-        # Add noise layer for snare
-        if "snare" in str(preset):
-            noise = np.random.normal(0, 0.4, n_samples)
-            raw = raw * 0.6 + noise * 0.4
+        # Noise layer for snare / clap / cymbals / crash / ride
+        noise_presets = {"snare", "clap", "cymbals", "crash", "ride"}
+        if any(k in str(preset) for k in noise_presets):
+            rng = np.random.default_rng(int(freq * 137) % (2**31))
+            noise = rng.standard_normal(n_samples)
+            raw = raw * 0.5 + noise * 0.5
 
         env = self._adsr(n_samples, preset["A"], preset["D"], preset["S"], preset["R"])
         return raw * env * note.velocity
@@ -135,14 +342,24 @@ class Synth:
         preset_key = track.instrument if track.instrument in self.PRESETS else "sine"
         preset = self.PRESETS[preset_key]
         beat_sec = 60.0 / bpm
+        eighth_sec = beat_sec / 2.0  # one 8th note duration in seconds
         total_samples = (
             int(total_beats * beat_sec * self.sample_rate) + self.sample_rate
         )  # +1s tail
         buf = np.zeros(total_samples)
 
         cursor = 0
+        beat_idx = 0  # counts 8th-note grid steps for swing
         for beat in track.beats:
             dur_sec = beat.duration * beat_sec
+
+            # Swing: delay every odd (2nd, 4th, ...) 8th-note step
+            swing_offset = 0
+            if track.swing > 0 and beat.duration <= 0.5:
+                if beat_idx % 2 == 1:
+                    swing_offset = int(track.swing * eighth_sec * self.sample_rate)
+            beat_idx += max(1, int(beat.duration / 0.5))
+
             n_samples = int(dur_sec * self.sample_rate)
             event = beat.event
 
@@ -165,8 +382,10 @@ class Synth:
             if len(notes) > 1:
                 mixed /= len(notes) ** 0.5  # RMS normalization
 
-            end = min(cursor + n_samples, total_samples)
-            buf[cursor:end] += mixed[: end - cursor] * track.volume
+            write_pos = cursor + swing_offset
+            end = min(write_pos + n_samples, total_samples)
+            if end > write_pos:
+                buf[write_pos:end] += mixed[: end - write_pos] * track.volume
             cursor += n_samples
 
         return buf
@@ -176,26 +395,45 @@ class Synth:
     # ------------------------------------------------------------------
 
     def render_song(self, song: Song) -> FloatArray:
-        """Render all tracks to a stereo float64 array, shape (N, 2)."""
+        """Render all tracks to a stereo float64 array, shape (N, 2).
+
+        If song._effects is a dict mapping track name → callable(stereo, sr),
+        each named track's stereo contribution is passed through its effect
+        chain before being mixed into the master bus.
+        """
+        import math
+
         if not song.tracks:
             return np.zeros((self.sample_rate, 2))  # 1s silence
 
+        effects: dict = getattr(song, "_effects", {})
         total_beats = song.total_beats
         beat_sec = 60.0 / song.bpm
         total_samples = int(total_beats * beat_sec * self.sample_rate) + self.sample_rate
 
-        mono = np.zeros(total_samples)
+        stereo_mix = np.zeros((total_samples, 2))
         for track in song.tracks:
-            rendered = self.render_track(track, song.bpm, total_beats)
-            n = min(len(rendered), total_samples)
-            mono[:n] += rendered[:n]
+            mono = self.render_track(track, song.bpm, total_beats)
+            n = min(len(mono), total_samples)
+            # Equal-power pan: -1..1 → 0..π/2
+            angle = (track.pan + 1) / 2 * math.pi / 2
+            l_gain = math.cos(angle)
+            r_gain = math.sin(angle)
+            # Build stereo slice for this track
+            track_stereo = np.zeros((total_samples, 2))
+            track_stereo[:n, 0] = mono[:n] * l_gain
+            track_stereo[:n, 1] = mono[:n] * r_gain
+            # Apply per-track effect chain if defined
+            if track.name in effects:
+                try:
+                    track_stereo = effects[track.name](track_stereo, self.sample_rate)
+                except Exception:
+                    pass  # never let an effect crash the render
+            stereo_mix += track_stereo
 
-        # Soft clip / normalize
-        peak = np.max(np.abs(mono))
+        # Soft clip / normalize master bus
+        peak = np.max(np.abs(stereo_mix))
         if peak > 0:
-            mono /= peak
-        mono = np.tanh(mono * 0.95)  # gentle saturation
-
-        # Mono → stereo
-        stereo = np.column_stack([mono, mono])
-        return stereo.astype(np.float64)
+            stereo_mix /= peak
+        stereo_mix = np.tanh(stereo_mix * 0.95)
+        return stereo_mix.astype(np.float64)
