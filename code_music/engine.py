@@ -223,22 +223,30 @@ class Track:
 
 @dataclass
 class Song:
-    """Container for multiple Tracks and global tempo/metadata.
+    """Container for multiple Tracks, VoiceTracks and global tempo/metadata.
 
     Attributes:
         title: Song title used in exported filename.
         bpm: Beats per minute.
         sample_rate: Audio sample rate (44100 for CD quality).
         tracks: List of Track objects mixed together on export.
+        voice_tracks: List of VoiceTrack objects (rendered separately, then mixed).
     """
 
     title: str = "untitled"
     bpm: float = 120.0
     sample_rate: int = 44100
     tracks: list[Track] = field(default_factory=list)
+    voice_tracks: list = field(default_factory=list)  # list[VoiceTrack]
 
     def add_track(self, track: Track) -> "Track":
         self.tracks.append(track)
+        return track
+
+    def add_voice_track(self, track) -> object:  # track: VoiceTrack
+        """Add a VoiceTrack to the song. Returns the track."""
+        track.sample_rate = self.sample_rate
+        self.voice_tracks.append(track)
         return track
 
     @property

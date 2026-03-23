@@ -395,7 +395,7 @@ class Synth:
     # ------------------------------------------------------------------
 
     def render_song(self, song: Song) -> FloatArray:
-        """Render all tracks to a stereo float64 array, shape (N, 2).
+        """Render all tracks + voice tracks to a stereo float64 array, shape (N, 2).
 
         If song._effects is a dict mapping track name → callable(stereo, sr),
         each named track's stereo contribution is passed through its effect
@@ -403,33 +403,46 @@ class Synth:
         """
         import math
 
-        if not song.tracks:
+        has_instrument_tracks = bool(song.tracks)
+        has_voice_tracks = bool(getattr(song, "voice_tracks", []))
+
+        if not has_instrument_tracks and not has_voice_tracks:
             return np.zeros((self.sample_rate, 2))  # 1s silence
 
         effects: dict = getattr(song, "_effects", {})
-        total_beats = song.total_beats
+        total_beats = song.total_beats if has_instrument_tracks else 8.0
         beat_sec = 60.0 / song.bpm
         total_samples = int(total_beats * beat_sec * self.sample_rate) + self.sample_rate
 
         stereo_mix = np.zeros((total_samples, 2))
+
+        # ── Instrument tracks ──────────────────────────────────────────────
         for track in song.tracks:
             mono = self.render_track(track, song.bpm, total_beats)
             n = min(len(mono), total_samples)
-            # Equal-power pan: -1..1 → 0..π/2
             angle = (track.pan + 1) / 2 * math.pi / 2
             l_gain = math.cos(angle)
             r_gain = math.sin(angle)
-            # Build stereo slice for this track
             track_stereo = np.zeros((total_samples, 2))
             track_stereo[:n, 0] = mono[:n] * l_gain
             track_stereo[:n, 1] = mono[:n] * r_gain
-            # Apply per-track effect chain if defined
             if track.name in effects:
                 try:
                     track_stereo = effects[track.name](track_stereo, self.sample_rate)
                 except Exception:
-                    pass  # never let an effect crash the render
+                    pass
             stereo_mix += track_stereo
+
+        # ── Voice tracks ───────────────────────────────────────────────────
+        from .voice import render_voice_track
+
+        for vtrack in getattr(song, "voice_tracks", []):
+            try:
+                voice_stereo = render_voice_track(vtrack, song.bpm, total_beats, self.sample_rate)
+                n = min(len(voice_stereo), total_samples)
+                stereo_mix[:n] += voice_stereo[:n]
+            except Exception as e:
+                print(f"[voice] track '{getattr(vtrack, 'name', '?')}' failed: {e}")
 
         # Soft clip / normalize master bus
         peak = np.max(np.abs(stereo_mix))

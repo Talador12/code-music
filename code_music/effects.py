@@ -291,3 +291,141 @@ def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     result[:, 0] *= math.cos(angle)
     result[:, 1] *= math.sin(angle)
     return result.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# LFO modulation — tremolo (volume) and vibrato (pitch)
+# ---------------------------------------------------------------------------
+
+
+def tremolo(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 5.0,
+    depth: float = 0.3,
+) -> FloatArray:
+    """Amplitude tremolo via sinusoidal LFO.
+
+    Args:
+        rate_hz: LFO frequency in Hz (typical: 3–8 Hz).
+        depth:   Modulation depth 0.0–1.0 (0 = no effect, 1 = full on/off).
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    lfo = 1.0 - depth * (0.5 - 0.5 * np.sin(2 * np.pi * rate_hz * t))
+    return (samples * lfo[:, np.newaxis]).astype(np.float64)
+
+
+def vibrato(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 5.5,
+    depth_cents: float = 25.0,
+) -> FloatArray:
+    """Pitch vibrato via LFO-modulated time-stretching (warp method).
+
+    Args:
+        rate_hz:     LFO speed in Hz.
+        depth_cents: Max pitch deviation in cents (100 cents = 1 semitone).
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    depth_samples = depth_cents / 100.0 * sample_rate / (rate_hz * 2 * np.pi)
+    offsets = depth_samples * np.sin(2 * np.pi * rate_hz * t)
+    indices = np.clip(np.arange(n, dtype=np.float64) - offsets, 0, n - 1)
+
+    lo = np.floor(indices).astype(int)
+    hi = np.minimum(lo + 1, n - 1)
+    frac = indices - lo
+
+    warped_l = samples[lo, 0] * (1 - frac) + samples[hi, 0] * frac
+    warped_r = samples[lo, 1] * (1 - frac) + samples[hi, 1] * frac
+    return np.column_stack([warped_l, warped_r]).astype(np.float64)
+
+
+def lfo_filter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 0.5,
+    min_cutoff: float = 300.0,
+    max_cutoff: float = 4000.0,
+    filter_type: str = "low",
+) -> FloatArray:
+    """LFO-swept filter — the classic EDM filter-open effect.
+
+    Args:
+        rate_hz:    LFO speed. Slow (0.1–1 Hz) = gradual sweep. Fast = wah.
+        min_cutoff: Filter floor in Hz.
+        max_cutoff: Filter ceiling in Hz.
+        filter_type: "low" or "high".
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rate_hz * t)  # 0..1
+    cutoffs = min_cutoff + lfo * (max_cutoff - min_cutoff)
+
+    # Process in blocks of 512 samples with fixed cutoff per block
+    block_size = 512
+    out = np.zeros_like(samples)
+    for start in range(0, n, block_size):
+        end = min(start + block_size, n)
+        block = samples[start:end]
+        cutoff = float(np.mean(cutoffs[start:end]))
+        cutoff = np.clip(cutoff, 20.0, sample_rate / 2 - 1)
+        if filter_type == "high":
+            sos = sig.butter(2, cutoff, btype="high", fs=sample_rate, output="sos")
+        else:
+            sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        out[start:end] = sig.sosfilt(sos, block)
+    return out.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Sidechain compression — the classic EDM "pumping" effect
+# ---------------------------------------------------------------------------
+
+
+def sidechain(
+    target: FloatArray,
+    trigger: FloatArray,
+    sample_rate: int = 44100,
+    threshold: float = 0.3,
+    ratio: float = 8.0,
+    attack_ms: float = 2.0,
+    release_ms: float = 80.0,
+    depth: float = 1.0,
+) -> FloatArray:
+    """Sidechain compression: duck `target` when `trigger` is loud.
+
+    Classic EDM pumping effect — route kick drum as `trigger`,
+    pad/bass as `target`. The pad ducks every time the kick hits.
+
+    Args:
+        target:      Signal to be compressed (e.g. pad, bass).
+        trigger:     Signal driving the compression (e.g. kick drum).
+        threshold:   Trigger level above which compression starts (0–1).
+        ratio:       Compression ratio (higher = more ducking).
+        attack_ms:   How fast the duck clamps down.
+        release_ms:  How fast it lets go (long release = pumping feel).
+        depth:       0.0 = no effect, 1.0 = full sidechain compression.
+    """
+    # Extract envelope from trigger (mono-linked)
+    # Use release coefficient for smoothing; attack_ms reserved for future use
+    trig_mono = np.max(np.abs(trigger), axis=1)
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+    _ = attack_ms  # kept in signature for future attack-specific smoothing
+
+    # AR envelope follower — vectorised via lfilter
+    env = sig.lfilter([1.0 - r_coef], [1.0, -r_coef], trig_mono)
+
+    # Gain computation
+    gain = np.where(
+        env > threshold,
+        (threshold + (env - threshold) / ratio) / np.maximum(env, 1e-9),
+        1.0,
+    )
+
+    # Blend between dry (gain=1) and ducked (gain=computed) by depth
+    blended_gain = 1.0 - depth * (1.0 - gain)
+    result = target * blended_gain[:, np.newaxis]
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
