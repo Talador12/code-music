@@ -139,6 +139,12 @@ class Synth:
         "bass": {"wave": "sawtooth", "harmonics": 6, "A": 0.02, "D": 0.2, "S": 0.6, "R": 0.3},
         "pad": {"wave": "sine", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 0.8},
         "pluck": {"wave": "sawtooth", "harmonics": 8, "A": 0.001, "D": 0.4, "S": 0.1, "R": 0.5},
+        # Karplus-Strong physical models — most realistic plucked/struck sounds
+        "guitar_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.2},
+        "banjo_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.6},
+        "harp_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.8},
+        "sitar_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.0},
+        "koto_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.9},
         "supersaw": {"wave": "supersaw", "harmonics": 7, "A": 0.02, "D": 0.05, "S": 0.9, "R": 0.3},
         "reese_bass": {"wave": "reese", "harmonics": 6, "A": 0.03, "D": 0.1, "S": 0.8, "R": 0.4},
         "acid": {"wave": "sawtooth", "harmonics": 10, "A": 0.005, "D": 0.2, "S": 0.3, "R": 0.15},
@@ -361,6 +367,22 @@ class Synth:
                 ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t),
                 axis=0,
             )
+
+        elif wave == "karplus":
+            # Karplus-Strong plucked string synthesis.
+            # Seeds a short buffer with noise, then applies a feedback loop
+            # with a simple averaging filter — models a vibrating string.
+            period = max(2, int(self.sample_rate / max(freq, 1.0)))
+            out = np.zeros(n_samples)
+            # Seed: short burst of white noise at pitch frequency
+            rng = np.random.default_rng(int(freq * 137) % (2**31))
+            buf = rng.uniform(-1.0, 1.0, period)
+            for i in range(n_samples):
+                out[i] = buf[i % period]
+                # Averaging filter with loss factor (0.996 ≈ very little damping)
+                loss = 0.996
+                buf[i % period] = loss * 0.5 * (buf[i % period] + buf[(i + 1) % period])
+            return out
 
         else:
             return np.sin(2 * np.pi * freq * t)

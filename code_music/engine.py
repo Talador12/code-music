@@ -1003,3 +1003,115 @@ class Song:
     @property
     def duration_sec(self) -> float:
         return self.total_beats * self.beat_duration_sec
+
+
+# ---------------------------------------------------------------------------
+# Chord progression suggester
+# ---------------------------------------------------------------------------
+
+# Common progressions by mood, expressed as Roman numeral scale degrees (0-based)
+# Each tuple: (scale_degree, chord_shape)
+_PROGRESSIONS: dict[str, list[list[tuple[int, str]]]] = {
+    "happy": [
+        [(0, "maj"), (4, "maj"), (5, "maj"), (3, "min")],  # I-V-vi-IV  (pop)
+        [(0, "maj"), (3, "min"), (4, "maj"), (4, "maj")],  # I-IV-V-V
+        [(0, "maj"), (4, "maj"), (3, "maj"), (0, "maj")],  # I-V-IV-I  (rock)
+    ],
+    "sad": [
+        [(5, "min"), (3, "maj"), (0, "maj"), (4, "maj")],  # vi-IV-I-V  (emotional pop)
+        [(0, "min"), (6, "maj"), (3, "maj"), (4, "dom7")],  # i-bVII-bIV-V
+        [(0, "min"), (5, "min"), (3, "maj"), (4, "dom7")],  # i-v-bIII-iv
+    ],
+    "tense": [
+        [(0, "min"), (1, "dim"), (2, "min"), (4, "dom7")],  # i-ii°-III-V
+        [(0, "min"), (6, "maj"), (4, "dom7"), (0, "min")],  # i-bVII-V-i
+        [(0, "min7"), (5, "min7"), (2, "min7"), (4, "dom7")],  # jazz minor ii-V-i
+    ],
+    "dreamy": [
+        [(0, "maj7"), (4, "maj7"), (2, "min7"), (3, "maj7")],  # Imaj7-Vmaj7-IIm7-IVmaj7
+        [(0, "maj7"), (5, "min7"), (2, "min7"), (4, "dom7")],  # I-vi-ii-V jazz
+        [(0, "maj7"), (3, "maj7"), (4, "dom7"), (0, "maj7")],  # I-IV-V7-I dreamy
+    ],
+    "epic": [
+        [(0, "min"), (7, "maj"), (4, "maj"), (6, "maj")],  # i-bVIII-bV-bVII
+        [(0, "min"), (5, "maj"), (3, "maj"), (6, "maj")],  # i-bVI-bIII-bVII  (Zimmer)
+        [(0, "min"), (7, "maj"), (3, "maj"), (4, "dom7")],  # i-bVIII-bIII-V
+    ],
+    "groovy": [
+        [(0, "dom7"), (3, "dom7"), (4, "dom7"), (3, "dom7")],  # I7-IV7-V7-IV7 blues
+        [(0, "min7"), (0, "min7"), (3, "dom7"), (3, "dom7")],  # i7-i7-IV7-IV7 funk
+        [(0, "min7"), (3, "dom7"), (5, "min7"), (1, "dom7")],  # jazz minor turnaround
+    ],
+    "dark": [
+        [(0, "min"), (1, "dim"), (6, "maj"), (4, "dom7")],  # i-ii°-bVII-V  phrygian feel
+        [(0, "min"), (1, "maj"), (4, "dom7"), (0, "min")],  # i-bII-V-i  Spanish/metal
+        [(0, "min7"), (5, "min"), (2, "dim"), (4, "dom7")],  # i-v-ii°-V
+    ],
+    "chill": [
+        [(0, "maj7"), (2, "min7"), (3, "maj7"), (4, "dom7")],  # I-II-IV-V jazz
+        [(0, "min7"), (3, "maj7"), (6, "maj7"), (2, "dom7")],  # i-bIII-bVI-V lo-fi
+        [(0, "maj7"), (4, "maj7"), (5, "min7"), (4, "dom7")],  # I-V-vi-V slow
+    ],
+}
+
+_SCALE_MAJOR_DEGREES = [0, 2, 4, 5, 7, 9, 11]  # major scale intervals
+
+
+def suggest_progression(
+    root: str,
+    mood: str = "happy",
+    octave: int = 3,
+    duration: float = 4.0,
+    velocity: float = 0.65,
+    variation: int = 0,
+) -> list[Chord]:
+    """Suggest a chord progression for a given root and mood.
+
+    Looks up a common progression for the mood, maps the Roman numeral
+    scale degrees to actual chord roots, and returns a list of Chords
+    ready to add to a Track.
+
+    Args:
+        root:      Root note name (e.g. 'C', 'F#', 'Bb').
+        mood:      Emotional character: happy, sad, tense, dreamy, epic,
+                   groovy, dark, chill.
+        octave:    Octave for chord voicings (3 or 4 typical).
+        duration:  Beats per chord.
+        velocity:  Chord velocity (0.0–1.0).
+        variation: Which progression variation to use (0, 1, or 2).
+
+    Returns:
+        List of Chord objects — pass directly to Track.extend().
+
+    Example::
+
+        pad.extend(suggest_progression("Am", mood="sad", duration=4.0))
+        pad.extend(suggest_progression("C",  mood="happy") * 4)
+
+    Available moods: happy, sad, tense, dreamy, epic, groovy, dark, chill
+    """
+    if mood not in _PROGRESSIONS:
+        raise ValueError(f"Unknown mood {mood!r}. Choose: {sorted(_PROGRESSIONS)}")
+
+    variants = _PROGRESSIONS[mood]
+    prog = variants[variation % len(variants)]
+
+    root_midi = note_name_to_midi(root, octave=4)
+    result = []
+    for degree, shape in prog:
+        # Map degree to semitone offset using major scale
+        deg_idx = degree % len(_SCALE_MAJOR_DEGREES)
+        oct_offset = degree // len(_SCALE_MAJOR_DEGREES)
+        semitone = _SCALE_MAJOR_DEGREES[deg_idx] + oct_offset * 12
+        chord_midi = root_midi + semitone
+        chord_name = NOTE_NAMES[chord_midi % 12]
+        result.append(
+            Chord(
+                root=chord_name,
+                shape=shape,
+                octave=octave,
+                duration=duration,
+                velocity=velocity,
+            )
+        )
+    return result

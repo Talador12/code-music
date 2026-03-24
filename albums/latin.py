@@ -23,5 +23,6 @@ ALBUM = {
     "tracks": [
         {"title": "The Clave", "song": "tank_bebop", "bpm": 180},
         {"title": "Siesta", "song": "lo_fi_loop", "bpm": 95},
+        {"title": "Ipanema Hours",         "song": "ipanema_hours",           "bpm": 120},
     ],
 }

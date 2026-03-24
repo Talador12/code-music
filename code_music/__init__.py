@@ -70,6 +70,7 @@ from .engine import (
     shake,
     # articulations
     staccato,
+    suggest_progression,
     transpose,
     # ornaments
     trill,
@@ -145,6 +146,7 @@ __all__ = [
     "CHORD_SHAPES",
     "INTERVALS",
     "ARP_PATTERNS",
+    "suggest_progression",
     # synth
     "Synth",
     # audio export

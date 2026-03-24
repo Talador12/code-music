@@ -25,5 +25,6 @@ ALBUM = {
     "tracks": [
         {"title": "Chorus", "song": "clarity_drive", "bpm": 120},
         {"title": "Second Time", "song": "future_bass", "bpm": 118},
+        {"title": "Second Chorus",         "song": "second_chorus",           "bpm": 116},
     ],
 }
