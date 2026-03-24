@@ -83,6 +83,17 @@ CHORD_SHAPES = {
     "dom7": [0, 4, 7, 10],
     "sus2": [0, 2, 7],
     "sus4": [0, 5, 7],
+    # Jazz extensions (commonly needed)
+    "min7b5": [0, 3, 6, 10],  # half-diminished / ø chord
+    "dim7": [0, 3, 6, 9],  # fully diminished
+    "maj6": [0, 4, 7, 9],  # major 6th
+    "min6": [0, 3, 7, 9],  # minor 6th
+    "7sus4": [0, 5, 7, 10],  # dominant 7 suspended
+    "maj9": [0, 4, 7, 11, 14],  # major 9th
+    "min9": [0, 3, 7, 10, 14],  # minor 9th
+    "dom9": [0, 4, 7, 10, 14],  # dominant 9th
+    "7b9": [0, 4, 7, 10, 13],  # dominant b9 (jazz tension)
+    "7#9": [0, 4, 7, 10, 15],  # dominant #9 (Hendrix chord)
 }
 
 # Scale patterns (semitone intervals from root)
@@ -247,6 +258,41 @@ class Chord:
             Note(pitch=root_midi + offset, duration=self.duration, velocity=self.velocity)
             for offset in offsets
         ]
+
+    def invert(self, n: int = 1) -> "Chord":
+        """Return an inverted voicing of this chord.
+
+        Inversion n moves the bottom n notes up an octave:
+          0 = root position  (C E G)
+          1 = first inversion (E G C)
+          2 = second inversion (G C E)
+
+        Args:
+            n: Inversion number (0 = root, 1 = first, 2 = second, etc.)
+
+        Example::
+
+            Chord("C", "maj", 4).invert(1)   # E in bass
+            Chord("G", "dom7", 3).invert(2)  # D in bass
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+        n = n % len(offsets)  # wrap around
+        # Move the bottom n notes up an octave
+        rotated = offsets[n:] + [o + 12 for o in offsets[:n]]
+        # Normalize so the lowest offset is 0 relative to new bass
+        base = rotated[0]
+        normalized = [o - base for o in rotated]
+        # Adjust root midi to reflect new bass note
+        root_midi = note_name_to_midi(self.root, self.octave) + base
+        new_root = NOTE_NAMES[root_midi % 12]
+        new_octave = root_midi // 12 - 1
+        return Chord(
+            root=new_root,
+            shape=normalized,
+            octave=new_octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
 
     def __repr__(self) -> str:
         return f"Chord({self.root}{self.octave} {self.shape}, dur={self.duration})"

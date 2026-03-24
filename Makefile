@@ -60,10 +60,11 @@ XML_SONGS    := $(addprefix dist/notation/xml/,  $(addsuffix .xml, $(SONG_NAMES)
         play-scales play-scales-arp play-scales-group play-scales-arp-group \
         list-scales list-samples list-songs list-albums new-song watch \
         albums export-song \
-        $(addprefix play-,       $(SONG_NAMES)) \
-        $(addprefix play-scale-, $(SCALE_NAMES)) \
-        $(addprefix preview-,    $(SAMPLE_NAMES)) \
-        $(addprefix album-,      $(ALBUM_STEMS))
+        $(addprefix play-,            $(SONG_NAMES)) \
+        $(addprefix play-scale-,     $(SCALE_NAMES)) \
+        $(addprefix preview-,        $(SAMPLE_NAMES)) \
+        $(addprefix album-,          $(ALBUM_STEMS)) \
+        $(addprefix play-album-,     $(ALBUM_STEMS))
 
 ################################################################################
 #                               Utility                                        #
@@ -161,13 +162,28 @@ list-samples: ## [Create] List all available sample preview names
 list-albums: ## [Create] List all 22 genre albums with track counts and render status
 	$(BIN)/python -m albums.render --list
 
+play-album-anthology: ## [Vibe] Render and play The Anthology (one track per genre)
+	@$(MAKE) album-anthology
+	@for f in dist/albums/anthology/*.wav; do \
+		echo "  ▶ $$(basename $$f)"; \
+		$(PLAY) "$$f"; \
+	done
+
 albums: ## [Create] Render all 22 genre albums (WAV + FLAC + MP3 + liner notes + playlist)
 	$(BIN)/python -m albums.render --all
 
-# Per-album render rules (generated): make album-<album_name>
+# Per-album render + play rules (generated)
+# make album-<name>       → render to dist/albums/<name>/
+# make play-album-<name>  → render then play all tracks back-to-back
 define ALBUM_RULE
 album-$(1): ## [Create] Render album: $(1)
 	$(BIN)/python -m albums.render $(1)
+
+play-album-$(1): album-$(1) ## [Vibe] Render and play album: $(1)
+	@for f in dist/albums/$(1)/*.wav; do \
+		echo "  ▶ $$(basename $$f)"; \
+		$(PLAY) "$$f"; \
+	done
 endef
 $(foreach a,$(ALBUM_STEMS),$(eval $(call ALBUM_RULE,$(a))))
 
