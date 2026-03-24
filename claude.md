@@ -69,7 +69,7 @@
 - [x] Track.reverse() — play a track's notes in reverse order
 
 ### Effects
-- [ ] Stereo imager — visualize L/R balance as a PNG
+- [x] Stereo imager — visualize L/R balance as a PNG
 - [x] Slapback delay — single short echo (rockabilly, early rock)
 
 ### Songs

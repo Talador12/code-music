@@ -353,3 +353,10 @@ check: lint test ## [Dev] Run lint + test in one command
 stats: ## [Dev] Show song statistics — total duration, BPM distribution, genres
 	$(BIN)/python scripts/stats.py
 
+
+stereo-images: ## [Dev] Generate stereo field visualization for all rendered songs
+	$(BIN)/python scripts/stereo_imager.py --all
+
+stereo-image-%: ## [Dev] Generate stereo image for one song (e.g. make stereo-image-trance_odyssey)
+	$(BIN)/python scripts/stereo_imager.py dist/wav/$*.wav
+
