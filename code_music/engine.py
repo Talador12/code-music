@@ -1304,3 +1304,121 @@ def remix(
                     new_oct = root_midi // 12 - 1
                     new_track.add(Chord(new_root, c.shape, new_oct, c.duration, c.velocity))
     return new_song
+
+
+# ---------------------------------------------------------------------------
+# BPM automation — gradual tempo change within a song
+# ---------------------------------------------------------------------------
+
+
+def bpm_ramp(
+    start_bpm: float,
+    end_bpm: float,
+    bars: int,
+    beats_per_bar: int = 4,
+) -> list[float]:
+    """Return a list of per-beat BPM values for a gradual tempo change.
+
+    Useful for ritardando (slowing down), accelerando (speeding up),
+    or rubato (free tempo). The returned list can be used with a custom
+    render loop, or passed to the `bpm_map` field on a Song.
+
+    Args:
+        start_bpm:    Starting tempo.
+        end_bpm:      Ending tempo.
+        bars:         How many bars the ramp spans.
+        beats_per_bar: Beats per bar (default 4).
+
+    Returns:
+        List of BPM values, one per beat, linearly interpolated.
+
+    Example::
+
+        # Ritardando over 4 bars: 120 BPM → 80 BPM
+        ramp = bpm_ramp(120, 80, bars=4)
+        # Then use with render_with_bpm_map(song, ramp)
+    """
+    total_beats = bars * beats_per_bar
+    return [
+        start_bpm + (end_bpm - start_bpm) * (i / max(total_beats - 1, 1))
+        for i in range(total_beats)
+    ]
+
+
+def accelerando(
+    start_bpm: float, bars: int, factor: float = 1.5, beats_per_bar: int = 4
+) -> list[float]:
+    """Gradual speed-up. factor=1.5 means end BPM is 50% faster than start."""
+    return bpm_ramp(start_bpm, start_bpm * factor, bars, beats_per_bar)
+
+
+def ritardando(
+    start_bpm: float, bars: int, factor: float = 0.7, beats_per_bar: int = 4
+) -> list[float]:
+    """Gradual slow-down. factor=0.7 means end BPM is 30% slower than start."""
+    return bpm_ramp(start_bpm, start_bpm * factor, bars, beats_per_bar)
+
+
+# ---------------------------------------------------------------------------
+# Roman numeral chord analysis
+# ---------------------------------------------------------------------------
+
+_ROMAN = ["I", "bII", "II", "bIII", "III", "IV", "#IV", "V", "bVI", "VI", "bVII", "VII"]
+
+_CHORD_QUALITY_SYMBOLS = {
+    "maj": "",
+    "min": "m",
+    "dim": "°",
+    "aug": "+",
+    "maj7": "Δ7",
+    "min7": "m7",
+    "dom7": "7",
+    "min7b5": "ø7",
+    "dim7": "°7",
+    "sus2": "sus2",
+    "sus4": "sus4",
+    "maj9": "Δ9",
+    "min9": "m9",
+    "dom9": "9",
+}
+
+
+def analyze_progression(
+    chords: list[Chord],
+    key_root: str = "C",
+    mode: str = "major",
+) -> list[str]:
+    """Analyze a chord progression and return Roman numeral notation.
+
+    Args:
+        chords:    List of Chord objects to analyze.
+        key_root:  Root note of the key (e.g. 'C', 'F#', 'Bb').
+        mode:      'major' or 'minor'.
+
+    Returns:
+        List of Roman numeral strings (e.g. ['I', 'V', 'vi', 'IV']).
+
+    Example::
+
+        prog = suggest_progression("C", mood="happy")
+        print(analyze_progression(prog, key_root="C"))
+        # → ['I', 'V', 'vi', 'IV']
+    """
+    key_midi = note_name_to_midi(key_root, 4)
+    result = []
+    for chord in chords:
+        chord_midi = note_name_to_midi(chord.root, 4)
+        interval = (chord_midi - key_midi) % 12
+        roman = _ROMAN[interval]
+
+        # Determine if it's major/minor quality for case
+        shape = chord.shape if isinstance(chord.shape, str) else "custom"
+        is_minor = shape.startswith("min") or shape in ("dim", "dim7", "min7b5")
+        quality = _CHORD_QUALITY_SYMBOLS.get(shape, f"({shape})")
+
+        # Lowercase Roman for minor chords in major key
+        if is_minor and mode == "major":
+            roman = roman.lower()
+
+        result.append(f"{roman}{quality}")
+    return result

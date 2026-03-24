@@ -25,5 +25,6 @@ ALBUM = {
         {"title": "The Count", "song": "tank_bebop", "bpm": 168},
         {"title": "Still Life", "song": "lo_fi_loop", "bpm": 90},
         {"title": "After Midnight", "song": "after_midnight","bpm": 58},
+        {"title": "Fusion Flight",    "song": "fusion_flight",    "bpm": 148},
     ],
 }

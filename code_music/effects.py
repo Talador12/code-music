@@ -909,3 +909,242 @@ def vocoder(
 
     result = carrier * (1 - wet) + output * wet
     return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Multi-tap delay — more than 2 echo taps with individual timing/pan
+# ---------------------------------------------------------------------------
+
+
+def multitap_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    taps: list[tuple[float, float, float]] | None = None,
+    feedback: float = 0.3,
+) -> FloatArray:
+    """Multi-tap delay: multiple echoes at different times, levels, and pans.
+
+    Args:
+        taps: List of (delay_ms, level, pan) tuples.
+              pan: -1.0=L, 0.0=center, 1.0=R.
+              Default: classic three-tap spread.
+        feedback: Overall feedback amount.
+
+    Example::
+
+        # Three taps: 125ms left, 250ms center, 375ms right
+        multitap_delay(s, sr, taps=[(125, 0.6, -0.5), (250, 0.4, 0.0), (375, 0.3, 0.5)])
+    """
+    if taps is None:
+        taps = [(125.0, 0.6, -0.5), (250.0, 0.4, 0.0), (375.0, 0.3, 0.5)]
+
+    n = len(samples)
+    out = samples.copy()
+
+    for delay_ms, level, pan in taps:
+        d = max(1, int(delay_ms * sample_rate / 1000))
+        if d >= n:
+            continue
+        angle = (pan + 1) / 2 * math.pi / 2
+        l_gain = math.cos(angle) * level
+        r_gain = math.sin(angle) * level
+        echo = np.roll(samples, d)
+        echo[:d] = 0.0
+        out[:, 0] += echo[:, 0] * l_gain
+        out[:, 1] += echo[:, 1] * r_gain
+
+        # Feedback: add decayed version of each tap
+        if feedback > 0:
+            echo2 = np.roll(echo, d)
+            echo2[: d * 2] = 0.0
+            out[:, 0] += echo2[:, 0] * l_gain * feedback
+            out[:, 1] += echo2[:, 1] * r_gain * feedback
+
+    peak = np.max(np.abs(out))
+    if peak > 1.0:
+        out /= peak
+    return out.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Granular synthesis effect — scatter audio into grains, re-assemble
+# ---------------------------------------------------------------------------
+
+
+def granular(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    grain_size_ms: float = 50.0,
+    scatter: float = 0.3,
+    pitch_spread: float = 0.0,
+    density: float = 1.0,
+    wet: float = 0.7,
+) -> FloatArray:
+    """Granular effect: chop audio into grains and re-scatter them.
+
+    Creates shimmering, frozen, or glitchy textures by re-ordering small
+    fragments of audio. Common in ambient, experimental, and modern electronic.
+
+    Args:
+        grain_size_ms: Size of each grain in milliseconds (20–200ms typical).
+        scatter:       How far grains are displaced in time (0=none, 1=fully random).
+        pitch_spread:  Pitch variation per grain in semitones (0=none, 0.5=slight).
+        density:       Probability a grain plays (0–1). Lower = sparser texture.
+        wet:           Wet/dry mix.
+    """
+    grain_samples = max(64, int(grain_size_ms * sample_rate / 1000))
+    n = len(samples)
+    rng = np.random.default_rng(42)
+    out = np.zeros_like(samples)
+    counts = np.zeros(n)
+
+    n_grains = int(n / grain_samples * 2)  # overlapping grains
+
+    for _ in range(n_grains):
+        if rng.random() > density:
+            continue
+        # Source position (with scatter)
+        src_center = rng.integers(0, n)
+        scatter_amt = int(scatter * grain_samples * 4)
+        src = int(
+            np.clip(src_center + rng.integers(-scatter_amt, scatter_amt + 1), 0, n - grain_samples)
+        )
+
+        # Destination (slightly time-shifted)
+        dst = int(
+            np.clip(
+                src_center + rng.integers(-grain_samples // 4, grain_samples // 4 + 1),
+                0,
+                n - grain_samples,
+            )
+        )
+
+        grain = samples[src : src + grain_samples].copy()
+
+        # Pitch spread via resampling
+        if pitch_spread > 0:
+            semitones = rng.uniform(-pitch_spread, pitch_spread)
+            ratio = 2 ** (semitones / 12.0)
+            new_len = max(16, int(grain_samples / ratio))
+            from scipy import signal as _sig
+
+            grain_l = _sig.resample(grain[:, 0], new_len)
+            grain_r = _sig.resample(grain[:, 1], new_len)
+            grain = np.column_stack([grain_l, grain_r])
+            grain = (
+                grain[:grain_samples]
+                if len(grain) >= grain_samples
+                else np.pad(grain, ((0, grain_samples - len(grain)), (0, 0)))
+            )
+
+        # Hanning window to avoid clicks
+        window = np.hanning(grain_samples)
+        grain *= window[:, np.newaxis]
+
+        end = min(dst + grain_samples, n)
+        chunk = end - dst
+        out[dst:end] += grain[:chunk]
+        counts[dst:end] += 1
+
+    # Normalize by overlap count
+    mask = counts > 0
+    out[mask] /= counts[mask, np.newaxis]
+
+    return (samples * (1 - wet) + out * wet).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Auto-tune — snap pitch to nearest scale note
+# ---------------------------------------------------------------------------
+
+
+def autotune(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    scale_notes: list[int] | None = None,
+    strength: float = 0.7,
+    speed_ms: float = 50.0,
+) -> FloatArray:
+    """Auto-tune effect: snap the pitch of audio toward the nearest scale note.
+
+    Uses a simple pitch detection + resampling approach. Works best on
+    monophonic melodic signals (vocal, lead synth). Not suitable for drums
+    or full mixes.
+
+    Args:
+        scale_notes: MIDI note numbers in one octave (0-11) to snap to.
+                     Default: chromatic (all notes, just smoothing).
+        strength:    How strongly to correct pitch (0=off, 1=hard snap).
+        speed_ms:    How fast pitch correction kicks in (lower=Cher effect).
+
+    Example::
+
+        # Snap to A minor pentatonic: A C D E G
+        autotune(voice, sr, scale_notes=[0, 3, 5, 7, 10])
+    """
+    if scale_notes is None:
+        scale_notes = list(range(12))  # chromatic — just smoothing
+
+    n = len(samples)
+    block = max(64, int(speed_ms * sample_rate / 1000))
+    out = samples.copy().astype(np.float64)
+
+    def _nearest_scale_midi(detected_midi: float) -> float:
+        """Find nearest scale MIDI pitch."""
+        oct_n = int(detected_midi) // 12
+        chroma = detected_midi % 12
+        diffs = [(abs(chroma - s), s) for s in scale_notes]
+        # Also check wrapping (e.g. chroma=11, scale has 0)
+        diffs += [(abs(chroma - s - 12), s) for s in scale_notes]
+        diffs += [(abs(chroma - s + 12), s) for s in scale_notes]
+        best = min(diffs)[1]
+        return oct_n * 12 + best
+
+    # Process block by block
+    for start in range(0, n, block):
+        end = min(start + block, n)
+        mono = np.mean(out[start:end], axis=1)
+        if len(mono) < 16:
+            continue
+
+        # Simple autocorrelation pitch detection
+        corr = np.correlate(mono, mono, mode="full")
+        corr = corr[len(corr) // 2 :]
+        # Find first peak after initial zero-crossing
+        min_period = max(2, int(sample_rate / 2000))  # max 2kHz
+        max_period = min(len(corr) - 1, int(sample_rate / 60))  # min 60Hz
+        if max_period <= min_period:
+            continue
+        sub = corr[min_period:max_period]
+        if len(sub) == 0 or np.max(sub) < 0.01:
+            continue
+        period = np.argmax(sub) + min_period
+        if period < 2:
+            continue
+        detected_freq = sample_rate / period
+        if detected_freq < 60 or detected_freq > 2000:
+            continue
+
+        detected_midi = 69 + 12 * np.log2(detected_freq / 440.0)
+        target_midi = _nearest_scale_midi(detected_midi)
+        semitone_shift = (target_midi - detected_midi) * strength
+        if abs(semitone_shift) < 0.05:
+            continue
+
+        # Resample this block to apply pitch shift
+        ratio = 2 ** (semitone_shift / 12.0)
+        new_len = max(1, int((end - start) / ratio))
+        from scipy import signal as _sig
+
+        shifted_l = _sig.resample(out[start:end, 0], new_len)
+        shifted_r = _sig.resample(out[start:end, 1], new_len)
+        # Fit back to original block size
+        block_len = end - start
+        if new_len >= block_len:
+            out[start:end, 0] = shifted_l[:block_len]
+            out[start:end, 1] = shifted_r[:block_len]
+        else:
+            out[start : start + new_len, 0] = shifted_l
+            out[start : start + new_len, 1] = shifted_r
+
+    return np.clip(out, -1.0, 1.0).astype(np.float64)

@@ -1,6 +1,7 @@
 """code-music: write code blocks, export audio."""
 
 from .effects import (
+    autotune,
     bandpass,
     bitcrush,
     chorus,
@@ -9,11 +10,13 @@ from .effects import (
     distortion,
     flanger,
     gate,
+    granular,
     highpass,
     lfo_filter,
     limiter,
     lowpass,
     multiband_compress,
+    multitap_delay,
     noise_sweep,
     pan,
     phaser,
@@ -55,7 +58,10 @@ from .engine import (
     Section,
     Song,
     Track,
+    accelerando,
+    analyze_progression,
     arp,
+    bpm_ramp,
     chord_prog,
     crescendo,
     decrescendo,
@@ -71,6 +77,7 @@ from .engine import (
     prob,
     remix,
     repeat,
+    ritardando,
     scale,
     shake,
     # articulations
@@ -154,6 +161,13 @@ __all__ = [
     "suggest_progression",
     "PolyphonicTrack",
     "remix",
+    "bpm_ramp",
+    "accelerando",
+    "ritardando",
+    "analyze_progression",
+    "multitap_delay",
+    "granular",
+    "autotune",
     # synth
     "Synth",
     # audio export

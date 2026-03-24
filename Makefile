@@ -300,3 +300,8 @@ covers: ## [Create] Generate album cover art for all albums → dist/covers/
 cover-%: ## [Create] Generate cover art for one album (e.g. make cover-anthology)
 	$(BIN)/python scripts/make_cover.py --album $*
 
+
+midi-to-song: ## [Create] Convert a MIDI file to a code-music song script (MIDI=file.mid)
+	@test -n "$(MIDI)" || (echo "Usage: make midi-to-song MIDI=file.mid OUT=songs/name.py"; exit 1)
+	$(BIN)/python scripts/midi_to_song.py "$(MIDI)" $(if $(OUT),--out $(OUT),)
+
