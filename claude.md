@@ -81,5 +81,5 @@
 - [x] Song using BPM automation + time sig changes (showcase built features)
 - [ ] Deploy GitHub Pages web player (enable Pages on main, /docs source)
 - [ ] Expand albums to 5+ tracks each (most are at 3-4)
-- [ ] New genres: Afrobeats, shoegaze, math rock
+- [x] New genres: Afrobeats, shoegaze, math rock
 - [ ] More PolyphonicTrack songs (only conversations.py uses it)
