@@ -46,7 +46,7 @@
 ### Engine
 - [x] Chord voicing spread control (open vs close voicing)
 - [x] Time signature automation (change mid-song)
-- [ ] Note probability per-track (density slider at track level)
+- [x] Note probability per-track (density slider at track level)
 
 ### Effects
 - [ ] Convolution reverb from real IR files (load .wav)

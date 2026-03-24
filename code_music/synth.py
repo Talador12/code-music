@@ -530,6 +530,12 @@ class Synth:
         )  # +1s tail
         buf = np.zeros(total_samples)
 
+        # Density: random note dropout per track
+        import random as _random
+
+        density_rng = _random.Random(track.density_seed)
+        use_density = track.density < 1.0 - 1e-6
+
         cursor = 0
         beat_idx = 0  # counts 8th-note grid steps for swing
         for beat in track.beats:
@@ -546,6 +552,11 @@ class Synth:
             event = beat.event
 
             if event is None:
+                cursor += n_samples
+                continue
+
+            # Density: randomly skip this note/chord
+            if use_density and density_rng.random() > track.density:
                 cursor += n_samples
                 continue
 

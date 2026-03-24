@@ -75,3 +75,49 @@ class TestEffectsHook:
         song._effects = {"mel": lambda s, sr: 1 / 0}  # will raise ZeroDivisionError
         out = Synth(SR).render_song(song)  # should not raise
         assert out.shape[0] > 0
+
+
+class TestDensity:
+    def test_density_one_plays_all(self):
+        song = Song(bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(instrument="sine", density=1.0))
+        tr.extend([Note("A", 4, 0.5)] * 8)
+        out = Synth(SR).render_song(song)
+        assert np.max(np.abs(out)) > 0.1
+
+    def test_density_zero_silence(self):
+        song = Song(bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(instrument="sine", density=0.0))
+        tr.extend([Note("A", 4, 0.5)] * 8)
+        out = Synth(SR).render_song(song)
+        assert np.max(np.abs(out)) < 0.01
+
+    def test_density_half_less_energy(self):
+        song_full = Song(bpm=120, sample_rate=SR)
+        tr = song_full.add_track(Track(instrument="sine", density=1.0,
+                                         density_seed=42))
+        tr.extend([Note("A", 4, 0.5)] * 16)
+
+        song_half = Song(bpm=120, sample_rate=SR)
+        tr2 = song_half.add_track(Track(instrument="sine", density=0.5,
+                                          density_seed=42))
+        tr2.extend([Note("A", 4, 0.5)] * 16)
+
+        full = Synth(SR).render_song(song_full)
+        half = Synth(SR).render_song(song_half)
+        # Half density should have less total energy
+        assert np.mean(np.abs(half)) < np.mean(np.abs(full))
+
+    def test_density_seed_reproducible(self):
+        def render(seed):
+            song = Song(bpm=120, sample_rate=SR)
+            tr = song.add_track(Track(instrument="sine", density=0.5,
+                                        density_seed=seed))
+            tr.extend([Note("A", 4, 0.5)] * 16)
+            return Synth(SR).render_song(song)
+
+        a = render(42)
+        b = render(42)
+        c = render(99)
+        np.testing.assert_allclose(a, b)  # same seed = same output
+        assert not np.allclose(a, c)       # different seed = different output

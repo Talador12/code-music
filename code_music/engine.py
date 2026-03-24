@@ -1064,6 +1064,8 @@ class Track:
     volume: float = 0.8
     pan: float = 0.0  # -1.0 (L) to 1.0 (R)
     swing: float = 0.0  # 0.0 = straight, 0.5 = medium swing, 0.67 = heavy
+    density: float = 1.0  # 0.0–1.0 probability each note plays (1.0 = all notes)
+    density_seed: int | None = None  # random seed for reproducible dropout
 
     def add(self, event: Note | Chord | None) -> "Track":
         """Append a note, chord, or rest beat. Returns self for chaining."""
