@@ -94,6 +94,7 @@ from .engine import (
     tuplets,
     turn,
     upper_mordent,
+    voice_lead,
 )
 from .export import export_flac, export_mp3, export_ogg, export_wav
 from .midi import export_midi
@@ -166,6 +167,7 @@ __all__ = [
     "accelerando",
     "ritardando",
     "analyze_progression",
+    "voice_lead",
     "multitap_delay",
     "granular",
     "autotune",

@@ -25,5 +25,6 @@ ALBUM = {
     "tracks": [
         {"title": "Teeth", "song": "prog_rock", "bpm": 130},
         {"title": "Teeth II",         "song": "teeth_two",      "bpm": 118},
+        {"title": "The Arc",         "song": "the_arc",      "bpm": 124},
     ],
 }

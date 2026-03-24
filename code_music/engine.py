@@ -1422,3 +1422,93 @@ def analyze_progression(
 
         result.append(f"{roman}{quality}")
     return result
+
+
+# ---------------------------------------------------------------------------
+# Voice leading helper — smooth chord transitions
+# ---------------------------------------------------------------------------
+
+
+def voice_lead(
+    chords: list[Chord],
+    octave: int = 3,
+    duration: float | None = None,
+    velocity: float = 0.65,
+) -> list[Chord]:
+    """Return a version of the chord progression with smoother voice leading.
+
+    Minimises the total semitone movement between adjacent chords by
+    choosing the voicing (inversion) of each chord that moves the least
+    distance from the previous chord.
+
+    Args:
+        chords:    Input chord progression.
+        octave:    Base octave for voicing.
+        duration:  Override chord duration (None = keep original).
+        velocity:  Override chord velocity (None = keep original).
+
+    Returns:
+        New list of Chords with optimised inversions.
+
+    Example::
+
+        prog = suggest_progression("C", mood="happy")
+        smooth = voice_lead(prog)          # minimise jumps between chords
+        pad.extend(smooth * 4)
+    """
+    if not chords:
+        return []
+
+    def _chord_midis(chord: Chord, oct: int) -> list[int]:
+        root_midi = note_name_to_midi(chord.root, oct)
+        offsets = CHORD_SHAPES[chord.shape] if isinstance(chord.shape, str) else list(chord.shape)
+        return [root_midi + o for o in offsets]
+
+    def _inversion_midis(base_midis: list[int], inv: int) -> list[int]:
+        """Rotate bottom `inv` notes up an octave."""
+        midis = list(base_midis)
+        for _ in range(inv % len(midis)):
+            midis = midis[1:] + [midis[0] + 12]
+        return midis
+
+    def _total_motion(prev: list[int], curr: list[int]) -> int:
+        n = min(len(prev), len(curr))
+        return sum(abs(curr[i] - prev[i]) for i in range(n))
+
+    result = []
+    prev_midis = _chord_midis(chords[0], octave)
+
+    for chord in chords:
+        base = _chord_midis(chord, octave)
+        n_inv = len(base)
+        best_motion = float("inf")
+        best_midis = base
+
+        for inv in range(n_inv):
+            candidate = _inversion_midis(base, inv)
+            # Also try one octave up
+            for shift in (0, 12):
+                shifted = [m + shift for m in candidate]
+                motion = _total_motion(prev_midis, shifted)
+                if motion < best_motion:
+                    best_motion = motion
+                    best_midis = shifted
+
+        # Build chord from the best MIDI voicing (as custom offsets)
+        root_midi = best_midis[0]
+        root_name = NOTE_NAMES[root_midi % 12]
+        root_oct = root_midi // 12 - 1
+        offsets = [m - root_midi for m in best_midis]
+
+        result.append(
+            Chord(
+                root=root_name,
+                shape=offsets,
+                octave=root_oct,
+                duration=duration if duration is not None else chord.duration,
+                velocity=velocity,
+            )
+        )
+        prev_midis = best_midis
+
+    return result

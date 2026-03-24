@@ -1,84 +1,87 @@
 # code-music — project state
 
-## Status: v0.13.0 — 43 songs, PolyphonicTrack, remix(), generative album, CI
+## Status: v0.17.0 — 55 songs, voice_lead(), 269 tests, all albums 3+
 
-## What's built
+## What's built (full inventory)
 
 ### Engine
-- All primitives: Note, Chord, Beat, Track, Song, scale, arp, etc.
-- **PolyphonicTrack** — notes sound simultaneously (piano chords, guitar voicings)
-- **remix(song, semitones, bpm_factor)** — transpose + retempo any song
+- Note, Chord, Beat, Track, Song, PolyphonicTrack, Section
 - suggest_progression(root, mood) — 8 moods × 3 variations
-- Chord.invert(n) — chord inversions
-- generate_melody, humanize, staccato, legato, pizzicato, prob
-- All ornaments: trill, mordent, turn, grace_note, doit, fall, flip, shake
-- Tuplets: triplet(), tuplet(), triplets(), tuplets()
-- 20+ chord shapes including min7b5, dim7, maj9, 7b9, 7#9
+- analyze_progression(chords, key_root) — Roman numeral analysis
+- **voice_lead(chords)** — smooth voice leading via inversion minimisation
+- bpm_ramp / accelerando / ritardando — tempo automation
+- Chord.invert(n), Chord.notes
+- scale(), arp(), chord_prog(), generate_melody()
+- humanize, staccato, legato, pizzicato, prob, repeat, transpose
+- crescendo, decrescendo, triplets, tuplets, all ornaments
+- remix(song, semitones, bpm_factor) — transpose + retempo
 
 ### Synth (65+ presets)
-- Standard waveforms + all orchestral instruments
+- Velocity-to-timbre: acoustic instruments get brighter when struck harder
 - Karplus-Strong: guitar_ks, banjo_ks, harp_ks, sitar_ks, koto_ks
-- EDM: supersaw, reese_bass, wobble, acid, hoover, stab, 808
-- All percussion: kick, snare, hat, clap, tom, ride, crash, taiko, tabla, djembe
+- Wobble bass (per-note LFO filter), formant vowels, FM synthesis
+- Full orchestral + percussion + EDM + voice presets
 
-### Effects (29 functions)
+### Effects (31 functions)
 - reverb, delay, chorus, flanger, phaser, distortion
+- **conv_reverb(room)** — convolution reverb (hall/chamber/plate/room/cave/spring)
+- **granular(grain_size_ms, scatter)** — grain scatter texture
+- **autotune(scale_notes, strength)** — pitch correction to scale
+- **multitap_delay(taps)** — multiple echoes, individual delay/level/pan
 - lowpass, highpass, bandpass, compress, multiband_compress, limiter
 - gate, lfo_filter, sidechain, stereo_width, tremolo, vibrato
 - bitcrush, ring_mod, tape_sat, noise_sweep, pan, vocoder
 
-### Songs (43 total, all genres covered)
-Electronic: trance_odyssey, clarity_drive, lollipop_laser, deadmau5_house,
-            future_bass, heavy_wobble, berlin_four, veldt, neon_grid, signal_loss,
-            neuromancer, trap_god
-Jazz/Soul:  tank_bebop, lo_fi_loop, late_shift, small_hours, upstream_two,
-            gospel_hour, ipanema_hours, after_midnight
-Rock:       prog_rock, the_room, fault_lines, teeth_two, slow_coast
-Classical:  symphony_no1, cathedral, still_water
-Cinematic:  cinematic_rise, deep_space_drift, open_circuit, drift_state
-DnB:        liquid_dnb, upstream_two
-Folk:       porch_song, mountain_road
-Funk/Reggae:on_the_one, sun_and_sorrow
-World:      wrong_side_of_the_scale, silk_road, duende
-Pop:        second_chorus
-Misc:       chiptune_quest, after_midnight
+### Songs (55 total)
+All major genres covered. Key highlights:
+- EDM: veldt, neon_grid, lost_frequencies (deep house), slipstream, electric_dreams
+- Jazz: tank_bebop, after_midnight, fusion_flight, conversations (PolyphonicTrack)
+- Classical: symphony_no1, cathedral, still_water
+- Cinematic: neon_cathedral (conv_reverb), cinematic_rise
+- Rock/Metal: prog_rock, fault_lines, the_arc (5/4)
+- Folk: porch_song, mountain_road, campfire
+- Hip-hop: lo_fi_loop, east_coast_night, trap_god, vapor_wave
+- World: silk_road, wrong_side_of_the_scale, duende
 
-### Albums (22)
-All have 3+ tracks. 6 have 4+. The Anthology has 11 (one per genre).
+### Albums (22) — all 3+ tracks
+All genres covered, most at 4-5 tracks.
 
 ### Scripts
-- scripts/gen_album.py — generative album from seed + genre
-- scripts/play_scales.py — interactive scale player
-- scripts/play_vibe.py — mood-based song player
-- scripts/spotify_auth.py + spotify_taste.py — Spotify OAuth profiling
+- gen_album.py — generative album from seed + genre
+- midi_to_song.py — MIDI reverse compiler
+- make_cover.py — album cover art generator
+- play_scales.py, play_vibe.py — interactive players
+- spotify_auth.py + spotify_taste.py — Spotify OAuth
 
-### CI (.github/workflows/ci.yml)
-- Lint + test on push/PR (Python 3.11 + 3.12)
-- Smoke renders key songs
-- Tests PolyphonicTrack and remix()
-- Batch render all songs on main push → uploaded as artifact
+### Web Player
+docs/web/index.html — dark terminal aesthetic, plays from dist/wav/
+
+### CI
+GitHub Actions: lint + test + smoke renders + batch render artifact
 
 ## Roadmap
 
 ### Next priorities
-- [ ] Spotify taste calibration (run make spotify, paste output here)
-- [ ] GitHub Pages web player — browse albums in browser
-- [ ] MIDI → code-music reverse compiler
-- [ ] Convolution reverb with real IR files
-- [ ] More songs to calibrate to Spotify taste once OAuth runs
-- [ ] Album artwork generation
+- [ ] Spotify taste calibration — paste `make spotify` output here
+- [ ] More songs based on taste once calibrated
+- [ ] Update web player song list (currently shows old 42 songs)
+- [ ] Album artwork auto-bundled with album render
 
-### Engine ideas
-- [ ] BPM automation (gradual tempo changes within a song)
-- [ ] Velocity-to-timbre (louder hit = brighter on piano/drums)
-- [ ] Chord voicing spread control (open vs close voicings)
+### Engine
+- [ ] Chord voicing spread control (open vs close voicing)
+- [ ] Time signature automation (change mid-song)
+- [ ] Note probability per-track
 
-### Effects ideas
-- [ ] Auto-tune (snap voice pitch to scale)
-- [ ] Multi-tap delay (more than 2 taps)
-- [ ] Granular synthesis (scattered grain texture)
+### Effects
+- [ ] Multi-band EQ
+- [ ] Convolution reverb from real IR files (load .wav)
 
 ### Distribution
 - [ ] DistroKid batch upload helper
-- [ ] Spotify playlist generation from rendered songs
-- [ ] Album cover art (matplotlib + Pillow text art)
+- [ ] Spotify playlist from rendered songs
+
+### Ideas
+- [ ] Visual waveform export (matplotlib png of audio)
+- [ ] Song fingerprinting (compare two renders for regression)
+- [ ] Lyrics + voice synthesis integration
+- [ ] Album sampler: one 2-minute preview mixing all tracks
