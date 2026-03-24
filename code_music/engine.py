@@ -1077,6 +1077,29 @@ class Track:
             self.add(e)
         return self
 
+    def reverse(self) -> "Track":
+        """Return a new Track with all beats in reverse order.
+
+        The instrument, volume, pan, swing, and density stay the same.
+        Only the note/chord sequence is reversed.
+
+        Example::
+
+            reversed_melody = melody_track.reverse()
+            song.add_track(reversed_melody)
+        """
+        rev = Track(
+            name=self.name,
+            instrument=self.instrument,
+            volume=self.volume,
+            pan=self.pan,
+            swing=self.swing,
+            density=self.density,
+            density_seed=self.density_seed,
+        )
+        rev.beats = list(reversed(self.beats))
+        return rev
+
     @property
     def total_beats(self) -> float:
         return sum(b.duration for b in self.beats)
@@ -1159,6 +1182,68 @@ class Song:
         track.sample_rate = self.sample_rate
         self.voice_tracks.append(track)
         return track
+
+    def merge(self, other: "Song", title: str | None = None) -> "Song":
+        """Combine two songs by layering all their tracks into a new Song.
+
+        Both songs' tracks, poly_tracks, and voice_tracks are copied into
+        the result. The BPM and sample_rate come from self (the first song).
+        Effects dicts are merged (other's effects override on name collision).
+
+        Args:
+            other: The second song to layer in.
+            title: Title for the merged song (default: "self.title + other.title").
+
+        Returns:
+            A new Song containing all tracks from both songs.
+
+        Example::
+
+            drums = Song(title="Drums", bpm=120)
+            # ... add drum tracks ...
+            melody = Song(title="Melody", bpm=120)
+            # ... add melody tracks ...
+            full = drums.merge(melody, title="Full Arrangement")
+        """
+        import copy
+
+        merged = Song(
+            title=title or f"{self.title} + {other.title}",
+            bpm=self.bpm,
+            sample_rate=self.sample_rate,
+            time_sig=self.time_sig,
+            key_sig=self.key_sig,
+            composer=self.composer,
+        )
+
+        # Copy tracks from both songs
+        for track in self.tracks:
+            merged.tracks.append(copy.deepcopy(track))
+        for track in other.tracks:
+            merged.tracks.append(copy.deepcopy(track))
+
+        # Copy poly tracks
+        for pt in self.poly_tracks:
+            merged.poly_tracks.append(copy.deepcopy(pt))
+        for pt in other.poly_tracks:
+            merged.poly_tracks.append(copy.deepcopy(pt))
+
+        # Copy voice tracks
+        for vt in self.voice_tracks:
+            merged.voice_tracks.append(copy.deepcopy(vt))
+        for vt in other.voice_tracks:
+            merged.voice_tracks.append(copy.deepcopy(vt))
+
+        # Copy time_sig_map
+        merged.time_sig_map = list(self.time_sig_map) + list(other.time_sig_map)
+        merged.time_sig_map.sort(key=lambda x: x[0])
+
+        # Merge effects dicts
+        fx = dict(getattr(self, "_effects", {}) or {})
+        fx.update(getattr(other, "_effects", {}) or {})
+        merged._effects = fx
+
+        return merged
 
     @property
     def beat_duration_sec(self) -> float:

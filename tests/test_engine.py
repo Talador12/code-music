@@ -241,3 +241,108 @@ class TestTimeSigAutomation:
         song = Song(bpm=120)
         result = song.add_time_sig_change(8.0, 3, 4)
         assert result is song  # returns self for chaining
+
+
+class TestSongMerge:
+    def test_merge_combines_tracks(self):
+        s1 = Song(bpm=120)
+        s1.add_track(Track(name="drums", instrument="drums_kick"))
+        s2 = Song(bpm=120)
+        s2.add_track(Track(name="melody", instrument="piano"))
+        merged = s1.merge(s2)
+        assert len(merged.tracks) == 2
+        assert merged.tracks[0].name == "drums"
+        assert merged.tracks[1].name == "melody"
+
+    def test_merge_uses_first_bpm(self):
+        s1 = Song(bpm=120)
+        s2 = Song(bpm=140)
+        merged = s1.merge(s2)
+        assert merged.bpm == 120
+
+    def test_merge_default_title(self):
+        s1 = Song(title="A", bpm=120)
+        s2 = Song(title="B", bpm=120)
+        merged = s1.merge(s2)
+        assert "A" in merged.title and "B" in merged.title
+
+    def test_merge_custom_title(self):
+        s1 = Song(title="A", bpm=120)
+        s2 = Song(title="B", bpm=120)
+        merged = s1.merge(s2, title="Combined")
+        assert merged.title == "Combined"
+
+    def test_merge_preserves_notes(self):
+        s1 = Song(bpm=120)
+        t1 = s1.add_track(Track())
+        t1.add(Note("C", 4, 1.0))
+        s2 = Song(bpm=120)
+        t2 = s2.add_track(Track())
+        t2.add(Note("G", 5, 2.0))
+        merged = s1.merge(s2)
+        assert merged.tracks[0].beats[0].event.pitch == "C"
+        assert merged.tracks[1].beats[0].event.pitch == "G"
+
+    def test_merge_does_not_mutate_originals(self):
+        s1 = Song(bpm=120)
+        s1.add_track(Track(name="a"))
+        s2 = Song(bpm=120)
+        s2.add_track(Track(name="b"))
+        merged = s1.merge(s2)
+        assert len(s1.tracks) == 1  # original unchanged
+        assert len(s2.tracks) == 1
+        assert len(merged.tracks) == 2
+
+    def test_merge_renders(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+        s1 = Song(bpm=120, sample_rate=22050)
+        t1 = s1.add_track(Track(instrument="sine"))
+        t1.add(Note("C", 4, 1.0))
+        s2 = Song(bpm=120, sample_rate=22050)
+        t2 = s2.add_track(Track(instrument="piano"))
+        t2.add(Note("G", 5, 1.0))
+        merged = s1.merge(s2)
+        samples = Synth(22050).render_song(merged)
+        assert np.max(np.abs(samples)) > 0.1
+
+
+class TestTrackReverse:
+    def test_reverse_reverses_notes(self):
+        t = Track()
+        t.add(Note("C", 4, 1.0))
+        t.add(Note("E", 4, 1.0))
+        t.add(Note("G", 4, 1.0))
+        rev = t.reverse()
+        pitches = [b.event.pitch for b in rev.beats]
+        assert pitches == ["G", "E", "C"]
+
+    def test_reverse_preserves_instrument(self):
+        t = Track(name="mel", instrument="piano", volume=0.5, pan=-0.3)
+        t.add(Note("C", 4, 1.0))
+        rev = t.reverse()
+        assert rev.instrument == "piano"
+        assert rev.volume == 0.5
+        assert rev.pan == -0.3
+
+    def test_reverse_preserves_total_beats(self):
+        t = Track()
+        t.add(Note("C", 4, 2.0))
+        t.add(Note("E", 4, 1.0))
+        t.add(Note("G", 4, 3.0))
+        rev = t.reverse()
+        assert rev.total_beats == t.total_beats
+
+    def test_reverse_does_not_mutate_original(self):
+        t = Track()
+        t.add(Note("C", 4, 1.0))
+        t.add(Note("G", 4, 1.0))
+        rev = t.reverse()
+        assert t.beats[0].event.pitch == "C"
+        assert rev.beats[0].event.pitch == "G"
+
+    def test_reverse_empty_track(self):
+        t = Track()
+        rev = t.reverse()
+        assert len(rev.beats) == 0

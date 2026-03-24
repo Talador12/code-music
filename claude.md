@@ -65,8 +65,8 @@
 
 ### Engine
 - [ ] Chord.voicings() — return all common voicings of a chord (root, drop2, spread, shell)
-- [ ] Song.merge(other_song) — combine two songs into one (layer tracks)
-- [ ] Track.reverse() — play a track's notes in reverse order
+- [x] Song.merge(other_song) — combine two songs into one (layer tracks)
+- [x] Track.reverse() — play a track's notes in reverse order
 
 ### Effects
 - [ ] Stereo imager — visualize L/R balance as a PNG
