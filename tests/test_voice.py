@@ -158,3 +158,60 @@ class TestVoiceTrack:
         track.add(VoiceClip("two", voice="Zarvox", backend="say"), beat_offset=4.0)
         result = render_voice_track(track, bpm=120, total_beats=8.0, sample_rate=SR)
         assert result.shape[0] > 0
+
+
+class TestLyrics:
+    def test_from_text_parses_lines(self):
+        from code_music.voice import Lyrics
+        lyrics = Lyrics.from_text("""
+            hello world
+            second line
+            third line
+        """, start_beat=0.0, beats_per_line=4.0)
+        assert len(lyrics.lines) == 3
+        assert lyrics.lines[0] == (0.0, "hello world")
+        assert lyrics.lines[1] == (4.0, "second line")
+        assert lyrics.lines[2] == (8.0, "third line")
+
+    def test_from_text_custom_start(self):
+        from code_music.voice import Lyrics
+        lyrics = Lyrics.from_text("one\ntwo", start_beat=8.0, beats_per_line=2.0)
+        assert lyrics.lines[0][0] == 8.0
+        assert lyrics.lines[1][0] == 10.0
+
+    def test_from_text_skips_empty_lines(self):
+        from code_music.voice import Lyrics
+        lyrics = Lyrics.from_text("""
+            line one
+
+            line two
+        """)
+        assert len(lyrics.lines) == 2
+
+    def test_manual_lyrics(self):
+        from code_music.voice import Lyrics
+        lyrics = Lyrics([(0.0, "hello"), (2.5, "world")])
+        assert len(lyrics.lines) == 2
+        assert lyrics.lines[1] == (2.5, "world")
+
+    def test_to_voice_track(self):
+        from code_music.voice import Lyrics, VoiceTrack
+        lyrics = Lyrics.from_text("hello\nworld", beats_per_line=4.0)
+        vt = lyrics.to_voice_track(name="vox", voice="Samantha", backend="say")
+        assert isinstance(vt, VoiceTrack)
+        assert vt.name == "vox"
+        assert len(vt.clips) == 2
+        assert vt.clips[0][0].text == "hello"
+        assert vt.clips[0][1] == 0.0  # beat offset
+        assert vt.clips[1][0].text == "world"
+        assert vt.clips[1][1] == 4.0
+
+    def test_to_voice_track_voice_params(self):
+        from code_music.voice import Lyrics
+        lyrics = Lyrics([(0.0, "test")])
+        vt = lyrics.to_voice_track(voice="Zarvox", rate=80, volume=0.5, pan=-0.3)
+        clip = vt.clips[0][0]
+        assert clip.voice == "Zarvox"
+        assert clip.rate == 80
+        assert clip.volume == 0.5
+        assert clip.pan == -0.3

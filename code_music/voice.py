@@ -174,6 +174,102 @@ class VoiceTrack:
 
 
 # ---------------------------------------------------------------------------
+# Lyrics helper — write lyrics as text, auto-place on beats
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Lyrics:
+    """Lyrics with beat-aligned lines for voice synthesis.
+
+    Write lyrics as a list of (beat_offset, text) tuples, or use
+    ``from_text()`` to auto-space lines evenly across a bar range.
+
+    Example (manual placement)::
+
+        lyrics = Lyrics([
+            (0.0,  "hello world"),
+            (4.0,  "this is code music"),
+            (8.0,  "every note is a function"),
+            (12.0, "every song is a program"),
+        ])
+
+    Example (auto-spaced)::
+
+        lyrics = Lyrics.from_text('''
+            hello world
+            this is code music
+            every note is a function
+            every song is a program
+        ''', start_beat=0.0, beats_per_line=4.0)
+
+    Then convert to a VoiceTrack::
+
+        vox = lyrics.to_voice_track(voice="Samantha", backend="say")
+        song.add_voice_track(vox)
+    """
+
+    lines: list[tuple[float, str]] = field(default_factory=list)
+
+    @classmethod
+    def from_text(
+        cls,
+        text: str,
+        start_beat: float = 0.0,
+        beats_per_line: float = 4.0,
+    ) -> "Lyrics":
+        """Create lyrics from a multi-line string, auto-spaced.
+
+        Each non-empty line becomes one voice clip, placed ``beats_per_line``
+        beats apart starting at ``start_beat``.
+
+        Args:
+            text:           Multi-line lyrics string (one line per phrase).
+            start_beat:     Beat offset for the first line.
+            beats_per_line: Beats between each line (default 4.0 = one bar at 4/4).
+        """
+        raw_lines = [ln.strip() for ln in text.strip().splitlines() if ln.strip()]
+        return cls([(start_beat + i * beats_per_line, line) for i, line in enumerate(raw_lines)])
+
+    def to_voice_track(
+        self,
+        name: str = "vocals",
+        voice: str = "Samantha",
+        backend: Backend = "auto",
+        rate: int = 100,
+        volume: float = 0.8,
+        pan: float = 0.0,
+    ) -> VoiceTrack:
+        """Convert lyrics to a VoiceTrack ready to add to a Song.
+
+        Each line becomes a VoiceClip placed at its beat offset.
+
+        Args:
+            name:    Track name.
+            voice:   Voice preset (backend-specific).
+            backend: Voice backend ("auto", "say", "bark", etc.)
+            rate:    Speaking rate (say backend, percentage).
+            volume:  Clip volume 0.0–1.0.
+            pan:     Stereo position -1.0 to 1.0.
+
+        Returns:
+            VoiceTrack ready for ``song.add_voice_track()``.
+        """
+        track = VoiceTrack(name=name)
+        for beat, text in self.lines:
+            clip = VoiceClip(
+                text=text,
+                voice=voice,
+                backend=backend,
+                rate=rate,
+                volume=volume,
+                pan=pan,
+            )
+            track.add(clip, beat_offset=beat)
+        return track
+
+
+# ---------------------------------------------------------------------------
 # Backend implementations
 # ---------------------------------------------------------------------------
 

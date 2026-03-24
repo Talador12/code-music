@@ -57,6 +57,6 @@
 
 ### Ideas
 - [x] Song fingerprinting (compare two renders for regression)
-- [ ] Lyrics + voice synthesis integration
+- [x] Lyrics + voice synthesis integration
 - [x] Visual scale diagram in web player
 - [x] BPM tap utility
