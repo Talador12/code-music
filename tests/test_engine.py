@@ -395,3 +395,45 @@ class TestChordVoicings:
             tr.add(chord)
             samples = Synth(22050).render_song(song)
             assert np.max(np.abs(samples)) > 0.0, f"voicing '{key}' produced silence"
+
+
+class TestSongInfo:
+    def test_returns_dict(self):
+        s = Song(title="Test", bpm=120)
+        assert isinstance(s.info(), dict)
+
+    def test_contains_all_keys(self):
+        s = Song(title="Test", bpm=120)
+        info = s.info()
+        for key in ("title", "bpm", "duration_sec", "total_beats", "time_sig",
+                     "key_sig", "composer", "sample_rate", "tracks",
+                     "poly_tracks", "voice_tracks", "track_names"):
+            assert key in info, f"missing key: {key}"
+
+    def test_title_and_bpm(self):
+        s = Song(title="My Song", bpm=140)
+        info = s.info()
+        assert info["title"] == "My Song"
+        assert info["bpm"] == 140.0
+
+    def test_track_count(self):
+        s = Song(bpm=120)
+        s.add_track(Track(name="drums"))
+        s.add_track(Track(name="bass"))
+        info = s.info()
+        assert info["tracks"] == 2
+        assert info["track_names"] == ["drums", "bass"]
+
+    def test_duration_with_notes(self):
+        s = Song(bpm=120)
+        tr = s.add_track(Track())
+        tr.add(Note("C", 4, 4.0))
+        info = s.info()
+        assert info["duration_sec"] > 0
+        assert info["total_beats"] == 4.0
+
+    def test_time_sig_and_key(self):
+        s = Song(bpm=120, time_sig=(3, 4), key_sig="Bb")
+        info = s.info()
+        assert info["time_sig"] == (3, 4)
+        assert info["key_sig"] == "Bb"

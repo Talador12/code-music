@@ -1299,6 +1299,43 @@ class Song:
 
         return merged
 
+    def info(self) -> dict:
+        """Return a summary dict of this song's metadata and structure.
+
+        Useful for dashboards, CLI tools, and inspecting songs programmatically.
+
+        Returns::
+
+            {
+                "title":       "Trance Odyssey",
+                "bpm":         138.0,
+                "duration_sec": 90.2,
+                "total_beats":  207.5,
+                "time_sig":     (4, 4),
+                "key_sig":      "C",
+                "composer":     "",
+                "sample_rate":  44100,
+                "tracks":       5,
+                "poly_tracks":  0,
+                "voice_tracks": 0,
+                "track_names":  ["kick", "snare", "hat", "pad", "lead"],
+            }
+        """
+        return {
+            "title": self.title,
+            "bpm": self.bpm,
+            "duration_sec": round(self.duration_sec, 1),
+            "total_beats": round(self.total_beats, 1),
+            "time_sig": self.time_sig,
+            "key_sig": self.key_sig,
+            "composer": self.composer,
+            "sample_rate": self.sample_rate,
+            "tracks": len(self.tracks),
+            "poly_tracks": len(self.poly_tracks),
+            "voice_tracks": len(self.voice_tracks),
+            "track_names": [t.name for t in self.tracks],
+        }
+
     @property
     def beat_duration_sec(self) -> float:
         return 60.0 / self.bpm

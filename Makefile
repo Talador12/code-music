@@ -364,3 +364,11 @@ stereo-image-%: ## [Dev] Generate stereo image for one song (e.g. make stereo-im
 pages-url: ## [Dev] Show the GitHub Pages URL
 	@echo "https://talador12.github.io/code-music/"
 
+
+render-one: ## [Dev] Render one song to all formats (WAV+FLAC+MP3). Usage: make render-one SONG=name
+	@test -n "$(SONG)" || (echo "Usage: make render-one SONG=trance_odyssey"; exit 1)
+	@mkdir -p dist/wav dist/flac dist/mp3
+	$(CM) songs/$(SONG).py -o dist/wav/$(SONG).wav
+	$(CM) songs/$(SONG).py --flac -o dist/flac/$(SONG).flac 2>/dev/null || echo "  (FLAC skipped — install ffmpeg)"
+	$(CM) songs/$(SONG).py --mp3 -o dist/mp3/$(SONG).mp3 2>/dev/null || echo "  (MP3 skipped — install ffmpeg)"
+

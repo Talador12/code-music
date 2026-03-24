@@ -85,9 +85,9 @@
 ## v1.2 Roadmap
 
 - [ ] Remaining 7 albums at 4 tracks → get all to 5+
-- [ ] Tag v1.1.0 release (triggers GitHub Release with 71-song WAV zip)
+- [x] Tag v1.1.0 release (triggers GitHub Release with 71-song WAV zip)
 - [ ] Chord.shell_voicing() with optional bass note override
-- [ ] Song.info() → dict with title, bpm, duration, track count, key, time_sig
-- [ ] make render-one SONG=name — render single song to all formats (WAV+FLAC+MP3)
+- [x] Song.info() → dict with title, bpm, duration, track count, key, time_sig
+- [x] make render-one SONG=name — render single song to all formats (WAV+FLAC+MP3)
 - [x] New genres: Afrobeats, shoegaze, math rock
 - [x] More PolyphonicTrack songs (3 total: conversations, nocturne_op2, town_square)
