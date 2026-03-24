@@ -27,5 +27,6 @@ ALBUM = {
         {"title": "Ember",            "song": "small_hours",    "bpm": 85},
         {"title": "Trap God",       "song": "trap_god",      "bpm": 140},
         {"title": "East Coast Night", "song": "east_coast_night", "bpm": 92},
+        {"title": "East Coast Night","song":"east_coast_night",  "bpm": 92},
     ],
 }

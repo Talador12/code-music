@@ -26,5 +26,6 @@ ALBUM = {
         {"title": "Upstream II",      "song": "upstream_two",   "bpm": 174},
         {"title": "Signal Loss",     "song": "signal_loss",  "bpm": 174},
         {"title": "Neuromancer",    "song": "neuromancer",   "bpm": 174},
+        {"title": "Lagos Nights",  "song": "lagos_nights",     "bpm": 108},
     ],
 }

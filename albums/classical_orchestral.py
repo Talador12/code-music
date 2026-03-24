@@ -27,5 +27,6 @@ ALBUM = {
         {"title": "Cathedral",       "song": "cathedral",      "bpm": 84},
         {"title": "Still Water",    "song": "still_water",   "bpm": 66},
         {"title": "Nocturne Op. 2",  "song": "nocturne_op2",  "bpm": 56},
+        {"title": "Conversations", "song": "conversations",    "bpm": 80},
     ],
 }

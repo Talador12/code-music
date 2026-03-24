@@ -24,5 +24,6 @@ ALBUM = {
         {"title": "Half Step", "song": "liquid_dnb", "bpm": 140},
         {"title": "Wobble Room", "song": "trance_odyssey", "bpm": 138},
         {"title": "Wobble Room",  "song": "heavy_wobble",    "bpm": 140},
+        {"title": "Bass Cannon",    "song": "bass_cannon",  "bpm": 142},
     ],
 }

@@ -80,6 +80,6 @@
 
 - [x] Song using BPM automation + time sig changes (showcase built features)
 - [x] Deploy GitHub Pages web player (enable Pages on main, /docs source)
-- [ ] Expand albums to 5+ tracks each (most are at 3-4)
+- [x] Expand albums to 5+ tracks each (0 at 3, 7 at 4, 13 at 5, 2 at 6)
 - [x] New genres: Afrobeats, shoegaze, math rock
 - [x] More PolyphonicTrack songs (3 total: conversations, nocturne_op2, town_square)

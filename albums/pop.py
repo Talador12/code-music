@@ -27,5 +27,6 @@ ALBUM = {
         {"title": "Second Time", "song": "future_bass", "bpm": 118},
         {"title": "Second Chorus",         "song": "second_chorus",           "bpm": 116},
         {"title": "Chromatic Bloom", "song": "chromatic_bloom", "bpm": 120},
+        {"title": "Neon Prayer",    "song": "neon_prayer",      "bpm": 145},
     ],
 }

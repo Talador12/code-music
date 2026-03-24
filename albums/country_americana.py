@@ -31,5 +31,6 @@ ALBUM = {
         {"title": "Pickin", "song": "tank_bebop", "bpm": 180},
         {"title": "Blue Ridge", "song": "prog_rock", "bpm": 140},
         {"title": "Duende",                "song": "duende",                 "bpm": 140},
+        {"title": "Boot Scoot",     "song": "boot_scoot",   "bpm": 170},
     ],
 }
