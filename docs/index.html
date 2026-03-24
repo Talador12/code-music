@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>code-music</title>
+  <style>
+    :root {
+      --bg:      #0a0a10;
+      --bg2:     #12121c;
+      --border:  #222236;
+      --text:    #c8c8e0;
+      --dim:     #666680;
+      --accent:  #7755ff;
+      --accent2: #44aaff;
+      --green:   #44ffaa;
+      --red:     #ff4466;
+      --mono:    'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      padding: 2rem;
+    }
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    h1 { font-size: 1.8rem; color: var(--accent); letter-spacing: 0.1em; }
+    h1 span { color: var(--dim); font-size: 0.9rem; margin-left: 1rem; }
+    .subtitle { color: var(--dim); margin-top: 0.3rem; }
+    .links { margin-top: 0.8rem; }
+    .links a { color: var(--accent2); text-decoration: none; margin-right: 1.5rem; }
+    .links a:hover { text-decoration: underline; }
+
+    /* Quick play bar */
+    #now-playing {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.8rem 1.2rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 1rem;
+      z-index: 100;
+    }
+    #np-label { color: var(--dim); min-width: 5rem; }
+    #np-title { color: var(--green); flex: 1; }
+    #np-controls button {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.2rem 0.7rem;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-left: 0.3rem;
+    }
+    #np-controls button:hover { border-color: var(--accent); color: var(--accent); }
+    #np-progress {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      max-width: 200px;
+      cursor: pointer;
+    }
+    #np-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.5s;
+    }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--dim);
+      padding: 0.3rem 0.9rem;
+      cursor: pointer;
+      border-radius: 3px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .tab-btn.active { border-color: var(--accent); color: var(--accent); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Albums grid */
+    .albums-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .album-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .album-card:hover { border-color: var(--accent); }
+    .album-card.playing { border-color: var(--green); }
+    .album-title { color: var(--text); font-weight: bold; font-size: 0.9rem; }
+    .album-genre { color: var(--dim); font-size: 0.75rem; margin-top: 0.2rem; }
+    .album-tracks { color: var(--accent2); font-size: 0.75rem; margin-top: 0.5rem; }
+    .track-list { margin-top: 0.6rem; display: none; }
+    .album-card.expanded .track-list { display: block; }
+    .track-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.2rem 0;
+      color: var(--dim);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .track-item:hover { color: var(--text); }
+    .track-item.playing { color: var(--green); }
+    .track-num { min-width: 1.5rem; text-align: right; }
+    .play-icon { color: var(--accent); }
+
+    /* Songs list */
+    .songs-list { }
+    .song-row {
+      display: grid;
+      grid-template-columns: 3rem 1fr 8rem 6rem 5rem;
+      gap: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      border-radius: 3px;
+      cursor: pointer;
+      align-items: center;
+    }
+    .song-row:hover { background: var(--bg2); }
+    .song-row.playing { background: var(--bg2); color: var(--green); }
+    .song-num { color: var(--dim); text-align: right; }
+    .song-title { color: var(--text); }
+    .song-row.playing .song-title { color: var(--green); }
+    .song-genre { color: var(--dim); font-size: 0.75rem; }
+    .song-bpm { color: var(--dim); font-size: 0.75rem; text-align: right; }
+    .song-play { color: var(--accent); text-align: center; }
+    .header-row {
+      display: grid;
+      grid-template-columns: 3rem 1fr 8rem 6rem 5rem;
+      gap: 0.5rem;
+      padding: 0.3rem 0.6rem;
+      color: var(--dim);
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Scales */
+    .scales-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.5rem;
+    }
+    .scale-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.6rem 0.8rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .scale-card:hover { border-color: var(--accent2); }
+    .scale-name { color: var(--text); font-size: 0.8rem; }
+    .scale-group { color: var(--dim); font-size: 0.7rem; }
+    .scale-char { color: var(--accent2); font-size: 0.7rem; margin-top: 0.2rem; }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      color: var(--dim);
+      font-size: 0.75rem;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>code-music <span>v0.18.0</span></h1>
+  <div class="subtitle">Code-generated music. Write Python, hear sound, export to Spotify.</div>
+  <div class="links">
+    <a href="https://github.com/Talador12/code-music" target="_blank">GitHub</a>
+    <a href="https://github.com/Talador12/code-music/blob/main/docs/for_listeners.md" target="_blank">For Listeners</a>
+    <a href="https://github.com/Talador12/code-music/blob/main/docs/for_creators.md" target="_blank">For Creators</a>
+    <a href="https://github.com/Talador12/code-music/blob/main/docs/distribution.md" target="_blank">Distribution Guide</a>
+  </div>
+</header>
+
+<!-- Now playing bar -->
+<div id="now-playing">
+  <span id="np-label">▶ NOW PLAYING</span>
+  <span id="np-title">—</span>
+  <div id="np-progress" onclick="seekAudio(event)"><div id="np-bar"></div></div>
+  <div id="np-controls">
+    <button onclick="prevTrack()">⏮</button>
+    <button onclick="togglePlay()" id="play-btn">▶</button>
+    <button onclick="nextTrack()">⏭</button>
+    <button onclick="stopAudio()">■</button>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('albums')">ALBUMS</button>
+  <button class="tab-btn" onclick="showTab('songs')">SONGS</button>
+  <button class="tab-btn" onclick="showTab('scales')">SCALES</button>
+</div>
+
+<!-- Albums tab -->
+<div id="tab-albums" class="tab-content active">
+  <div class="albums-grid" id="albums-grid"></div>
+</div>
+
+<!-- Songs tab -->
+<div id="tab-songs" class="tab-content">
+  <div class="header-row">
+    <span>#</span><span>TITLE</span><span>GENRE</span><span>BPM</span><span></span>
+  </div>
+  <div id="songs-list" class="songs-list"></div>
+</div>
+
+<!-- Scales tab -->
+<div id="tab-scales" class="tab-content">
+  <div id="piano-diagram" style="display:none; margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.6rem;">
+      <span id="piano-label" style="color:var(--accent); font-weight:bold;"></span>
+      <span id="piano-formula" style="color:var(--dim); font-size:0.75rem;"></span>
+      <button onclick="closePiano()" style="background:none;border:1px solid var(--border);color:var(--dim);padding:0.1rem 0.5rem;cursor:pointer;border-radius:3px;font-family:var(--mono);font-size:11px;margin-left:auto;">✕</button>
+    </div>
+    <svg id="piano-svg" viewBox="0 0 560 120" style="width:100%;max-width:560px;height:auto;"></svg>
+  </div>
+  <div class="scales-grid" id="scales-grid"></div>
+</div>
+
+<footer>
+  Audio files are generated locally with <code>make songs-wav</code> and
+  <code>make scales</code>. This page reads from <code>dist/</code>.
+  &nbsp;·&nbsp;
+  <a href="https://github.com/Talador12/code-music">github.com/Talador12/code-music</a>
+</footer>
+
+<script>
+// ─── Data ──────────────────────────────────────────────────────────────────
+const ALBUMS = [
+  { id:"edm_progressive",    title:"Machine Dreams",      genre:"Progressive House",       tracks:["Veldt","Machine Dreams","Filter Open"] },
+  { id:"edm_festival",       title:"Offshore",            genre:"Big Room / Festival EDM", tracks:["Offshore","Open Water","Glass Half"] },
+  { id:"cosmic_electro",     title:"Neon Lollipop",       genre:"Cosmic Electro / Disco",  tracks:["Lollipop Laser","Neon Grid"] },
+  { id:"techno",             title:"Concrete",            genre:"Techno",                  tracks:["Concrete","Bunker"] },
+  { id:"dubstep",            title:"Half Step",           genre:"Dubstep",                 tracks:["Half Step","Wobble Room"] },
+  { id:"drum_and_bass",      title:"Upstream",            genre:"Liquid DnB",              tracks:["Upstream","Upstream II","Signal Loss","Neuromancer"] },
+  { id:"ambient_cinematic",  title:"Carrier",             genre:"Ambient / Cinematic",     tracks:["Carrier","Drift State","Open Circuit","Weight"] },
+  { id:"jazz_neosoul",       title:"After Hours",         genre:"Jazz / Neo-Soul",         tracks:["The Count","Bedside Table","After Midnight"] },
+  { id:"classical_orchestral",title:"Symphony No. 1",    genre:"Classical",               tracks:["Symphony No. 1","Cathedral","Still Water"] },
+  { id:"rock_prog",          title:"Teeth",               genre:"Prog Rock",               tracks:["Teeth","Teeth II","Room Tone"] },
+  { id:"metal",              title:"Fault Line",          genre:"Metal",                   tracks:["Fault Line","Fault Lines","Oblique"] },
+  { id:"hiphop_lofi",        title:"Small Hours",         genre:"Lo-Fi / Hip-Hop",         tracks:["Bedside Table","Ember","Trap God"] },
+  { id:"rnb_soul",           title:"Low Light",           genre:"R&B / Soul",              tracks:["Low Light","Gospel Hour","Low Light II"] },
+  { id:"funk_disco",         title:"On the One",          genre:"Funk / Disco",            tracks:["On the One","Slap"] },
+  { id:"folk_acoustic",      title:"Open Tuning",         genre:"Folk / Acoustic",         tracks:["Porch Song","Mountain Road","Campfire"] },
+  { id:"latin",              title:"The Clave",           genre:"Latin / Afro-Cuban",      tracks:["Brass Section","Siesta","Ipanema Hours"] },
+  { id:"pop",                title:"Chorus",              genre:"Pop",                     tracks:["Chorus","Second Chorus"] },
+  { id:"indie_alternative",  title:"Room Tone",           genre:"Indie / Alternative",     tracks:["Room Tone","Slow Coast","No Answer"] },
+  { id:"world_experimental", title:"Wrong Octave",        genre:"World / Experimental",    tracks:["Wrong Side of the Scale","Silk Road","Maqam"] },
+  { id:"country_americana",  title:"No Boot Scootin",     genre:"Bluegrass / Anti-Country",tracks:["Pickin","Blue Ridge","Duende"] },
+  { id:"videogame_anime",    title:"Respawn",             genre:"Video Game / Anime",      tracks:["Save Point","Brass Section","Static"] },
+  { id:"anthology",          title:"All Of It",           genre:"Compilation",             tracks:["I. Carrier","II. Still Life","III. The Count","IV. Weight","V. Teeth","VI. The Hall","VII. Slow Burn","VIII. Lollipop Laser","IX. Drop","X. Upstream","XI. Drift"] },
+  { id:"parody",             title:"Certified Mid",       genre:"Parody",                  tracks:["Trucks","The Drop","Autumn Leaves Again","23 Minutes","C Major"] },
+];
+
+const SONGS = [
+  // — Electronic —
+  { title:"Carrier",          file:"deep_space_drift",        genre:"Ambient",         bpm:60  },
+  { title:"Drift State",      file:"drift_state",             genre:"Generative Amb.", bpm:50  },
+  { title:"Open Circuit",     file:"open_circuit",            genre:"Cinematic Amb.",  bpm:65  },
+  { title:"Machine Dreams",   file:"deadmau5_house",          genre:"Prog House",      bpm:128 },
+  { title:"Veldt",            file:"veldt",                   genre:"Prog House",      bpm:128 },
+  { title:"Lost Frequencies", file:"lost_frequencies",        genre:"Deep House",      bpm:122 },
+  { title:"Offshore",         file:"clarity_drive",           genre:"Festival EDM",    bpm:128 },
+  { title:"Neon Prayer",      file:"neon_prayer",             genre:"Future Bass",     bpm:145 },
+  { title:"Between",          file:"future_bass",             genre:"Future Bass",     bpm:150 },
+  { title:"Lollipop Laser",   file:"lollipop_laser",          genre:"Cosmic Disco",    bpm:128 },
+  { title:"Neon Grid",        file:"neon_grid",               genre:"Cosmic Disco",    bpm:124 },
+  { title:"Drop",             file:"trance_odyssey",          genre:"Trance",          bpm:138 },
+  { title:"Concrete",         file:"berlin_four",             genre:"Techno",          bpm:138 },
+  { title:"Electric Dreams",  file:"electric_dreams",         genre:"Synthwave",       bpm:110 },
+  { title:"Slipstream",       file:"slipstream",              genre:"Synthwave",       bpm:118 },
+  { title:"Half Step",        file:"heavy_wobble",            genre:"Dubstep",         bpm:140 },
+  { title:"Signal Loss",      file:"signal_loss",             genre:"Hard DnB",        bpm:174 },
+  { title:"Upstream",         file:"liquid_dnb",              genre:"Liquid DnB",      bpm:174 },
+  { title:"Upstream II",      file:"upstream_two",            genre:"Liquid DnB",      bpm:174 },
+  { title:"Neuromancer",      file:"neuromancer",             genre:"Neurofunk",       bpm:174 },
+  // — Jazz / Soul —
+  { title:"The Count",        file:"tank_bebop",              genre:"Bebop Jazz",      bpm:168 },
+  { title:"After Midnight",   file:"after_midnight",          genre:"Jazz Ballad",     bpm:58  },
+  { title:"Fusion Flight",    file:"fusion_flight",           genre:"Jazz Fusion",     bpm:148 },
+  { title:"Conversations",    file:"conversations",           genre:"Jazz/Neo-Class.", bpm:80  },
+  { title:"Low Light",        file:"late_shift",              genre:"Neo-Soul",        bpm:88  },
+  { title:"Gospel Hour",      file:"gospel_hour",             genre:"Gospel",          bpm:76  },
+  { title:"Midnight Gospel",  file:"midnight_gospel",         genre:"Gospel/Soul",     bpm:82  },
+  { title:"Ipanema Hours",    file:"ipanema_hours",           genre:"Bossa Nova",      bpm:120 },
+  { title:"Bedside Table",    file:"lo_fi_loop",              genre:"Lo-Fi",           bpm:90  },
+  { title:"Ember",            file:"small_hours",             genre:"Lo-Fi",           bpm:85  },
+  { title:"East Coast Night", file:"east_coast_night",        genre:"Boom Bap",        bpm:92  },
+  { title:"Trap God",         file:"trap_god",                genre:"Trap",            bpm:140 },
+  { title:"Vapor Wave",       file:"vapor_wave",              genre:"Vaporwave",       bpm:80  },
+  // — Rock / Metal —
+  { title:"Teeth",            file:"prog_rock",               genre:"Prog Rock",       bpm:130 },
+  { title:"Teeth II",         file:"teeth_two",               genre:"Prog Rock",       bpm:118 },
+  { title:"The Arc",          file:"the_arc",                 genre:"Prog Rock 5/4",   bpm:124 },
+  { title:"Room Tone",        file:"the_room",                genre:"Indie Rock",      bpm:104 },
+  { title:"Slow Coast",       file:"slow_coast",              genre:"Indie/Lo-Fi",     bpm:92  },
+  { title:"Fault Lines",      file:"fault_lines",             genre:"Prog Metal",      bpm:152 },
+  // — Classical / Orchestral —
+  { title:"Symphony No. 1",   file:"symphony_no1",            genre:"Classical",       bpm:108 },
+  { title:"Cathedral",        file:"cathedral",               genre:"Romantic",        bpm:84  },
+  { title:"Still Water",      file:"still_water",             genre:"Neo-Classical",   bpm:66  },
+  { title:"Weight",           file:"cinematic_rise",          genre:"Cinematic",       bpm:100 },
+  { title:"Neon Cathedral",   file:"neon_cathedral",          genre:"Hybrid Orch.",    bpm:88  },
+  // — Folk / World —
+  { title:"Porch Song",       file:"porch_song",              genre:"Folk",            bpm:84  },
+  { title:"Mountain Road",    file:"mountain_road",           genre:"Bluegrass",       bpm:96  },
+  { title:"Campfire",         file:"campfire",                genre:"Folk",            bpm:76  },
+  { title:"Duende",           file:"duende",                  genre:"Flamenco",        bpm:140 },
+  { title:"Sun and Sorrow",   file:"sun_and_sorrow",          genre:"Reggae",          bpm:80  },
+  { title:"Silk Road",        file:"silk_road",               genre:"Persian/World",   bpm:88  },
+  { title:"Wrong Side...",    file:"wrong_side_of_the_scale", genre:"Arabic/World",   bpm:96  },
+  // — Everything else —
+  { title:"On the One",       file:"on_the_one",              genre:"Funk",            bpm:108 },
+  { title:"Save Point",       file:"chiptune_quest",          genre:"Chiptune",        bpm:160 },
+  { title:"Second Chorus",    file:"second_chorus",           genre:"Pop",             bpm:116 },
+  { title:"Hello World",      file:"hello_world",             genre:"Tutorial",        bpm:100 },
+];
+
+const SCALE_GROUPS = [
+  // intervals: semitone offsets from root (C=0)
+  { name:"Major",           group:"diatonic",   char:"bright, happy, resolved",    intervals:[0,2,4,5,7,9,11] },
+  { name:"Natural Minor",   group:"diatonic",   char:"dark, sad, familiar",        intervals:[0,2,3,5,7,8,10] },
+  { name:"Dorian",          group:"diatonic",   char:"minor + warmth",             intervals:[0,2,3,5,7,9,10] },
+  { name:"Phrygian",        group:"diatonic",   char:"dark, Spanish",              intervals:[0,1,3,5,7,8,10] },
+  { name:"Lydian",          group:"diatonic",   char:"floating, dreamy",           intervals:[0,2,4,6,7,9,11] },
+  { name:"Mixolydian",      group:"diatonic",   char:"bluesy major",              intervals:[0,2,4,5,7,9,10] },
+  { name:"Major Pentatonic",group:"pentatonic", char:"folk, country, universal",   intervals:[0,2,4,7,9] },
+  { name:"Minor Pentatonic",group:"pentatonic", char:"rock, blues, guitar",        intervals:[0,3,5,7,10] },
+  { name:"Blues",           group:"blues",      char:"soul, tension, bends",       intervals:[0,3,5,6,7,10] },
+  { name:"Harmonic Minor",  group:"minor",      char:"classical, dramatic",        intervals:[0,2,3,5,7,8,11] },
+  { name:"Melodic Minor",   group:"minor",      char:"jazz lines, smooth",         intervals:[0,2,3,5,7,9,11] },
+  { name:"Whole Tone",      group:"symmetric",  char:"dreamy, Debussy, no gravity",intervals:[0,2,4,6,8,10] },
+  { name:"Diminished",      group:"symmetric",  char:"jazz tension",               intervals:[0,2,3,5,6,8,9,11] },
+  { name:"Bebop Dominant",  group:"bebop",      char:"Parker, chord tones on beats",intervals:[0,2,4,5,7,9,10,11] },
+  { name:"Lydian Dominant", group:"modal_jazz", char:"bright + bluesy fusion",     intervals:[0,2,4,6,7,9,10] },
+  { name:"Altered",         group:"modal_jazz", char:"V7alt — maximum tension",    intervals:[0,1,3,4,6,8,10] },
+  { name:"Hungarian Minor", group:"world",      char:"gypsy, dramatic",            intervals:[0,2,3,6,7,8,11] },
+  { name:"Arabic",          group:"world",      char:"two aug 2nds, dense",        intervals:[0,1,4,5,7,8,11] },
+  { name:"Japanese",        group:"world",      char:"koto, meditative",           intervals:[0,1,5,7,8] },
+  { name:"Persian",         group:"world",      char:"ancient, tense, exotic",     intervals:[0,1,4,5,6,8,11] },
+  { name:"Chromatic",       group:"reference",  char:"all 12 semitones",           intervals:[0,1,2,3,4,5,6,7,8,9,10,11] },
+];
+
+// ─── Audio engine ──────────────────────────────────────────────────────────
+let audio = null;
+let playlist = [];
+let currentIdx = 0;
+
+function audioPath(file) {
+  // When served from docs/ locally: ../dist/wav/<file>.wav
+  // When served from docs/web/: ../../dist/wav/<file>.wav
+  // Auto-detect: if URL contains /web/ use ../../, otherwise ../
+  const prefix = window.location.pathname.includes("/web/") ? "../../" : "../";
+  return `${prefix}dist/wav/${file}.wav`;
+}
+
+function playFile(file, title) {
+  if (audio) { audio.pause(); audio = null; }
+  audio = new Audio(audioPath(file));
+  audio.volume = 0.8;
+  document.getElementById("np-title").textContent = title;
+  document.getElementById("play-btn").textContent = "⏸";
+  audio.play().catch(() => {
+    document.getElementById("np-title").textContent = title + "  [render first: make songs-wav]";
+  });
+  audio.addEventListener("timeupdate", updateProgress);
+  audio.addEventListener("ended", () => {
+    if (currentIdx < playlist.length - 1) { currentIdx++; playPlaylist(currentIdx); }
+    else { document.getElementById("play-btn").textContent = "▶"; }
+  });
+  document.querySelectorAll(".song-row, .track-item").forEach(el => el.classList.remove("playing"));
+  document.querySelectorAll(`[data-file="${file}"]`).forEach(el => el.classList.add("playing"));
+}
+
+function updateProgress() {
+  if (!audio || !audio.duration) return;
+  const pct = (audio.currentTime / audio.duration) * 100;
+  document.getElementById("np-bar").style.width = pct + "%";
+}
+
+function seekAudio(e) {
+  if (!audio) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audio.currentTime = pct * audio.duration;
+}
+
+function togglePlay() {
+  if (!audio) return;
+  if (audio.paused) { audio.play(); document.getElementById("play-btn").textContent = "⏸"; }
+  else { audio.pause(); document.getElementById("play-btn").textContent = "▶"; }
+}
+
+function stopAudio() {
+  if (audio) { audio.pause(); audio = null; }
+  document.getElementById("np-title").textContent = "—";
+  document.getElementById("np-bar").style.width = "0%";
+  document.getElementById("play-btn").textContent = "▶";
+}
+
+function playPlaylist(idx) {
+  if (!playlist[idx]) return;
+  currentIdx = idx;
+  playFile(playlist[idx].file, playlist[idx].title);
+}
+
+function prevTrack() { if (currentIdx > 0) playPlaylist(currentIdx - 1); }
+function nextTrack() { playPlaylist(currentIdx + 1); }
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+  event.target.classList.add("active");
+}
+
+// ─── Render albums ─────────────────────────────────────────────────────────
+function buildAlbums() {
+  const grid = document.getElementById("albums-grid");
+  ALBUMS.forEach(alb => {
+    const card = document.createElement("div");
+    card.className = "album-card";
+    card.id = `album-${alb.id}`;
+
+    const trackList = alb.tracks.map((t, i) =>
+      `<div class="track-item" data-idx="${i}" onclick="playAlbumTrack('${alb.id}',${i})">
+        <span class="track-num">${String(i+1).padStart(2,"0")}</span>
+        <span class="play-icon">▷</span>
+        <span>${t}</span>
+       </div>`
+    ).join("");
+
+    card.innerHTML = `
+      <div class="album-title">${alb.title}</div>
+      <div class="album-genre">${alb.genre}</div>
+      <div class="album-tracks">${alb.tracks.length} tracks</div>
+      <div class="track-list">${trackList}</div>
+    `;
+    card.querySelector(".album-title").onclick = () => card.classList.toggle("expanded");
+    grid.appendChild(card);
+  });
+}
+
+function playAlbumTrack(albumId, idx) {
+  const alb = ALBUMS.find(a => a.id === albumId);
+  if (!alb) return;
+  // Map album track name to song file — best effort using SONGS table
+  const song = SONGS.find(s => s.title.toLowerCase().includes(alb.tracks[idx].toLowerCase().split(" ")[0].toLowerCase()))
+             || SONGS[0];
+  playlist = alb.tracks.map((t, i) => {
+    const s = SONGS.find(sg => sg.title.toLowerCase().includes(t.split(" ")[0].toLowerCase())) || {file:"hello_world", title:t};
+    return { file: s.file, title: t };
+  });
+  playPlaylist(idx);
+}
+
+// ─── Render songs ──────────────────────────────────────────────────────────
+function buildSongs() {
+  const list = document.getElementById("songs-list");
+  playlist = SONGS; // default playlist = all songs
+  SONGS.forEach((s, i) => {
+    const row = document.createElement("div");
+    row.className = "song-row";
+    row.setAttribute("data-file", s.file);
+    row.innerHTML = `
+      <span class="song-num">${String(i+1).padStart(2,"0")}</span>
+      <span class="song-title">${s.title}</span>
+      <span class="song-genre">${s.genre}</span>
+      <span class="song-bpm">${s.bpm} BPM</span>
+      <span class="song-play">▷</span>
+    `;
+    row.onclick = () => { currentIdx = i; playFile(s.file, s.title); };
+    list.appendChild(row);
+  });
+}
+
+// ─── Piano diagram ─────────────────────────────────────────────────────────
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const BLACK_KEYS = new Set([1,3,6,8,10]); // C#, D#, F#, G#, A#
+
+function drawPiano(intervals, name) {
+  const svg = document.getElementById("piano-svg");
+  svg.innerHTML = "";
+  const activeSet = new Set(intervals);
+  const ww = 40, wh = 100, bw = 24, bh = 60; // white/black key sizes
+  // White key positions (C D E F G A B = indices 0,2,4,5,7,9,11)
+  const whites = [0,2,4,5,7,9,11];
+  const whiteIdx = {}; whites.forEach((n,i) => whiteIdx[n] = i);
+  // Draw white keys
+  whites.forEach((note, i) => {
+    const x = i * ww;
+    const active = activeSet.has(note);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", x); rect.setAttribute("y", 0);
+    rect.setAttribute("width", ww - 1); rect.setAttribute("height", wh);
+    rect.setAttribute("rx", 3);
+    rect.setAttribute("fill", active ? "#7755ff" : "#1a1a2e");
+    rect.setAttribute("stroke", "#333355"); rect.setAttribute("stroke-width", "1");
+    svg.appendChild(rect);
+    // Note name label
+    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x", x + ww/2); txt.setAttribute("y", wh + 14);
+    txt.setAttribute("text-anchor", "middle");
+    txt.setAttribute("fill", active ? "#7755ff" : "#444466");
+    txt.setAttribute("font-size", "10"); txt.setAttribute("font-family", "monospace");
+    txt.textContent = NOTE_NAMES[note];
+    svg.appendChild(txt);
+  });
+  // Draw black keys on top
+  const blackPositions = {1:0.65, 3:1.65, 6:3.65, 8:4.65, 10:5.65}; // fractional white-key positions
+  Object.entries(blackPositions).forEach(([note, pos]) => {
+    const n = parseInt(note);
+    const x = pos * ww - bw/2 + ww/2;
+    const active = activeSet.has(n);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", x); rect.setAttribute("y", 0);
+    rect.setAttribute("width", bw); rect.setAttribute("height", bh);
+    rect.setAttribute("rx", 2);
+    rect.setAttribute("fill", active ? "#aa77ff" : "#08081a");
+    rect.setAttribute("stroke", "#222244"); rect.setAttribute("stroke-width", "1");
+    svg.appendChild(rect);
+  });
+  // Update label
+  document.getElementById("piano-label").textContent = name;
+  const formula = intervals.map(i => {
+    const names = ["1","♭2","2","♭3","3","4","♯4/♭5","5","♭6","6","♭7","7"];
+    return names[i];
+  }).join("  ");
+  document.getElementById("piano-formula").textContent = formula;
+  document.getElementById("piano-diagram").style.display = "block";
+}
+
+function closePiano() {
+  document.getElementById("piano-diagram").style.display = "none";
+}
+
+// ─── Render scales ─────────────────────────────────────────────────────────
+function buildScales() {
+  const grid = document.getElementById("scales-grid");
+  SCALE_GROUPS.forEach(sc => {
+    const card = document.createElement("div");
+    card.className = "scale-card";
+    const file = sc.name.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/__+/g,"_").replace(/^_|_$/g,"");
+    card.innerHTML = `
+      <div class="scale-name">${sc.name}</div>
+      <div class="scale-group">[${sc.group}]</div>
+      <div class="scale-char">${sc.char}</div>
+    `;
+    card.onclick = () => {
+      drawPiano(sc.intervals, sc.name);
+      playFile(`../scales/${file}`, sc.name + " (all 12 keys)");
+    };
+    grid.appendChild(card);
+  });
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+buildAlbums();
+buildSongs();
+buildScales();
+</script>
+</body>
+</html>

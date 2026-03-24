@@ -360,3 +360,7 @@ stereo-images: ## [Dev] Generate stereo field visualization for all rendered son
 stereo-image-%: ## [Dev] Generate stereo image for one song (e.g. make stereo-image-trance_odyssey)
 	$(BIN)/python scripts/stereo_imager.py dist/wav/$*.wav
 
+
+pages-url: ## [Dev] Show the GitHub Pages URL
+	@echo "https://talador12.github.io/code-music/"
+
