@@ -694,4 +694,23 @@ class Synth:
         if peak > 0:
             stereo_mix /= peak
         stereo_mix = np.tanh(stereo_mix * 0.95)
+
+        # Apply master chain if set: EQ → compress → limit
+        master = getattr(song, "_master_chain", None)
+        if master:
+            from .effects import compress, eq, limiter
+
+            stereo_mix = eq(stereo_mix, self.sample_rate, bands=master["eq_bands"])
+            stereo_mix = compress(
+                stereo_mix,
+                self.sample_rate,
+                threshold=master["compress_threshold"],
+                ratio=master["compress_ratio"],
+            )
+            stereo_mix = limiter(
+                stereo_mix,
+                self.sample_rate,
+                ceiling=master["ceiling"],
+            )
+
         return stereo_mix.astype(np.float64)

@@ -1453,6 +1453,54 @@ class Song:
             "track_names": [t.name for t in self.tracks],
         }
 
+    def master(
+        self,
+        eq_bands: list | None = None,
+        compress_threshold: float = 0.6,
+        compress_ratio: float = 3.0,
+        ceiling: float = 0.98,
+    ) -> "Song":
+        """Set up a master bus chain: EQ → compress → limit.
+
+        Adds a ``_master_chain`` attribute that the Synth applies to the
+        final stereo mix after all tracks are rendered and mixed.
+
+        Args:
+            eq_bands:           List of (freq_hz, gain_db, q) tuples for parametric EQ.
+                                Default: gentle presence boost + low warmth + air.
+            compress_threshold: Compressor threshold (0.0–1.0).
+            compress_ratio:     Compression ratio.
+            ceiling:            Limiter ceiling (0.0–1.0, typically 0.95–0.99).
+
+        Returns:
+            self for chaining.
+
+        Example::
+
+            song = Song(title="My Track", bpm=120)
+            song.master()  # sensible defaults
+            # or custom:
+            song.master(
+                eq_bands=[(80, +2.0, 0.7), (3000, +1.5, 1.2), (10000, +1.0, 0.8)],
+                compress_threshold=0.5,
+                compress_ratio=4.0,
+                ceiling=0.97,
+            )
+        """
+        if eq_bands is None:
+            eq_bands = [
+                (80.0, +1.5, 0.7),
+                (3000.0, +1.0, 1.0),
+                (10000.0, +0.8, 0.8),
+            ]
+        self._master_chain = {
+            "eq_bands": eq_bands,
+            "compress_threshold": compress_threshold,
+            "compress_ratio": compress_ratio,
+            "ceiling": ceiling,
+        }
+        return self
+
     def export_stems(self, out_dir: str, fmt: str = "wav") -> list:
         """Render each track as a separate audio file (stem export).
 

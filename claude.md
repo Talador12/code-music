@@ -97,3 +97,11 @@
 - [x] Track.quantize(grid) — snap note timings to nearest grid subdivision
 - [x] Song.export_stems() — render each track as a separate WAV file
 - [x] Reach 75 songs (75 total)
+
+## v1.4 Roadmap
+
+- [x] Song.master() — master bus chain (EQ → compress → limit) in one call
+- [ ] Genre-aware song templates — make new-song STYLE=jazz copies genre template
+- [ ] Audio sample import — load a WAV as a Track instrument (sampling)
+- [ ] Reach 80 songs
+- [ ] Tag v1.3.0 release

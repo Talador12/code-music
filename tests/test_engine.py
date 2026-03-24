@@ -553,3 +553,55 @@ class TestExportStems:
             paths = song.export_stems(tmp)
             with wave.open(str(paths[0]), "rb") as wf:
                 assert wf.getnframes() > 0
+
+
+class TestSongMaster:
+    def test_master_returns_self(self):
+        s = Song(bpm=120)
+        assert s.master() is s
+
+    def test_master_sets_chain(self):
+        s = Song(bpm=120)
+        s.master()
+        assert hasattr(s, "_master_chain")
+        assert "eq_bands" in s._master_chain
+        assert "compress_threshold" in s._master_chain
+        assert "ceiling" in s._master_chain
+
+    def test_master_custom_params(self):
+        s = Song(bpm=120)
+        s.master(compress_threshold=0.4, compress_ratio=6.0, ceiling=0.95)
+        assert s._master_chain["compress_threshold"] == 0.4
+        assert s._master_chain["compress_ratio"] == 6.0
+        assert s._master_chain["ceiling"] == 0.95
+
+    def test_master_renders_without_error(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+        s = Song(bpm=120, sample_rate=22050)
+        tr = s.add_track(Track(instrument="piano"))
+        tr.add(Note("C", 4, 2.0))
+        s.master()
+        samples = Synth(22050).render_song(s)
+        assert samples.shape[0] > 0
+        assert np.max(np.abs(samples)) <= 1.0 + 1e-6
+
+    def test_master_output_differs_from_unmastered(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+        # Unmastered
+        s1 = Song(bpm=120, sample_rate=22050)
+        tr1 = s1.add_track(Track(instrument="sine"))
+        tr1.extend([Note("A", 4, 0.5)] * 8)
+        raw = Synth(22050).render_song(s1)
+
+        # Mastered
+        s2 = Song(bpm=120, sample_rate=22050)
+        tr2 = s2.add_track(Track(instrument="sine"))
+        tr2.extend([Note("A", 4, 0.5)] * 8)
+        s2.master(eq_bands=[(3000, +4.0, 1.0)], compress_threshold=0.3)
+        mastered = Synth(22050).render_song(s2)
+
+        assert not np.allclose(raw, mastered, atol=0.01)
