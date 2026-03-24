@@ -2,6 +2,8 @@
 # Run `make help` to see commands grouped by audience.
 # Requires: Python 3.11+  |  MP3/OGG/FLAC: brew install ffmpeg
 
+.DEFAULT_GOAL := help
+
 PYTHON  ?= python3
 VENV    := .venv
 BIN     := $(VENV)/bin
