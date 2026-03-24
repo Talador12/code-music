@@ -337,3 +337,10 @@ fingerprint-check: ## [Dev] Compare current renders against saved fingerprints (
 bpm-tap: ## [Explore] Tap Enter to the beat — shows running BPM average
 	$(BIN)/python scripts/bpm_tap.py
 
+
+playlist: ## [Create] Generate playlists (M3U + JSON + TXT) for all songs → dist/playlists/
+	$(BIN)/python scripts/make_playlist.py
+
+playlist-%: ## [Create] Generate playlist for one vibe (e.g. make playlist-chill)
+	$(BIN)/python scripts/make_playlist.py --vibe $*
+

@@ -53,7 +53,7 @@
 
 ### Distribution
 - [x] DistroKid batch upload helper
-- [ ] Spotify playlist from rendered songs
+- [x] Spotify playlist from rendered songs
 
 ### Ideas
 - [x] Song fingerprinting (compare two renders for regression)
