@@ -104,4 +104,4 @@
 - [x] Genre-aware song templates — make new-song STYLE=jazz copies genre template
 - [ ] Audio sample import — load a WAV as a Track instrument (sampling)
 - [ ] Reach 80 songs
-- [ ] Tag v1.3.0 release
+- [x] Tag v1.3.0 release
