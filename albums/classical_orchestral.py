@@ -24,5 +24,6 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Symphony No. 1 in C Minor", "song": "symphony_no1", "bpm": 108},
+        {"title": "Cathedral",       "song": "cathedral",      "bpm": 84},
     ],
 }

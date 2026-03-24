@@ -24,5 +24,6 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Small Hours", "song": "lo_fi_loop", "bpm": 90},
+        {"title": "Ember",            "song": "small_hours",    "bpm": 85},
     ],
 }

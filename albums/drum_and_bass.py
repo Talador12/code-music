@@ -23,5 +23,6 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Upstream", "song": "liquid_dnb", "bpm": 174},
+        {"title": "Upstream II",      "song": "upstream_two",   "bpm": 174},
     ],
 }

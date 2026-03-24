@@ -22,5 +22,6 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Lollipop Laser", "song": "lollipop_laser", "bpm": 128},
+        {"title": "Neon Grid",        "song": "neon_grid",      "bpm": 124},
     ],
 }

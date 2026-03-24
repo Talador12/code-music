@@ -25,5 +25,6 @@ ALBUM = {
         {"title": "Low Light", "song": "lo_fi_loop", "bpm": 85},
         {"title": "Wax", "song": "tank_bebop", "bpm": 92},
         {"title": "Low Light",    "song": "late_shift",      "bpm": 88},
+        {"title": "Gospel Hour",      "song": "gospel_hour",    "bpm": 76},
     ],
 }
