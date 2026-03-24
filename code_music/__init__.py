@@ -6,6 +6,7 @@ from .effects import (
     bitcrush,
     chorus,
     compress,
+    conv_reverb,
     delay,
     distortion,
     flanger,
@@ -168,6 +169,7 @@ __all__ = [
     "multitap_delay",
     "granular",
     "autotune",
+    "conv_reverb",
     # synth
     "Synth",
     # audio export

@@ -23,5 +23,6 @@ ALBUM = {
         {"title": "Open", "song": "lo_fi_loop", "bpm": 98},
         {"title": "Slow Burn", "song": "deep_space_drift", "bpm": 64},
         {"title": "Veldt",            "song": "veldt",          "bpm": 128},
+        {"title": "Lost Frequencies",  "song": "lost_frequencies", "bpm": 122},
     ],
 }

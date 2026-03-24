@@ -498,6 +498,21 @@ class Synth:
             raw = raw * 0.75 + attack_noise * noise_env * 0.4
 
         env = self._adsr(n_samples, preset["A"], preset["D"], preset["S"], preset["R"])
+
+        # ── Velocity-to-timbre: louder = brighter (more high harmonics) ──
+        # Applies to piano, guitar, and acoustic instruments
+        # Use wave_type and preset structure to detect acoustic instruments
+        vel_timbre_waves = {"sine", "karplus"}
+        is_acoustic = wave_type in vel_timbre_waves and preset.get("A", 0.1) < 0.02
+        if is_acoustic and note.velocity > 0.01:
+            # Boost high frequencies proportional to velocity
+            brightness = max(0.0, (note.velocity - 0.5) * 2.0)  # 0 at vel=0.5, 1 at vel=1.0
+            if brightness > 0.05:
+                cutoff = min(self.sample_rate / 2 - 1, 1000.0 + brightness * 8000.0)
+                sos_hi = _sig.butter(1, cutoff, btype="high", fs=self.sample_rate, output="sos")
+                hi_shelf = _sig.sosfilt(sos_hi, raw)
+                raw = raw + hi_shelf * brightness * 0.4
+
         return raw * env * note.velocity
 
     # ------------------------------------------------------------------

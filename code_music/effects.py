@@ -1148,3 +1148,91 @@ def autotune(
             out[start : start + new_len, 1] = shifted_r
 
     return np.clip(out, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Convolution reverb — synthetic room impulse responses
+# ---------------------------------------------------------------------------
+
+
+def conv_reverb(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    room: str = "hall",
+    wet: float = 0.3,
+) -> FloatArray:
+    """Convolution reverb using synthetic impulse responses.
+
+    No external IR files needed — IRs are generated algorithmically to
+    model different acoustic spaces. Sounds more natural than the
+    algorithmic reverb because it captures the full decay curve.
+
+    Args:
+        room: Room type — "hall", "chamber", "plate", "room", "cave", "spring".
+        wet:  Wet/dry mix.
+
+    Example::
+
+        reverb_wet = conv_reverb(guitar, sr, room="hall", wet=0.35)
+    """
+    ROOMS = {
+        "hall":    {"rt60": 2.5, "early_ms": 25,  "color": 0.6,  "diffuse": 0.85},
+        "chamber": {"rt60": 1.4, "early_ms": 15,  "color": 0.5,  "diffuse": 0.75},
+        "plate":   {"rt60": 1.8, "early_ms": 8,   "color": 0.3,  "diffuse": 0.95},
+        "room":    {"rt60": 0.6, "early_ms": 10,  "color": 0.65, "diffuse": 0.6},
+        "cave":    {"rt60": 4.0, "early_ms": 40,  "color": 0.8,  "diffuse": 0.5},
+        "spring":  {"rt60": 0.9, "early_ms": 5,   "color": 0.2,  "diffuse": 0.9},
+    }
+    params = ROOMS.get(room, ROOMS["room"])
+    rt60    = params["rt60"]
+    early   = int(params["early_ms"] * sample_rate / 1000)
+    color   = params["color"]
+    diffuse = params["diffuse"]
+
+    # Build synthetic IR:
+    # 1. Early reflections: sparse, discrete
+    # 2. Late reverb tail: dense noise with exponential decay
+    ir_len = int(rt60 * sample_rate)
+    rng = np.random.default_rng(42)
+    ir = np.zeros(ir_len)
+
+    # Early reflections — handful of strong echoes
+    n_early = 12
+    for i in range(n_early):
+        pos = int(early * (i / n_early) ** 0.7) + rng.integers(0, max(1, early // 10))
+        pos = min(pos, ir_len - 1)
+        amp = (1.0 - i / n_early) * 0.9
+        ir[pos] += rng.choice([-1, 1]) * amp
+
+    # Late tail — exponential decay noise
+    t = np.arange(ir_len) / sample_rate
+    decay = np.exp(-6.91 * t / rt60)  # -60dB at rt60
+    noise = rng.standard_normal(ir_len) * diffuse
+
+    # Color: LP filter the noise (darker rooms = more LP)
+    if color > 0:
+        cutoff = max(500.0, 12000.0 * (1.0 - color * 0.8))
+        sos_lp = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        noise = sig.sosfilt(sos_lp, noise)
+
+    ir += noise * decay * 0.3
+
+    # Normalize IR
+    peak = np.max(np.abs(ir))
+    if peak > 0:
+        ir /= peak
+
+    # Convolve each channel
+    def _conv(ch: np.ndarray) -> np.ndarray:
+        return sig.fftconvolve(ch, ir, mode="full")[: len(ch)]
+
+    left  = _conv(samples[:, 0])
+    right = _conv(samples[:, 1])
+    wet_signal = np.column_stack([left, right])
+
+    # Normalize wet signal
+    wp = np.max(np.abs(wet_signal))
+    if wp > 0:
+        wet_signal /= wp
+
+    return (samples * (1 - wet) + wet_signal * wet).astype(np.float64)

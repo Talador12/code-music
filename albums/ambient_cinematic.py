@@ -28,5 +28,6 @@ ALBUM = {
         {"title": "Weight", "song": "cinematic_rise", "bpm": 100},
         {"title": "Drift State",  "song": "drift_state",  "bpm": 50},
         {"title": "Open Circuit", "song": "open_circuit", "bpm": 65},
+        {"title": "Neon Cathedral",    "song": "neon_cathedral",   "bpm": 88},
     ],
 }
