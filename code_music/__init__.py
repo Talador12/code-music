@@ -2,6 +2,7 @@
 
 from .effects import (
     bandpass,
+    bitcrush,
     chorus,
     compress,
     delay,
@@ -16,8 +17,10 @@ from .effects import (
     pan,
     phaser,
     reverb,
+    ring_mod,
     sidechain,
     stereo_width,
+    tape_sat,
     tremolo,
     vibrato,
 )
@@ -161,6 +164,9 @@ __all__ = [
     "distortion",
     "flanger",
     "phaser",
+    "bitcrush",
+    "ring_mod",
+    "tape_sat",
     "lowpass",
     "highpass",
     "bandpass",

@@ -1,75 +1,73 @@
 # code-music — project state
 
-## Status: v0.7.0 — album system, 11 genre albums, The Anthology
+## Status: v0.8.0 — 5 new songs, bitcrush/ring_mod/tape_sat, 22 albums fleshed out
 
-## What's done
+## Songs (18 total)
+| File | Title | Genre | BPM |
+|---|---|---|---|
+| hello_world | Hello World | tutorial | 100 |
+| lo_fi_loop | Bedside Table | lo-fi hip-hop | 90 |
+| prog_rock | Teeth | prog rock | 130 |
+| clarity_drive | Offshore | festival EDM | 128 |
+| lollipop_laser | Lollipop Laser | cosmic disco | 128 |
+| deep_space_drift | Carrier | ambient | 60 |
+| trance_odyssey | Drop | uplifting trance | 138 |
+| tank_bebop | The Count | bebop jazz | 168 |
+| symphony_no1 | Symphony No. 1 | classical | 108 |
+| cinematic_rise | Weight | cinematic | 100 |
+| deadmau5_house | Machine Dreams | progressive house | 128 |
+| liquid_dnb | Upstream | liquid DnB | 174 |
+| future_bass | Between | future bass | 150 |
+| **heavy_wobble** | **Half Step** | **dubstep** | **140** |
+| **late_shift** | **Low Light** | **neo-soul R&B** | **88** |
+| **berlin_four** | **Concrete** | **techno** | **138** |
+| **chiptune_quest** | **Save Point** | **chiptune/8-bit** | **160** |
+| **the_room** | **Room Tone** | **indie/alt rock** | **104** |
 
-### Album system (`albums/`)
-- `_album.py` — AlbumDef schema, render_album(), liner_notes, M3U playlists
-- `render.py` — CLI: `python -m albums.render <stem>` / `--all` / `--list`
-- Makefile: `make album-<name>`, `make albums`, `make list-albums`
-- Output: `dist/albums/<name>/01 - Title.{wav,flac,mp3}` + `liner_notes.txt` + `playlist*.m3u`
+## New effects
+- `bitcrush(bit_depth, downsample)` — lo-fi / chiptune / NES texture
+- `ring_mod(freq_hz)` — metallic / robotic / AM radio
+- `tape_sat(drive, warmth)` — warm analog tape saturation
 
-### 11 genre albums
-| Album file | Title | Genre |
-|---|---|---|
-| `edm_progressive` | Machine Dreams | Progressive House (deadmau5) |
-| `edm_festival` | Clarity Drive | Big Room / Festival EDM (Zedd) |
-| `cosmic_electro` | Neon Lollipop | Cosmic Electro / Disco House (Mord Fustang) |
-| `jazz_neosoul` | After Hours | Jazz / Neo-Soul (Cowboy Bebop, Herbie Hancock) |
-| `drum_and_bass` | Liquid State | Liquid Drum & Bass (Hospital Records) |
-| `ambient_cinematic` | Deep Space Drift | Ambient / Cinematic (Eno, Zimmer) |
-| `classical_orchestral` | Symphony No. 1 in C Minor | Classical / Orchestral |
-| `rock_prog` | Dorian Excursion | Progressive Rock (Floyd, Tool, Rush) |
-| `hiphop_lofi` | 3am Study Session | Lo-Fi Hip-Hop (Nujabes, J Dilla) |
-| `videogame_anime` | Loading Screen | Video Game / Anime OST (Kanno, Mitsuda) |
-| `anthology` | The Anthology | Compilation — 11 genres, 1 per genre |
-
-### make help reorganized
-Four audience sections: [VIBE] [CREATE] [EXPLORE] [DEV]
-Albums listed with descriptions in [CREATE] section.
-
-## All songs (13)
-hello_world, lo_fi_loop, prog_rock, clarity_drive, lollipop_laser,
-deep_space_drift, trance_odyssey, tank_bebop, symphony_no1, cinematic_rise,
-deadmau5_house, liquid_dnb, future_bass
+## Albums (22)
+All referenced in `albums/` with full track lists, descriptions, influences.
+Most now have 2-3 songs each. Target is 4-6 per album.
 
 ## Roadmap
 
-### Albums — next
-- [ ] Dubstep album (heavy wobble bass, half-time — Skrillex, Excision era)
-- [ ] Future Bass / Melodic Dubstep album (Illenium, Marshmello, Flume)
-- [ ] Classical Piano album (Chopin nocturnes, Debussy impressionism)
-- [ ] World Music album (flamenco, arabic maqam, Japanese traditional)
-- [ ] Metal / Symphonic Metal album (Rammstein energy, Nightwish orchestration)
-- [ ] R&B / Neo-Soul album (D'Angelo, Frank Ocean influence)
-- [ ] Each album needs more tracks — expand to 5-8 tracks minimum
-
-### Songs needed
-- [ ] Dubstep song (wobble bass, half-time drops)
-- [ ] Flamenco-influenced song (phrygian dominant, guitar + percussion)
-- [ ] Neo-soul song (Rhodes, walking bass, jazz-funk hybrid)
-- [ ] Chiptune / 8-bit song (square waves, NES-era feel)
-- [ ] Drum & Bass — harder (Pendulum-style, distorted bass)
+### Songs still needed
+- [ ] Flamenco / phrygian dominant (guitar + cajon percussion)
+- [ ] Gospel / soul choir song (choir_aah full arrangement)
+- [ ] Drum & bass — harder (Pendulum/Chase & Status energy, 174)
+- [ ] Funk full song (proper James Brown-style groove)
+- [ ] Latin jazz / bossa nova
+- [ ] Metal full song (heavy distortion, odd time)
+- [ ] Folk / fingerpicked full song
+- [ ] Ambient generative (procedural, runs indefinitely)
 
 ### Engine
-- [ ] Chord progression suggester: root + mood → progression
-- [ ] Velocity-to-timbre (louder = brighter)
-- [ ] Polyphonic Track (simultaneous notes, not sequential)
-- [ ] Bitcrusher / lo-fi effect
-- [ ] Ring modulator
-- [ ] Tape saturation
-- [ ] Karplus-Strong string synthesis
+- [ ] Karplus-Strong string synthesis (plucked string realism)
+- [ ] Chord progression suggester: root + mood → chord list
+- [ ] Velocity-to-timbre (harder hit = brighter piano/drums)
+- [ ] Polyphonic Track (simultaneous notes)
+- [ ] Swing per-note variation (humanize rhythm timing)
 
-### Distribution
-- [ ] Spotify upload guide per album (DistroKid / TuneCore)
-- [ ] GitHub Pages album browser (web player)
+### Effects
+- [ ] Multi-band compressor (mastering chain)
+- [ ] Convolution reverb with real IR files
+- [ ] Vocoder effect (robot/harmonizer voice)
+
+### Albums
+- [ ] Expand every album to 4-6 tracks minimum
+- [ ] Album artwork generation
+- [ ] GitHub Pages album browser / web player
+
+### Spotify
+- [ ] DistroKid / TuneCore upload guide in docs/
 - [ ] Batch CI render to dist/ on push
-- [ ] Album artwork generation (matplotlib? or AI image)
 
-### Ideas from sessions
-- [ ] Generative album: seed + genre → full album procedurally
-- [ ] Live coding mode: --watch auto-plays on save
-- [ ] Collaborative: multiple song files merged into one song
+### Ideas
+- [ ] Generative album: seed + genre → whole album procedurally
+- [ ] Live watch mode: --watch auto-plays on save
 - [ ] BPM tap utility
-- [ ] Autotune post-processing for voice tracks
+- [ ] Music taste profile from Spotify API (needs OAuth token)

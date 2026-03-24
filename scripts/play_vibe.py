@@ -30,18 +30,23 @@ ERASE = "\033[2K"
 # (file_stem, vibe, one_line_description)
 SONGS: list[tuple[str, str, str]] = [
     # chill
-    ("deep_space_drift", "chill", "slow, ambient, no drums — outer space"),
-    ("lo_fi_loop", "chill", "lo-fi hip-hop beat — late night studying"),
-    ("deadmau5_house", "chill", "slow-building electronic — patient and hypnotic"),
+    ("deep_space_drift", "chill", "ambient, no drums — outer space"),
+    ("lo_fi_loop", "chill", "lo-fi hip-hop — late night"),
+    ("deadmau5_house", "chill", "progressive house — patient filter sweep"),
+    ("late_shift", "chill", "neo-soul Rhodes — swung and warm"),
     # energizing
-    ("trance_odyssey", "energizing", "uplifting trance — builds and drops hard"),
-    ("clarity_drive", "energizing", "festival EDM — anthem melody, big drop"),
+    ("trance_odyssey", "energizing", "uplifting trance — builds and drops"),
+    ("clarity_drive", "energizing", "festival EDM — anthem drop"),
     ("future_bass", "energizing", "future bass — emotional and driving"),
-    ("prog_rock", "energizing", "prog rock guitar — D Dorian, 130 BPM"),
+    ("prog_rock", "energizing", "prog rock — D Dorian, complex"),
+    ("chiptune_quest", "energizing", "chiptune — 8-bit boss fight energy"),
+    ("berlin_four", "energizing", "techno — 138 BPM, no mercy"),
     # alluring
-    ("lollipop_laser", "alluring", "cosmic disco — neon, euphoric, retro"),
-    ("liquid_dnb", "alluring", "liquid drum & bass — warm, jazzy, fast"),
+    ("lollipop_laser", "alluring", "cosmic disco — neon, Mord Fustang"),
+    ("liquid_dnb", "alluring", "liquid DnB — warm and jazzy at 174"),
     ("tank_bebop", "alluring", "big-band jazz — Cowboy Bebop energy"),
+    ("the_room", "alluring", "indie rock — Radiohead quiet tension"),
+    ("heavy_wobble", "alluring", "dubstep — wobble bass, half-time drop"),
     # powerful
     ("symphony_no1", "powerful", "full orchestra — sonata form, strings and brass"),
     ("cinematic_rise", "powerful", "film trailer — taiko drums, choir swell"),

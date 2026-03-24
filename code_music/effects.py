@@ -673,3 +673,100 @@ def flanger(
         out[i] = samples[i] * (1 - wet) + (samples[i] + flanged) * wet
         buf[i % max_d] = samples[i] + flanged * feedback
     return out.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Bitcrusher — lo-fi / chiptune / downsampling
+# ---------------------------------------------------------------------------
+
+
+def bitcrush(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bit_depth: int = 8,
+    downsample: int = 4,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Bitcrusher — reduces bit depth and sample rate for lo-fi / 8-bit texture.
+
+    Args:
+        bit_depth:   Target bit depth (4=harsh, 8=classic NES, 12=mild warmth).
+        downsample:  Sample-rate reduction factor (1=none, 4=quarter rate, 8=gritty).
+        wet:         Wet/dry mix.
+    """
+    levels = 2**bit_depth
+    # Quantise
+    crushed = np.round(samples * levels) / levels
+    # Downsample: hold each sample for `downsample` steps
+    if downsample > 1:
+        for ch in range(2):
+            held = crushed[::downsample, ch]
+            repeated = np.repeat(held, downsample)[: len(samples)]
+            crushed[:, ch] = repeated
+    return (samples * (1 - wet) + crushed * wet).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Ring modulator — metallic / robot / AM radio
+# ---------------------------------------------------------------------------
+
+
+def ring_mod(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    freq_hz: float = 440.0,
+    wet: float = 0.7,
+) -> FloatArray:
+    """Ring modulator — multiplies signal by a carrier sine wave.
+
+    Produces sum and difference frequencies, creating metallic/robotic tones.
+    Classic effect for Dalek voices, metal bells, and experimental textures.
+
+    Args:
+        freq_hz: Carrier frequency in Hz. Low (50–200Hz) = bass thickening.
+                 Mid (400–1000Hz) = bell/metallic. High (2000Hz+) = robotic.
+        wet:     Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    carrier = np.sin(2 * np.pi * freq_hz * t)
+    modulated = samples * carrier[:, np.newaxis]
+    return (samples * (1 - wet) + modulated * wet).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Tape saturation — warm analog simulation
+# ---------------------------------------------------------------------------
+
+
+def tape_sat(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    drive: float = 2.0,
+    warmth: float = 0.5,
+    wet: float = 0.6,
+) -> FloatArray:
+    """Tape saturation — warm harmonic distortion with low-end emphasis.
+
+    Simulates the soft compression and 2nd-order harmonic distortion of
+    analog tape. Adds warmth, glue, and subtle compression to a mix.
+
+    Args:
+        drive:   Pre-gain (1.0 = gentle, 4.0 = saturated).
+        warmth:  Low-end boost amount (0–1). Higher = more bass warmth.
+        wet:     Wet/dry mix.
+    """
+    # Soft saturation: tanh is too clean, use x/(1+|x|) for tape feel
+    driven = samples * drive
+    saturated = driven / (1 + np.abs(driven))
+
+    # Low-shelf boost for warmth (tape has enhanced low frequencies)
+    if warmth > 0:
+        cutoff = 300.0
+        sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        low_l = sig.sosfilt(sos, saturated[:, 0])
+        low_r = sig.sosfilt(sos, saturated[:, 1])
+        low_boost = np.column_stack([low_l, low_r]) * warmth * 0.5
+        saturated = saturated + low_boost
+
+    return np.clip(samples * (1 - wet) + saturated * wet, -1.0, 1.0).astype(np.float64)
