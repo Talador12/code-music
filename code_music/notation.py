@@ -221,8 +221,22 @@ def export_lilypond(song: Song, path: str | Path) -> Path:
         measure: list[str] = []
         measure_beats = 0.0
         beats_per_bar = num * 4 / den  # beats (quarters) per bar
+        total_beat_cursor = 0.0
+        ts_changes = list(getattr(song, "time_sig_map", []))
+        ts_idx = 0
 
         for beat in track.beats:
+            # Check for time signature changes
+            while ts_idx < len(ts_changes) and ts_changes[ts_idx][0] <= total_beat_cursor + 0.001:
+                _, new_num, new_den = ts_changes[ts_idx]
+                if measure:
+                    lines.append("          " + " ".join(measure) + " |")
+                    measure = []
+                    measure_beats = 0.0
+                lines.append(f"          \\time {new_num}/{new_den}")
+                beats_per_bar = new_num * 4 / new_den
+                ts_idx += 1
+
             event = beat.event
             if event is None:
                 token = f"r{_closest_str(_BEAT_TO_LILY, beat.duration)}"
@@ -238,6 +252,7 @@ def export_lilypond(song: Song, path: str | Path) -> Path:
 
             measure.append(token)
             measure_beats += dur
+            total_beat_cursor += dur
 
             if measure_beats >= beats_per_bar - 0.001:
                 lines.append("          " + " ".join(measure) + " |")

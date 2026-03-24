@@ -198,3 +198,46 @@ class TestChordVoicing:
         s = c.spread()
         assert s.duration == 3.0
         assert s.velocity == 0.42
+
+
+class TestTimeSigAutomation:
+    def test_add_time_sig_change(self):
+        song = Song(bpm=120, time_sig=(4, 4))
+        song.add_time_sig_change(16.0, 3, 4)
+        assert len(song.time_sig_map) == 1
+        assert song.time_sig_map[0] == (16.0, 3, 4)
+
+    def test_multiple_changes_sorted(self):
+        song = Song(bpm=120, time_sig=(4, 4))
+        song.add_time_sig_change(32.0, 7, 8)
+        song.add_time_sig_change(16.0, 3, 4)
+        assert song.time_sig_map[0][0] == 16.0
+        assert song.time_sig_map[1][0] == 32.0
+
+    def test_time_sig_at_default(self):
+        song = Song(bpm=120, time_sig=(4, 4))
+        assert song.time_sig_at(0.0) == (4, 4)
+        assert song.time_sig_at(100.0) == (4, 4)
+
+    def test_time_sig_at_after_change(self):
+        song = Song(bpm=120, time_sig=(4, 4))
+        song.add_time_sig_change(16.0, 3, 4)
+        assert song.time_sig_at(0.0) == (4, 4)
+        assert song.time_sig_at(15.9) == (4, 4)
+        assert song.time_sig_at(16.0) == (3, 4)
+        assert song.time_sig_at(100.0) == (3, 4)
+
+    def test_time_sig_at_multiple_changes(self):
+        song = Song(bpm=120, time_sig=(4, 4))
+        song.add_time_sig_change(8.0, 3, 4)
+        song.add_time_sig_change(20.0, 7, 8)
+        song.add_time_sig_change(30.0, 6, 8)
+        assert song.time_sig_at(5.0) == (4, 4)
+        assert song.time_sig_at(10.0) == (3, 4)
+        assert song.time_sig_at(25.0) == (7, 8)
+        assert song.time_sig_at(35.0) == (6, 8)
+
+    def test_chaining(self):
+        song = Song(bpm=120)
+        result = song.add_time_sig_change(8.0, 3, 4)
+        assert result is song  # returns self for chaining

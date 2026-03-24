@@ -235,14 +235,29 @@ def export_midi(song: Song, path: str | Path, ticks_per_beat: int = 480) -> Path
     n_tracks = len(song.tracks) + 1  # +1 for tempo track
     header = b"MThd" + struct.pack(">IHHH", 6, 1, n_tracks, ticks_per_beat)
 
-    # ── Tempo track (track 0) ──────────────────────────────────────────────
-    tempo_event = (
-        b"\x00"  # delta time 0
-        b"\xff\x51\x03"  # Set Tempo meta event
-        + struct.pack(">I", tempo_us)[1:]  # 3 bytes big-endian
-        + b"\x00\xff\x2f\x00"  # End of Track
-    )
-    tempo_track = b"MTrk" + struct.pack(">I", len(tempo_event)) + tempo_event
+    # ── Tempo track (track 0) — includes tempo + time signature events ────
+    import math
+
+    tempo_data = bytearray()
+    # Tempo at tick 0
+    tempo_data += b"\x00\xff\x51\x03" + struct.pack(">I", tempo_us)[1:]
+    # Initial time signature at tick 0
+    num, den = song.time_sig
+    den_pow = max(0, int(math.log2(den))) if den > 0 else 2
+    tempo_data += b"\x00\xff\x58\x04" + bytes([num, den_pow, 24, 8])
+
+    # Time signature changes from time_sig_map
+    prev_tick = 0
+    for at_beat, ts_num, ts_den in getattr(song, "time_sig_map", []):
+        tick = int(at_beat * ticks_per_beat)
+        delta = tick - prev_tick
+        prev_tick = tick
+        ts_den_pow = max(0, int(math.log2(ts_den))) if ts_den > 0 else 2
+        tempo_data += _var_len(delta) + b"\xff\x58\x04" + bytes([ts_num, ts_den_pow, 24, 8])
+
+    # End of track
+    tempo_data += b"\x00\xff\x2f\x00"
+    tempo_track = b"MTrk" + struct.pack(">I", len(tempo_data)) + bytes(tempo_data)
 
     # ── Instrument tracks ──────────────────────────────────────────────────
     drum_instruments = set(GM_DRUMS.keys()) | {"snare_orch", "cymbals", "gong", "timpani"}

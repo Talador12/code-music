@@ -1099,8 +1099,49 @@ class Song:
     voice_tracks: list = field(default_factory=list)  # list[VoiceTrack]
     poly_tracks: list = field(default_factory=list)  # list[PolyphonicTrack]
     time_sig: tuple[int, int] = (4, 4)
+    time_sig_map: list[tuple[float, int, int]] = field(default_factory=list)
     composer: str = ""
     key_sig: str = "C"
+
+    def add_time_sig_change(self, at_beat: float, numerator: int, denominator: int) -> "Song":
+        """Schedule a time signature change at a specific beat offset.
+
+        The change takes effect from `at_beat` onward until the next change.
+        The initial time signature is set via `time_sig` on the Song.
+
+        Args:
+            at_beat:     Beat position where the change occurs.
+            numerator:   Top number (beats per bar).
+            denominator: Bottom number (beat unit: 4=quarter, 8=eighth).
+
+        Example::
+
+            song = Song(title="Mixed Meter", bpm=120, time_sig=(4, 4))
+            song.add_time_sig_change(at_beat=16.0, numerator=3, denominator=4)
+            song.add_time_sig_change(at_beat=28.0, numerator=7, denominator=8)
+            # Bars 1-4: 4/4, bars 5-8ish: 3/4, then 7/8
+
+        Returns:
+            self for chaining.
+        """
+        self.time_sig_map.append((at_beat, numerator, denominator))
+        self.time_sig_map.sort(key=lambda x: x[0])
+        return self
+
+    def time_sig_at(self, beat: float) -> tuple[int, int]:
+        """Return the active time signature at a given beat position.
+
+        Walks the time_sig_map in reverse to find the most recent change
+        before or at the given beat. Returns the default time_sig if no
+        changes have been scheduled yet.
+        """
+        result = self.time_sig
+        for at_beat, num, den in self.time_sig_map:
+            if at_beat <= beat:
+                result = (num, den)
+            else:
+                break
+        return result
 
     def add_track(self, track: Track) -> "Track":
         self.tracks.append(track)

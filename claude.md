@@ -45,7 +45,7 @@
 
 ### Engine
 - [x] Chord voicing spread control (open vs close voicing)
-- [ ] Time signature automation (change mid-song)
+- [x] Time signature automation (change mid-song)
 - [ ] Note probability per-track (density slider at track level)
 
 ### Effects
