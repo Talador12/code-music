@@ -81,4 +81,4 @@
 - [x] Song statistics script — total duration, BPM distribution, genre counts
 
 ### Distribution
-- [ ] GitHub Release with rendered WAV zip artifact on tag push
+- [x] GitHub Release with rendered WAV zip artifact on tag push
