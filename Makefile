@@ -129,10 +129,17 @@ $(foreach s,$(SONG_NAMES),$(eval $(call PLAY_SONG_RULE,$(s))))
 #                          [CREATE] Make music                                 #
 ################################################################################
 
-new-song: ## [Create] Copy the beginner template — edit it, then make play-<name>
+new-song: ## [Create] Copy a genre template. STYLE=edm|jazz|rock|ambient|hiphop (default: beginner)
 	@read -p "Song name (no spaces, e.g. my_track): " name; \
-	cp songs/_template_beginner.py songs/$$name.py; \
-	echo "Created songs/$$name.py — edit it, then: make play-$$name"
+	style=$${STYLE:-beginner}; \
+	tmpl="songs/_template_$${style}.py"; \
+	if [ ! -f "$$tmpl" ]; then \
+		echo "Available styles: beginner edm jazz rock ambient hiphop"; \
+		echo "Usage: make new-song STYLE=jazz"; \
+		exit 1; \
+	fi; \
+	cp "$$tmpl" "songs/$$name.py"; \
+	echo "Created songs/$$name.py from $$style template — edit it, then: make play-$$name"
 
 watch: ## [Create] Live coding — re-renders and plays on every file save (SONG=name)
 	@test -n "$(SONG)" || (echo "Usage: make watch SONG=my_track"; exit 1)
