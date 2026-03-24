@@ -70,7 +70,7 @@
 
 ### Effects
 - [ ] Stereo imager — visualize L/R balance as a PNG
-- [ ] Slapback delay — single short echo (rockabilly, early rock)
+- [x] Slapback delay — single short echo (rockabilly, early rock)
 
 ### Songs
 - [ ] Reach 60 songs (2 more needed)

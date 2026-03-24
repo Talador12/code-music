@@ -249,3 +249,47 @@ class TestFingerprint:
             assert isinstance(fp, str)
             assert len(fp) == 32
             int(fp, 16)  # should be valid hex
+
+
+class TestSlapback:
+    def test_output_shape(self):
+        from code_music.effects import slapback
+        s = _sine(SR)
+        out = slapback(s, SR)
+        assert out.shape == s.shape
+
+    def test_level_zero_passthrough(self):
+        from code_music.effects import slapback
+        s = _sine(SR)
+        out = slapback(s, SR, level=0.0)
+        np.testing.assert_allclose(out, s, atol=1e-9)
+
+    def test_adds_echo(self):
+        from code_music.effects import slapback
+        # Impulse test: echo should appear after the delay
+        n = SR
+        impulse = np.zeros((n, 2))
+        impulse[100] = 0.8
+        out = slapback(impulse, SR, delay_ms=100.0, level=0.6)
+        d = int(0.1 * SR)
+        # Echo should exist at position 100 + d
+        assert np.max(np.abs(out[100 + d])) > 0.1
+
+    def test_output_clamped(self):
+        from code_music.effects import slapback
+        s = _sine(SR) * 0.9
+        out = slapback(s, SR, level=0.9)
+        assert np.max(np.abs(out)) <= 1.0 + 1e-6
+
+    def test_single_echo_no_feedback(self):
+        from code_music.effects import slapback
+        # Create an impulse — single spike then silence
+        n = SR
+        impulse = np.zeros((n, 2))
+        impulse[0] = 0.9
+        out = slapback(impulse, SR, delay_ms=100.0, level=0.5)
+        d = int(0.1 * SR)
+        # Should have original spike at 0 and one echo at d, nothing after
+        assert np.max(np.abs(out[0])) > 0.5       # original
+        assert np.max(np.abs(out[d])) > 0.2        # echo
+        assert np.max(np.abs(out[d*2:])) < 0.01    # no second echo

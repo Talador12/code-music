@@ -135,6 +135,50 @@ def delay(
 
 
 # ---------------------------------------------------------------------------
+# Slapback delay — single short echo (rockabilly, early rock)
+# ---------------------------------------------------------------------------
+
+
+def slapback(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 120.0,
+    level: float = 0.6,
+) -> FloatArray:
+    """Slapback delay — a single short echo with no feedback.
+
+    The defining effect of 1950s rockabilly, early rock, and surf guitar.
+    Sam Phillips at Sun Records invented this by running tape between two
+    machines. One echo, 75–175ms, no repeats. Simple and effective.
+
+    Also useful on vocals, snare drums, and lead instruments for presence
+    without the wash of a full delay or reverb.
+
+    Args:
+        delay_ms: Echo time in milliseconds (75–175ms typical for slapback).
+        level:    Volume of the echo relative to dry signal (0.0–1.0).
+
+    Example::
+
+        slapback(vocal, sr, delay_ms=120.0, level=0.6)
+        slapback(guitar, sr, delay_ms=90.0, level=0.5)
+    """
+    d = max(1, int(delay_ms * sample_rate / 1000))
+    n = len(samples)
+    if d >= n:
+        return samples.copy().astype(np.float64)
+
+    echo = np.zeros_like(samples)
+    echo[d:] = samples[:-d] * level
+
+    out = samples + echo
+    peak = np.max(np.abs(out))
+    if peak > 1.0:
+        out /= peak
+    return out.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
 # Chorus
 # ---------------------------------------------------------------------------
 
