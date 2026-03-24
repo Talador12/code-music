@@ -82,4 +82,4 @@
 - [x] Deploy GitHub Pages web player (enable Pages on main, /docs source)
 - [ ] Expand albums to 5+ tracks each (most are at 3-4)
 - [x] New genres: Afrobeats, shoegaze, math rock
-- [ ] More PolyphonicTrack songs (only conversations.py uses it)
+- [x] More PolyphonicTrack songs (3 total: conversations, nocturne_op2, town_square)
