@@ -421,6 +421,70 @@ class Chord:
 
         return result
 
+    def shell_voicing(self, bass: str | None = None, bass_octave: int | None = None) -> "Chord":
+        """Return a shell voicing: root + 3rd + 7th, skip the 5th.
+
+        Shell voicings are the standard jazz comping approach — three notes
+        that define the chord quality without the 5th (which adds density
+        but little harmonic information).
+
+        The optional ``bass`` parameter lets you put a different note in the
+        bass — useful for slash chords (C/E, G/B) and walking bass lines
+        where the pianist plays a rootless voicing above.
+
+        Args:
+            bass:        Optional bass note name (e.g. "E" for C/E).
+                         If None, the chord root is the bass.
+            bass_octave: Octave for the bass note (default: self.octave - 1).
+
+        Returns:
+            A new Chord with the shell voicing (custom offsets).
+
+        Examples::
+
+            Chord("C", "maj7", 3).shell_voicing()
+            # → C E B  (root + 3rd + 7th)
+
+            Chord("C", "maj7", 3).shell_voicing(bass="E")
+            # → E C B  (E in bass — first inversion feel)
+
+            Chord("G", "dom7", 3).shell_voicing(bass="F", bass_octave=2)
+            # → F(2) G B F  (F bass, shell above)
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+
+        # Build shell: root(0) + 3rd(1) + 7th(3) for 4+ note chords
+        if len(offsets) >= 4:
+            shell = [offsets[0], offsets[1], offsets[3]]
+        elif len(offsets) >= 2:
+            shell = [offsets[0], offsets[1]]
+        else:
+            shell = list(offsets)
+
+        if bass is not None:
+            # Calculate bass note offset relative to chord root
+            root_midi = note_name_to_midi(self.root, self.octave)
+            b_oct = bass_octave if bass_octave is not None else self.octave - 1
+            bass_midi = note_name_to_midi(bass, b_oct)
+            bass_offset = bass_midi - root_midi
+            # Put bass at the bottom, shell above
+            new_offsets = [bass_offset] + shell
+            return Chord(
+                root=self.root,
+                shape=new_offsets,
+                octave=self.octave,
+                duration=self.duration,
+                velocity=self.velocity,
+            )
+
+        return Chord(
+            root=self.root,
+            shape=shell,
+            octave=self.octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
+
     def __repr__(self) -> str:
         return f"Chord({self.root}{self.octave} {self.shape}, dur={self.duration})"
 

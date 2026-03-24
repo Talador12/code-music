@@ -437,3 +437,52 @@ class TestSongInfo:
         info = s.info()
         assert info["time_sig"] == (3, 4)
         assert info["key_sig"] == "Bb"
+
+
+class TestShellVoicing:
+    def test_seventh_chord_three_notes(self):
+        c = Chord("C", "maj7", 3)
+        sh = c.shell_voicing()
+        assert len(sh.notes) == 3
+
+    def test_triad_two_notes(self):
+        c = Chord("C", "maj", 3)
+        sh = c.shell_voicing()
+        assert len(sh.notes) == 2
+
+    def test_preserves_duration_velocity(self):
+        c = Chord("D", "min7", 3, duration=3.0, velocity=0.42)
+        sh = c.shell_voicing()
+        assert sh.duration == 3.0
+        assert sh.velocity == 0.42
+
+    def test_bass_override_adds_note(self):
+        c = Chord("C", "maj7", 3)
+        sh = c.shell_voicing(bass="E")
+        # bass + shell = 4 notes
+        assert len(sh.notes) == 4
+
+    def test_bass_override_lowest_note(self):
+        c = Chord("C", "maj7", 4)
+        sh = c.shell_voicing(bass="E", bass_octave=2)
+        midis = sorted(n.midi for n in sh.notes)
+        # E2 = midi 40, should be the lowest
+        assert midis[0] == 40
+
+    def test_no_bass_root_is_lowest(self):
+        c = Chord("G", "dom7", 3)
+        sh = c.shell_voicing()
+        midis = sorted(n.midi for n in sh.notes)
+        # Root G3 = midi 55 should be in there
+        assert 55 in midis
+
+    def test_renders_without_error(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+        song = Song(bpm=120, sample_rate=22050)
+        tr = song.add_track(Track(instrument="piano"))
+        tr.add(Chord("A", "min7", 3, duration=2.0).shell_voicing())
+        tr.add(Chord("D", "dom7", 3, duration=2.0).shell_voicing(bass="F#"))
+        samples = Synth(22050).render_song(song)
+        assert np.max(np.abs(samples)) > 0.0
