@@ -64,7 +64,7 @@
 ## Next Roadmap
 
 ### Engine
-- [ ] Chord.voicings() — return all common voicings of a chord (root, drop2, spread, shell)
+- [x] Chord.voicings() — return all common voicings of a chord (root, drop2, spread, shell)
 - [x] Song.merge(other_song) — combine two songs into one (layer tracks)
 - [x] Track.reverse() — play a track's notes in reverse order
 

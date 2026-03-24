@@ -367,6 +367,60 @@ class Chord:
             velocity=self.velocity,
         )
 
+    def voicings(self) -> dict[str, "Chord"]:
+        """Return a dict of all common voicings of this chord.
+
+        Keys:
+            "root"    — root position (default, unchanged)
+            "inv1"    — first inversion
+            "inv2"    — second inversion
+            "drop2"   — drop-2 voicing (jazz guitar/piano standard)
+            "spread"  — open voicing (alternate notes up an octave)
+            "close"   — close voicing (all notes within one octave)
+            "shell"   — shell voicing (root + 3rd + 7th only, no 5th)
+
+        Shell voicing is only available for chords with 4+ notes (7th chords).
+        For triads, "shell" returns root + 3rd only.
+
+        Example::
+
+            v = Chord("C", "maj7", 3).voicings()
+            pad.add(v["drop2"])     # jazz voicing
+            pad.add(v["spread"])    # orchestral voicing
+            pad.add(v["shell"])     # minimal comping voicing
+
+        Returns:
+            Dict of name → Chord for each voicing.
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+
+        result: dict[str, Chord] = {
+            "root": self,
+            "inv1": self.invert(1),
+            "inv2": self.invert(2),
+            "drop2": self.drop2(),
+            "spread": self.spread(),
+            "close": self.close(),
+        }
+
+        # Shell voicing: root + 3rd + 7th (skip the 5th)
+        if len(offsets) >= 4:
+            shell_offsets = [offsets[0], offsets[1], offsets[3]]
+        elif len(offsets) >= 2:
+            shell_offsets = [offsets[0], offsets[1]]
+        else:
+            shell_offsets = list(offsets)
+
+        result["shell"] = Chord(
+            root=self.root,
+            shape=shell_offsets,
+            octave=self.octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
+
+        return result
+
     def __repr__(self) -> str:
         return f"Chord({self.root}{self.octave} {self.shape}, dur={self.duration})"
 

@@ -346,3 +346,52 @@ class TestTrackReverse:
         t = Track()
         rev = t.reverse()
         assert len(rev.beats) == 0
+
+
+class TestChordVoicings:
+    def test_returns_dict(self):
+        v = Chord("C", "maj7", 4).voicings()
+        assert isinstance(v, dict)
+
+    def test_all_keys_present(self):
+        v = Chord("C", "maj7", 4).voicings()
+        for key in ("root", "inv1", "inv2", "drop2", "spread", "close", "shell"):
+            assert key in v, f"missing key: {key}"
+
+    def test_all_values_are_chords(self):
+        v = Chord("A", "min7", 3).voicings()
+        for key, chord in v.items():
+            assert isinstance(chord, Chord), f"{key} is not a Chord"
+
+    def test_root_is_unchanged(self):
+        c = Chord("G", "dom7", 3, duration=2.0, velocity=0.6)
+        v = c.voicings()
+        assert v["root"] is c
+
+    def test_shell_has_three_notes_for_seventh(self):
+        v = Chord("C", "maj7", 4).voicings()
+        assert len(v["shell"].notes) == 3  # root + 3rd + 7th
+
+    def test_shell_has_two_notes_for_triad(self):
+        v = Chord("C", "maj", 4).voicings()
+        assert len(v["shell"].notes) == 2  # root + 3rd
+
+    def test_voicings_differ(self):
+        v = Chord("D", "min7", 3).voicings()
+        midis = {}
+        for key, chord in v.items():
+            midis[key] = tuple(sorted(n.midi for n in chord.notes))
+        # At least some voicings should differ from root
+        unique = set(midis.values())
+        assert len(unique) > 1, "all voicings produced identical notes"
+
+    def test_all_voicings_render(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+        for key, chord in Chord("F", "maj7", 3, duration=1.0).voicings().items():
+            song = Song(bpm=120, sample_rate=22050)
+            tr = song.add_track(Track(instrument="piano"))
+            tr.add(chord)
+            samples = Synth(22050).render_song(song)
+            assert np.max(np.abs(samples)) > 0.0, f"voicing '{key}' produced silence"
