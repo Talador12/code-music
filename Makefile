@@ -333,3 +333,7 @@ fingerprint: ## [Dev] Save audio fingerprints of all rendered songs → .fingerp
 fingerprint-check: ## [Dev] Compare current renders against saved fingerprints (regression test)
 	$(BIN)/python scripts/fingerprint.py --check
 
+
+bpm-tap: ## [Explore] Tap Enter to the beat — shows running BPM average
+	$(BIN)/python scripts/bpm_tap.py
+

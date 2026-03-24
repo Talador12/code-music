@@ -59,4 +59,4 @@
 - [x] Song fingerprinting (compare two renders for regression)
 - [ ] Lyrics + voice synthesis integration
 - [ ] Visual scale diagram in web player
-- [ ] BPM tap utility
+- [x] BPM tap utility
