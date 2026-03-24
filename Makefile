@@ -319,3 +319,10 @@ samplers: ## [Create] Build 2-min sampler preview for all albums → dist/sample
 sampler-%: ## [Create] Build sampler for one album (e.g. make sampler-jazz_neosoul)
 	$(BIN)/python scripts/make_sampler.py --album $*
 
+
+distrokid-prep: ## [Create] Prepare all albums for DistroKid upload → dist/distrokid/
+	$(BIN)/python scripts/distrokid_prep.py --all
+
+distrokid-prep-%: ## [Create] Prepare one album for DistroKid (e.g. make distrokid-prep-jazz_neosoul)
+	$(BIN)/python scripts/distrokid_prep.py --album $*
+

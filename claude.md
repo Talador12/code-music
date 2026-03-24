@@ -52,7 +52,7 @@
 - [x] Convolution reverb from real IR files (load .wav)
 
 ### Distribution
-- [ ] DistroKid batch upload helper
+- [x] DistroKid batch upload helper
 - [ ] Spotify playlist from rendered songs
 
 ### Ideas
