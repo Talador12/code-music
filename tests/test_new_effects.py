@@ -130,3 +130,68 @@ class TestAutotune:
         out = autotune(s, SR, scale_notes=chromatic, strength=1.0)
         # A=440Hz is already on a chromatic note — minimal change
         assert np.max(np.abs(out - s)) < 0.5  # some change is ok, not complete rewrite
+
+
+class TestConvReverbIRFile:
+    def _make_ir_wav(self, path, sr=22050, dur_sec=0.5):
+        """Create a simple impulse WAV file for testing."""
+        import wave as _wave
+        n = int(sr * dur_sec)
+        rng = np.random.default_rng(42)
+        ir = rng.standard_normal(n).astype(np.float64)
+        ir *= np.exp(-np.linspace(0, 10, n))  # decaying noise
+        ir_int = (np.clip(ir / max(np.max(np.abs(ir)), 1e-9), -1, 1) * 32767).astype(np.int16)
+        with _wave.open(str(path), "w") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sr)
+            wf.writeframes(ir_int.tobytes())
+
+    def test_ir_file_loads_and_applies(self):
+        import tempfile
+        from pathlib import Path
+        s = _sine(SR)
+        with tempfile.TemporaryDirectory() as tmp:
+            ir_path = Path(tmp) / "test_ir.wav"
+            self._make_ir_wav(ir_path, sr=SR)
+            out = conv_reverb(s, SR, ir_file=str(ir_path), wet=0.5)
+            assert out.shape == s.shape
+            assert not np.allclose(out, s)  # IR should modify the signal
+
+    def test_ir_file_wet_zero_passthrough(self):
+        import tempfile
+        from pathlib import Path
+        s = _sine(SR)
+        with tempfile.TemporaryDirectory() as tmp:
+            ir_path = Path(tmp) / "test_ir.wav"
+            self._make_ir_wav(ir_path, sr=SR)
+            out = conv_reverb(s, SR, ir_file=str(ir_path), wet=0.0)
+            np.testing.assert_allclose(out, s, atol=1e-6)
+
+    def test_ir_file_not_found_raises(self):
+        import pytest
+        s = _sine(SR)
+        with pytest.raises(FileNotFoundError):
+            conv_reverb(s, SR, ir_file="/nonexistent/ir.wav", wet=0.3)
+
+    def test_ir_file_output_clamped(self):
+        import tempfile
+        from pathlib import Path
+        s = _sine(SR) * 0.9
+        with tempfile.TemporaryDirectory() as tmp:
+            ir_path = Path(tmp) / "test_ir.wav"
+            self._make_ir_wav(ir_path, sr=SR)
+            out = conv_reverb(s, SR, ir_file=str(ir_path), wet=0.8)
+            assert np.max(np.abs(out)) <= 1.0 + 1e-6
+
+    def test_ir_file_different_sample_rate(self):
+        """IR at different sample rate should be resampled automatically."""
+        import tempfile
+        from pathlib import Path
+        s = _sine(SR)
+        with tempfile.TemporaryDirectory() as tmp:
+            ir_path = Path(tmp) / "test_ir_44k.wav"
+            self._make_ir_wav(ir_path, sr=44100)  # different from SR=22050
+            out = conv_reverb(s, SR, ir_file=str(ir_path), wet=0.5)
+            assert out.shape == s.shape
+            assert not np.allclose(out, s)

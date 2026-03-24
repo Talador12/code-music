@@ -49,7 +49,7 @@
 - [x] Note probability per-track (density slider at track level)
 
 ### Effects
-- [ ] Convolution reverb from real IR files (load .wav)
+- [x] Convolution reverb from real IR files (load .wav)
 
 ### Distribution
 - [ ] DistroKid batch upload helper

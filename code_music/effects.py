@@ -1160,33 +1160,88 @@ def conv_reverb(
     sample_rate: int = 44100,
     room: str = "hall",
     wet: float = 0.3,
+    ir_file: str | None = None,
 ) -> FloatArray:
-    """Convolution reverb using synthetic impulse responses.
+    """Convolution reverb — synthetic rooms or load a real IR .wav file.
 
-    No external IR files needed — IRs are generated algorithmically to
-    model different acoustic spaces. Sounds more natural than the
-    algorithmic reverb because it captures the full decay curve.
+    Two modes:
+      1. Synthetic IR (default): pass ``room="hall"`` etc. No files needed.
+      2. Real IR file: pass ``ir_file="path/to/impulse.wav"``. The WAV is
+         loaded, resampled to match sample_rate if needed, and used as the
+         impulse response. This captures the exact acoustic signature of a
+         real space — studios, churches, stairwells, plates, springs.
 
     Args:
-        room: Room type — "hall", "chamber", "plate", "room", "cave", "spring".
-        wet:  Wet/dry mix.
+        room:    Synthetic room type (ignored when ir_file is set).
+                 Options: "hall", "chamber", "plate", "room", "cave", "spring".
+        wet:     Wet/dry mix (0.0 = dry, 1.0 = full wet).
+        ir_file: Path to a .wav impulse response file. When provided, the
+                 synthetic room is ignored and this IR is used instead.
 
-    Example::
+    Examples::
 
-        reverb_wet = conv_reverb(guitar, sr, room="hall", wet=0.35)
+        # Synthetic room
+        conv_reverb(guitar, sr, room="hall", wet=0.35)
+
+        # Real IR file
+        conv_reverb(guitar, sr, ir_file="irs/church.wav", wet=0.4)
     """
+    # ── Load real IR file if provided ─────────────────────────────────────
+    if ir_file is not None:
+        import wave as _wave
+        from pathlib import Path as _Path
+
+        ir_path = _Path(ir_file)
+        if not ir_path.exists():
+            raise FileNotFoundError(f"IR file not found: {ir_file}")
+
+        with _wave.open(str(ir_path), "rb") as wf:
+            ir_sr = wf.getframerate()
+            ir_n = wf.getnframes()
+            ir_ch = wf.getnchannels()
+            ir_sw = wf.getsampwidth()
+            ir_raw = wf.readframes(ir_n)
+
+        ir_dtype = np.int16 if ir_sw == 2 else np.int32
+        ir_data = np.frombuffer(ir_raw, dtype=ir_dtype).astype(np.float64)
+        ir_data /= 32768.0 if ir_sw == 2 else 2147483648.0
+
+        # Mix to mono if stereo
+        if ir_ch == 2:
+            ir_data = ir_data.reshape(-1, 2).mean(axis=1)
+
+        # Resample IR to match sample_rate if needed
+        if ir_sr != sample_rate:
+            new_len = int(len(ir_data) * sample_rate / ir_sr)
+            ir_data = sig.resample(ir_data, new_len)
+
+        # Normalize IR
+        pk = np.max(np.abs(ir_data))
+        if pk > 0:
+            ir_data /= pk
+
+        # Convolve
+        left = sig.fftconvolve(samples[:, 0], ir_data, mode="full")[: len(samples)]
+        right = sig.fftconvolve(samples[:, 1], ir_data, mode="full")[: len(samples)]
+        wet_signal = np.column_stack([left, right])
+        wp = np.max(np.abs(wet_signal))
+        if wp > 0:
+            wet_signal /= wp
+        return (samples * (1 - wet) + wet_signal * wet).astype(np.float64)
+
+    # ── Synthetic IR (no file provided) ────────────────────────────────────
     ROOMS = {
-        "hall":    {"rt60": 2.5, "early_ms": 25,  "color": 0.6,  "diffuse": 0.85},
-        "chamber": {"rt60": 1.4, "early_ms": 15,  "color": 0.5,  "diffuse": 0.75},
-        "plate":   {"rt60": 1.8, "early_ms": 8,   "color": 0.3,  "diffuse": 0.95},
-        "room":    {"rt60": 0.6, "early_ms": 10,  "color": 0.65, "diffuse": 0.6},
-        "cave":    {"rt60": 4.0, "early_ms": 40,  "color": 0.8,  "diffuse": 0.5},
-        "spring":  {"rt60": 0.9, "early_ms": 5,   "color": 0.2,  "diffuse": 0.9},
+        "hall": {"rt60": 2.5, "early_ms": 25, "color": 0.6, "diffuse": 0.85},
+        "chamber": {"rt60": 1.4, "early_ms": 15, "color": 0.5, "diffuse": 0.75},
+        "plate": {"rt60": 1.8, "early_ms": 8, "color": 0.3, "diffuse": 0.95},
+        "room": {"rt60": 0.6, "early_ms": 10, "color": 0.65, "diffuse": 0.6},
+        "cave": {"rt60": 4.0, "early_ms": 40, "color": 0.8, "diffuse": 0.5},
+        "spring": {"rt60": 0.9, "early_ms": 5, "color": 0.2, "diffuse": 0.9},
     }
     params = ROOMS.get(room, ROOMS["room"])
-    rt60    = params["rt60"]
-    early   = int(params["early_ms"] * sample_rate / 1000)
-    color   = params["color"]
+    rt60 = params["rt60"]
+    early = int(params["early_ms"] * sample_rate / 1000)
+    color = params["color"]
     diffuse = params["diffuse"]
 
     # Build synthetic IR:
@@ -1226,7 +1281,7 @@ def conv_reverb(
     def _conv(ch: np.ndarray) -> np.ndarray:
         return sig.fftconvolve(ch, ir, mode="full")[: len(ch)]
 
-    left  = _conv(samples[:, 0])
+    left = _conv(samples[:, 0])
     right = _conv(samples[:, 1])
     wet_signal = np.column_stack([left, right])
 
@@ -1271,9 +1326,9 @@ def eq(
     """
     if bands is None:
         bands = [
-            (100.0,  +1.5, 0.7),   # low warmth
-            (3000.0, +1.0, 1.0),   # presence
-            (8000.0, +0.8, 0.8),   # air
+            (100.0, +1.5, 0.7),  # low warmth
+            (3000.0, +1.0, 1.0),  # presence
+            (8000.0, +0.8, 0.8),  # air
         ]
 
     result = samples.copy().astype(np.float64)
@@ -1285,18 +1340,18 @@ def eq(
         q = max(0.1, q)
 
         # Peaking EQ biquad coefficients
-        A   = 10 ** (gain_db / 40.0)
-        w0  = 2 * math.pi * freq_hz / sample_rate
+        A = 10 ** (gain_db / 40.0)
+        w0 = 2 * math.pi * freq_hz / sample_rate
         alpha = math.sin(w0) / (2 * q)
 
-        b0 =  1 + alpha * A
+        b0 = 1 + alpha * A
         b1 = -2 * math.cos(w0)
-        b2 =  1 - alpha * A
-        a0 =  1 + alpha / A
+        b2 = 1 - alpha * A
+        a0 = 1 + alpha / A
         a1 = -2 * math.cos(w0)
-        a2 =  1 - alpha / A
+        a2 = 1 - alpha / A
 
-        sos = np.array([[b0/a0, b1/a0, b2/a0, 1.0, a1/a0, a2/a0]])
+        sos = np.array([[b0 / a0, b1 / a0, b2 / a0, 1.0, a1 / a0, a2 / a0]])
         result[:, 0] = sig.sosfilt(sos, result[:, 0])
         result[:, 1] = sig.sosfilt(sos, result[:, 1])
 
