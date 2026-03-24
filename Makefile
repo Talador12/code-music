@@ -60,6 +60,18 @@ dev: install
 # =============================================================================
 
 # Play all songs grouped by mood — chill / energizing / alluring / powerful
+spotify-auth:
+	@echo "Setup: https://developer.spotify.com/dashboard"
+	@echo "  1. Create app  (Redirect URI: http://localhost:8888/callback)"
+	@echo "  2. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET env vars"
+	@echo ""
+	$(BIN)/python scripts/spotify_auth.py
+
+spotify-taste:
+	$(BIN)/python scripts/spotify_taste.py
+
+.PHONY: spotify-auth spotify-taste
+
 vibe:
 	$(BIN)/python -m scripts.play_vibe
 
@@ -290,6 +302,8 @@ help:
 	@echo "│  make vibe-alluring         Dark, mysterious, pulls you in"
 	@echo "│  make vibe-powerful         Heavy, orchestral, impact"
 	@echo "│  make list-songs            See all songs with descriptions"
+	@echo "│  make spotify-auth          Authorize Spotify access (one-time setup)"
+	@echo "│  make spotify-taste         Read your listening data → styles/my_taste.py"
 	@echo "│"
 	@echo "│  make play-<song>           Play one song directly"
 	@$(foreach s,$(filter-out _template_beginner,$(SONG_NAMES)),echo "│    make play-$(s)";)

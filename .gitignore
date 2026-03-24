@@ -18,5 +18,11 @@ output/
 *.flac
 *.ogg
 
+# Spotify OAuth token — never commit this
+.spotify_token
+
+# Spotify raw data dump — large, personal
+styles/my_taste.json
+
 # macOS
 .DS_Store
