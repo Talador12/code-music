@@ -294,6 +294,79 @@ class Chord:
             velocity=self.velocity,
         )
 
+    def spread(self, octave_spread: int = 1) -> "Chord":
+        """Return an open voicing — spread notes across more octaves.
+
+        Close voicing:  C E G      (all within one octave)
+        Open voicing:   C G E      (notes spread across two octaves)
+
+        The algorithm takes every other note and moves it up `octave_spread`
+        octaves. This creates wider intervals between adjacent notes, giving
+        the chord an open, orchestral quality vs the dense close voicing.
+
+        Args:
+            octave_spread: How many octaves to spread alternate notes (default 1).
+
+        Example::
+
+            Chord("C", "maj7", 3).spread()   # C G E B → open voicing
+            Chord("A", "min9", 3).spread(2)  # very wide, orchestral
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+        spread_offsets = list(offsets)
+        for i in range(1, len(spread_offsets), 2):
+            spread_offsets[i] += 12 * octave_spread
+        return Chord(
+            root=self.root,
+            shape=spread_offsets,
+            octave=self.octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
+
+    def drop2(self) -> "Chord":
+        """Return a drop-2 voicing — move the 2nd-from-top note down an octave.
+
+        Drop-2 is the standard jazz guitar/piano voicing. It opens up the
+        chord without making it as wide as full spread(). Very common in
+        jazz comping.
+
+        Example::
+
+            Chord("C", "maj7", 4).drop2()   # close: C E G B → drop2: G C E B
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+        if len(offsets) < 3:
+            return Chord(self.root, list(offsets), self.octave, self.duration, self.velocity)
+        d2 = list(offsets)
+        # Move 2nd from top down an octave
+        idx = len(d2) - 2
+        d2[idx] -= 12
+        d2.sort()
+        return Chord(
+            root=self.root,
+            shape=d2,
+            octave=self.octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
+
+    def close(self) -> "Chord":
+        """Return a close (tight) voicing — all notes within one octave.
+
+        Useful after spread() or drop2() to return to compact voicing.
+        """
+        offsets = CHORD_SHAPES[self.shape] if isinstance(self.shape, str) else list(self.shape)
+        # Bring all notes into the range 0-11 (one octave)
+        closed = sorted(set(o % 12 for o in offsets))
+        return Chord(
+            root=self.root,
+            shape=closed,
+            octave=self.octave,
+            duration=self.duration,
+            velocity=self.velocity,
+        )
+
     def __repr__(self) -> str:
         return f"Chord({self.root}{self.octave} {self.shape}, dur={self.duration})"
 

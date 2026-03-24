@@ -145,3 +145,56 @@ class TestSong:
     def test_beat_duration_sec(self):
         song = Song(bpm=60)
         assert math.isclose(song.beat_duration_sec, 1.0)
+
+
+class TestChordVoicing:
+    def test_spread_widens_range(self):
+        c = Chord("C", "maj7", 4)
+        close_range = c.notes[-1].midi - c.notes[0].midi
+        spread_range = c.spread().notes[-1].midi - c.spread().notes[0].midi
+        assert spread_range > close_range
+
+    def test_spread_preserves_note_count(self):
+        c = Chord("A", "min9", 3)
+        assert len(c.spread().notes) == len(c.notes)
+
+    def test_drop2_different_from_close(self):
+        c = Chord("C", "maj7", 4)
+        close_midis = [n.midi for n in c.notes]
+        drop2_midis = [n.midi for n in c.drop2().notes]
+        assert close_midis != drop2_midis
+
+    def test_drop2_preserves_note_count(self):
+        c = Chord("G", "dom7", 3)
+        assert len(c.drop2().notes) == len(c.notes)
+
+    def test_close_compacts_to_octave(self):
+        c = Chord("C", "maj7", 4)
+        closed = c.spread(2).close()
+        midis = [n.midi for n in closed.notes]
+        assert max(midis) - min(midis) <= 12
+
+    def test_spread_default_one_octave(self):
+        c = Chord("C", "maj", 4)
+        spread_midis = sorted(n.midi for n in c.spread().notes)
+        close_midis = sorted(n.midi for n in c.notes)
+        # Spread voicing should have a wider total range than close
+        spread_range = spread_midis[-1] - spread_midis[0]
+        close_range = close_midis[-1] - close_midis[0]
+        assert spread_range > close_range
+
+    def test_triad_drop2_handles_small_chord(self):
+        c = Chord("C", "maj", 4)
+        d2 = c.drop2()
+        assert len(d2.notes) == 3  # should not crash on 3-note chord
+
+    def test_two_note_chord_drop2_passthrough(self):
+        c = Chord("C", "power", 4)  # [0, 7] — only 2 notes
+        d2 = c.drop2()
+        assert len(d2.notes) == 2  # should not crash
+
+    def test_spread_preserves_duration_velocity(self):
+        c = Chord("D", "min7", 3, duration=3.0, velocity=0.42)
+        s = c.spread()
+        assert s.duration == 3.0
+        assert s.velocity == 0.42
