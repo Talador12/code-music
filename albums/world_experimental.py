@@ -26,5 +26,6 @@ ALBUM = {
         {"title": "Maqam", "song": "cinematic_rise", "bpm": 88},
         {"title": "Wrong Side of the Scale","song": "wrong_side_of_the_scale","bpm": 96},
         {"title": "Sun and Sorrow", "song": "sun_and_sorrow","bpm": 80},
+        {"title": "Silk Road",     "song": "silk_road",     "bpm": 88},
     ],
 }

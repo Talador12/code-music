@@ -50,6 +50,8 @@ from .engine import (
     Beat,
     Chord,
     Note,
+    # new
+    PolyphonicTrack,
     Section,
     Song,
     Track,
@@ -67,6 +69,7 @@ from .engine import (
     mordent,
     pizzicato,
     prob,
+    remix,
     repeat,
     scale,
     shake,
@@ -149,6 +152,8 @@ __all__ = [
     "INTERVALS",
     "ARP_PATTERNS",
     "suggest_progression",
+    "PolyphonicTrack",
+    "remix",
     # synth
     "Synth",
     # audio export

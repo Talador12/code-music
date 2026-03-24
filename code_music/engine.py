@@ -1024,12 +1024,18 @@ class Song:
     sample_rate: int = 44100
     tracks: list[Track] = field(default_factory=list)
     voice_tracks: list = field(default_factory=list)  # list[VoiceTrack]
-    time_sig: tuple[int, int] = (4, 4)  # (numerator, denominator) e.g. (3,4), (6,8), (7,8)
+    poly_tracks: list = field(default_factory=list)  # list[PolyphonicTrack]
+    time_sig: tuple[int, int] = (4, 4)
     composer: str = ""
-    key_sig: str = "C"  # root note for sheet music export (e.g. "G", "Bb", "F#")
+    key_sig: str = "C"
 
     def add_track(self, track: Track) -> "Track":
         self.tracks.append(track)
+        return track
+
+    def add_polytrack(self, track) -> object:  # track: PolyphonicTrack
+        """Add a PolyphonicTrack. Returns the track."""
+        self.poly_tracks.append(track)
         return track
 
     def add_voice_track(self, track) -> object:  # track: VoiceTrack
@@ -1044,7 +1050,9 @@ class Song:
 
     @property
     def total_beats(self) -> float:
-        return max((t.total_beats for t in self.tracks), default=0.0)
+        seq_beats = max((t.total_beats for t in self.tracks), default=0.0)
+        poly_beats = max((t.total_beats for t in self.poly_tracks), default=0.0)
+        return max(seq_beats, poly_beats)
 
     @property
     def duration_sec(self) -> float:
@@ -1161,3 +1169,138 @@ def suggest_progression(
             )
         )
     return result
+
+
+# ---------------------------------------------------------------------------
+# PolyphonicTrack — multiple notes sounding simultaneously
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class PolyphonicTrack:
+    """A track where multiple notes can sound at the same time.
+
+    Unlike a regular Track (which is sequential — one note at a time),
+    PolyphonicTrack holds a list of (Note, start_beat) pairs. All notes
+    that overlap in time are mixed together during render.
+
+    Useful for: piano left hand (full chord voicings that sustain while
+    the right hand plays melody), guitar strumming, organ, pads with
+    individual note control.
+
+    Example::
+
+        piano = song.add_polytrack(PolyphonicTrack(name="piano", instrument="piano"))
+        piano.add(Note("C", 3, duration=4.0), at=0.0)   # bass note sustains
+        piano.add(Note("E", 3, duration=4.0), at=0.0)   # chord tones
+        piano.add(Note("G", 3, duration=4.0), at=0.0)
+        piano.add(Note("C", 5, duration=0.5), at=0.5)   # melody over the top
+        piano.add(Note("D", 5, duration=0.5), at=1.0)
+
+    Attributes:
+        name:       Track label.
+        instrument: Synth preset name.
+        volume:     Track gain 0.0–1.0.
+        pan:        Stereo position -1.0 (L) to 1.0 (R).
+        events:     List of (Note, start_beat) pairs — sorted by start_beat.
+    """
+
+    name: str = "poly"
+    instrument: str = "piano"
+    volume: float = 0.8
+    pan: float = 0.0
+    events: list[tuple[Note, float]] = field(default_factory=list)
+
+    def add(self, note: Note, at: float) -> "PolyphonicTrack":
+        """Add a note at a specific beat position. Returns self for chaining."""
+        self.events.append((note, at))
+        return self
+
+    def add_chord(self, chord: Chord, at: float) -> "PolyphonicTrack":
+        """Add all notes of a chord simultaneously at a beat position."""
+        for note in chord.notes:
+            self.events.append((note, at))
+        return self
+
+    @property
+    def total_beats(self) -> float:
+        if not self.events:
+            return 0.0
+        return max(at + note.duration for note, at in self.events)
+
+
+# ---------------------------------------------------------------------------
+# Song remix helper
+# ---------------------------------------------------------------------------
+
+
+def remix(
+    song: "Song", semitones: int = 0, bpm_factor: float = 1.0, title: str | None = None
+) -> "Song":
+    """Create a remixed version of a song with transposition and/or tempo change.
+
+    Args:
+        song:        Source song to remix.
+        semitones:   Transpose all pitched notes by this many semitones.
+                     +7 = up a fifth, -5 = down a fourth, +12 = up an octave.
+        bpm_factor:  Multiply the BPM by this factor.
+                     1.5 = 50% faster, 0.75 = 25% slower.
+        title:       Title for the remixed song (default: original + " (Remix)").
+
+    Returns:
+        A new Song with all tracks transposed and/or retempoed.
+
+    Example::
+
+        # Transpose "Offshore" up a minor third, 10% faster
+        remixed = remix(song, semitones=3, bpm_factor=1.1, title="Offshore (Club Mix)")
+        # Then render the remix
+        from code_music.synth import Synth
+        from code_music.export import export_wav
+        export_wav(Synth().render_song(remixed), "remix.wav")
+    """
+    import copy
+
+    new_song = Song(
+        title=title or f"{song.title} (Remix)",
+        bpm=song.bpm * bpm_factor,
+        sample_rate=song.sample_rate,
+        time_sig=song.time_sig,
+        key_sig=song.key_sig,
+        composer=song.composer,
+    )
+    new_song._effects = copy.copy(getattr(song, "_effects", {}))
+
+    for track in song.tracks:
+        new_track = new_song.add_track(
+            Track(
+                name=track.name,
+                instrument=track.instrument,
+                volume=track.volume,
+                pan=track.pan,
+                swing=track.swing,
+            )
+        )
+        for beat in track.beats:
+            if beat.event is None:
+                new_track.add(Note.rest(beat.duration))
+            elif isinstance(beat.event, Note):
+                n = beat.event
+                if n.pitch is None:
+                    new_track.add(Note.rest(n.duration))
+                elif semitones == 0:
+                    new_track.add(copy.copy(n))
+                else:
+                    new_midi = (n.midi or 60) + semitones
+                    new_track.add(Note(pitch=new_midi, duration=n.duration, velocity=n.velocity))
+            elif isinstance(beat.event, Chord):
+                c = beat.event
+                if semitones == 0:
+                    new_track.add(copy.copy(c))
+                else:
+                    # Transpose chord root
+                    root_midi = note_name_to_midi(c.root, c.octave) + semitones
+                    new_root = NOTE_NAMES[root_midi % 12]
+                    new_oct = root_midi // 12 - 1
+                    new_track.add(Chord(new_root, c.shape, new_oct, c.duration, c.velocity))
+    return new_song

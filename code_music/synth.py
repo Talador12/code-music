@@ -557,6 +557,44 @@ class Synth:
 
         return buf
 
+    def render_polytrack(
+        self,
+        ptrack,  # PolyphonicTrack
+        bpm: float,
+        total_beats: float,
+        total_samples: int,
+    ) -> FloatArray:
+        """Render a PolyphonicTrack by summing all its notes into a stereo buffer.
+
+        Each (Note, start_beat) pair is rendered independently and mixed at the
+        correct time position. Notes that overlap play simultaneously.
+        """
+        import math
+
+        preset_key = ptrack.instrument if ptrack.instrument in self.PRESETS else "sine"
+        preset = self.PRESETS[preset_key]
+        beat_sec = 60.0 / bpm
+        buf = np.zeros((total_samples, 2))
+
+        angle = (ptrack.pan + 1) / 2 * math.pi / 2
+        l_gain = math.cos(angle)
+        r_gain = math.sin(angle)
+
+        for note, start_beat in ptrack.events:
+            if note.pitch is None:
+                continue
+            start_sample = int(start_beat * beat_sec * self.sample_rate)
+            n_samples = int(note.duration * beat_sec * self.sample_rate)
+            if n_samples < 1 or start_sample >= total_samples:
+                continue
+            rendered = self._render_note(note, n_samples, preset)
+            end_sample = min(start_sample + n_samples, total_samples)
+            clip_len = end_sample - start_sample
+            buf[start_sample:end_sample, 0] += rendered[:clip_len] * l_gain * ptrack.volume
+            buf[start_sample:end_sample, 1] += rendered[:clip_len] * r_gain * ptrack.volume
+
+        return buf.astype(np.float64)
+
     # ------------------------------------------------------------------
     # Song → stereo array
     # ------------------------------------------------------------------
@@ -571,13 +609,14 @@ class Synth:
         import math
 
         has_instrument_tracks = bool(song.tracks)
+        has_poly_tracks = bool(getattr(song, "poly_tracks", []))
         has_voice_tracks = bool(getattr(song, "voice_tracks", []))
 
-        if not has_instrument_tracks and not has_voice_tracks:
+        if not has_instrument_tracks and not has_poly_tracks and not has_voice_tracks:
             return np.zeros((self.sample_rate, 2))  # 1s silence
 
         effects: dict = getattr(song, "_effects", {})
-        total_beats = song.total_beats if has_instrument_tracks else 8.0
+        total_beats = song.total_beats if (has_instrument_tracks or has_poly_tracks) else 8.0
         beat_sec = 60.0 / song.bpm
         total_samples = int(total_beats * beat_sec * self.sample_rate) + self.sample_rate
 
@@ -599,6 +638,19 @@ class Synth:
                 except Exception:
                     pass
             stereo_mix += track_stereo
+
+        # ── Polyphonic tracks ──────────────────────────────────────────────
+        for ptrack in getattr(song, "poly_tracks", []):
+            try:
+                poly_stereo = self.render_polytrack(ptrack, song.bpm, total_beats, total_samples)
+                if ptrack.name in effects:
+                    try:
+                        poly_stereo = effects[ptrack.name](poly_stereo, self.sample_rate)
+                    except Exception:
+                        pass
+                stereo_mix += poly_stereo
+            except Exception as e:
+                print(f"[poly] track '{getattr(ptrack, 'name', '?')}' failed: {e}")
 
         # ── Voice tracks ───────────────────────────────────────────────────
         from .voice import render_voice_track

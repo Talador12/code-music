@@ -159,6 +159,9 @@ samples: $(WAV_SAMPLES) ## [Create] Render all instrument/technique sample previ
 list-samples: ## [Create] List all available sample preview names
 	@echo ""; $(foreach s,$(SAMPLE_NAMES),echo "  make preview-$(s)";) echo ""
 
+gen-album: ## [Create] Generate a procedural album (GENRE=ambient SEED=42 TRACKS=5)
+	$(BIN)/python scripts/gen_album.py --genre $(or $(GENRE),ambient) --seed $(or $(SEED),42) --tracks $(or $(TRACKS),5)
+
 list-albums: ## [Create] List all 22 genre albums with track counts and render status
 	$(BIN)/python -m albums.render --list
 
