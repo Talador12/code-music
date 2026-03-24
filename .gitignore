@@ -26,3 +26,6 @@ styles/my_taste.json
 
 # macOS
 .DS_Store
+
+# Audio fingerprint snapshot (machine-specific, not committed)
+.fingerprints.json

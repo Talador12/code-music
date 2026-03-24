@@ -195,3 +195,57 @@ class TestConvReverbIRFile:
             out = conv_reverb(s, SR, ir_file=str(ir_path), wet=0.5)
             assert out.shape == s.shape
             assert not np.allclose(out, s)
+
+
+class TestFingerprint:
+    def _make_wav(self, path, freq=440.0, dur=1.0, sr=22050):
+        """Write a sine WAV for fingerprint testing."""
+        import wave as _wave
+        n = int(sr * dur)
+        t = np.linspace(0, dur, n, endpoint=False)
+        mono = (np.sin(2 * np.pi * freq * t) * 0.5 * 32767).astype(np.int16)
+        stereo = np.column_stack([mono, mono]).flatten()
+        with _wave.open(str(path), "w") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(2)
+            wf.setframerate(sr)
+            wf.writeframes(stereo.tobytes())
+
+    def test_same_file_same_fingerprint(self):
+        import tempfile
+        from pathlib import Path
+
+        from scripts.fingerprint import fingerprint_wav
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = Path(tmp) / "test.wav"
+            self._make_wav(wav)
+            fp1 = fingerprint_wav(wav)
+            fp2 = fingerprint_wav(wav)
+            assert fp1 == fp2
+
+    def test_different_freq_different_fingerprint(self):
+        import tempfile
+        from pathlib import Path
+
+        from scripts.fingerprint import fingerprint_wav
+        with tempfile.TemporaryDirectory() as tmp:
+            wav_a = Path(tmp) / "a.wav"
+            wav_b = Path(tmp) / "b.wav"
+            self._make_wav(wav_a, freq=440.0)
+            self._make_wav(wav_b, freq=880.0)
+            fp_a = fingerprint_wav(wav_a)
+            fp_b = fingerprint_wav(wav_b)
+            assert fp_a != fp_b
+
+    def test_fingerprint_is_hex_string(self):
+        import tempfile
+        from pathlib import Path
+
+        from scripts.fingerprint import fingerprint_wav
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = Path(tmp) / "test.wav"
+            self._make_wav(wav)
+            fp = fingerprint_wav(wav)
+            assert isinstance(fp, str)
+            assert len(fp) == 32
+            int(fp, 16)  # should be valid hex

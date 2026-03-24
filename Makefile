@@ -326,3 +326,10 @@ distrokid-prep: ## [Create] Prepare all albums for DistroKid upload → dist/dis
 distrokid-prep-%: ## [Create] Prepare one album for DistroKid (e.g. make distrokid-prep-jazz_neosoul)
 	$(BIN)/python scripts/distrokid_prep.py --album $*
 
+
+fingerprint: ## [Dev] Save audio fingerprints of all rendered songs → .fingerprints.json
+	$(BIN)/python scripts/fingerprint.py --snapshot
+
+fingerprint-check: ## [Dev] Compare current renders against saved fingerprints (regression test)
+	$(BIN)/python scripts/fingerprint.py --check
+
