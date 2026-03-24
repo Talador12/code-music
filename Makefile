@@ -344,3 +344,12 @@ playlist: ## [Create] Generate playlists (M3U + JSON + TXT) for all songs → di
 playlist-%: ## [Create] Generate playlist for one vibe (e.g. make playlist-chill)
 	$(BIN)/python scripts/make_playlist.py --vibe $*
 
+
+check: lint test ## [Dev] Run lint + test in one command
+	@echo ""
+	@echo "$(shell printf '\033[92m')All checks passed.$(shell printf '\033[0m')"
+
+
+stats: ## [Dev] Show song statistics — total duration, BPM distribution, genres
+	$(BIN)/python scripts/stats.py
+

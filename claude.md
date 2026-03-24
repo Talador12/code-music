@@ -55,8 +55,30 @@
 - [x] DistroKid batch upload helper
 - [x] Spotify playlist from rendered songs
 
-### Ideas
+### Ideas (completed)
 - [x] Song fingerprinting (compare two renders for regression)
 - [x] Lyrics + voice synthesis integration
 - [x] Visual scale diagram in web player
 - [x] BPM tap utility
+
+## Next Roadmap
+
+### Engine
+- [ ] Chord.voicings() — return all common voicings of a chord (root, drop2, spread, shell)
+- [ ] Song.merge(other_song) — combine two songs into one (layer tracks)
+- [ ] Track.reverse() — play a track's notes in reverse order
+
+### Effects
+- [ ] Stereo imager — visualize L/R balance as a PNG
+- [ ] Slapback delay — single short echo (rockabilly, early rock)
+
+### Songs
+- [ ] Reach 60 songs (2 more needed)
+- [ ] Write a song that uses Lyrics + voice synthesis end-to-end
+
+### Scripts
+- [x] make check — run lint + test in one command
+- [x] Song statistics script — total duration, BPM distribution, genre counts
+
+### Distribution
+- [ ] GitHub Release with rendered WAV zip artifact on tag push
