@@ -240,6 +240,14 @@
 
 <!-- Scales tab -->
 <div id="tab-scales" class="tab-content">
+  <div id="piano-diagram" style="display:none; margin-bottom:1.5rem;">
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.6rem;">
+      <span id="piano-label" style="color:var(--accent); font-weight:bold;"></span>
+      <span id="piano-formula" style="color:var(--dim); font-size:0.75rem;"></span>
+      <button onclick="closePiano()" style="background:none;border:1px solid var(--border);color:var(--dim);padding:0.1rem 0.5rem;cursor:pointer;border-radius:3px;font-family:var(--mono);font-size:11px;margin-left:auto;">✕</button>
+    </div>
+    <svg id="piano-svg" viewBox="0 0 560 120" style="width:100%;max-width:560px;height:auto;"></svg>
+  </div>
   <div class="scales-grid" id="scales-grid"></div>
 </div>
 
@@ -343,27 +351,28 @@ const SONGS = [
 ];
 
 const SCALE_GROUPS = [
-  { name:"Major",           group:"diatonic",   char:"bright, happy, resolved"       },
-  { name:"Natural Minor",   group:"diatonic",   char:"dark, sad, familiar"            },
-  { name:"Dorian",          group:"diatonic",   char:"minor + warmth"                 },
-  { name:"Phrygian",        group:"diatonic",   char:"dark, Spanish"                  },
-  { name:"Lydian",          group:"diatonic",   char:"floating, dreamy"               },
-  { name:"Mixolydian",      group:"diatonic",   char:"bluesy major"                   },
-  { name:"Major Pentatonic",group:"pentatonic", char:"folk, country, universal"       },
-  { name:"Minor Pentatonic",group:"pentatonic", char:"rock, blues, guitar"            },
-  { name:"Blues",           group:"blues",      char:"soul, tension, bends"           },
-  { name:"Harmonic Minor",  group:"minor",      char:"classical, dramatic"            },
-  { name:"Melodic Minor",   group:"minor",      char:"jazz lines, smooth"             },
-  { name:"Whole Tone",      group:"symmetric",  char:"dreamy, Debussy, no gravity"    },
-  { name:"Diminished",      group:"symmetric",  char:"jazz tension"                   },
-  { name:"Bebop Dominant",  group:"bebop",      char:"Parker, chord tones on beats"   },
-  { name:"Lydian Dominant", group:"modal_jazz", char:"bright + bluesy fusion"         },
-  { name:"Altered",         group:"modal_jazz", char:"V7alt — maximum tension"        },
-  { name:"Hungarian Minor", group:"world",      char:"gypsy, dramatic"                },
-  { name:"Arabic",          group:"world",      char:"two aug 2nds, dense"            },
-  { name:"Japanese",        group:"world",      char:"koto, meditative"               },
-  { name:"Persian",         group:"world",      char:"ancient, tense, exotic"         },
-  { name:"Chromatic",       group:"reference",  char:"all 12 semitones"               },
+  // intervals: semitone offsets from root (C=0)
+  { name:"Major",           group:"diatonic",   char:"bright, happy, resolved",    intervals:[0,2,4,5,7,9,11] },
+  { name:"Natural Minor",   group:"diatonic",   char:"dark, sad, familiar",        intervals:[0,2,3,5,7,8,10] },
+  { name:"Dorian",          group:"diatonic",   char:"minor + warmth",             intervals:[0,2,3,5,7,9,10] },
+  { name:"Phrygian",        group:"diatonic",   char:"dark, Spanish",              intervals:[0,1,3,5,7,8,10] },
+  { name:"Lydian",          group:"diatonic",   char:"floating, dreamy",           intervals:[0,2,4,6,7,9,11] },
+  { name:"Mixolydian",      group:"diatonic",   char:"bluesy major",              intervals:[0,2,4,5,7,9,10] },
+  { name:"Major Pentatonic",group:"pentatonic", char:"folk, country, universal",   intervals:[0,2,4,7,9] },
+  { name:"Minor Pentatonic",group:"pentatonic", char:"rock, blues, guitar",        intervals:[0,3,5,7,10] },
+  { name:"Blues",           group:"blues",      char:"soul, tension, bends",       intervals:[0,3,5,6,7,10] },
+  { name:"Harmonic Minor",  group:"minor",      char:"classical, dramatic",        intervals:[0,2,3,5,7,8,11] },
+  { name:"Melodic Minor",   group:"minor",      char:"jazz lines, smooth",         intervals:[0,2,3,5,7,9,11] },
+  { name:"Whole Tone",      group:"symmetric",  char:"dreamy, Debussy, no gravity",intervals:[0,2,4,6,8,10] },
+  { name:"Diminished",      group:"symmetric",  char:"jazz tension",               intervals:[0,2,3,5,6,8,9,11] },
+  { name:"Bebop Dominant",  group:"bebop",      char:"Parker, chord tones on beats",intervals:[0,2,4,5,7,9,10,11] },
+  { name:"Lydian Dominant", group:"modal_jazz", char:"bright + bluesy fusion",     intervals:[0,2,4,6,7,9,10] },
+  { name:"Altered",         group:"modal_jazz", char:"V7alt — maximum tension",    intervals:[0,1,3,4,6,8,10] },
+  { name:"Hungarian Minor", group:"world",      char:"gypsy, dramatic",            intervals:[0,2,3,6,7,8,11] },
+  { name:"Arabic",          group:"world",      char:"two aug 2nds, dense",        intervals:[0,1,4,5,7,8,11] },
+  { name:"Japanese",        group:"world",      char:"koto, meditative",           intervals:[0,1,5,7,8] },
+  { name:"Persian",         group:"world",      char:"ancient, tense, exotic",     intervals:[0,1,4,5,6,8,11] },
+  { name:"Chromatic",       group:"reference",  char:"all 12 semitones",           intervals:[0,1,2,3,4,5,6,7,8,9,10,11] },
 ];
 
 // ─── Audio engine ──────────────────────────────────────────────────────────
@@ -496,6 +505,66 @@ function buildSongs() {
   });
 }
 
+// ─── Piano diagram ─────────────────────────────────────────────────────────
+const NOTE_NAMES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const BLACK_KEYS = new Set([1,3,6,8,10]); // C#, D#, F#, G#, A#
+
+function drawPiano(intervals, name) {
+  const svg = document.getElementById("piano-svg");
+  svg.innerHTML = "";
+  const activeSet = new Set(intervals);
+  const ww = 40, wh = 100, bw = 24, bh = 60; // white/black key sizes
+  // White key positions (C D E F G A B = indices 0,2,4,5,7,9,11)
+  const whites = [0,2,4,5,7,9,11];
+  const whiteIdx = {}; whites.forEach((n,i) => whiteIdx[n] = i);
+  // Draw white keys
+  whites.forEach((note, i) => {
+    const x = i * ww;
+    const active = activeSet.has(note);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", x); rect.setAttribute("y", 0);
+    rect.setAttribute("width", ww - 1); rect.setAttribute("height", wh);
+    rect.setAttribute("rx", 3);
+    rect.setAttribute("fill", active ? "#7755ff" : "#1a1a2e");
+    rect.setAttribute("stroke", "#333355"); rect.setAttribute("stroke-width", "1");
+    svg.appendChild(rect);
+    // Note name label
+    const txt = document.createElementNS("http://www.w3.org/2000/svg","text");
+    txt.setAttribute("x", x + ww/2); txt.setAttribute("y", wh + 14);
+    txt.setAttribute("text-anchor", "middle");
+    txt.setAttribute("fill", active ? "#7755ff" : "#444466");
+    txt.setAttribute("font-size", "10"); txt.setAttribute("font-family", "monospace");
+    txt.textContent = NOTE_NAMES[note];
+    svg.appendChild(txt);
+  });
+  // Draw black keys on top
+  const blackPositions = {1:0.65, 3:1.65, 6:3.65, 8:4.65, 10:5.65}; // fractional white-key positions
+  Object.entries(blackPositions).forEach(([note, pos]) => {
+    const n = parseInt(note);
+    const x = pos * ww - bw/2 + ww/2;
+    const active = activeSet.has(n);
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x", x); rect.setAttribute("y", 0);
+    rect.setAttribute("width", bw); rect.setAttribute("height", bh);
+    rect.setAttribute("rx", 2);
+    rect.setAttribute("fill", active ? "#aa77ff" : "#08081a");
+    rect.setAttribute("stroke", "#222244"); rect.setAttribute("stroke-width", "1");
+    svg.appendChild(rect);
+  });
+  // Update label
+  document.getElementById("piano-label").textContent = name;
+  const formula = intervals.map(i => {
+    const names = ["1","♭2","2","♭3","3","4","♯4/♭5","5","♭6","6","♭7","7"];
+    return names[i];
+  }).join("  ");
+  document.getElementById("piano-formula").textContent = formula;
+  document.getElementById("piano-diagram").style.display = "block";
+}
+
+function closePiano() {
+  document.getElementById("piano-diagram").style.display = "none";
+}
+
 // ─── Render scales ─────────────────────────────────────────────────────────
 function buildScales() {
   const grid = document.getElementById("scales-grid");
@@ -508,7 +577,10 @@ function buildScales() {
       <div class="scale-group">[${sc.group}]</div>
       <div class="scale-char">${sc.char}</div>
     `;
-    card.onclick = () => playFile(`../scales/${file}`, sc.name + " (all 12 keys)");
+    card.onclick = () => {
+      drawPiano(sc.intervals, sc.name);
+      playFile(`../scales/${file}`, sc.name + " (all 12 keys)");
+    };
     grid.appendChild(card);
   });
 }
