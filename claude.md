@@ -96,4 +96,4 @@
 
 - [x] Track.quantize(grid) — snap note timings to nearest grid subdivision
 - [x] Song.export_stems() — render each track as a separate WAV file
-- [ ] Reach 75 songs (4 more needed)
+- [x] Reach 75 songs (75 total)
