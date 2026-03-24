@@ -9,6 +9,7 @@ from .effects import (
     conv_reverb,
     delay,
     distortion,
+    eq,
     flanger,
     gate,
     granular,
@@ -172,6 +173,7 @@ __all__ = [
     "granular",
     "autotune",
     "conv_reverb",
+    "eq",
     # synth
     "Synth",
     # audio export

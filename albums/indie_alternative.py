@@ -27,5 +27,6 @@ ALBUM = {
         {"title": "Room Tone",    "song": "the_room",        "bpm": 104},
         {"title": "Slow Coast",      "song": "slow_coast",   "bpm": 92},
         {"title": "Vapor Wave",       "song": "vapor_wave",       "bpm": 80},
+        {"title": "Quarter Life",   "song": "quarter_life",    "bpm": 95},
     ],
 }

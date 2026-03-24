@@ -305,3 +305,17 @@ midi-to-song: ## [Create] Convert a MIDI file to a code-music song script (MIDI=
 	@test -n "$(MIDI)" || (echo "Usage: make midi-to-song MIDI=file.mid OUT=songs/name.py"; exit 1)
 	$(BIN)/python scripts/midi_to_song.py "$(MIDI)" $(if $(OUT),--out $(OUT),)
 
+
+waveforms: ## [Create] Generate waveform PNG for all rendered songs → dist/waveforms/
+	@command -v python3 -c "import matplotlib" 2>/dev/null || $(BIN)/pip install matplotlib -q
+	$(BIN)/python scripts/make_waveform.py --all
+
+waveform-%: ## [Create] Generate waveform PNG for one song (e.g. make waveform-trance_odyssey)
+	$(BIN)/python scripts/make_waveform.py dist/wav/$*.wav
+
+samplers: ## [Create] Build 2-min sampler preview for all albums → dist/samplers/
+	$(BIN)/python scripts/make_sampler.py --all
+
+sampler-%: ## [Create] Build sampler for one album (e.g. make sampler-jazz_neosoul)
+	$(BIN)/python scripts/make_sampler.py --album $*
+

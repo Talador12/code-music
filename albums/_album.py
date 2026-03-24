@@ -132,6 +132,17 @@ def render_album(
     for fmt in formats:
         _write_playlist(album, out_dir, fmt)
 
+    # Auto-generate cover art if matplotlib is available
+    try:
+        from scripts.make_cover import make_cover
+
+        album_stem = out_dir.name
+        cover_out = out_dir / "cover.png"
+        make_cover(album_stem, cover_out)
+        print(f"  cover → {cover_out.name}")
+    except Exception:
+        pass  # cover art is optional
+
     return rendered
 
 

@@ -1236,3 +1236,68 @@ def conv_reverb(
         wet_signal /= wp
 
     return (samples * (1 - wet) + wet_signal * wet).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Multi-band EQ — parametric equalizer with configurable bands
+# ---------------------------------------------------------------------------
+
+
+def eq(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bands: list[tuple[float, float, float]] | None = None,
+) -> FloatArray:
+    """Parametric multi-band equalizer.
+
+    Each band is a (frequency_hz, gain_db, q) tuple:
+      frequency_hz: Centre frequency of the band.
+      gain_db:      Boost (+) or cut (-) in decibels. 0 = no change.
+      q:            Bandwidth (higher Q = narrower). Typical: 0.5–4.0.
+
+    Args:
+        bands: List of (freq_hz, gain_db, q) tuples.
+               Default: gentle presence boost and low-end warmth.
+
+    Example::
+
+        # Brighten highs, add warmth, cut muddy mids
+        eq(guitar, sr, bands=[
+            (80,   +3.0, 0.7),   # low warmth
+            (500,  -2.0, 1.0),   # cut mud
+            (3000, +2.5, 1.2),   # presence
+            (8000, +1.5, 0.8),   # air
+        ])
+    """
+    if bands is None:
+        bands = [
+            (100.0,  +1.5, 0.7),   # low warmth
+            (3000.0, +1.0, 1.0),   # presence
+            (8000.0, +0.8, 0.8),   # air
+        ]
+
+    result = samples.copy().astype(np.float64)
+
+    for freq_hz, gain_db, q in bands:
+        if abs(gain_db) < 0.1:
+            continue
+        freq_hz = np.clip(freq_hz, 20.0, sample_rate / 2 - 1)
+        q = max(0.1, q)
+
+        # Peaking EQ biquad coefficients
+        A   = 10 ** (gain_db / 40.0)
+        w0  = 2 * math.pi * freq_hz / sample_rate
+        alpha = math.sin(w0) / (2 * q)
+
+        b0 =  1 + alpha * A
+        b1 = -2 * math.cos(w0)
+        b2 =  1 - alpha * A
+        a0 =  1 + alpha / A
+        a1 = -2 * math.cos(w0)
+        a2 =  1 - alpha / A
+
+        sos = np.array([[b0/a0, b1/a0, b2/a0, 1.0, a1/a0, a2/a0]])
+        result[:, 0] = sig.sosfilt(sos, result[:, 0])
+        result[:, 1] = sig.sosfilt(sos, result[:, 1])
+
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
