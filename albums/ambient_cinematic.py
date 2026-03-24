@@ -26,5 +26,7 @@ ALBUM = {
     "tracks": [
         {"title": "Carrier", "song": "deep_space_drift", "bpm": 60},
         {"title": "Weight", "song": "cinematic_rise", "bpm": 100},
+        {"title": "Drift State",  "song": "drift_state",  "bpm": 50},
+        {"title": "Open Circuit", "song": "open_circuit", "bpm": 65},
     ],
 }

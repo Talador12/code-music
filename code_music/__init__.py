@@ -13,6 +13,7 @@ from .effects import (
     lfo_filter,
     limiter,
     lowpass,
+    multiband_compress,
     noise_sweep,
     pan,
     phaser,
@@ -23,6 +24,7 @@ from .effects import (
     tape_sat,
     tremolo,
     vibrato,
+    vocoder,
 )
 from .engine import (
     # composition helpers
@@ -167,7 +169,9 @@ __all__ = [
     "flanger",
     "phaser",
     "bitcrush",
+    "multiband_compress",
     "ring_mod",
+    "vocoder",
     "tape_sat",
     "lowpass",
     "highpass",

@@ -1,73 +1,104 @@
 # code-music — project state
 
-## Status: v0.8.0 — 5 new songs, bitcrush/ring_mod/tape_sat, 22 albums fleshed out
+## Status: v0.10.0 — 33 songs, 22 albums, 230 tests, Spotify OAuth
 
-## Songs (18 total)
-| File | Title | Genre | BPM |
-|---|---|---|---|
-| hello_world | Hello World | tutorial | 100 |
-| lo_fi_loop | Bedside Table | lo-fi hip-hop | 90 |
-| prog_rock | Teeth | prog rock | 130 |
-| clarity_drive | Offshore | festival EDM | 128 |
-| lollipop_laser | Lollipop Laser | cosmic disco | 128 |
-| deep_space_drift | Carrier | ambient | 60 |
-| trance_odyssey | Drop | uplifting trance | 138 |
-| tank_bebop | The Count | bebop jazz | 168 |
-| symphony_no1 | Symphony No. 1 | classical | 108 |
-| cinematic_rise | Weight | cinematic | 100 |
-| deadmau5_house | Machine Dreams | progressive house | 128 |
-| liquid_dnb | Upstream | liquid DnB | 174 |
-| future_bass | Between | future bass | 150 |
-| **heavy_wobble** | **Half Step** | **dubstep** | **140** |
-| **late_shift** | **Low Light** | **neo-soul R&B** | **88** |
-| **berlin_four** | **Concrete** | **techno** | **138** |
-| **chiptune_quest** | **Save Point** | **chiptune/8-bit** | **160** |
-| **the_room** | **Room Tone** | **indie/alt rock** | **104** |
+## What's built
 
-## New effects
-- `bitcrush(bit_depth, downsample)` — lo-fi / chiptune / NES texture
-- `ring_mod(freq_hz)` — metallic / robotic / AM radio
-- `tape_sat(drive, warmth)` — warm analog tape saturation
+### Engine
+- `Note / Chord / Beat / Track / Song` — full music primitives
+- `Track.pan`, `Track.swing`, `song._effects` post-render hook
+- `song.time_sig`, `song.key_sig`, `song.composer`
+- Duration constants: `WHOLE HALF QUARTER EIGHTH SIXTEENTH THIRTY_SECOND`
+- Tuplets: `triplet() tuplet() triplets() tuplets()`
+- Ornaments: `trill mordent upper_mordent turn grace_note doit fall flip shake`
+- Articulations: `staccato legato pizzicato`
+- Composition: `arp chord_prog crescendo decrescendo transpose humanize repeat scale`
+- `suggest_progression(root, mood)` — 8 moods × 3 variations
+- `generate_melody(scale, mode, bars, density, seed)`
+- `prob(note, p)` — probabilistic notes
 
-## Albums (22)
-All referenced in `albums/` with full track lists, descriptions, influences.
-Most now have 2-3 songs each. Target is 4-6 per album.
+### Synth (65 presets)
+- Standard waveforms + additive synthesis
+- Supersaw (7 detuned saws), Reese bass, Hoover, Wobble (LFO filter per note)
+- FM synthesis, Formant vowels (a/o/e), Moog ladder filter
+- **Karplus-Strong physical models**: guitar_ks, banjo_ks, harp_ks, sitar_ks, koto_ks
+- Full orchestral: strings, brass, woodwinds, percussion, choir
+- EDM: acid, hoover, stab, supersaw, sub_bass, 808
+- Drums: kick, snare, hat, clap, tom, ride, crash, 808, taiko, tabla, djembe
+
+### Effects (all scipy/numpy vectorized)
+- `reverb delay chorus flanger phaser distortion`
+- `lowpass highpass bandpass compress limiter`
+- `gate lfo_filter sidechain stereo_width tremolo vibrato`
+- `bitcrush ring_mod tape_sat noise_sweep pan`
+
+### Export
+- WAV (stdlib), FLAC (lossless), MP3 (320k), OGG (pydub + ffmpeg)
+- MIDI (pure stdlib, SMF type 1)
+- LilyPond, ABC notation, MusicXML sheet music
+
+### Songs (33 total)
+Electronic: clarity_drive, lollipop_laser, trance_odyssey, deadmau5_house,
+            future_bass, heavy_wobble, berlin_four, veldt, neon_grid
+Jazz/Soul:  tank_bebop, lo_fi_loop, late_shift, small_hours, upstream_two,
+            gospel_hour, ipanema_hours
+Rock:       prog_rock, the_room, fault_lines, teeth_two
+Classical:  symphony_no1, cathedral
+Cinematic:  cinematic_rise, deep_space_drift
+DnB:        liquid_dnb
+Pop:        second_chorus
+Folk:       porch_song
+Funk:       on_the_one
+Flamenco:   duende
+World:      wrong_side_of_the_scale
+Chiptune:   chiptune_quest
+Neo-soul:   late_shift
+
+### Albums (22)
+All in `albums/` — most at 3+ tracks now
+
+### Spotify integration
+- `make spotify` — OAuth auth + reads your listening data
+- Writes `styles/my_taste.py` with top artists, genres, playlists
+- `make export-spotify` — renders all songs to dist/flac/ for upload
 
 ## Roadmap
 
-### Songs still needed
-- [ ] Flamenco / phrygian dominant (guitar + cajon percussion)
-- [ ] Gospel / soul choir song (choir_aah full arrangement)
-- [ ] Drum & bass — harder (Pendulum/Chase & Status energy, 174)
-- [ ] Funk full song (proper James Brown-style groove)
-- [ ] Latin jazz / bossa nova
-- [ ] Metal full song (heavy distortion, odd time)
-- [ ] Folk / fingerpicked full song
-- [ ] Ambient generative (procedural, runs indefinitely)
+### Songs
+- [ ] Harder DnB (Pendulum / Chase & Status — distorted bass, faster)
+- [ ] Ambient generative (procedural, slow-evolving, never repeats)
+- [ ] Reggae / dancehall
+- [ ] Neo-classical / minimal piano (Nils Frahm, Ólafur Arnalds)
+- [ ] Drum & bass — neurofunk (dark, technical)
+- [ ] Trap / hip-hop production (808 bass, hi-hat rolls)
 
 ### Engine
-- [ ] Karplus-Strong string synthesis (plucked string realism)
-- [ ] Chord progression suggester: root + mood → chord list
-- [ ] Velocity-to-timbre (harder hit = brighter piano/drums)
-- [ ] Polyphonic Track (simultaneous notes)
-- [ ] Swing per-note variation (humanize rhythm timing)
+- [ ] Polyphonic Track (notes playing simultaneously, not sequentially)
+- [ ] Velocity-to-timbre (louder = brighter on piano/drums)
+- [ ] Note probability per-track (density control at track level)
+- [ ] Chord inversion helper: `Chord.invert(n)`
+- [ ] BPM automation (gradual tempo changes within a song)
 
 ### Effects
-- [ ] Multi-band compressor (mastering chain)
-- [ ] Convolution reverb with real IR files
+- [ ] Multi-band compressor (mastering chain — low/mid/high separate)
 - [ ] Vocoder effect (robot/harmonizer voice)
+- [ ] Convolution reverb with real IR files (load .wav impulse response)
+- [ ] Auto-tune post-processing (snap voice pitch to scale)
 
 ### Albums
-- [ ] Expand every album to 4-6 tracks minimum
-- [ ] Album artwork generation
-- [ ] GitHub Pages album browser / web player
+- [ ] Flesh out 7 remaining 2-track albums to 3+
+- [ ] Album artwork generation (matplotlib text art, or AI image)
+- [ ] GitHub Pages web player — browse and play albums in browser
 
-### Spotify
+### Distribution
 - [ ] DistroKid / TuneCore upload guide in docs/
-- [ ] Batch CI render to dist/ on push
+- [ ] Batch CI render to dist/ on push (GitHub Actions artifact)
 
 ### Ideas
-- [ ] Generative album: seed + genre → whole album procedurally
-- [ ] Live watch mode: --watch auto-plays on save
-- [ ] BPM tap utility
-- [ ] Music taste profile from Spotify API (needs OAuth token)
+- [ ] Generative album: seed + genre + mood → full procedural album
+- [ ] Song remix helper: transpose + retempo existing song
+- [ ] Live watch mode: --watch flag re-renders AND auto-plays on save
+- [ ] BPM tap utility (figure out tempo from tapping)
+- [ ] Music taste auto-calibration once Spotify OAuth token provided
+- [ ] MIDI → code-music reverse compiler (read .mid → generate song script)
+- [ ] Collaborate mode: merge two song scripts into one arrangement

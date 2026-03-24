@@ -770,3 +770,142 @@ def tape_sat(
         saturated = saturated + low_boost
 
     return np.clip(samples * (1 - wet) + saturated * wet, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Multi-band compressor
+# ---------------------------------------------------------------------------
+
+
+def multiband_compress(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    low_cut: float = 250.0,
+    high_cut: float = 4000.0,
+    low_threshold: float = 0.6,
+    mid_threshold: float = 0.5,
+    high_threshold: float = 0.4,
+    ratio: float = 3.0,
+    makeup_gain: float = 1.15,
+) -> FloatArray:
+    """Three-band compressor: low / mid / high compressed independently.
+
+    Splits the signal into three frequency bands, compresses each with
+    its own threshold, then recombines. Avoids the pumping artifacts of
+    a full-band compressor on complex mixes.
+
+    Args:
+        low_cut:          Crossover between low and mid bands (Hz).
+        high_cut:         Crossover between mid and high bands (Hz).
+        low_threshold:    Compression threshold for the bass band.
+        mid_threshold:    Compression threshold for the mid band.
+        high_threshold:   Compression threshold for the high band.
+        ratio:            Compression ratio applied to all bands.
+        makeup_gain:      Post-compression gain.
+    """
+    # Split into three bands via butterworth crossovers
+    sos_low = sig.butter(4, low_cut, btype="low", fs=sample_rate, output="sos")
+    sos_mid = sig.butter(4, [low_cut, high_cut], btype="band", fs=sample_rate, output="sos")
+    sos_high = sig.butter(4, high_cut, btype="high", fs=sample_rate, output="sos")
+
+    def _band(sos):
+        return np.column_stack(
+            [
+                sig.sosfilt(sos, samples[:, 0]),
+                sig.sosfilt(sos, samples[:, 1]),
+            ]
+        ).astype(np.float64)
+
+    low_band = _band(sos_low)
+    mid_band = _band(sos_mid)
+    high_band = _band(sos_high)
+
+    # Compress each band independently
+    low_c = compress(low_band, sample_rate, threshold=low_threshold, ratio=ratio, makeup_gain=1.0)
+    mid_c = compress(mid_band, sample_rate, threshold=mid_threshold, ratio=ratio, makeup_gain=1.0)
+    high_c = compress(
+        high_band, sample_rate, threshold=high_threshold, ratio=ratio, makeup_gain=1.0
+    )
+
+    result = (low_c + mid_c + high_c) * makeup_gain
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Vocoder — carrier modulated by a modulator (robot/harmonizer voice)
+# ---------------------------------------------------------------------------
+
+
+def vocoder(
+    carrier: FloatArray,
+    modulator: FloatArray,
+    sample_rate: int = 44100,
+    bands: int = 16,
+    wet: float = 0.9,
+) -> FloatArray:
+    """Vocoder: impose the spectral envelope of `modulator` onto `carrier`.
+
+    Classic use: carrier = synth pad/sawtooth, modulator = voice/speech.
+    The result sounds like the synth is 'speaking'. Also works with any
+    two audio signals for interesting timbral blends.
+
+    Args:
+        carrier:   The signal whose pitch/timbre gets reshaped (e.g. synth).
+        modulator: The signal whose spectral envelope is extracted (e.g. voice).
+        bands:     Number of frequency bands (more = smoother but slower).
+        wet:       Mix between vocoded output and dry carrier.
+    """
+    n = min(len(carrier), len(modulator))
+    carrier = carrier[:n]
+    modulator = modulator[:n]
+
+    # Pad both to same length
+    if len(carrier) < n or len(modulator) < n:
+        carrier = np.pad(carrier, ((0, max(0, n - len(carrier))), (0, 0)))
+        modulator = np.pad(modulator, ((0, max(0, n - len(modulator))), (0, 0)))
+
+    # Frequency bands spaced logarithmically from 80Hz to 8kHz
+    freqs = np.logspace(np.log10(80), np.log10(8000), bands + 1)
+
+    output = np.zeros((n, 2), dtype=np.float64)
+
+    for i in range(bands):
+        lo, hi = freqs[i], freqs[i + 1]
+        if lo >= sample_rate / 2 - 1 or hi >= sample_rate / 2:
+            continue
+        hi = min(hi, sample_rate / 2 - 1)
+        try:
+            sos = sig.butter(2, [lo, hi], btype="band", fs=sample_rate, output="sos")
+        except Exception:
+            continue
+
+        # Filter both signals to this band
+        car_band = np.column_stack(
+            [
+                sig.sosfilt(sos, carrier[:, 0]),
+                sig.sosfilt(sos, carrier[:, 1]),
+            ]
+        )
+        mod_band = np.column_stack(
+            [
+                sig.sosfilt(sos, modulator[:, 0]),
+                sig.sosfilt(sos, modulator[:, 1]),
+            ]
+        )
+
+        # Extract envelope from modulator band (rectify + smooth)
+        r_coef = math.exp(-1.0 / max(1, 10 * sample_rate / 1000))
+        env_l = sig.lfilter([1.0 - r_coef], [1.0, -r_coef], np.abs(mod_band[:, 0]))
+        env_r = sig.lfilter([1.0 - r_coef], [1.0, -r_coef], np.abs(mod_band[:, 1]))
+        env = np.column_stack([env_l, env_r])
+
+        # Apply modulator envelope to carrier band
+        output += car_band * env * 4.0  # ×4 to compensate for band energy loss
+
+    # Normalize
+    peak = np.max(np.abs(output))
+    if peak > 0:
+        output /= peak
+
+    result = carrier * (1 - wet) + output * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
