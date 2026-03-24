@@ -486,3 +486,70 @@ class TestShellVoicing:
         tr.add(Chord("D", "dom7", 3, duration=2.0).shell_voicing(bass="F#"))
         samples = Synth(22050).render_song(song)
         assert np.max(np.abs(samples)) > 0.0
+
+
+class TestTrackQuantize:
+    def test_snaps_to_grid(self):
+        t = Track()
+        t.add(Note("C", 4, 0.33))   # ~1/3 beat
+        t.add(Note("E", 4, 0.78))   # ~3/4 beat
+        q = t.quantize(grid=0.25)
+        assert q.beats[0].event.duration == 0.25  # snapped to 0.25
+        assert q.beats[1].event.duration == 0.75  # snapped to 0.75
+
+    def test_preserves_pitch(self):
+        t = Track()
+        t.add(Note("G", 5, 0.33))
+        q = t.quantize(grid=0.5)
+        assert q.beats[0].event.pitch == "G"
+        assert q.beats[0].event.octave == 5
+
+    def test_minimum_duration_is_grid(self):
+        t = Track()
+        t.add(Note("C", 4, 0.01))   # very short
+        q = t.quantize(grid=0.25)
+        assert q.beats[0].event.duration == 0.25  # at least one grid unit
+
+    def test_preserves_total_beat_count_approx(self):
+        t = Track()
+        t.add(Note("C", 4, 1.0))
+        t.add(Note("E", 4, 0.5))
+        t.add(Note("G", 4, 0.5))
+        q = t.quantize(grid=0.25)
+        assert abs(q.total_beats - t.total_beats) < 0.5
+
+    def test_does_not_mutate_original(self):
+        t = Track()
+        t.add(Note("C", 4, 0.33))
+        _ = t.quantize(grid=0.25)
+        assert t.beats[0].event.duration == 0.33  # original unchanged
+
+    def test_chord_quantized(self):
+        t = Track()
+        t.add(Chord("C", "maj", 4, duration=0.37))
+        q = t.quantize(grid=0.25)
+        assert q.beats[0].event.duration == 0.25 or q.beats[0].event.duration == 0.5
+
+
+class TestExportStems:
+    def test_creates_files(self):
+        import tempfile
+        song = Song(title="Stem Test", bpm=120, sample_rate=22050)
+        song.add_track(Track(name="kick", instrument="drums_kick")).add(Note("C", 2, 2.0))
+        song.add_track(Track(name="bass", instrument="bass")).add(Note("E", 2, 2.0))
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = song.export_stems(tmp)
+            assert len(paths) == 2
+            assert all(p.exists() for p in paths)
+            assert any("kick" in p.name for p in paths)
+            assert any("bass" in p.name for p in paths)
+
+    def test_stem_files_have_audio(self):
+        import tempfile
+        import wave
+        song = Song(title="Stem Test", bpm=120, sample_rate=22050)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 4, 1.0))
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = song.export_stems(tmp)
+            with wave.open(str(paths[0]), "rb") as wf:
+                assert wf.getnframes() > 0

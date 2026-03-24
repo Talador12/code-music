@@ -1195,6 +1195,59 @@ class Track:
             self.add(e)
         return self
 
+    def quantize(self, grid: float = 0.25) -> "Track":
+        """Return a new Track with note durations snapped to the nearest grid.
+
+        Rounds each note/chord/rest duration to the nearest multiple of ``grid``.
+        Useful for tightening up humanized or generated patterns.
+
+        Args:
+            grid: Grid subdivision in beats (0.25 = 16th note, 0.5 = 8th, 1.0 = quarter).
+
+        Returns:
+            New Track with quantized durations. Original track unchanged.
+
+        Example::
+
+            tight = loose_track.quantize(grid=0.25)   # snap to 16th grid
+            song.add_track(tight)
+        """
+        q = Track(
+            name=self.name,
+            instrument=self.instrument,
+            volume=self.volume,
+            pan=self.pan,
+            swing=self.swing,
+            density=self.density,
+            density_seed=self.density_seed,
+        )
+        for beat in self.beats:
+            if beat.event is None:
+                q.beats.append(Beat(event=None))
+                continue
+            event = beat.event
+            snapped_dur = max(grid, round(event.duration / grid) * grid)
+            if isinstance(event, Note):
+                q.add(
+                    Note(
+                        pitch=event.pitch,
+                        octave=event.octave,
+                        duration=snapped_dur,
+                        velocity=event.velocity,
+                    )
+                )
+            elif isinstance(event, Chord):
+                q.add(
+                    Chord(
+                        root=event.root,
+                        shape=event.shape,
+                        octave=event.octave,
+                        duration=snapped_dur,
+                        velocity=event.velocity,
+                    )
+                )
+        return q
+
     def reverse(self) -> "Track":
         """Return a new Track with all beats in reverse order.
 
@@ -1399,6 +1452,65 @@ class Song:
             "voice_tracks": len(self.voice_tracks),
             "track_names": [t.name for t in self.tracks],
         }
+
+    def export_stems(self, out_dir: str, fmt: str = "wav") -> list:
+        """Render each track as a separate audio file (stem export).
+
+        Creates one file per track, named ``<track_name>.<fmt>``.
+        Useful for mixing in a DAW, sharing individual parts, or remix work.
+
+        Args:
+            out_dir: Output directory (created if missing).
+            fmt:     Audio format — "wav" (default), "flac", or "mp3".
+
+        Returns:
+            List of Path objects for the written files.
+
+        Example::
+
+            song.export_stems("dist/stems/my_song/")
+            # → dist/stems/my_song/kick.wav, bass.wav, lead.wav, ...
+        """
+        from pathlib import Path as _Path
+
+        from .export import export_flac, export_mp3, export_wav
+        from .synth import Synth
+
+        out = _Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        synth = Synth(sample_rate=self.sample_rate)
+        total_beats = self.total_beats
+        results = []
+
+        import math
+
+        import numpy as np
+
+        for track in self.tracks:
+            mono = synth.render_track(track, self.bpm, total_beats)
+            total_samples = len(mono)
+            # Pan to stereo
+            angle = (track.pan + 1) / 2 * math.pi / 2
+            stereo = np.zeros((total_samples, 2))
+            stereo[:, 0] = mono * math.cos(angle)
+            stereo[:, 1] = mono * math.sin(angle)
+            # Normalize
+            peak = np.max(np.abs(stereo))
+            if peak > 0:
+                stereo /= peak
+            stereo = np.tanh(stereo * 0.95)
+
+            safe_name = track.name.replace(" ", "_").replace("/", "_")
+            path = out / f"{safe_name}.{fmt}"
+            if fmt == "flac":
+                export_flac(stereo, path, self.sample_rate)
+            elif fmt == "mp3":
+                export_mp3(stereo, path, self.sample_rate)
+            else:
+                export_wav(stereo, path, self.sample_rate)
+            results.append(path)
+
+        return results
 
     @property
     def beat_duration_sec(self) -> float:

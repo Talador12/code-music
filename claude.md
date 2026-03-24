@@ -91,3 +91,9 @@
 - [x] make render-one SONG=name — render single song to all formats (WAV+FLAC+MP3)
 - [x] New genres: Afrobeats, shoegaze, math rock
 - [x] More PolyphonicTrack songs (3 total: conversations, nocturne_op2, town_square)
+
+## v1.3 Roadmap
+
+- [x] Track.quantize(grid) — snap note timings to nearest grid subdivision
+- [x] Song.export_stems() — render each track as a separate WAV file
+- [ ] Reach 75 songs (4 more needed)
