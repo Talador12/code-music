@@ -84,7 +84,7 @@
 
 ## v1.2 Roadmap
 
-- [ ] Remaining 7 albums at 4 tracks → get all to 5+
+- [x] Remaining 7 albums at 4 tracks → get all to 5+
 - [x] Tag v1.1.0 release (triggers GitHub Release with 71-song WAV zip)
 - [x] Chord.shell_voicing() with optional bass note override
 - [x] Song.info() → dict with title, bpm, duration, track count, key, time_sig
