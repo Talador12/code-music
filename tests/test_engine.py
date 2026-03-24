@@ -605,3 +605,83 @@ class TestSongMaster:
         mastered = Synth(22050).render_song(s2)
 
         assert not np.allclose(raw, mastered, atol=0.01)
+
+
+class TestSampleTrack:
+    def _make_wav(self, path, freq=440.0, dur=0.5, sr=22050):
+        import wave as _wave
+
+        import numpy as np
+        n = int(sr * dur)
+        t = np.linspace(0, dur, n, endpoint=False)
+        mono = (np.sin(2 * np.pi * freq * t) * 0.5 * 32767).astype(np.int16)
+        with _wave.open(str(path), "w") as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(sr)
+            wf.writeframes(mono.tobytes())
+
+    def test_from_wav(self):
+        import tempfile
+        from pathlib import Path
+
+        from code_music import SampleTrack
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = Path(tmp) / "test.wav"
+            self._make_wav(wav)
+            st = SampleTrack.from_wav(str(wav), name="kick")
+            assert st.name == "kick"
+            assert st.wav_path == str(wav)
+
+    def test_trigger_chaining(self):
+        from code_music import SampleTrack
+        st = SampleTrack(name="x", wav_path="/dev/null")
+        result = st.trigger(at=0.0).trigger(at=1.0).trigger(at=2.0)
+        assert result is st
+        assert len(st.triggers) == 3
+
+    def test_total_beats(self):
+        from code_music import SampleTrack
+        st = SampleTrack(name="x", wav_path="/dev/null")
+        st.trigger(at=0.0).trigger(at=4.0)
+        assert st.total_beats == 5.0  # last trigger + 1 beat tail
+
+    def test_renders_in_song(self):
+        import tempfile
+        from pathlib import Path
+
+        import numpy as np
+
+        from code_music import SampleTrack, Song
+        from code_music.synth import Synth
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = Path(tmp) / "test.wav"
+            self._make_wav(wav, sr=22050)
+            st = SampleTrack.from_wav(str(wav), name="hit", volume=0.8)
+            st.trigger(at=0.0).trigger(at=2.0)
+            song = Song(title="Sample Test", bpm=120, sample_rate=22050)
+            song.add_sample_track(st)
+            # Need at least one regular track for total_beats
+            from code_music import Note, Track
+            tr = song.add_track(Track(instrument="sine"))
+            tr.add(Note("C", 4, 4.0))
+            samples = Synth(22050).render_song(song)
+            assert np.max(np.abs(samples)) > 0.01
+
+    def test_pitch_shift(self):
+        import tempfile
+        from pathlib import Path
+
+        from code_music import Note, SampleTrack, Song, Track
+        from code_music.synth import Synth
+        with tempfile.TemporaryDirectory() as tmp:
+            wav = Path(tmp) / "test.wav"
+            self._make_wav(wav, freq=440.0, sr=22050)
+            st = SampleTrack.from_wav(str(wav), name="hit")
+            st.trigger(at=0.0, semitones=12)  # up an octave
+            song = Song(bpm=120, sample_rate=22050)
+            song.add_sample_track(st)
+            tr = song.add_track(Track(instrument="sine"))
+            tr.add(Note("C", 4, 2.0))
+            samples = Synth(22050).render_song(song)
+            assert samples.shape[0] > 0

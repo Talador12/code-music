@@ -1277,6 +1277,98 @@ class Track:
 
 
 @dataclass
+class SampleTrack:
+    """A track that plays back a WAV file at specified beat offsets.
+
+    Load any audio file and trigger it at exact beat positions — this is
+    sampling. Use for drum hits, vocal chops, field recordings, anything.
+
+    The WAV is loaded once, then each trigger plays the full sample (or a
+    specified duration). Pitch shifting via semitone offset is supported.
+
+    Example::
+
+        from code_music import SampleTrack
+
+        kick = SampleTrack.from_wav("samples/kick.wav", name="kick", volume=0.9)
+        kick.trigger(at=0.0)          # play at beat 0
+        kick.trigger(at=1.0)          # play again at beat 1
+        kick.trigger(at=2.0, semitones=-2)  # pitch down 2 semitones
+        song.add_sample_track(kick)
+
+    Attributes:
+        name:       Track label.
+        wav_path:   Path to the source WAV file.
+        volume:     Track gain 0.0–1.0.
+        pan:        Stereo position -1.0 (L) to 1.0 (R).
+        triggers:   List of (beat_offset, semitones, velocity) tuples.
+    """
+
+    name: str = "sample"
+    wav_path: str = ""
+    volume: float = 0.8
+    pan: float = 0.0
+    triggers: list[tuple[float, float, float]] = field(default_factory=list)
+
+    @classmethod
+    def from_wav(
+        cls, path: str, name: str = "sample", volume: float = 0.8, pan: float = 0.0
+    ) -> "SampleTrack":
+        """Create a SampleTrack from a WAV file path."""
+        return cls(name=name, wav_path=path, volume=volume, pan=pan)
+
+    def trigger(self, at: float, semitones: float = 0.0, velocity: float = 1.0) -> "SampleTrack":
+        """Schedule the sample to play at a specific beat offset.
+
+        Args:
+            at:         Beat position to trigger the sample.
+            semitones:  Pitch shift in semitones (0 = original pitch).
+            velocity:   Volume multiplier for this trigger (0.0–1.0).
+
+        Returns:
+            self for chaining.
+        """
+        self.triggers.append((at, semitones, velocity))
+        return self
+
+    @property
+    def total_beats(self) -> float:
+        if not self.triggers:
+            return 0.0
+        return max(at for at, _, _ in self.triggers) + 1.0  # +1 beat for tail
+
+    def load_audio(self, target_sr: int = 44100):
+        """Load the WAV file and return a mono float64 numpy array + sample rate.
+
+        Auto-resamples to target_sr if the WAV has a different rate.
+        """
+        import wave as _wave
+
+        import numpy as np
+
+        with _wave.open(self.wav_path, "rb") as wf:
+            sr = wf.getframerate()
+            n = wf.getnframes()
+            ch = wf.getnchannels()
+            sw = wf.getsampwidth()
+            raw = wf.readframes(n)
+
+        dtype = np.int16 if sw == 2 else np.int32
+        samples = np.frombuffer(raw, dtype=dtype).astype(np.float64)
+        samples /= 32768.0 if sw == 2 else 2147483648.0
+        if ch == 2:
+            samples = samples.reshape(-1, 2).mean(axis=1)
+
+        if sr != target_sr:
+            from scipy import signal as _sig
+
+            new_len = int(len(samples) * target_sr / sr)
+            samples = _sig.resample(samples, new_len)
+
+        return samples
+
+
+@dataclass
 class Song:
     """Container for multiple Tracks, VoiceTracks and global tempo/metadata.
 
@@ -1294,6 +1386,7 @@ class Song:
     tracks: list[Track] = field(default_factory=list)
     voice_tracks: list = field(default_factory=list)  # list[VoiceTrack]
     poly_tracks: list = field(default_factory=list)  # list[PolyphonicTrack]
+    sample_tracks: list = field(default_factory=list)  # list[SampleTrack]
     time_sig: tuple[int, int] = (4, 4)
     time_sig_map: list[tuple[float, int, int]] = field(default_factory=list)
     composer: str = ""
@@ -1346,6 +1439,11 @@ class Song:
     def add_polytrack(self, track) -> object:  # track: PolyphonicTrack
         """Add a PolyphonicTrack. Returns the track."""
         self.poly_tracks.append(track)
+        return track
+
+    def add_sample_track(self, track) -> object:  # track: SampleTrack
+        """Add a SampleTrack (audio file sampling). Returns the track."""
+        self.sample_tracks.append(track)
         return track
 
     def add_voice_track(self, track) -> object:  # track: VoiceTrack

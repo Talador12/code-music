@@ -678,6 +678,32 @@ class Synth:
             except Exception as e:
                 print(f"[poly] track '{getattr(ptrack, 'name', '?')}' failed: {e}")
 
+        # ── Sample tracks ──────────────────────────────────────────────────
+        for strack in getattr(song, "sample_tracks", []):
+            try:
+                raw = strack.load_audio(self.sample_rate)
+                beat_sec = 60.0 / song.bpm
+                angle = (strack.pan + 1) / 2 * math.pi / 2
+                l_gain = math.cos(angle) * strack.volume
+                r_gain = math.sin(angle) * strack.volume
+                for at_beat, semitones, velocity in strack.triggers:
+                    # Pitch shift if needed
+                    if semitones != 0:
+                        from scipy import signal as _sig
+
+                        ratio = 2 ** (semitones / 12.0)
+                        shifted = _sig.resample(raw, max(1, int(len(raw) / ratio)))
+                    else:
+                        shifted = raw
+                    start = int(at_beat * beat_sec * self.sample_rate)
+                    end = min(start + len(shifted), total_samples)
+                    clip = end - start
+                    if clip > 0:
+                        stereo_mix[start:end, 0] += shifted[:clip] * l_gain * velocity
+                        stereo_mix[start:end, 1] += shifted[:clip] * r_gain * velocity
+            except Exception as e:
+                print(f"[sample] track '{getattr(strack, 'name', '?')}' failed: {e}")
+
         # ── Voice tracks ───────────────────────────────────────────────────
         from .voice import render_voice_track
 

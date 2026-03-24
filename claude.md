@@ -102,6 +102,6 @@
 
 - [x] Song.master() — master bus chain (EQ → compress → limit) in one call
 - [x] Genre-aware song templates — make new-song STYLE=jazz copies genre template
-- [ ] Audio sample import — load a WAV as a Track instrument (sampling)
+- [x] Audio sample import — load a WAV as a Track instrument (sampling)
 - [ ] Reach 80 songs
 - [x] Tag v1.3.0 release

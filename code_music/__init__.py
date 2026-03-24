@@ -58,6 +58,7 @@ from .engine import (
     Note,
     # new
     PolyphonicTrack,
+    SampleTrack,
     Section,
     Song,
     Track,
@@ -164,6 +165,7 @@ __all__ = [
     "ARP_PATTERNS",
     "suggest_progression",
     "PolyphonicTrack",
+    "SampleTrack",
     "remix",
     "bpm_ramp",
     "accelerando",
