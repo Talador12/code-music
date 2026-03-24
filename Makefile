@@ -9,7 +9,7 @@ CM      := $(BIN)/python -m code_music.cli
 PLAY    := afplay   # macOS. Linux: swap to `aplay`
 
 # ── Auto-discovery ────────────────────────────────────────────────────────────
-SONGS        := $(wildcard songs/*.py)
+SONGS        := $(filter-out songs/_%.py, $(wildcard songs/*.py))
 SONG_NAMES   := $(notdir $(basename $(SONGS)))
 
 SCALES_PY    := $(wildcard scales/*.py)
@@ -33,7 +33,7 @@ XML_SONGS    := $(addprefix dist/notation/xml/,  $(addsuffix .xml, $(SONG_NAMES)
 
 .PHONY: all install dev lint test clean help \
         songs-wav songs-flac songs-mp3 songs-all \
-        samples scales spotify \
+        samples scales spotify export-spotify \
         notation-lily notation-abc notation-xml notation-all \
         vibe vibe-chill vibe-energizing vibe-alluring vibe-powerful \
         play-scales play-scales-arp play-scales-group play-scales-arp-group \
@@ -60,17 +60,28 @@ dev: install
 # =============================================================================
 
 # Play all songs grouped by mood — chill / energizing / alluring / powerful
-spotify-auth:
-	@echo "Setup: https://developer.spotify.com/dashboard"
-	@echo "  1. Create app  (Redirect URI: http://localhost:8888/callback)"
-	@echo "  2. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET env vars"
+# Spotify profile: authorize + read your listening data in one command
+# Run once: set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET first
+# (get them at https://developer.spotify.com/dashboard — takes 3 minutes)
+spotify:
+	@if [ -f .spotify_token ]; then \
+		echo "Token found — reading your Spotify data..."; \
+		$(BIN)/python scripts/spotify_taste.py; \
+	else \
+		echo "No token yet — authorizing first..."; \
+		$(BIN)/python scripts/spotify_auth.py && $(BIN)/python scripts/spotify_taste.py; \
+	fi
+
+# Export all songs to Spotify-ready FLAC
+export-spotify: songs-flac
 	@echo ""
-	$(BIN)/python scripts/spotify_auth.py
+	@echo "Spotify-ready FLAC files in dist/flac/:"
+	@ls -lh dist/flac/*.flac 2>/dev/null || echo "  (none — run: make songs-flac)"
+	@echo ""
+	@echo "Upload at: https://artists.spotify.com  (Music → Upload Track)"
+	@echo "Minimum: 30s, 44100 Hz, stereo."
 
-spotify-taste:
-	$(BIN)/python scripts/spotify_taste.py
-
-.PHONY: spotify-auth spotify-taste
+.PHONY: spotify export-spotify
 
 vibe:
 	$(BIN)/python -m scripts.play_vibe
@@ -141,14 +152,7 @@ songs-flac: $(FLAC_SONGS)
 songs-mp3:  $(MP3_SONGS)
 songs-all:  songs-wav songs-flac songs-mp3
 
-# Upload to Spotify (renders FLAC + shows instructions)
-spotify: songs-flac
-	@echo ""
-	@echo "Spotify-ready files in dist/flac/:"
-	@ls -lh dist/flac/*.flac 2>/dev/null || echo "  (none)"
-	@echo ""
-	@echo "Upload at: https://artists.spotify.com  (Music → Upload Track)"
-	@echo "Min requirements: 30s duration, 44100 Hz, stereo. FLAC preferred."
+# (export-spotify is defined above, near the spotify auth targets)
 
 # Preview an instrument sample — hear what a preset sounds like
 define PREVIEW_RULE
@@ -302,8 +306,10 @@ help:
 	@echo "│  make vibe-alluring         Dark, mysterious, pulls you in"
 	@echo "│  make vibe-powerful         Heavy, orchestral, impact"
 	@echo "│  make list-songs            See all songs with descriptions"
-	@echo "│  make spotify-auth          Authorize Spotify access (one-time setup)"
-	@echo "│  make spotify-taste         Read your listening data → styles/my_taste.py"
+	@echo "│  make spotify               Authorize + read your Spotify listening data"
+	@echo "│    → writes styles/my_taste.py with your top artists, genres, playlists"
+	@echo "│    → requires SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET env vars"
+	@echo "│    → get them at https://developer.spotify.com/dashboard (3 min setup)"
 	@echo "│"
 	@echo "│  make play-<song>           Play one song directly"
 	@$(foreach s,$(filter-out _template_beginner,$(SONG_NAMES)),echo "│    make play-$(s)";)
@@ -313,7 +319,7 @@ help:
 	@echo "│  make new-song              Copy beginner template, ready to edit"
 	@echo "│  make watch SONG=my_track   Live coding — re-renders on each save"
 	@echo "│  make export-song SONG=x    Export one song to WAV + FLAC + MP3"
-	@echo "│  make spotify               Render all songs → Spotify-ready FLAC"
+	@echo "│  make export-spotify        Render all songs → dist/flac/ (upload-ready)"
 	@echo "│"
 	@echo "│  make preview-<sample>      Hear an instrument or technique"
 	@echo "│  make samples               Render all 100+ sample previews"
