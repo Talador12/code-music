@@ -73,8 +73,8 @@
 - [x] Slapback delay — single short echo (rockabilly, early rock)
 
 ### Songs
-- [ ] Reach 60 songs (2 more needed)
-- [ ] Write a song that uses Lyrics + voice synthesis end-to-end
+- [x] Reach 60 songs (60 total)
+- [x] Write a song that uses Lyrics + voice synthesis end-to-end
 
 ### Scripts
 - [x] make check — run lint + test in one command
