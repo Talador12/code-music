@@ -292,3 +292,11 @@ dist/notation/abc/%.abc: songs/%.py
 dist/notation/xml/%.xml: songs/%.py
 	@mkdir -p dist/notation/xml
 	$(BIN)/python -c "import importlib.util; spec=importlib.util.spec_from_file_location('s','$<'); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m); from code_music.notation import export_musicxml; export_musicxml(m.song,'$@')"
+
+covers: ## [Create] Generate album cover art for all albums → dist/covers/
+	@command -v python3 -c "import matplotlib" 2>/dev/null || $(BIN)/pip install matplotlib -q
+	$(BIN)/python scripts/make_cover.py --all
+
+cover-%: ## [Create] Generate cover art for one album (e.g. make cover-anthology)
+	$(BIN)/python scripts/make_cover.py --album $*
+
