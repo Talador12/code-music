@@ -2820,3 +2820,338 @@ def voice_lead(
         prev_midis = best_midis
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Song.generate — full multi-track generative songs
+# ---------------------------------------------------------------------------
+
+_GENRE_TEMPLATES: dict[str, dict] = {
+    "lo_fi": {
+        "bpm": 80,
+        "mood": "chill",
+        "mode": "pentatonic",
+        "root": "A",
+        "instruments": {
+            "pad": "pad",
+            "lead": "piano",
+            "bass": "bass",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+        },
+        "volumes": {"pad": 0.35, "lead": 0.55, "bass": 0.55, "kick": 0.6, "hat": 0.2},
+    },
+    "jazz": {
+        "bpm": 130,
+        "mood": "groovy",
+        "mode": "dorian",
+        "root": "D",
+        "instruments": {
+            "pad": "organ",
+            "lead": "piano",
+            "bass": "bass",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+        },
+        "volumes": {"pad": 0.3, "lead": 0.5, "bass": 0.55, "kick": 0.6, "hat": 0.25},
+    },
+    "ambient": {
+        "bpm": 70,
+        "mood": "dreamy",
+        "mode": "major",
+        "root": "E",
+        "instruments": {"pad": "pad", "lead": "triangle", "bass": "sine"},
+        "volumes": {"pad": 0.35, "lead": 0.35, "bass": 0.4},
+    },
+    "edm": {
+        "bpm": 128,
+        "mood": "epic",
+        "mode": "minor",
+        "root": "A",
+        "instruments": {
+            "pad": "pad",
+            "lead": "sawtooth",
+            "bass": "bass",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+            "snare": "drums_snare",
+        },
+        "volumes": {"pad": 0.3, "lead": 0.5, "bass": 0.6, "kick": 0.8, "hat": 0.3, "snare": 0.5},
+    },
+    "rock": {
+        "bpm": 140,
+        "mood": "epic",
+        "mode": "pentatonic",
+        "root": "E",
+        "instruments": {
+            "pad": "sawtooth",
+            "lead": "sawtooth",
+            "bass": "bass",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+            "snare": "drums_snare",
+        },
+        "volumes": {"pad": 0.4, "lead": 0.5, "bass": 0.6, "kick": 0.75, "hat": 0.3, "snare": 0.55},
+    },
+    "classical": {
+        "bpm": 90,
+        "mood": "sad",
+        "mode": "minor",
+        "root": "C",
+        "instruments": {"pad": "pad", "lead": "piano", "bass": "bass"},
+        "volumes": {"pad": 0.4, "lead": 0.55, "bass": 0.5},
+    },
+    "funk": {
+        "bpm": 108,
+        "mood": "groovy",
+        "mode": "mixolydian",
+        "root": "Bb",
+        "instruments": {
+            "pad": "pluck",
+            "lead": "sawtooth",
+            "bass": "bass",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+            "snare": "drums_snare",
+        },
+        "volumes": {"pad": 0.4, "lead": 0.45, "bass": 0.6, "kick": 0.75, "hat": 0.3, "snare": 0.5},
+    },
+    "hip_hop": {
+        "bpm": 90,
+        "mood": "dark",
+        "mode": "pentatonic",
+        "root": "C",
+        "instruments": {
+            "pad": "pad",
+            "lead": "piano",
+            "bass": "sine",
+            "kick": "drums_kick",
+            "hat": "drums_hat",
+            "snare": "drums_snare",
+        },
+        "volumes": {"pad": 0.2, "lead": 0.4, "bass": 0.65, "kick": 0.8, "hat": 0.3, "snare": 0.5},
+    },
+}
+
+
+def generate_song(
+    genre: str = "lo_fi",
+    bars: int = 16,
+    seed: int | None = None,
+    title: str | None = None,
+    sample_rate: int = 44100,
+) -> Song:
+    """Generate a complete multi-track song from a genre template.
+
+    Uses ``generate_melody()``, ``suggest_progression()``, and genre-specific
+    drum/bass patterns to assemble a full song with pad, lead, bass, and drums.
+
+    Args:
+        genre:       Genre template. Available: lo_fi, jazz, ambient, edm, rock,
+                     classical, funk, hip_hop.
+        bars:        Number of bars to generate (4/4 time).
+        seed:        Random seed for reproducibility (None = random each time).
+        title:       Song title (defaults to genre name).
+        sample_rate: Audio sample rate.
+
+    Returns:
+        A fully populated Song ready to render.
+
+    Example::
+
+        song = generate_song("jazz", bars=16, seed=42)
+        play(song)
+    """
+    import random as _rng
+
+    if genre not in _GENRE_TEMPLATES:
+        raise ValueError(f"Unknown genre {genre!r}. Choose: {sorted(_GENRE_TEMPLATES)}")
+
+    tmpl = _GENRE_TEMPLATES[genre]
+    rng = _rng.Random(seed)
+    bpm = tmpl["bpm"]
+    root = tmpl["root"]
+    mode = tmpl["mode"]
+    mood = tmpl["mood"]
+
+    song = Song(
+        title=title or genre.replace("_", " ").title(),
+        bpm=bpm,
+        sample_rate=sample_rate,
+    )
+
+    instruments = tmpl["instruments"]
+    volumes = tmpl["volumes"]
+
+    # ── Chords (pad) ──────────────────────────────────────────────────
+    if "pad" in instruments:
+        pad = song.add_track(
+            Track(
+                name="pad",
+                instrument=instruments["pad"],
+                volume=volumes.get("pad", 0.35),
+            )
+        )
+        chords = suggest_progression(
+            root, mood=mood, octave=3, duration=4.0, variation=rng.randint(0, 2)
+        )
+        repeats = max(1, bars // len(chords))
+        for _ in range(repeats):
+            pad.extend(chords)
+
+    # ── Melody (lead) ─────────────────────────────────────────────────
+    if "lead" in instruments:
+        lead = song.add_track(
+            Track(
+                name="lead",
+                instrument=instruments["lead"],
+                volume=volumes.get("lead", 0.5),
+            )
+        )
+        melody = generate_melody(
+            root,
+            mode,
+            octave=5,
+            bars=bars,
+            bpm=bpm,
+            density=0.5 + rng.random() * 0.3,
+            seed=rng.randint(0, 2**31),
+        )
+        lead.extend(melody)
+
+    # ── Bass ──────────────────────────────────────────────────────────
+    if "bass" in instruments:
+        bass = song.add_track(
+            Track(
+                name="bass",
+                instrument=instruments["bass"],
+                volume=volumes.get("bass", 0.55),
+            )
+        )
+        # Simple root-note bass following chord roots
+        chords_for_bass = suggest_progression(
+            root, mood=mood, octave=2, duration=4.0, variation=rng.randint(0, 2)
+        )
+        repeats = max(1, bars // len(chords_for_bass))
+        for _ in range(repeats):
+            for chord in chords_for_bass:
+                # Convert chord root to a bass note pattern
+                bass.extend(
+                    [
+                        Note(chord.root, 2, 1.0),
+                        Note(chord.root, 2, 0.5),
+                        Note.rest(0.5),
+                        Note(chord.root, 2, 1.0),
+                        Note.rest(1.0),
+                    ]
+                )
+
+    # ── Drums ─────────────────────────────────────────────────────────
+    if "kick" in instruments:
+        kick = song.add_track(
+            Track(
+                name="kick",
+                instrument=instruments["kick"],
+                volume=volumes.get("kick", 0.7),
+            )
+        )
+        for _ in range(bars):
+            kick.extend([Note("C", 2, 1.0)] * 4)
+
+    if "snare" in instruments:
+        snare = song.add_track(
+            Track(
+                name="snare",
+                instrument=instruments["snare"],
+                volume=volumes.get("snare", 0.5),
+            )
+        )
+        for _ in range(bars):
+            snare.extend([Note.rest(1.0), Note("E", 4, 1.0), Note.rest(1.0), Note("E", 4, 1.0)])
+
+    if "hat" in instruments:
+        hat = song.add_track(
+            Track(
+                name="hat",
+                instrument=instruments["hat"],
+                volume=volumes.get("hat", 0.25),
+            )
+        )
+        for _ in range(bars):
+            hat.extend([Note("F#", 6, 0.5)] * 8)
+
+    return song
+
+
+# ---------------------------------------------------------------------------
+# detect_key — analyze a Song to determine its likely key
+# ---------------------------------------------------------------------------
+
+_KEY_PROFILES: dict[str, list[float]] = {
+    # Krumhansl-Kessler key profiles (normalized)
+    "major": [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88],
+    "minor": [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17],
+}
+
+
+def detect_key(song: Song) -> tuple[str, str, float]:
+    """Analyze a Song and return its most likely key.
+
+    Uses the Krumhansl-Kessler pitch-class profile correlation algorithm:
+    counts how often each pitch class appears (weighted by duration), then
+    correlates against major and minor key profiles for all 12 roots.
+
+    Args:
+        song: A Song with at least one track containing pitched notes.
+
+    Returns:
+        (root, mode, confidence) — e.g. ``('A', 'minor', 0.87)``
+
+    Example::
+
+        root, mode, conf = detect_key(song)
+        print(f"Detected: {root} {mode} ({conf:.0%} confidence)")
+    """
+    import numpy as _np
+
+    # Count pitch-class durations
+    pc_counts = _np.zeros(12)
+    for track in song.tracks:
+        for beat in track.beats:
+            if beat.event is None:
+                continue
+            event = beat.event
+            if isinstance(event, Note) and event.pitch is not None:
+                try:
+                    midi = note_name_to_midi(str(event.pitch), event.octave)
+                    pc = midi % 12
+                    pc_counts[pc] += event.duration
+                except (ValueError, TypeError):
+                    continue
+            elif isinstance(event, Chord):
+                try:
+                    midi = note_name_to_midi(str(event.root), event.octave)
+                    pc = midi % 12
+                    pc_counts[pc] += event.duration * 2  # chords weight more
+                except (ValueError, TypeError):
+                    continue
+
+    if pc_counts.sum() == 0:
+        return ("C", "major", 0.0)
+
+    # Correlate against all 24 key profiles (12 major + 12 minor)
+    best_root = "C"
+    best_mode = "major"
+    best_corr = -1.0
+
+    for mode_name, profile in _KEY_PROFILES.items():
+        profile_arr = _np.array(profile)
+        for shift in range(12):
+            rotated = _np.roll(pc_counts, -shift)
+            corr = _np.corrcoef(rotated, profile_arr)[0, 1]
+            if corr > best_corr:
+                best_corr = corr
+                best_root = NOTE_NAMES[shift]
+                best_mode = mode_name
+
+    return (best_root, best_mode, max(0.0, float(best_corr)))

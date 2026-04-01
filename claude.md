@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v4.1.0 — 140 songs, 719 tests, web playground, tagged
+## Status: v5.0.0 — 140 songs, 734 tests, generative + analysis, tagged
 
 ## What's built
 
@@ -337,3 +337,11 @@
 - [x] Ready state shows Ctrl+Enter hint
 - [x] Uploaded v4.0.0 wheel to release manually for immediate playground use
 - [x] Tag v4.1.0 release
+
+## v5.0 Roadmap — Generative Music + Analysis
+
+- [x] `generate_song(genre, bars, seed)`: assembles complete multi-track songs from genre templates (8 genres: lo_fi, jazz, ambient, edm, rock, classical, funk, hip_hop)
+- [x] `detect_key(song)`: Krumhansl-Kessler pitch-class profile correlation — analyzes Song to return (root, mode, confidence)
+- [x] CLI `--random [genre]`: generate and play a random song on the fly
+- [x] 15 new tests (generate all genres, determinism, render, key detection C/Am/G/chords/empty/generated, CLI genre error)
+- [x] Tag v5.0.0 release

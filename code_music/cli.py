@@ -145,6 +145,8 @@ examples:
   code-music --import-midi song.mid     import MIDI → render to WAV
   code-music --new my_song.py           scaffold a starter song file
   code-music --list-instruments         show all available instruments
+  code-music --random                   generate and play a random song
+  code-music --random jazz              generate and play a jazz song
 """
     parser = argparse.ArgumentParser(
         prog="code-music",
@@ -197,6 +199,14 @@ examples:
         help="List all available synth instruments and exit",
     )
     parser.add_argument(
+        "--random",
+        nargs="?",
+        const="",
+        default=None,
+        metavar="GENRE",
+        help="Generate and play a random song (lo_fi, jazz, ambient, edm, rock, ...)",
+    )
+    parser.add_argument(
         "--info",
         action="store_true",
         help="Show song metadata (title, BPM, duration, tracks) without rendering",
@@ -226,6 +236,25 @@ examples:
 
     if args.new:
         return _scaffold_song(args.new)
+
+    if args.random is not None:
+        import random as _rng
+
+        from .engine import generate_song
+        from .playback import play as _play
+
+        genres = ["lo_fi", "jazz", "ambient", "edm", "rock", "classical", "funk", "hip_hop"]
+        genre = args.random if args.random else _rng.choice(genres)
+        if genre not in genres:
+            print(f"error: unknown genre {genre!r}. Choose: {', '.join(genres)}", file=sys.stderr)
+            return 1
+        seed = _rng.randint(0, 2**31)
+        print(f"  Generating {genre} song (seed={seed})...")
+        song = generate_song(genre, bars=16, seed=seed, sample_rate=22050)
+        if args.bpm:
+            song.bpm = args.bpm
+        _play(song)
+        return 0
 
     # ── MIDI import mode (no script required) ──────────────────────────
     if args.import_midi:
