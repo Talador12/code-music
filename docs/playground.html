@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>code-music playground</title>
+  <style>
+    :root { --bg: #0d1117; --bg2: #161b22; --border: #30363d; --text: #c9d1d9; --accent: #7755ff; --green: #3fb950; --red: #f85149; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Segoe UI', monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header h1 a { color: var(--accent); text-decoration: none; }
+    .status { font-size: 13px; padding: 4px 10px; border-radius: 12px; background: var(--bg2); border: 1px solid var(--border); }
+    .status.ready { border-color: var(--green); color: var(--green); }
+    .status.loading { border-color: #d29922; color: #d29922; }
+    .status.error { border-color: var(--red); color: var(--red); }
+    main { display: flex; height: calc(100vh - 57px); }
+    .editor-pane { flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+    .output-pane { width: 360px; display: flex; flex-direction: column; }
+    .toolbar { padding: 8px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; background: var(--bg2); }
+    .toolbar select, .toolbar button { font-family: inherit; font-size: 13px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+    .toolbar button { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .toolbar button:hover:not(:disabled) { filter: brightness(1.2); }
+    textarea { flex: 1; padding: 16px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 14px; line-height: 1.5; background: var(--bg); color: var(--text); border: none; resize: none; tab-size: 4; }
+    textarea:focus { outline: none; }
+    .output-content { flex: 1; padding: 16px; overflow-y: auto; font-size: 13px; line-height: 1.6; }
+    .output-content pre { white-space: pre-wrap; word-break: break-word; }
+    .output-content .err { color: var(--red); }
+    .output-content .ok { color: var(--green); }
+    audio { width: 100%; margin-top: 8px; }
+    .audio-section { padding: 16px; border-top: 1px solid var(--border); }
+    @media (max-width: 768px) { main { flex-direction: column; } .output-pane { width: 100%; height: 300px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1><a href="https://github.com/Talador12/code-music">code-music</a> playground</h1>
+    <span id="status" class="status loading">loading pyodide...</span>
+  </header>
+  <main>
+    <div class="editor-pane">
+      <div class="toolbar">
+        <select id="examples">
+          <option value="">-- load example --</option>
+          <option value="hello">Hello World</option>
+          <option value="chords">Chords + Scale</option>
+          <option value="effects">Effects Chain</option>
+          <option value="arrangement">Arrangement</option>
+        </select>
+        <button id="run" disabled>Run &amp; Play</button>
+      </div>
+      <textarea id="code" spellcheck="false">from code_music import Song, Track, Note, Chord, EffectsChain, scale, reverb, play
+
+song = Song(title="Playground", bpm=120, sample_rate=22050)
+
+pad = song.add_track(Track(name="pad", instrument="pad", volume=0.4))
+pad.add(Chord("A", "min7", 3, duration=8.0))
+
+lead = song.add_track(Track(name="lead", instrument="piano", volume=0.6))
+lead.extend(scale("A", "pentatonic", octave=5, length=8))
+
+song.effects = {"pad": EffectsChain().add(reverb, room_size=0.6, wet=0.3)}
+</textarea>
+    </div>
+    <div class="output-pane">
+      <div class="output-content" id="output"><pre>Press "Run &amp; Play" to render your song.</pre></div>
+      <div class="audio-section" id="audio-section" style="display:none">
+        <audio id="player" controls></audio>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const EXAMPLES = {
+      hello: `from code_music import Song, Track, Note
+
+song = Song(title="Hello World", bpm=120, sample_rate=22050)
+melody = song.add_track(Track(name="melody", instrument="piano"))
+melody.add(Note("C", 4, 1.0))
+melody.add(Note("E", 4, 1.0))
+melody.add(Note("G", 4, 1.0))
+melody.add(Note("C", 5, 2.0))
+`,
+      chords: `from code_music import Song, Track, Chord, scale
+
+song = Song(title="Chords + Scale", bpm=100, sample_rate=22050)
+
+pad = song.add_track(Track(name="pad", instrument="pad", volume=0.4))
+pad.add(Chord("A", "min7", 3, duration=4.0))
+pad.add(Chord("D", "min7", 3, duration=4.0))
+pad.add(Chord("G", "dom7", 3, duration=4.0))
+pad.add(Chord("C", "maj7", 3, duration=4.0))
+
+lead = song.add_track(Track(name="lead", instrument="piano", volume=0.6))
+lead.extend(scale("A", "pentatonic", octave=5, length=16))
+`,
+      effects: `from code_music import Song, Track, Note, Chord, EffectsChain, reverb, delay
+
+song = Song(title="Effects Demo", bpm=110, sample_rate=22050)
+
+pad = song.add_track(Track(name="pad", instrument="pad", volume=0.4))
+for _ in range(4):
+    pad.add(Chord("D", "min7", 3, duration=4.0))
+
+lead = song.add_track(Track(name="lead", instrument="sawtooth", volume=0.5))
+for _ in range(4):
+    lead.extend([Note("D", 5, 0.5), Note("F", 5, 0.5), Note("A", 5, 0.5), Note("G", 5, 0.5)])
+
+song.effects = {
+    "pad": EffectsChain().add(reverb, room_size=0.7, wet=0.35),
+    "lead": EffectsChain().add(delay, delay_ms=250, feedback=0.3, wet=0.2),
+}
+`,
+      arrangement: `from code_music import Song, Section, Chord, Note, EffectsChain, reverb, scale
+
+song = Song(title="Arranged", bpm=120, sample_rate=22050)
+r = Note.rest
+
+intro = Section("intro", bars=2)
+intro.add_track("pad", [Chord("A", "min7", 3, duration=8.0)])
+intro.add_track("lead", [r(8.0)])
+
+verse = Section("verse", bars=2)
+verse.add_track("pad", [Chord("A", "min7", 3, duration=4.0), Chord("F", "maj7", 3, duration=4.0)])
+verse.add_track("lead", scale("A", "pentatonic", octave=5, length=8))
+
+song.arrange(
+    [intro, *verse.repeat(3)],
+    instruments={"pad": "pad", "lead": "piano"},
+    volumes={"pad": 0.35, "lead": 0.55},
+)
+song.effects = {"pad": EffectsChain().add(reverb, room_size=0.6, wet=0.3)}
+`,
+    };
+
+    const codeEl = document.getElementById('code');
+    const outputEl = document.getElementById('output');
+    const audioSection = document.getElementById('audio-section');
+    const playerEl = document.getElementById('player');
+    const runBtn = document.getElementById('run');
+    const statusEl = document.getElementById('status');
+    const examplesEl = document.getElementById('examples');
+
+    examplesEl.addEventListener('change', () => {
+      if (examplesEl.value && EXAMPLES[examplesEl.value]) {
+        codeEl.value = EXAMPLES[examplesEl.value];
+      }
+    });
+
+    // Tab key inserts spaces
+    codeEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = codeEl.selectionStart;
+        codeEl.value = codeEl.value.substring(0, s) + '    ' + codeEl.value.substring(codeEl.selectionEnd);
+        codeEl.selectionStart = codeEl.selectionEnd = s + 4;
+      }
+    });
+
+    let pyodide = null;
+
+    async function initPyodide() {
+      try {
+        statusEl.textContent = 'loading pyodide...';
+        statusEl.className = 'status loading';
+
+        pyodide = await loadPyodide();
+
+        statusEl.textContent = 'installing numpy + scipy...';
+        await pyodide.loadPackage(['numpy', 'scipy']);
+
+        statusEl.textContent = 'installing code-music...';
+        await pyodide.runPythonAsync(`
+import micropip
+await micropip.install('pydub')
+`);
+        // Install code-music from the wheel if on PyPI, otherwise from source
+        try {
+          await pyodide.runPythonAsync(`await micropip.install('code-music')`);
+        } catch {
+          // If not on PyPI yet, install from GitHub
+          await pyodide.runPythonAsync(`await micropip.install('https://github.com/Talador12/code-music/releases/latest/download/code_music-3.3.0-py3-none-any.whl')`);
+        }
+
+        statusEl.textContent = 'ready';
+        statusEl.className = 'status ready';
+        runBtn.disabled = false;
+      } catch (err) {
+        statusEl.textContent = 'failed to load';
+        statusEl.className = 'status error';
+        outputEl.innerHTML = `<pre class="err">${err}</pre>`;
+      }
+    }
+
+    runBtn.addEventListener('click', async () => {
+      if (!pyodide) return;
+      runBtn.disabled = true;
+      runBtn.textContent = 'Rendering...';
+      audioSection.style.display = 'none';
+      outputEl.innerHTML = '<pre>Rendering...</pre>';
+
+      try {
+        const code = codeEl.value;
+
+        // Run user code + render to WAV bytes
+        const result = await pyodide.runPythonAsync(`
+import io, struct, numpy as np
+exec(${JSON.stringify(code)})
+
+# Render
+from code_music.synth import Synth
+_samples = Synth(song.sample_rate).render_song(song)
+
+# Encode as WAV
+def _to_wav(samples, sr):
+    buf = io.BytesIO()
+    n_frames, n_channels = samples.shape
+    pcm = (np.clip(samples, -1, 1) * 32767).astype(np.int16)
+    # WAV header
+    data_size = pcm.nbytes
+    buf.write(b'RIFF')
+    buf.write(struct.pack('<I', 36 + data_size))
+    buf.write(b'WAVE')
+    buf.write(b'fmt ')
+    buf.write(struct.pack('<IHHIIHH', 16, 1, n_channels, sr, sr * n_channels * 2, n_channels * 2, 16))
+    buf.write(b'data')
+    buf.write(struct.pack('<I', data_size))
+    buf.write(pcm.tobytes())
+    return buf.getvalue()
+
+_wav_bytes = _to_wav(_samples, song.sample_rate)
+f"Rendered '{song.title}' — {song.duration_sec:.1f}s, {len(song.tracks)} tracks, {song.bpm} BPM"
+`);
+
+        outputEl.innerHTML = `<pre class="ok">${result}</pre>`;
+
+        // Get WAV bytes and create audio blob
+        const wavBytes = pyodide.globals.get('_wav_bytes').toJs();
+        const blob = new Blob([wavBytes], { type: 'audio/wav' });
+        const url = URL.createObjectURL(blob);
+
+        playerEl.src = url;
+        audioSection.style.display = 'block';
+        playerEl.play();
+
+      } catch (err) {
+        outputEl.innerHTML = `<pre class="err">${err}</pre>`;
+      } finally {
+        runBtn.disabled = false;
+        runBtn.textContent = 'Run & Play';
+      }
+    });
+
+    // Ctrl/Cmd+Enter to run
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !runBtn.disabled) {
+        runBtn.click();
+      }
+    });
+
+    // Load Pyodide
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.js';
+    script.onload = initPyodide;
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>

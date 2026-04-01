@@ -2,6 +2,8 @@
 
 Code-generated music. Write Python, hear sound, export to Spotify.
 
+**[Try it in your browser](https://talador12.github.io/code-music/playground.html)** — no install needed.
+
 ---
 
 **Who are you?**

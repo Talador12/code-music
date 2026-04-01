@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v3.3.0 — 140 songs, 719 tests, tagged
+## Status: v4.0.0 — 140 songs, 719 tests, web playground, tagged
 
 ## What's built
 
@@ -316,3 +316,15 @@
 - [x] Fix duplicate `check` target in Makefile
 - [x] 5 new songs (140 total): acid_house, new_wave, industrial_grind, dream_pop, afrobeat_groove
 - [x] Tag v3.3.0 release
+
+## v4.0 Roadmap — Web Playground
+
+- [x] `docs/playground.html`: Pyodide-based in-browser code editor + audio renderer
+- [x] Loads numpy + scipy + code-music in browser via Pyodide/micropip
+- [x] 4 pre-loaded examples (hello world, chords, effects, arrangement)
+- [x] WAV rendering in-browser via Web Audio API + blob URLs
+- [x] Ctrl/Cmd+Enter keyboard shortcut to run
+- [x] Tab key inserts spaces in editor
+- [x] Linked from landing page (docs/index.html) and README
+- [x] Updated landing page version + description
+- [x] Tag v4.0.0 release
