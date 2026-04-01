@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v4.0.0 — 140 songs, 719 tests, web playground, tagged
+## Status: v4.1.0 — 140 songs, 719 tests, web playground, tagged
 
 ## What's built
 
@@ -328,3 +328,12 @@
 - [x] Linked from landing page (docs/index.html) and README
 - [x] Updated landing page version + description
 - [x] Tag v4.0.0 release
+
+## v4.1 Roadmap — Playground Reliability
+
+- [x] Dynamic wheel URL: playground fetches wheel from GitHub releases API (no hardcoded version)
+- [x] CI: build wheel + attach to GitHub Release alongside WAV zip
+- [x] Better error messages when Pyodide or package load fails
+- [x] Ready state shows Ctrl+Enter hint
+- [x] Uploaded v4.0.0 wheel to release manually for immediate playground use
+- [x] Tag v4.1.0 release

@@ -175,22 +175,35 @@ song.effects = {"pad": EffectsChain().add(reverb, room_size=0.6, wet=0.3)}
         await pyodide.runPythonAsync(`
 import micropip
 await micropip.install('pydub')
-`);
-        // Install code-music from the wheel if on PyPI, otherwise from source
-        try {
-          await pyodide.runPythonAsync(`await micropip.install('code-music')`);
-        } catch {
-          // If not on PyPI yet, install from GitHub
-          await pyodide.runPythonAsync(`await micropip.install('https://github.com/Talador12/code-music/releases/latest/download/code_music-3.3.0-py3-none-any.whl')`);
-        }
 
-        statusEl.textContent = 'ready';
+# Try PyPI first, then fall back to GitHub release wheel
+_installed = False
+try:
+    await micropip.install('code-music')
+    _installed = True
+except Exception:
+    pass
+
+if not _installed:
+    # Find the wheel from GitHub releases API
+    from pyodide.http import pyfetch
+    resp = await pyfetch('https://api.github.com/repos/Talador12/code-music/releases/latest')
+    data = await resp.json()
+    whl = next((a['browser_download_url'] for a in data.get('assets', []) if a['name'].endswith('.whl')), None)
+    if whl:
+        await micropip.install(whl)
+    else:
+        raise RuntimeError('No wheel found in latest release. Install code-music on PyPI or upload a wheel.')
+`);
+
+        statusEl.textContent = 'ready — Ctrl+Enter to run';
         statusEl.className = 'status ready';
         runBtn.disabled = false;
+        outputEl.innerHTML = '<pre class="ok">Ready. Write code and press "Run & Play" or Ctrl+Enter.</pre>';
       } catch (err) {
-        statusEl.textContent = 'failed to load';
+        statusEl.textContent = 'setup failed';
         statusEl.className = 'status error';
-        outputEl.innerHTML = `<pre class="err">${err}</pre>`;
+        outputEl.innerHTML = `<pre class="err">Failed to load: ${err}\n\nThis usually means:\n- Pyodide CDN is down (try refreshing)\n- code-music wheel is not available (check GitHub releases)\n\nYou can still use code-music locally: pip install code-music</pre>`;
       }
     }
 

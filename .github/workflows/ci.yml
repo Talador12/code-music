@@ -154,10 +154,18 @@ jobs:
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "tests=$tests" >> "$GITHUB_OUTPUT"
 
+      - name: Build wheel for playground
+        run: |
+          pip install build
+          python -m build --wheel
+          cp dist/*.whl .
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: code-music-${{ github.ref_name }}-wav.zip
+          files: |
+            code-music-${{ github.ref_name }}-wav.zip
+            *.whl
           generate_release_notes: true
           body: |
             ## code-music ${{ github.ref_name }}
