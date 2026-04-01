@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.6.0-rc — 90 songs, 437 tests, ready to tag
+## Status: v1.6.0 — 90 songs, 437 tests, tagged
 
 ## What's built
 
@@ -150,4 +150,4 @@
 - [x] Real-time playback: `play(song)` function + `code-music --play` CLI flag
 - [x] Add `sounddevice` as optional dependency with clear install instructions
 - [x] Reach 90 songs (5 new: honky_tonk_moon, samba_de_janeiro, celtic_crossing, two_step_garage, minimal_pulse)
-- [ ] Tag v1.6.0 release
+- [x] Tag v1.6.0 release
