@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.6.0+ — 90 songs, 453 tests, v1.7 in progress
+## Status: v1.7.0 — 95 songs, 453 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 90 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 95 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -159,5 +159,5 @@
 - [x] Synth renderer: prefers song.effects, falls back to song._effects
 - [x] Migrate 3 songs to EffectsChain (fade_to_dawn, trance_odyssey, cinematic_rise)
 - [x] Update docs with EffectsChain usage (creators + theory)
-- [ ] Reach 95 songs
-- [ ] Tag v1.7.0 release
+- [x] Reach 95 songs (5 new: buenos_aires_tango, swing_shift, drill_sermon, psy_gate, balkan_brass)
+- [x] Tag v1.7.0 release

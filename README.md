@@ -54,7 +54,7 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `songs/` | 90 full songs across 25+ genres |
+| `songs/` | 95 full songs across 30+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
