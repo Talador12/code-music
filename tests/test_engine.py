@@ -5,9 +5,11 @@ import math
 from code_music.engine import (
     Chord,
     Note,
+    Section,
     Song,
     Track,
     midi_to_freq,
+    normalize_note_name,
     note_name_to_midi,
     scale,
 )
@@ -28,6 +30,41 @@ class TestFrequency:
 
     def test_sharp(self):
         assert note_name_to_midi("C#", 4) == 61
+
+
+class TestNormalizeNoteName:
+    def test_canonical_names_unchanged(self):
+        for name in ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]:
+            assert normalize_note_name(name) == name
+
+    def test_flat_to_sharp(self):
+        assert normalize_note_name("Db") == "C#"
+        assert normalize_note_name("Eb") == "D#"
+        assert normalize_note_name("Gb") == "F#"
+        assert normalize_note_name("Ab") == "G#"
+        assert normalize_note_name("Bb") == "A#"
+
+    def test_special_enharmonics(self):
+        assert normalize_note_name("Cb") == "B"
+        assert normalize_note_name("Fb") == "E"
+        assert normalize_note_name("E#") == "F"
+        assert normalize_note_name("B#") == "C"
+
+    def test_lowercase_input(self):
+        assert normalize_note_name("c#") == "C#"
+        assert normalize_note_name("bb") == "A#"
+        assert normalize_note_name("e") == "E"
+
+    def test_unknown_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="Unknown note name"):
+            normalize_note_name("X")
+
+    def test_midi_uses_normalized_names(self):
+        assert note_name_to_midi("Db", 4) == note_name_to_midi("C#", 4)
+        assert note_name_to_midi("Bb", 3) == note_name_to_midi("A#", 3)
+        assert note_name_to_midi("Fb", 4) == note_name_to_midi("E", 4)
 
 
 class TestNote:
@@ -555,6 +592,99 @@ class TestTrackQuantize:
         assert q.beats[0].event.duration == 0.25 or q.beats[0].event.duration == 0.5
 
 
+class TestTrackFadeIn:
+    def test_fade_in_starts_silent(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("C", 4, 1.0, velocity=0.8))
+        faded = t.fade_in(beats=4.0)
+        assert faded.beats[0].event.velocity < 0.01
+
+    def test_fade_in_reaches_original_velocity(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("C", 4, 1.0, velocity=0.8))
+        faded = t.fade_in(beats=4.0)
+        assert faded.beats[7].event.velocity == 0.8
+
+    def test_fade_in_monotonically_increases(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("A", 4, 1.0, velocity=1.0))
+        faded = t.fade_in(beats=8.0)
+        velocities = [b.event.velocity for b in faded.beats]
+        for i in range(1, len(velocities)):
+            assert velocities[i] >= velocities[i - 1]
+
+    def test_fade_in_preserves_rests(self):
+        t = Track()
+        t.add(Note.rest(2.0))
+        t.add(Note("C", 4, 2.0, velocity=0.6))
+        faded = t.fade_in(beats=4.0)
+        assert faded.beats[0].event.pitch is None
+
+    def test_fade_in_does_not_mutate_original(self):
+        t = Track()
+        t.add(Note("C", 4, 1.0, velocity=0.8))
+        _ = t.fade_in(beats=1.0)
+        assert t.beats[0].event.velocity == 0.8
+
+    def test_fade_in_preserves_metadata(self):
+        t = Track(name="lead", instrument="piano", volume=0.7, pan=-0.3, swing=0.1)
+        t.add(Note("C", 4, 1.0))
+        faded = t.fade_in(beats=1.0)
+        assert faded.name == "lead"
+        assert faded.instrument == "piano"
+        assert faded.volume == 0.7
+        assert faded.pan == -0.3
+        assert faded.swing == 0.1
+
+
+class TestTrackFadeOut:
+    def test_fade_out_ends_quiet(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("C", 4, 1.0, velocity=0.8))
+        faded = t.fade_out(beats=4.0)
+        # Last beat at cursor=7.0, remaining=1.0, factor=1/4=0.25 → vel=0.2
+        assert faded.beats[7].event.velocity < faded.beats[4].event.velocity
+
+    def test_fade_out_keeps_beginning_intact(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("C", 4, 1.0, velocity=0.8))
+        faded = t.fade_out(beats=4.0)
+        assert faded.beats[0].event.velocity == 0.8
+        assert faded.beats[3].event.velocity == 0.8
+
+    def test_fade_out_monotonically_decreases_in_fade_region(self):
+        t = Track()
+        for _ in range(8):
+            t.add(Note("A", 4, 1.0, velocity=1.0))
+        faded = t.fade_out(beats=8.0)
+        velocities = [b.event.velocity for b in faded.beats]
+        for i in range(1, len(velocities)):
+            assert velocities[i] <= velocities[i - 1]
+
+    def test_fade_out_does_not_mutate_original(self):
+        t = Track()
+        t.add(Note("C", 4, 1.0, velocity=0.8))
+        _ = t.fade_out(beats=1.0)
+        assert t.beats[0].event.velocity == 0.8
+
+    def test_fade_in_and_fade_out_chain(self):
+        t = Track()
+        for _ in range(16):
+            t.add(Note("C", 4, 1.0, velocity=0.8))
+        chained = t.fade_in(beats=4.0).fade_out(beats=4.0)
+        # Beginning should be near-silent from fade_in
+        assert chained.beats[0].event.velocity < 0.01
+        # End should be quieter than middle from fade_out
+        assert chained.beats[15].event.velocity < chained.beats[8].event.velocity
+        # Middle should retain most of its velocity
+        assert chained.beats[8].event.velocity > 0.5
+
+
 class TestExportStems:
     def test_creates_files(self):
         import tempfile
@@ -725,3 +855,113 @@ class TestSampleTrack:
             tr.add(Note("C", 4, 2.0))
             samples = Synth(22050).render_song(song)
             assert samples.shape[0] > 0
+
+
+class TestSongArrange:
+    def test_arrange_creates_tracks(self):
+        intro = Section("intro", bars=2)
+        intro.add_track("pad", [Chord("A", "min7", 3, duration=8.0)])
+        intro.add_track("lead", [Note("C", 5, 8.0)])
+
+        song = Song(bpm=120)
+        song.arrange([intro], instruments={"pad": "pad", "lead": "piano"})
+
+        assert len(song.tracks) == 2
+        names = [t.name for t in song.tracks]
+        assert "pad" in names
+        assert "lead" in names
+
+    def test_arrange_concatenates_sections(self):
+        s1 = Section("A", bars=2)
+        s1.add_track("melody", [Note("C", 4, 4.0), Note("E", 4, 4.0)])
+
+        s2 = Section("B", bars=2)
+        s2.add_track("melody", [Note("G", 4, 4.0), Note("B", 4, 4.0)])
+
+        song = Song(bpm=120)
+        song.arrange([s1, s2])
+
+        melody = [t for t in song.tracks if t.name == "melody"][0]
+        assert len(melody.beats) == 4
+        assert melody.beats[0].event.pitch == "C"
+        assert melody.beats[2].event.pitch == "G"
+
+    def test_arrange_fills_missing_tracks_with_rests(self):
+        s1 = Section("intro", bars=2)
+        s1.add_track("pad", [Chord("A", "min", 3, duration=8.0)])
+
+        s2 = Section("verse", bars=2)
+        s2.add_track("pad", [Chord("D", "min", 3, duration=8.0)])
+        s2.add_track("lead", [Note("E", 5, 8.0)])
+
+        song = Song(bpm=120)
+        song.arrange([s1, s2])
+
+        lead = [t for t in song.tracks if t.name == "lead"][0]
+        # First section: lead didn't exist → rest fills 8 beats
+        assert lead.beats[0].event.pitch is None
+        assert lead.beats[0].event.duration == 8.0
+        # Second section: has the actual note
+        assert lead.beats[1].event.pitch == "E"
+
+    def test_arrange_applies_instruments_and_volumes(self):
+        s = Section("x", bars=1)
+        s.add_track("bass", [Note("E", 2, 4.0)])
+
+        song = Song(bpm=120)
+        song.arrange(
+            [s],
+            instruments={"bass": "bass"},
+            volumes={"bass": 0.6},
+            pans={"bass": -0.4},
+        )
+        bass = song.tracks[0]
+        assert bass.instrument == "bass"
+        assert bass.volume == 0.6
+        assert bass.pan == -0.4
+
+    def test_arrange_returns_self(self):
+        song = Song(bpm=120)
+        result = song.arrange([Section("empty", bars=1)])
+        assert result is song
+
+    def test_arrange_total_beats_matches_sections(self):
+        s1 = Section("A", bars=4)
+        s1.add_track("pad", [Chord("C", "maj", 3, duration=16.0)])
+        s2 = Section("B", bars=4)
+        s2.add_track("pad", [Chord("G", "maj", 3, duration=16.0)])
+
+        song = Song(bpm=120)
+        song.arrange([s1, s2])
+        assert song.total_beats == 32.0
+
+    def test_arrange_pads_short_events(self):
+        s = Section("short", bars=4)
+        # Only 4 beats of events in a 16-beat section
+        s.add_track("lead", [Note("C", 4, 4.0)])
+
+        song = Song(bpm=120)
+        song.arrange([s])
+        lead = song.tracks[0]
+        assert lead.total_beats == 16.0
+
+    def test_arrange_renders_without_error(self):
+        import numpy as np
+
+        from code_music.synth import Synth
+
+        intro = Section("intro", bars=2)
+        intro.add_track("pad", [Chord("A", "min7", 3, duration=8.0)])
+
+        verse = Section("verse", bars=2)
+        verse.add_track("pad", [Chord("D", "min7", 3, duration=8.0)])
+        verse.add_track("lead", scale("A", "pentatonic", 5))
+
+        song = Song(bpm=120, sample_rate=22050)
+        song.arrange(
+            [intro, verse],
+            instruments={"pad": "pad", "lead": "piano"},
+        )
+        samples = Synth(22050).render_song(song)
+        assert samples.shape[0] > 0
+        assert np.max(np.abs(samples)) <= 1.0 + 1e-6

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.4.0+ — 80 songs, 403 tests, v1.5 started
+## Status: v1.4.0+ — 80 songs, 428 tests, v1.5 in progress
 
 ## What's built
 
@@ -139,3 +139,8 @@
 - [x] Make help regression tests: expose circle-of-fifths alias, keep internal targets hidden from help output
 - [x] List command regression tests: keep friendly names in list output and hide internal template stems
 - [x] List command regression tests: ensure `list-samples` never leaks underscore preview targets
+- [x] Engine: `normalize_note_name()` + `ENHARMONICS` table for clean flat→sharp resolution
+- [x] Engine: `Track.fade_in()` / `Track.fade_out()` — beat-level velocity ramps
+- [x] Engine: `Song.arrange(sections)` — compose from named Section blocks
+- [ ] Reach 85 songs
+- [ ] Tag v1.5.0 release

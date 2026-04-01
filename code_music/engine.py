@@ -55,6 +55,19 @@ DOUBLE_DOTTED_HALF = 3.5
 
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
+# Enharmonic aliases — normalized when resolving pitch names
+ENHARMONICS: dict[str, str] = {
+    "Db": "C#",
+    "Eb": "D#",
+    "Fb": "E",
+    "Gb": "F#",
+    "Ab": "G#",
+    "Bb": "A#",
+    "Cb": "B",
+    "E#": "F",
+    "B#": "C",
+}
+
 # Interval shortcuts (semitones from root)
 INTERVALS = {
     "unison": 0,
@@ -172,20 +185,30 @@ def midi_to_freq(midi: int) -> float:
     return A4_FREQ * (2.0 ** ((midi - A4_MIDI) / 12.0))
 
 
+def normalize_note_name(name: str) -> str:
+    """Normalize a note name to its canonical sharp-based form.
+
+    Handles enharmonic equivalents (Db→C#, Bb→A#, E#→F, etc.)
+    and mixed case input. Returns an entry from NOTE_NAMES.
+
+    Raises ValueError for unrecognized names.
+    """
+    # Capitalize first letter, keep rest as-is for '#'/'b'
+    cleaned = name[0].upper() + name[1:]
+    # Resolve enharmonic aliases
+    for alias, canon in ENHARMONICS.items():
+        if cleaned == alias:
+            cleaned = canon
+            break
+    if cleaned not in NOTE_NAMES:
+        raise ValueError(f"Unknown note name: {name!r}")
+    return cleaned
+
+
 def note_name_to_midi(name: str, octave: int = 4) -> int:
     """Convert e.g. 'C#' + octave 4 to MIDI note number."""
-    name = name.upper().replace("B#", "C").replace("CB", "B").replace("FB", "E").replace("E#", "F")
-    # Handle flats
-    name = (
-        name.replace("DB", "C#")
-        .replace("EB", "D#")
-        .replace("GB", "F#")
-        .replace("AB", "G#")
-        .replace("BB", "A#")
-    )
-    if name not in NOTE_NAMES:
-        raise ValueError(f"Unknown note name: {name!r}")
-    semitone = NOTE_NAMES.index(name)
+    canon = normalize_note_name(name)
+    semitone = NOTE_NAMES.index(canon)
     return (octave + 1) * 12 + semitone
 
 
@@ -1161,6 +1184,9 @@ class Section:
         self.tracks[track_name] = events
         return self
 
+    def __repr__(self) -> str:
+        return f"Section({self.name!r}, bars={self.bars}, tracks={list(self.tracks.keys())})"
+
 
 @dataclass
 class Track:
@@ -1270,6 +1296,73 @@ class Track:
         )
         rev.beats = list(reversed(self.beats))
         return rev
+
+    def fade_in(self, beats: float = 4.0) -> "Track":
+        """Return a new Track with velocity ramped from 0 to original over *beats*.
+
+        Notes that start before *beats* get scaled linearly; notes after
+        the fade region keep their original velocity.
+
+        Example::
+
+            intro = melody.fade_in(beats=8.0)
+            song.add_track(intro)
+        """
+        faded = self._clone_empty()
+        cursor = 0.0
+        for beat in self.beats:
+            if beat.event is not None and beats > 0:
+                t = min(cursor / beats, 1.0)
+                event = self._scale_velocity(beat.event, t)
+                faded.beats.append(Beat(event=event))
+            else:
+                faded.beats.append(Beat(event=beat.event))
+            cursor += beat.duration
+        return faded
+
+    def fade_out(self, beats: float = 4.0) -> "Track":
+        """Return a new Track with velocity ramped from original to 0 over the last *beats*.
+
+        Example::
+
+            outro = melody.fade_out(beats=8.0)
+            song.add_track(outro)
+        """
+        total = self.total_beats
+        fade_start = max(total - beats, 0.0)
+        faded = self._clone_empty()
+        cursor = 0.0
+        for beat in self.beats:
+            if beat.event is not None and cursor >= fade_start and beats > 0:
+                remaining = total - cursor
+                t = min(remaining / beats, 1.0)
+                event = self._scale_velocity(beat.event, t)
+                faded.beats.append(Beat(event=event))
+            else:
+                faded.beats.append(Beat(event=beat.event))
+            cursor += beat.duration
+        return faded
+
+    def _clone_empty(self) -> "Track":
+        """Return a new Track with the same metadata but no beats."""
+        return Track(
+            name=self.name,
+            instrument=self.instrument,
+            volume=self.volume,
+            pan=self.pan,
+            swing=self.swing,
+            density=self.density,
+            density_seed=self.density_seed,
+        )
+
+    @staticmethod
+    def _scale_velocity(event: "Note | Chord", factor: float) -> "Note | Chord":
+        """Return a copy of a Note or Chord with velocity scaled by *factor*."""
+        import copy
+
+        scaled = copy.copy(event)
+        scaled.velocity = event.velocity * max(0.0, min(factor, 1.0))
+        return scaled
 
     @property
     def total_beats(self) -> float:
@@ -1451,6 +1544,83 @@ class Song:
         track.sample_rate = self.sample_rate
         self.voice_tracks.append(track)
         return track
+
+    def arrange(
+        self,
+        sections: Sequence[Section],
+        instruments: dict[str, str] | None = None,
+        volumes: dict[str, float] | None = None,
+        pans: dict[str, float] | None = None,
+    ) -> "Song":
+        """Compose a song from an ordered list of Sections.
+
+        Each Section contains named tracks with lists of Note/Chord events.
+        ``arrange()`` concatenates these events in order, creating one Track
+        per unique track name seen across all sections. Tracks that don't
+        appear in a given section get rest-filled for that section's duration.
+
+        Args:
+            sections:    Ordered list of Section objects to concatenate.
+            instruments: Map of track_name → synth preset. Defaults to "sine".
+            volumes:     Map of track_name → volume (0.0–1.0). Defaults to 0.8.
+            pans:        Map of track_name → pan (-1.0..1.0). Defaults to 0.0.
+
+        Returns:
+            self (with tracks populated) for chaining.
+
+        Example::
+
+            intro = Section("intro", bars=4)
+            intro.add_track("pad", [Chord("A","min7",3,duration=16.0)])
+            intro.add_track("lead", [Note.rest(16.0)])
+
+            verse = Section("verse", bars=4)
+            verse.add_track("pad", [Chord("D","min7",3,duration=16.0)])
+            verse.add_track("lead", scale("A","pentatonic",5))
+
+            song = Song(title="Arranged", bpm=120)
+            song.arrange([intro, verse], instruments={"pad":"pad","lead":"piano"})
+        """
+        instruments = instruments or {}
+        volumes = volumes or {}
+        pans = pans or {}
+
+        # Discover all track names across all sections
+        all_track_names: list[str] = []
+        for section in sections:
+            for name in section.tracks:
+                if name not in all_track_names:
+                    all_track_names.append(name)
+
+        # Build one Track per unique name
+        built: dict[str, Track] = {}
+        for name in all_track_names:
+            built[name] = Track(
+                name=name,
+                instrument=instruments.get(name, "sine"),
+                volume=volumes.get(name, 0.8),
+                pan=pans.get(name, 0.0),
+            )
+
+        # Walk sections in order, appending events (or rests) per track
+        num, den = self.time_sig
+        for section in sections:
+            section_beats = float(section.bars * num * (4.0 / den))
+            for name in all_track_names:
+                events = section.tracks.get(name)
+                if events:
+                    built[name].extend(events)
+                    # Pad remainder if events are shorter than section
+                    used = sum((e.duration if hasattr(e, "duration") else 0.0) for e in events)
+                    if used < section_beats:
+                        built[name].add(Note.rest(section_beats - used))
+                else:
+                    built[name].add(Note.rest(section_beats))
+
+        for track in built.values():
+            self.add_track(track)
+
+        return self
 
     def merge(self, other: "Song", title: str | None = None) -> "Song":
         """Combine two songs by layering all their tracks into a new Song.
