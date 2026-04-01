@@ -160,6 +160,24 @@ vox.add(VoiceClip.rap("welcome to code music", voice="Zarvox", backend="say"), b
 
 Want a ready-made example? Start from `samples/voices/voice_pacing_demo.py`.
 
+## Import a MIDI file
+
+Have an existing `.mid` file? Import it and remix:
+
+```python
+from code_music import import_midi, play
+
+song = import_midi("my_track.mid")
+song.bpm = 100          # slow it down
+play(song)               # hear it immediately
+```
+
+Or from the command line:
+
+```bash
+code-music dummy.py --import-midi my_track.mid -o my_track.wav
+```
+
 ## Steal from an existing song
 
 The simplest way to learn: open any file in `songs/` and modify it.

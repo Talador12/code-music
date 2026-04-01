@@ -10,7 +10,7 @@ code_music/
   synth.py       Renders Song → numpy float64 stereo array
   effects.py     All audio effects (scipy/numpy, O(N log N))
   export.py      WAV (stdlib), MP3/FLAC/OGG (pydub + ffmpeg)
-  midi.py        MIDI export — pure stdlib, no mido
+  midi.py        MIDI import/export — pure stdlib, no mido
   notation.py    LilyPond, ABC, MusicXML exporters
   voice.py       Voice synthesis: say / Bark / ElevenLabs / OpenAI backends
   cli.py         `code-music` entry point, --watch live-reload

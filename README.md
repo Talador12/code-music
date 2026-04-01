@@ -82,6 +82,9 @@ make play-scale-circle_of_fifths # key relationship reference run
 
 # Direct playback (no file written)
 code-music songs/trance_odyssey.py --play
+
+# Import and render a MIDI file
+code-music dummy.py --import-midi my_track.mid -o remix.wav
 ```
 
 ## Export to Spotify

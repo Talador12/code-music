@@ -275,6 +275,23 @@ from code_music.midi import export_midi
 export_midi(song, "my_song.mid")   # SMF type 1, GM programs, channel 10 drums
 ```
 
+## MIDI import (v1.8+)
+
+```python
+from code_music import import_midi
+
+# Parse any .mid file into a Song
+song = import_midi("existing.mid")
+song.bpm = 140                     # re-tempo
+play(song)                         # listen immediately
+
+# Override instrument mapping
+song = import_midi("piano_piece.mid", instrument="pad")
+
+# CLI: render a .mid directly to WAV
+# code-music dummy.py --import-midi existing.mid -o remix.wav
+```
+
 ## Voice synthesis
 
 ```python

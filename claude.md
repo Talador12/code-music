@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.7.0+ — 100 songs, 467 tests, v1.8 in progress
+## Status: v1.8.0 — 100 songs, 467 tests, tagged
 
 ## What's built
 
@@ -168,5 +168,5 @@
 - [x] MIDI import: `import_midi()` parses .mid → Song (SMF type 0/1, zero deps)
 - [x] `midi_to_note_name()` utility in engine.py
 - [x] CLI `--import-midi` flag renders .mid directly to WAV
-- [ ] Update docs with MIDI import usage
-- [ ] Tag v1.8.0 release
+- [x] Update docs with MIDI import usage (creators, theory, developers, README)
+- [x] Tag v1.8.0 release
