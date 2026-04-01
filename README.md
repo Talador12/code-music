@@ -61,6 +61,7 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
+| `examples/` | 8 step-by-step tutorials: hello world → live coding |
 | `songs/` | 120 full songs across 40+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
@@ -95,6 +96,25 @@ code-music songs/my_wip.py --watch --play
 
 # Import and render a MIDI file
 code-music dummy.py --import-midi my_track.mid -o remix.wav
+```
+
+## Learn by example
+
+The `examples/` directory walks through the entire API step by step:
+
+| # | Example | What you'll learn |
+|---|---|---|
+| 01 | `hello_world.py` | Notes, tracks, Song basics |
+| 02 | `chords_and_scales.py` | Chord shapes, scale(), modes |
+| 03 | `effects_chain.py` | EffectsChain, reverb, delay, compress |
+| 04 | `arrangement.py` | Section, repeat, Song.arrange |
+| 05 | `track_transforms.py` | transpose, loop, split, merge, stretch, filter |
+| 06 | `midi_roundtrip.py` | Export to MIDI, import back, remix |
+| 07 | `json_save_load.py` | Song.export_json / Song.load_json |
+| 08 | `live_coding.py` | --watch --play for instant feedback |
+
+```bash
+code-music examples/01_hello_world.py --play    # start here
 ```
 
 ## Export to Spotify

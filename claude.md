@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.6.0 — 120 songs, 681 tests, tagged
+## Status: v2.7.0 — 120 songs, 689 tests, tagged
 
 ## What's built
 
@@ -244,3 +244,18 @@
 - [x] Local `python -m build` verified (sdist + wheel)
 - [x] 5 new songs (120 total): gospel_praise, dnb_neurofunk, disco_revival, reggaeton_noche, synthwave_drive
 - [x] Tag v2.6.0 release
+
+## v2.7 Roadmap — Interactive Examples
+
+- [x] `examples/` directory with 8 step-by-step tutorials covering entire API
+- [x] 01: hello world — simplest possible song
+- [x] 02: chords and scales — harmonic building blocks
+- [x] 03: effects chain — EffectsChain walkthrough
+- [x] 04: arrangement — Section + repeat + Song.arrange
+- [x] 05: track transforms — transpose, loop, split, merge, stretch, filter
+- [x] 06: MIDI roundtrip — export + import + remix
+- [x] 07: JSON save/load — Song serialization workflow
+- [x] 08: live coding — --watch --play instant feedback
+- [x] README: examples table + "Learn by example" section
+- [x] Smoke tests for all 8 examples
+- [x] Tag v2.7.0 release
