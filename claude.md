@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v3.2.0 — 135 songs, 714 tests, tagged
+## Status: v3.3.0 — 140 songs, 719 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 135 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 140 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -306,3 +306,13 @@
 - [x] Fix developer data-flow diagram: `_effects` → `effects`
 - [x] Audit all docs/README/AGENTS.md/examples for stale `_effects` refs — zero remaining
 - [x] Tag v3.2.0 release
+
+## v3.3 Roadmap — Contributor Infrastructure
+
+- [x] CONTRIBUTING.md with dev setup, song writing guide, PR checklist
+- [x] GitHub issue templates: bug report, feature request, new song
+- [x] GitHub PR template with checklist
+- [x] `make check` target (lint + test in one command)
+- [x] Fix duplicate `check` target in Makefile
+- [x] 5 new songs (140 total): acid_house, new_wave, industrial_grind, dream_pop, afrobeat_groove
+- [x] Tag v3.3.0 release

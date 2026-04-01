@@ -246,6 +246,10 @@ lint: ## [Dev] Run ruff check on all Python files
 test: ## [Dev] Run pytest test suite
 	$(BIN)/pytest tests/ -v
 
+check: ## [Dev] Lint + test in one command (run before every PR)
+	$(BIN)/ruff check code_music tests songs examples
+	$(BIN)/pytest tests/ -q
+
 examples: ## [Explore] Render all 8 tutorial examples → dist/examples/
 	@mkdir -p dist/examples
 	@count=0; for f in examples/0*.py; do \
@@ -368,9 +372,7 @@ playlist-%: ## [Create] Generate playlist for one vibe (e.g. make playlist-chill
 	$(BIN)/python scripts/make_playlist.py --vibe $*
 
 
-check: lint test ## [Dev] Run lint + test in one command
-	@echo ""
-	@echo "$(shell printf '\033[92m')All checks passed.$(shell printf '\033[0m')"
+
 
 
 stats: ## [Dev] Show song statistics — total duration, BPM distribution, genres

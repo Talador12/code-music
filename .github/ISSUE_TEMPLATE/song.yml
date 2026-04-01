@@ -1,0 +1,20 @@
+name: New Song
+description: Contribute a song
+labels: [song]
+body:
+  - type: textarea
+    id: song
+    attributes:
+      label: Song details
+      placeholder: |
+        Genre: [e.g. trip-hop]
+        Key: [e.g. Dm]
+        BPM: [e.g. 85]
+        Inspiration: [e.g. Massive Attack]
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      placeholder: Special techniques, unusual time signatures, etc.
