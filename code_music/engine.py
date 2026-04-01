@@ -1531,6 +1531,82 @@ class Track:
 
         return before, after
 
+    def merge(self, other: "Track") -> "Track":
+        """Overlay *other*'s events on top of this track at matching beat positions.
+
+        Walks both tracks in parallel. Where *other* has a pitched event and
+        *self* has a rest (or vice-versa), the pitched event wins. Where both
+        have pitched events, *self*'s event is kept. Metadata from *self*.
+
+        Example::
+
+            combined_hats = ride_pattern.merge(crash_accents)
+        """
+        import copy
+
+        merged = self._clone_empty()
+        self_beats = list(self.beats)
+        other_beats = list(other.beats)
+
+        s_cursor = 0.0
+
+        # Walk through beat-by-beat using self's timeline as the grid
+        for beat in self_beats:
+            dur = beat.duration
+            has_pitch = beat.event is not None and (
+                getattr(beat.event, "pitch", None) is not None
+                or getattr(beat.event, "root", None) is not None
+            )
+            if has_pitch:
+                # Self has a real event — keep it
+                merged.beats.append(Beat(event=copy.copy(beat.event)))
+            else:
+                # Self has rest — check if other has something at this position
+                # Find other's beat overlapping s_cursor
+                o_pos = 0.0
+                found = None
+                for ob in other_beats:
+                    if o_pos + ob.duration > s_cursor + 0.001 and o_pos < s_cursor + dur - 0.001:
+                        if ob.event is not None and (
+                            getattr(ob.event, "pitch", None) is not None
+                            or getattr(ob.event, "root", None) is not None
+                        ):
+                            found = ob.event
+                            break
+                    o_pos += ob.duration
+                    if o_pos > s_cursor + dur:
+                        break
+                if found is not None:
+                    merged.beats.append(Beat(event=copy.copy(found)))
+                else:
+                    merged.beats.append(Beat(event=copy.copy(beat.event) if beat.event else None))
+            s_cursor += dur
+
+        return merged
+
+    def stretch(self, factor: float) -> "Track":
+        """Return a new Track with all beat durations scaled by *factor*.
+
+        factor > 1.0 slows down (longer notes), factor < 1.0 speeds up.
+        Preserves pitch, velocity, and metadata.
+
+        Example::
+
+            half_speed = melody.stretch(2.0)
+            double_speed = melody.stretch(0.5)
+        """
+        import copy
+
+        stretched = self._clone_empty()
+        for beat in self.beats:
+            if beat.event is None:
+                stretched.add(Note.rest(beat.duration * factor))
+            else:
+                event = copy.copy(beat.event)
+                event.duration = beat.event.duration * factor
+                stretched.beats.append(Beat(event=event))
+        return stretched
+
     def slice(self, start_beat: float, end_beat: float) -> "Track":
         """Extract a subsection from *start_beat* to *end_beat*.
 
@@ -2212,6 +2288,35 @@ class Song:
             song.effects[name] = EffectsChain.from_dict(chain_data)
 
         return song
+
+    def export_json(self, path):
+        """Save the song to a JSON file via ``to_dict()``.
+
+        Example::
+
+            song.export_json("my_song.json")
+        """
+        import json
+        from pathlib import Path as _Path
+
+        out = _Path(path)
+        out.write_text(json.dumps(self.to_dict(), indent=2))
+        return out
+
+    @classmethod
+    def load_json(cls, path) -> "Song":
+        """Load a Song from a JSON file created by ``export_json()``.
+
+        Example::
+
+            song = Song.load_json("my_song.json")
+            audio = song.render()
+        """
+        import json
+        from pathlib import Path as _Path
+
+        data = json.loads(_Path(path).read_text())
+        return cls.from_dict(data)
 
     def render(self):
         """Render the song to a stereo float64 numpy array.

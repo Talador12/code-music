@@ -155,9 +155,10 @@ class TestSongToFromDict:
 class TestCLIInfo:
     def test_info_flag_prints_metadata(self):
         import subprocess
+        import sys
 
         result = subprocess.run(
-            [".venv/bin/python", "-m", "code_music.cli", "songs/trance_odyssey.py", "--info"],
+            [sys.executable, "-m", "code_music.cli", "songs/trance_odyssey.py", "--info"],
             capture_output=True,
             text=True,
             check=True,

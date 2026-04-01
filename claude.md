@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.3.0 — 110 songs, 653 tests, tagged
+## Status: v2.4.0 — 115 songs, 673 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 110 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 115 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -215,3 +215,13 @@
 - [x] Song smoke tests: 110 parametrized tests verify every song imports + defines `song`
 - [x] 15 feature tests (slice, serialization round-trip, CLI info)
 - [x] Tag v2.3.0 release
+
+## v2.4 Roadmap
+
+- [x] Fix CI: use `sys.executable` in CLI test (no `.venv/bin/python` in CI)
+- [x] `Track.merge(other)` — overlay two tracks at same beat positions
+- [x] `Track.stretch(factor)` — time-stretch by scaling all beat durations
+- [x] `Song.export_json()` / `Song.load_json()` — file-level JSON serialization
+- [x] 5 new songs (115 total): merged_grooves, time_warp, persian_nights, stutter_step, json_roundtrip
+- [x] 15 new tests for merge, stretch, export/load JSON
+- [x] Tag v2.4.0 release
