@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.7.0 — 95 songs, 453 tests, tagged
+## Status: v1.7.0+ — 100 songs, 453 tests, century milestone
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 95 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 100 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -161,3 +161,10 @@
 - [x] Update docs with EffectsChain usage (creators + theory)
 - [x] Reach 95 songs (5 new: buenos_aires_tango, swing_shift, drill_sermon, psy_gate, balkan_brass)
 - [x] Tag v1.7.0 release
+
+## v1.8 Roadmap
+
+- [x] Reach 100 songs (5 new: accordion_polka, cumbia_luna, jungle_pressure, drift_phonk, hardstyle_anthem)
+- [ ] MIDI import: parse .mid files into Song objects
+- [ ] CLI --import flag for MIDI files
+- [ ] Tag v1.8.0 release
