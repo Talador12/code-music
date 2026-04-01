@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.5.0 — 115 songs, 676 tests, tagged
+## Status: v2.6.0 — 120 songs, 681 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 115 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 120 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -236,3 +236,11 @@
 - [x] PyPI publish job in CI (Trusted Publisher via `pypa/gh-action-pypi-publish`)
 - [x] 3 new tests (__version__ importable, semver format, CLI --version)
 - [x] Tag v2.5.0 release
+
+## v2.6 Roadmap
+
+- [x] Fix CI: invalid classifier `Sound/Audio :: Synthesis` → `Sound/Audio :: Sound Synthesis`
+- [x] Add MIT LICENSE file
+- [x] Local `python -m build` verified (sdist + wheel)
+- [x] 5 new songs (120 total): gospel_praise, dnb_neurofunk, disco_revival, reggaeton_noche, synthwave_drive
+- [x] Tag v2.6.0 release

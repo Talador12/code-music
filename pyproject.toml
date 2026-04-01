@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-music"
-version = "2.5.0"
+version = "2.6.0"
 description = "Code-generated music: write blocks of code, export Spotify-ready audio"
 readme = "README.md"
 license = "MIT"
@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Multimedia :: Sound/Audio",
-    "Topic :: Multimedia :: Sound/Audio :: Synthesis",
+    "Topic :: Multimedia :: Sound/Audio :: Sound Synthesis",
     "Topic :: Artistic Software",
 ]
 dependencies = [
