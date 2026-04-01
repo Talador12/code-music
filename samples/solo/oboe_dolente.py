@@ -48,6 +48,6 @@ elegy = humanize(
 )
 ob.extend(elegy)
 
-song._effects = {
+song.effects = {
     "oboe": lambda s, sr: reverb(s, sr, room_size=0.8, damping=0.35, wet=0.35),
 }

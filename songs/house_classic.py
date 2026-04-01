@@ -58,7 +58,7 @@ for _ in range(4):
         ]
     )
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.4, wet=0.15), sr, rate_hz=0.5, wet=0.12
     ),

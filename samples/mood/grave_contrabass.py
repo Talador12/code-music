@@ -28,6 +28,6 @@ phrase = [
 ]
 cb.extend(humanize(phrase, vel_spread=0.06, timing_spread=0.04))
 
-song._effects = {
+song.effects = {
     "cb": lambda s, sr: reverb(s, sr, room_size=0.88, damping=0.3, wet=0.4),
 }

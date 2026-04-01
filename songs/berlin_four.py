@@ -103,7 +103,7 @@ metal.extend(bars(1))
 poly = [Note("F", 6, 0.375)] * 2 + [r(0.25)]  # 1.0 beat cycle
 metal.extend(poly * (71 * 3))
 
-song._effects = {
+song.effects = {
     "acid": lambda s, sr: lfo_filter(s, sr, rate_hz=0.25, min_cutoff=200.0, max_cutoff=6000.0),
     "stab": lambda s, sr: distortion(s, drive=2.5, tone=0.7, wet=0.5),
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=90.0),

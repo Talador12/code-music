@@ -74,7 +74,7 @@ jig = phrase_a + phrase_b + phrase_c + phrase_d
 for _ in range(6):
     fiddle.extend(jig)
 
-song._effects = {
+song.effects = {
     "fiddle": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.18),
     "bouzouki": lambda s, sr: reverb(s, sr, room_size=0.3, wet=0.12),
 }

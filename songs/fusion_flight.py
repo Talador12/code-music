@@ -144,7 +144,7 @@ run_up = humanize(
 )
 lead.extend(run_up * 3)
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.38, wet=0.12), sr, rate_hz=0.5, wet=0.15
     ),

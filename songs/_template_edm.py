@@ -52,7 +52,7 @@ lead.extend([r(BAR)] * 4)
 # TODO: add your melody here
 lead.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.5, wet=0.2), width=1.7),
     "lead": lambda s, sr: delay(s, sr, delay_ms=234.0, feedback=0.3, wet=0.2, ping_pong=True),
     "bass": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.1),

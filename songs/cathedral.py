@@ -169,7 +169,7 @@ horn.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "vln1": lambda s, sr: reverb(s, sr, room_size=0.85, damping=0.35, wet=0.3),
     "vln2": lambda s, sr: reverb(s, sr, room_size=0.85, damping=0.35, wet=0.3),
     "vla": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.28),

@@ -47,7 +47,7 @@ pad = song.add_track(Track(name="pad", instrument="pad", volume=0.2, pan=0.0))
 for ch, sh in [("D", "maj7"), ("A", "maj7"), ("B", "min7"), ("G", "maj7")]:
     pad.extend([Note(ch, 3, 4.0, velocity=0.3)])
 
-song._effects = {
+song.effects = {
     "celesta": lambda s, sr: stereo_width(
         delay(reverb(s, sr, room_size=0.75, wet=0.35), sr, delay_ms=789.0, feedback=0.2, wet=0.12),
         width=1.4,

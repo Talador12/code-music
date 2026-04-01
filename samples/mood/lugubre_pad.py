@@ -46,7 +46,7 @@ mel.extend(
     ]
 )
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(
         lfo_filter(
             reverb(s, sr, room_size=0.8, wet=0.35),

@@ -50,7 +50,7 @@ lead = crescendo(
 )
 piano.extend(lead)
 
-song._effects = {
+song.effects = {
     "violin": lambda s, sr: reverb(s, sr, room_size=0.75, wet=0.28),
     "strings": lambda s, sr: reverb(s, sr, room_size=0.75, wet=0.28),
     "cello": lambda s, sr: reverb(s, sr, room_size=0.8, wet=0.3),

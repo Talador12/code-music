@@ -41,7 +41,7 @@ hpd_l.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "right": lambda s, sr: reverb(s, sr, room_size=0.45, wet=0.12),
     "left": lambda s, sr: reverb(s, sr, room_size=0.45, wet=0.12),
 }

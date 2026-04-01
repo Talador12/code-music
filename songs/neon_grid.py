@@ -126,7 +126,7 @@ lead_mel = [
 ]
 lead.extend(lead_mel * 4)
 
-song._effects = {
+song.effects = {
     "laser": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.5, wet=0.2), sr, rate_hz=1.0, depth_ms=2.5, wet=0.42
     ),

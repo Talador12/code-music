@@ -89,7 +89,7 @@ bss.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: stereo_width(reverb(s, sr, room_size=0.95, damping=0.3, wet=0.5), width=1.7)
     for k in ("sop", "alt", "ten", "bass_v", "organ")
 }

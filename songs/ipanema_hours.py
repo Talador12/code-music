@@ -129,7 +129,7 @@ melody = humanize(
 for _ in range(4):
     vib.extend(melody)
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: reverb(s, sr, room_size=0.45, wet=0.15),
     "vibes": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.6, wet=0.28), sr, rate_hz=0.35, wet=0.18

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.9.0 — 100 songs, 467 tests, tagged
+## Status: v2.0.0 — 105 songs, 481 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 100 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 105 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -175,3 +175,14 @@
 
 - [x] Live coding: `--watch --play` auto-renders and plays on every file save
 - [x] Tag v1.9.0 release
+
+## v2.0 Roadmap
+
+- [x] `Section.repeat(n)` — avoid manual section duplication in arrangements
+- [x] `Track.concat(other)` — join tracks end-to-end for sectional composition
+- [x] Deprecation warning on `song._effects` (redirects to `song.effects`)
+- [x] Batch migrate 138 files from `_effects` → `effects`
+- [x] Clean internal engine.py/synth.py references to `_effects`
+- [x] 5 new songs (105 total): repeat_offender, concat_highway, afro_house, raga_dawn, mashup_machine
+- [x] 14 new tests for Section.repeat, Track.concat, _effects deprecation
+- [x] Tag v2.0.0 release

@@ -196,7 +196,7 @@ melody.extend(
 )
 
 # ── Effects hints (applied by render pipeline) ────────────────────────────────
-song._effects = {
+song.effects = {
     "pad_l": lambda s, sr: reverb(s, sr, room_size=0.75, damping=0.5, wet=0.35),
     "pad_r": lambda s, sr: reverb(s, sr, room_size=0.75, damping=0.5, wet=0.35),
     "arp": lambda s, sr: chorus(

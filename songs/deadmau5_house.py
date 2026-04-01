@@ -126,7 +126,7 @@ lead.extend(bars(12))
 # The pad effect simulates the classic deadmau5 LP filter automation:
 # bars 9-16 = dark (500 Hz), bars 17-40 = slowly opening, bars 41-56 = dark again
 # We approximate with lfo_filter at very slow rate
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(
         lfo_filter(
             reverb(s, sr, room_size=0.5, wet=0.2),

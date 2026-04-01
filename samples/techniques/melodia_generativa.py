@@ -15,7 +15,7 @@ for mode, pan_v, seed in modes:
     mel = generate_melody("A", scale_mode=mode, octave=4, bars=8, density=0.65, seed=seed)
     tr.extend(mel)
 
-song._effects = {
+song.effects = {
     "mel_major": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.15),
     "mel_dorian": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.15),
     "mel_pentatonic": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.15),

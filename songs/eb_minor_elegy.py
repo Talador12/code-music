@@ -114,7 +114,7 @@ for i, track in enumerate(song.tracks):
     elif track.name == "brass":
         song.tracks[i] = track.fade_out(beats=16.0)
 
-song._effects = {
+song.effects = {
     "strings": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.75, wet=0.35), width=1.5),
     "brass": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.2),
     "cello": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.25),

@@ -96,7 +96,7 @@ for ch in PROG * 6:
     bass.add(Note(ch.root, ch.octave - 1, ch.duration * 0.5, velocity=0.75))
     bass.add(r(ch.duration * 0.5))
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.55, wet=0.22), width=1.7),
     "choir": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.8, wet=0.4), width=1.8),
     "vibes": lambda s, sr: chorus(

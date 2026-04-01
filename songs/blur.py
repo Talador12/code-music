@@ -88,7 +88,7 @@ pad = song.add_track(Track(name="pad", instrument="pad", volume=0.25))
 for ch in [("D", "maj7"), ("A", "sus2"), ("B", "min7"), ("G", "maj7")] * 2:
     pad.add(Chord(ch[0], ch[1], 2, duration=BAR * 2, velocity=0.35))
 
-song._effects = {
+song.effects = {
     "gtr1": lambda s, sr: stereo_width(
         distortion(conv_reverb(s, sr, room="hall", wet=0.6), drive=2.5, tone=0.4, wet=0.7),
         width=1.8,

@@ -147,7 +147,7 @@ solo = humanize(
 )
 tpt.extend(solo)
 
-song._effects = {
+song.effects = {
     "trumpet": lambda s, sr: delay(
         reverb(s, sr, room_size=0.42, wet=0.18),
         sr,

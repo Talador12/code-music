@@ -44,7 +44,7 @@ for _ in range(6):
     for phrase in phrases:
         melody.extend(phrase)
 
-song._effects = {
+song.effects = {
     "melody": lambda s, sr: reverb(s, sr, room_size=0.55, wet=0.25),
     "bass": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.15),
 }

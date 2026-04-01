@@ -64,7 +64,7 @@ for i, track in enumerate(song.tracks):
     if track.name == "pad":
         song.tracks[i] = track.fade_in(beats=32.0).fade_out(beats=32.0)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: lfo_filter(
         reverb(s, sr, room_size=0.7, wet=0.35), sr, rate=0.08, depth=0.6
     ),

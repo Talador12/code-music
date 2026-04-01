@@ -104,7 +104,7 @@ bass.extend(
     * 5
 )
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: delay(
         reverb(s, sr, room_size=0.55, wet=0.22), sr, delay_ms=353.0, feedback=0.28, wet=0.18
     ),

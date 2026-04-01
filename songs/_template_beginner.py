@@ -93,7 +93,7 @@ mel.extend(melody)
 # Effects make things sound bigger and more interesting.
 # wet = how much effect (0.0 = dry, 1.0 = fully wet)
 # Try increasing or decreasing wet, or commenting these out.
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: reverb(s, sr, room_size=0.7, wet=0.35),
     "melody": lambda s, sr: delay(s, sr, delay_ms=375.0, feedback=0.3, wet=0.2),
 }

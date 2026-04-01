@@ -134,7 +134,7 @@ for _ in range(7):
     pad.extend(comp_loop)
 pad.extend(bars(4))
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.75, wet=0.35), width=1.6),
     "sax": lambda s, sr: reverb(
         delay(s, sr, delay_ms=345.0, feedback=0.3, wet=0.2), sr, room_size=0.4, wet=0.12

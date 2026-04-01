@@ -44,7 +44,7 @@ bass_tones = [
 ]
 pedal.extend(crescendo(bass_tones, 0.6, 1.0))
 
-song._effects = {
+song.effects = {
     "organ": lambda s, sr: stereo_width(
         reverb(s, sr, room_size=0.98, damping=0.1, wet=0.55), width=1.5
     ),

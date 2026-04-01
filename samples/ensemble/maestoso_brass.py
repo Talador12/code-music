@@ -94,6 +94,6 @@ for name, (inst, oct, pan_v, melody) in lines.items():
     tr = song.add_track(Track(name=name, instrument=inst, volume=0.78, pan=pan_v))
     tr.extend(humanize(crescendo(melody, 0.4, 0.92), vel_spread=0.04))
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: stereo_width(reverb(s, sr, room_size=0.72, wet=0.25), width=1.4) for k in lines
 }

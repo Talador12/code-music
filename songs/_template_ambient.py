@@ -37,7 +37,7 @@ strings = song.add_track(Track(name="strings", instrument="strings", volume=0.3,
 strings.extend([r(BAR)] * 8)
 # TODO: add string melody or chords here
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(conv_reverb(s, sr, room="hall", wet=0.45), width=1.9),
     "piano": lambda s, sr: delay(
         conv_reverb(s, sr, room="chamber", wet=0.3), sr, delay_ms=720.0, feedback=0.35, wet=0.2

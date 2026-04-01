@@ -133,7 +133,7 @@ mel = humanize(
 )
 lead.extend(mel * 2)
 
-song._effects = {
+song.effects = {
     "keys": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.15),
     "lead": lambda s, sr: delay(s, sr, delay_ms=278.0, feedback=0.25, wet=0.15),
     "bass": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.15),

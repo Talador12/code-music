@@ -47,7 +47,7 @@ morning = humanize(
 )
 fl.extend(morning)
 
-song._effects = {
+song.effects = {
     "flute": lambda s, sr: delay(
         reverb(s, sr, room_size=0.65, damping=0.5, wet=0.25),
         sr,

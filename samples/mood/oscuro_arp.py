@@ -24,7 +24,7 @@ kick.extend([Note("C", 2, 1.0)] * 32)
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.35))
 hat.extend([Note.rest(0.5), Note("F", 5, 0.5)] * 32)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: lfo_filter(
         reverb(s, sr, room_size=0.5, wet=0.2), sr, rate_hz=0.12, min_cutoff=200.0, max_cutoff=4500.0
     ),

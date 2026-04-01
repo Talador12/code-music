@@ -42,7 +42,7 @@ hi = song.add_track(Track(name="hi", instrument="triangle", volume=0.15, pan=0.4
 for _ in range(16):
     hi.add(Note("G", 6, BAR, velocity=0.25))
 
-song._effects = {
+song.effects = {
     "drone": lambda s, sr: lowpass(reverb(s, sr, room_size=0.95, wet=0.6), sr, cutoff_hz=200.0),
     "pad": lambda s, sr: stereo_width(
         granular(

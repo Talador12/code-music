@@ -174,7 +174,7 @@ mel.extend(
 mel.add(Note.rest(8.0))
 
 # ── Effects ───────────────────────────────────────────────────────────────
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.75, wet=0.35), width=1.6),
     "mel": lambda s, sr: reverb(
         delay(s, sr, delay_ms=345.0, feedback=0.35, wet=0.25), sr, room_size=0.5, wet=0.2

@@ -175,7 +175,7 @@ for _ in range(16):
         + [Note("F", 5, 0.5), r(0.5)]
     )
 
-song._effects = {
+song.effects = {
     "soprano": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.92, wet=0.5), width=1.7),
     "alto": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.92, wet=0.48), width=1.5),
     "bass_voice": lambda s, sr: reverb(s, sr, room_size=0.88, wet=0.42),

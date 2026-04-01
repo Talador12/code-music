@@ -121,7 +121,7 @@ bass.extend(walk)
 hat = song.add_track(Track(name="perc", instrument="drums_hat", volume=0.22))
 hat.extend([Note("F", 5, EIGHTH, velocity=0.22)] * (8 * 8))
 
-song._effects = {
+song.effects = {
     "harp": lambda s, sr: reverb(s, sr, room_size=0.55, wet=0.2),
     "flute": lambda s, sr: delay(
         reverb(s, sr, room_size=0.5, wet=0.18), sr, delay_ms=273.0, feedback=0.2, wet=0.1

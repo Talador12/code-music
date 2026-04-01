@@ -156,7 +156,7 @@ for _ in range(16):
     snare.extend([r(1.0), Note("D", 3, 1.0), r(1.0), Note("D", 3, 1.0)])
     hat.extend([Note("F", 5, 0.5)] * 8)
 
-song._effects = {
+song.effects = {
     "choir": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.88, wet=0.45), width=1.6),
     "organ": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.65, wet=0.25), sr, rate_hz=0.3, wet=0.12

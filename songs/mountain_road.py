@@ -143,7 +143,7 @@ walk = [
 ]
 bass.extend(walk * 2 + [r(BAR)] * 4 + walk[:8])
 
-song._effects = {
+song.effects = {
     "banjo": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.12),
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.1),
     "bass": lambda s, sr: compress(s, sr, threshold=0.55, ratio=3.0, makeup_gain=1.1),

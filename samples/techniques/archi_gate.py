@@ -14,7 +14,7 @@ for chord in [
     for _ in range(2):
         pad.add(chord)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(
         gate(reverb(s, sr, room_size=0.5, wet=0.2), sr, rate_hz=4.0, shape="trapezoid", duty=0.5),
         width=1.6,

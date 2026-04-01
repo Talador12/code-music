@@ -105,7 +105,7 @@ phrase = [
 ]
 mel.extend(phrase * 3)
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.15),
     "organ": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.4, wet=0.15), sr, rate_hz=0.4, wet=0.15

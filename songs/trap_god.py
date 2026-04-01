@@ -109,7 +109,7 @@ for ch, sh in [("G", "min7"), ("D#", "maj7"), ("F", "dom7"), ("C", "min7")] * 3:
     pad.add(Chord(ch, sh, 3, duration=BAR, velocity=0.35))
 pad.extend(b(2))
 
-song._effects = {
+song.effects = {
     "808": lambda s, sr: lowpass(
         compress(s, sr, threshold=0.4, ratio=6.0, makeup_gain=1.3), sr, cutoff_hz=120.0
     ),

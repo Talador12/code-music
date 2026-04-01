@@ -108,7 +108,7 @@ lead_phrase = [
 for _ in range(4):
     lead.extend(lead_phrase)
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: lowpass(s, sr, cutoff_hz=200),
     "chords": lambda s, sr: delay(
         reverb(s, sr, room_size=0.4, wet=0.2), sr, delay_ms=250, feedback=0.2, wet=0.15

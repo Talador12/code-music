@@ -151,7 +151,7 @@ sub.extend(
 )
 
 # ── Effects ───────────────────────────────────────────────────────────────────
-song._effects = {
+song.effects = {
     "drone": lambda s, sr: lowpass(
         reverb(s, sr, room_size=0.9, damping=0.6, wet=0.5), sr, cutoff_hz=400.0
     ),

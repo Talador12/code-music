@@ -144,7 +144,7 @@ counter = humanize(
 )
 sitar.extend(counter)
 
-song._effects = {
+song.effects = {
     "drone_A": lambda s, sr: lowpass(reverb(s, sr, room_size=0.9, wet=0.55), sr, cutoff_hz=300.0),
     "drone_E": lambda s, sr: lowpass(reverb(s, sr, room_size=0.9, wet=0.5), sr, cutoff_hz=400.0),
     "koto": lambda s, sr: reverb(s, sr, room_size=0.65, damping=0.4, wet=0.22),

@@ -93,7 +93,7 @@ for ch, sh in [("D", "min7"), ("A#", "maj7"), ("F", "maj7"), ("C", "dom7")] * 5:
     pad.add(Chord(ch, sh, 3, duration=BAR, velocity=0.42))
 pad.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "snare": lambda s, sr: gate(
         reverb(s, sr, room_size=0.9, wet=0.6), sr, rate_hz=2.0, shape="square", duty=0.4
     ),

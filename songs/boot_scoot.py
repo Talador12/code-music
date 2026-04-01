@@ -119,7 +119,7 @@ bass.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "banjo": lambda s, sr: reverb(s, sr, room_size=0.35, wet=0.1),
     "fiddle": lambda s, sr: reverb(s, sr, room_size=0.45, wet=0.15),
     "bass": lambda s, sr: compress(s, sr, threshold=0.55, ratio=3.0, makeup_gain=1.1),

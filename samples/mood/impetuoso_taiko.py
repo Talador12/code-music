@@ -61,7 +61,7 @@ thunder = crescendo(
 timp.extend(thunder)
 timp.extend(decrescendo := thunder[::-1])  # reverse echo
 
-song._effects = {
+song.effects = {
     "taiko": lambda s, sr: reverb(s, sr, room_size=0.8, damping=0.3, wet=0.3),
     "timp": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.35),
 }

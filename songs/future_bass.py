@@ -180,7 +180,7 @@ for _ in range(2):
 vox_pad.extend(bars(4))
 
 # ── Effects ───────────────────────────────────────────────────────────────
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.55, wet=0.2), width=1.7),
     "lead": lambda s, sr: delay(s, sr, delay_ms=200.0, feedback=0.25, wet=0.18, ping_pong=True),
     "vox_pad": lambda s, sr: reverb(s, sr, room_size=0.8, wet=0.4),

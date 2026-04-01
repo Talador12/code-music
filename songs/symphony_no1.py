@@ -446,7 +446,7 @@ timp.extend(
 )
 
 # ── Effects ────────────────────────────────────────────────────────────────
-song._effects = {
+song.effects = {
     "vln1": lambda s, sr: reverb(s, sr, room_size=0.75, damping=0.4, wet=0.25),
     "vln2": lambda s, sr: reverb(s, sr, room_size=0.75, damping=0.4, wet=0.25),
     "cello": lambda s, sr: reverb(s, sr, room_size=0.8, damping=0.35, wet=0.28),

@@ -84,7 +84,7 @@ strings.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "drone_sub_bass": lambda s, sr: lowpass(s, sr, cutoff_hz=100.0),
     "drone_sine": lambda s, sr: reverb(s, sr, room_size=0.95, wet=0.55),
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.92, wet=0.5), width=1.9),

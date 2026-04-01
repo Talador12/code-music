@@ -75,7 +75,7 @@ pad = song.add_track(Track(name="pad", instrument="pad", volume=0.35, pan=0.2))
 for ch, sh in [("D", "min7"), ("A#", "maj7"), ("F", "maj"), ("C", "dom7")] * 4:
     pad.add(Chord(ch, sh, 3, duration=BAR, velocity=0.4))
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: chorus(
         compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.15), sr, rate_hz=0.4, wet=0.12
     ),

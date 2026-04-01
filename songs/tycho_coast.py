@@ -56,7 +56,7 @@ bass = song.add_track(Track(name="bass", instrument="bass", volume=0.68))
 bass.extend([r(BAR)] * 4)
 bass.extend([Note("F", 2, HALF), Note("C", 2, HALF), Note("D", 2, HALF), Note("A#", 1, HALF)] * 10)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(conv_reverb(s, sr, room="hall", wet=0.4), width=1.8),
     "guitar": lambda s, sr: tape_sat(
         conv_reverb(s, sr, room="chamber", wet=0.25), sr, drive=1.3, warmth=0.5, wet=0.3

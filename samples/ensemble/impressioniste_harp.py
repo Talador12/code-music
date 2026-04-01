@@ -38,7 +38,7 @@ for inst, pan_v, vel in [("violin", -0.4, 0.4), ("strings", 0.2, 0.38), ("cello"
         ]
     )
 
-song._effects = {
+song.effects = {
     "harp": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.78, wet=0.35), sr, rate_hz=0.3, wet=0.15
     ),

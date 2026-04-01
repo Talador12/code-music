@@ -35,7 +35,7 @@ for _ in range(2):
     bass.extend(bass_walk)
     comp.extend(comp_chords)
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: chorus(reverb(s, sr, room_size=0.5, wet=0.2), sr, rate_hz=0.5, wet=0.15),
     "bass": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.12),
 }

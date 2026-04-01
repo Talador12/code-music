@@ -118,7 +118,7 @@ for _ in range(16):
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.2, swing=SWING))
 hat.extend([Note("F", 5, EIGHTH, velocity=0.2)] * (16 * 8))
 
-song._effects = {
+song.effects = {
     "rhodes": lambda s, sr: tremolo(
         conv_reverb(chorus(s, sr, rate_hz=0.4, wet=0.15), sr, room="chamber", wet=0.28),
         sr,

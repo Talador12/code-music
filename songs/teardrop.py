@@ -88,7 +88,7 @@ strings.extend([r(BAR)] * 8)
 for ch, sh in [("D", "min7"), ("F", "maj7"), ("C", "maj7"), ("A", "dom7")] * 2:
     strings.add(Chord(ch, sh, 3, duration=BAR, velocity=0.35))
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=100.0),
     "piano": lambda s, sr: tape_sat(
         delay(reverb(s, sr, room_size=0.6, wet=0.25), sr, delay_ms=375.0, feedback=0.3, wet=0.2),

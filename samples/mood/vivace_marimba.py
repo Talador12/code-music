@@ -47,6 +47,6 @@ full = (run_a + run_b) * 2 + run_c * 2 + run_a + run_b
 mar.extend(humanize(crescendo(full, 0.55, 0.9), vel_spread=0.06))
 mar.extend(humanize(landing, vel_spread=0.03))
 
-song._effects = {
+song.effects = {
     "marimba": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.18),
 }

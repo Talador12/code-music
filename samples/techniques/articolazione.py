@@ -25,6 +25,6 @@ normal.extend(phrase)
 stacc = song.add_track(Track(name="staccato", instrument="violin", volume=0.7, pan=0.5))
 stacc.extend(staccato(phrase, factor=0.4))
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2) for k in ("legato", "normal", "staccato")
 }

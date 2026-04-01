@@ -131,7 +131,7 @@ kick.extend([r(BAR)] * 4)
 snare.extend([r(BAR)] * 4)
 hat.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: tape_sat(
         reverb(s, sr, room_size=0.5, wet=0.18), sr, drive=1.8, warmth=0.4, wet=0.35
     ),

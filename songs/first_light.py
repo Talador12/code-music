@@ -116,7 +116,7 @@ for inst, pan_v, vol in [("violin", -0.3, 0.45), ("strings", 0.2, 0.42), ("cello
         )
     )
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(conv_reverb(s, sr, room="hall", wet=0.45), width=1.9),
     "guitar": lambda s, sr: delay(
         conv_reverb(s, sr, room="chamber", wet=0.3),

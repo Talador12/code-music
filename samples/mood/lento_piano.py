@@ -39,7 +39,7 @@ drops = [
 ]
 piano.extend(drops)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(
         reverb(s, sr, room_size=0.9, damping=0.6, wet=0.5), width=1.9
     ),

@@ -149,6 +149,6 @@ fast_run = humanize(
 )
 gtr.extend(fast_run)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.45, damping=0.5, wet=0.12),
 }

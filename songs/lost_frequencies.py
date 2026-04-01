@@ -95,7 +95,7 @@ for _ in range(4):
         arp_tr.extend(arp(ch, pattern="up", rate=0.25, octaves=2))
 arp_tr.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: tape_sat(
         conv_reverb(s, sr, room="chamber", wet=0.3),
         sr,

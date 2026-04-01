@@ -120,7 +120,7 @@ stab_pat = [
 stab.extend(stab_pat * 6)
 stab.extend(b(4))
 
-song._effects = {
+song.effects = {
     "wobble": lambda s, sr: distortion(
         compress(s, sr, threshold=0.45, ratio=5.0, makeup_gain=1.2),
         drive=3.0,

@@ -50,7 +50,7 @@ pad = song.add_track(Track(name="pad", instrument="pad", volume=0.38))
 for ch, sh in [("A#", "maj7"), ("G", "min7"), ("D#", "maj7"), ("F", "dom7")] * 4:
     pad.add(Chord(ch, sh, 3, duration=BAR, velocity=0.5))
 
-song._effects = {
+song.effects = {
     "laser": lambda s, sr: chorus(
         delay(s, sr, delay_ms=198.0, feedback=0.25, wet=0.18), sr, rate_hz=1.0, wet=0.4
     ),

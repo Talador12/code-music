@@ -54,7 +54,7 @@ for offset in [8.0, 16.0, 24.0]:
             beat_offset=beat + offset,
         )
 
-song._effects = {
+song.effects = {
     "chops": lambda s, sr: delay(
         reverb(s, sr, room_size=0.3, wet=0.15), sr, delay_ms=187.5, feedback=0.2, wet=0.15
     ),

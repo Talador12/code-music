@@ -78,6 +78,6 @@ for name, inst, line, pan_v in [
     tr = song.add_track(Track(name=name, instrument=inst, volume=0.7, pan=pan_v))
     tr.extend(line)
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2) for k in ("flute", "oboe", "clarinet")
 }

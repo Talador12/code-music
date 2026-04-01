@@ -47,7 +47,7 @@ longing = humanize(
 )
 vln.extend(longing)
 
-song._effects = {
+song.effects = {
     "violin": lambda s, sr: vibrato(
         reverb(s, sr, room_size=0.82, damping=0.38, wet=0.38),
         sr,

@@ -38,7 +38,7 @@ vib_line = [
 ]
 vib.extend(vib_line)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.55, wet=0.18),
     "vibes": lambda s, sr: chorus(reverb(s, sr, room_size=0.65, wet=0.3), sr, rate_hz=0.4, wet=0.2),
 }

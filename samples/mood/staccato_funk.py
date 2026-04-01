@@ -55,7 +55,7 @@ clap.extend([Note.rest(1.0), Note("D", 3, 1.0), Note.rest(1.0), Note("D", 3, 1.0
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.38, swing=0.52))
 hat.extend([Note("F", 5, 0.25)] * 64)
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: compress(s, sr, threshold=0.45, ratio=5.0, makeup_gain=1.2),
     "comp": lambda s, sr: chorus(reverb(s, sr, room_size=0.3, wet=0.12), sr, rate_hz=0.6, wet=0.12),
 }

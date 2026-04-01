@@ -139,7 +139,7 @@ snare.extend(bars(4))
 hat.extend(bars(4))
 ride.extend(bars(4))
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: chorus(reverb(s, sr, room_size=0.4, wet=0.15), sr, rate_hz=0.5, wet=0.18),
     "melody": lambda s, sr: delay(
         reverb(s, sr, room_size=0.5, wet=0.18), sr, delay_ms=341.0, feedback=0.25, wet=0.15

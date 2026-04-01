@@ -122,7 +122,7 @@ ride = song.add_track(Track(name="ride", instrument="drums_ride", volume=0.30, s
 for _ in range(8):
     ride.extend([Note("F", 5, EIGHTH, velocity=0.28)] * 8)
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: conv_reverb(
         delay(s, sr, delay_ms=338.0, feedback=0.22, wet=0.1),
         sr,

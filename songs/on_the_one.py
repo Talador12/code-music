@@ -104,7 +104,7 @@ mel = [
 for _ in range(12):
     lead.extend(mel)
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: compress(s, sr, threshold=0.45, ratio=5.0, makeup_gain=1.2),
     "comp": lambda s, sr: chorus(reverb(s, sr, room_size=0.3, wet=0.1), sr, rate_hz=0.6, wet=0.12),
 }

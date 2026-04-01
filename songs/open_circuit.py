@@ -118,7 +118,7 @@ for inst, pan_v, vol in [("violin", -0.3, 0.55), ("strings", 0.2, 0.5), ("cello"
         )
     )
 
-song._effects = {
+song.effects = {
     "pad_l": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.88, wet=0.45), width=1.8),
     "pad_r": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.88, wet=0.45), width=1.8),
     "piano": lambda s, sr: delay(

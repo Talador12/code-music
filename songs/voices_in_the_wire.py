@@ -147,7 +147,7 @@ outro_vox = outro_lyrics.to_voice_track(
 )
 song.add_voice_track(outro_vox)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: tape_sat(
         reverb(s, sr, room_size=0.5, wet=0.2), sr, drive=1.4, warmth=0.4, wet=0.3
     ),

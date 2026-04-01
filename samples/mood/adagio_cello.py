@@ -46,6 +46,6 @@ phrase_b = decrescendo(
 vc.extend(humanize(phrase_a, vel_spread=0.04, timing_spread=0.03))
 vc.extend(humanize(phrase_b, vel_spread=0.04, timing_spread=0.03))
 
-song._effects = {
+song.effects = {
     "cello": lambda s, sr: reverb(s, sr, room_size=0.85, damping=0.35, wet=0.35),
 }

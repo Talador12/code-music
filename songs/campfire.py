@@ -171,7 +171,7 @@ bass_walk = humanize(
 bass.extend(bass_walk)
 bass.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.5, damping=0.5, wet=0.14),
     "harmonica": lambda s, sr: delay(
         reverb(s, sr, room_size=0.55, wet=0.2), sr, delay_ms=394.0, feedback=0.2, wet=0.12

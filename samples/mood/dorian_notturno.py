@@ -115,7 +115,7 @@ for name, inst, line, pan_v in [
     tr = song.add_track(Track(name=name, instrument=inst, volume=0.68, pan=pan_v))
     tr.extend(line)
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: stereo_width(reverb(s, sr, room_size=0.85, damping=0.4, wet=0.35), width=1.4)
     for k in ("vln1", "vln2", "vla", "vc")
 }

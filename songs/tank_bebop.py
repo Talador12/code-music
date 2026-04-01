@@ -225,7 +225,7 @@ sax.extend(response)
 sax.extend([r(16.0)])
 
 # ── Effects ───────────────────────────────────────────────────────────────
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: compress(s, sr, threshold=0.6, ratio=3.0, makeup_gain=1.1),
     "sax": lambda s, sr: reverb(s, sr, room_size=0.35, wet=0.12),
     "piano": lambda s, sr: reverb(s, sr, room_size=0.3, wet=0.1),

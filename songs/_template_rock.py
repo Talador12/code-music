@@ -61,7 +61,7 @@ lead.extend([r(BAR)] * 4)
 # TODO: add your melody here
 lead.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: distortion(
         reverb(s, sr, room_size=0.35, wet=0.1), drive=2.0, tone=0.55, wet=0.35
     ),

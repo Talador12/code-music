@@ -61,7 +61,7 @@ counter = [
 ] * 3
 vln2.extend(crescendo(counter, start_vel=0.45, end_vel=0.88))
 
-song._effects = {
+song.effects = {
     "cello": lambda s, sr: compress(reverb(s, sr, room_size=0.6, wet=0.2), sr, ratio=3.0),
     "vln1": lambda s, sr: reverb(s, sr, room_size=0.65, wet=0.22),
     "vln2": lambda s, sr: reverb(s, sr, room_size=0.65, wet=0.22),

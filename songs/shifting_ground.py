@@ -250,7 +250,7 @@ strings.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: distortion(
         delay(s, sr, delay_ms=125.0, feedback=0.2, wet=0.1),
         drive=1.8,

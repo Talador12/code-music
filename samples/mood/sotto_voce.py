@@ -56,7 +56,7 @@ bass_line = humanize(
 )
 bcl.extend(bass_line)
 
-song._effects = {
+song.effects = {
     "vibes": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.75, wet=0.4), sr, rate_hz=0.35, depth_ms=3.0, wet=0.25
     ),

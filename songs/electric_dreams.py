@@ -98,7 +98,7 @@ for ch, sh in [("E", "min"), ("C", "maj"), ("G", "maj"), ("B", "dom7")] * 6:
     pad.add(Chord(ch, sh, 3, duration=BAR, velocity=0.38))
 pad.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "snare": lambda s, sr: gate(
         conv_reverb(s, sr, room="plate", wet=0.7),
         sr,

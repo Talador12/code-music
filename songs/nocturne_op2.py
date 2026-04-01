@@ -106,6 +106,6 @@ rh_melody = [
 for at, pitch, oct, dur, vel in rh_melody:
     piano.add(Note(pitch, oct, dur, velocity=vel), at=at)
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: conv_reverb(s, sr, room="chamber", wet=0.32),
 }

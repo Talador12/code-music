@@ -110,7 +110,7 @@ for i, track in enumerate(song.tracks):
     elif track.name == "lead":
         song.tracks[i] = track.fade_out(beats=16.0)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.8, wet=0.35), width=1.6),
     "lead": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.2),
 }

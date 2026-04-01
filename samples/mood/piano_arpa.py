@@ -26,7 +26,7 @@ for ch, sh, vel in [
     harp.extend(notes)
     harp.add(Note.rest(2.0))
 
-song._effects = {
+song.effects = {
     "harp": lambda s, sr: stereo_width(
         reverb(s, sr, room_size=0.8, damping=0.4, wet=0.35),
         width=1.6,

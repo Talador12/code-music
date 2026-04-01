@@ -37,6 +37,6 @@ lines = [
 for text, voice, rate, beat in lines:
     vox.add(VoiceClip(text, voice=voice, rate=rate, pan=0.0, volume=0.75), beat_offset=beat)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: reverb(s, sr, room_size=0.65, wet=0.3),
 }

@@ -1199,6 +1199,23 @@ class Section:
         self.tracks[track_name] = events
         return self
 
+    def repeat(self, n: int) -> list["Section"]:
+        """Return a list of *n* copies of this Section for use in Song.arrange().
+
+        The repeated sections share the same name but are independent objects
+        so the arrangement timeline expands correctly.
+
+        Example::
+
+            chorus = Section("chorus", bars=4)
+            chorus.add_track("lead", melody_notes)
+
+            song.arrange([intro, *chorus.repeat(3), outro])
+        """
+        import copy
+
+        return [copy.deepcopy(self) for _ in range(n)]
+
     def __repr__(self) -> str:
         return f"Section({self.name!r}, bars={self.bars}, tracks={list(self.tracks.keys())})"
 
@@ -1235,6 +1252,23 @@ class Track:
         for e in events:
             self.add(e)
         return self
+
+    def concat(self, other: "Track") -> "Track":
+        """Return a new Track joining *self* and *other* end-to-end.
+
+        Metadata (instrument, volume, pan, etc.) comes from *self*.
+        Both tracks' beats are preserved; *other*'s beats are appended
+        after *self*'s.
+
+        Example::
+
+            intro_lead = lead_track.fade_in(4.0)
+            full_lead = intro_lead.concat(main_lead).concat(outro_lead.fade_out(4.0))
+            song.add_track(full_lead)
+        """
+        joined = self._clone_empty()
+        joined.beats = list(self.beats) + list(other.beats)
+        return joined
 
     def quantize(self, grid: float = 0.25) -> "Track":
         """Return a new Track with note durations snapped to the nearest grid.
@@ -1501,6 +1535,32 @@ class Song:
     key_sig: str = "C"
     effects: dict = field(default_factory=dict)  # track_name → callable or EffectsChain
 
+    def __setattr__(self, name: str, value: object) -> None:
+        if name == "_effects":
+            import warnings
+
+            warnings.warn(
+                "song._effects is deprecated — use song.effects instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            # Silently redirect to the new attribute
+            super().__setattr__("effects", value)
+            return
+        super().__setattr__(name, value)
+
+    def __getattr__(self, name: str) -> object:
+        if name == "_effects":
+            import warnings
+
+            warnings.warn(
+                "song._effects is deprecated — use song.effects instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return self.effects
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute {name!r}")
+
     def add_time_sig_change(self, at_beat: float, numerator: int, denominator: int) -> "Song":
         """Schedule a time signature change at a specific beat offset.
 
@@ -1694,9 +1754,9 @@ class Song:
         merged.time_sig_map.sort(key=lambda x: x[0])
 
         # Merge effects dicts
-        fx = dict(getattr(self, "_effects", {}) or {})
-        fx.update(getattr(other, "_effects", {}) or {})
-        merged._effects = fx
+        fx = dict(self.effects or {})
+        fx.update(other.effects or {})
+        merged.effects = fx
 
         return merged
 
@@ -2080,7 +2140,7 @@ def remix(
         key_sig=song.key_sig,
         composer=song.composer,
     )
-    new_song._effects = copy.copy(getattr(song, "_effects", {}))
+    new_song.effects = copy.copy(song.effects or {})
 
     for track in song.tracks:
         new_track = new_song.add_track(

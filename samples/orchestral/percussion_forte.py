@@ -46,6 +46,6 @@ tabla.extend(
     [Note("A", 4, 0.25)] * 4 + [Note.rest(4.0)] + [Note("A", 4, 0.25)] * 8 + [Note.rest(4.0)]
 )
 
-song._effects = {
+song.effects = {
     "taiko": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.35),
 }

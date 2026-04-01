@@ -47,7 +47,7 @@ for text, voice, rate, beat, pan_v, vol in arias:
         beat_offset=beat,
     )
 
-song._effects = {
+song.effects = {
     "strings": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.4),
     "cello": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.35),
     "soprano": lambda s, sr: reverb(s, sr, room_size=0.9, wet=0.45),

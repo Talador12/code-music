@@ -64,6 +64,6 @@ mel.extend([r(BAR)] * 4)
 # TODO: add your melody here
 mel.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: chorus(reverb(s, sr, room_size=0.35, wet=0.1), sr, rate_hz=0.5, wet=0.12),
 }

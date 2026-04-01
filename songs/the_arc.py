@@ -171,7 +171,7 @@ kick.extend(bars(5))
 snare.extend(bars(5))
 hat.extend(bars(5))
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: distortion(
         reverb(s, sr, room_size=0.35, wet=0.12),
         drive=1.8,

@@ -49,7 +49,7 @@ taiko = song.add_track(Track(name="taiko", instrument="taiko", volume=1.0))
 taiko.add(Note("C", 2, 0.5, velocity=1.0))
 taiko.add(Note("C", 2, 8.0, velocity=0.2))
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: reverb(s, sr, room_size=0.95, damping=0.2, wet=0.4)
     for k in (
         "violin",

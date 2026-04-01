@@ -40,7 +40,7 @@ crash.add(Note.rest(8.0))
 clap = song.add_track(Track(name="clap", instrument="drums_clap", volume=0.8))
 clap.extend([r(1.0), Note("D", 3, 1.0), r(1.0), Note("D", 3, 1.0)] * 4)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.4, wet=0.15), width=1.8),
     "choir": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.25),
 }

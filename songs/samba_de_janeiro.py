@@ -86,7 +86,7 @@ melody_b = [
 for _ in range(8):
     lead.extend(melody_a + melody_b)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.35, wet=0.15),
     "lead": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.2),
 }

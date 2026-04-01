@@ -111,7 +111,7 @@ sub.extend(bars_r(4))
 sub.extend([Note("C", 1, BAR, velocity=0.75)] * 28)
 sub.extend(bars_r(4))
 
-song._effects = {
+song.effects = {
     "bass": lambda s, sr: distortion(
         compress(s, sr, threshold=0.45, ratio=6.0, makeup_gain=1.2),
         drive=2.8,

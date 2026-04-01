@@ -127,7 +127,7 @@ brass.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=90.0),
     "strings": lambda s, sr: conv_reverb(s, sr, room="hall", wet=0.35),
     "cello": lambda s, sr: conv_reverb(s, sr, room="hall", wet=0.32),

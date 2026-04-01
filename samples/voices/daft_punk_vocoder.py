@@ -50,7 +50,7 @@ phrases = [
 for text, voice, rate, beat, pan_v in phrases:
     vox.add(VoiceClip(text, voice=voice, rate=rate, pan=pan_v, volume=0.8), beat_offset=beat)
 
-song._effects = {
+song.effects = {
     "stab": lambda s, sr: reverb(s, sr, room_size=0.3, wet=0.15),
     "vocoder": lambda s, sr: delay(s, sr, delay_ms=250.0, feedback=0.3, wet=0.2, ping_pong=True),
 }

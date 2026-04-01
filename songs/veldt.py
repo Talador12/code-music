@@ -100,7 +100,7 @@ lead_mel = [
 ]
 lead.extend(lead_mel * 4)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(
         lfo_filter(
             reverb(s, sr, room_size=0.55, wet=0.18),

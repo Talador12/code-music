@@ -157,7 +157,7 @@ bass_line = humanize(
 )
 bass.extend(bass_line)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: reverb(s, sr, room_size=0.5, damping=0.5, wet=0.15),
     "harm": lambda s, sr: reverb(s, sr, room_size=0.55, wet=0.18),
     "bass": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.12),

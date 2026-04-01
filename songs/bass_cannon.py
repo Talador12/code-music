@@ -39,7 +39,7 @@ pad = song.add_track(Track(name="pad", instrument="pad", volume=0.3))
 for _ in range(6):
     pad.extend([Chord("F", "min7", 3, duration=BAR, velocity=0.4)] * 4)
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=90.0),
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.7, wet=0.3), width=1.8),
     "wobble": lambda s, sr: compress(s, sr, threshold=0.5, ratio=5.0, makeup_gain=1.2),

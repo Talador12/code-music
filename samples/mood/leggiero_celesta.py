@@ -45,7 +45,7 @@ mel = humanize(
 
 box.extend(mel)
 
-song._effects = {
+song.effects = {
     "box": lambda s, sr: delay(
         reverb(s, sr, room_size=0.7, damping=0.5, wet=0.3),
         sr,

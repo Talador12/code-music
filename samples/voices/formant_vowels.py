@@ -23,7 +23,7 @@ for vowel, pan_v in [("formant_a", -0.4), ("formant_o", 0.0), ("formant_e", 0.4)
         ]
     )
 
-song._effects = {
+song.effects = {
     "formant_a": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2),
     "formant_o": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2),
     "formant_e": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2),

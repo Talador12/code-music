@@ -145,7 +145,7 @@ strings.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: delay(
         reverb(s, sr, room_size=0.72, damping=0.35, wet=0.28),
         sr,

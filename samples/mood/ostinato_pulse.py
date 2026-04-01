@@ -22,7 +22,7 @@ for ch, sh in [("A", "min"), ("F", "maj"), ("C", "maj"), ("G", "maj")] * 2:
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.4))
 hat.extend([Note.rest(0.5), Note("F", 5, 0.5)] * 32)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.4, wet=0.15), width=1.7),
     "arp": lambda s, sr: reverb(s, sr, room_size=0.35, wet=0.12),
 }

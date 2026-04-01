@@ -64,6 +64,6 @@ for at, p, o, dur, vel in rh:
     new_o = midi // 12 - 1
     piano.add(Note(new_p, new_o, dur, velocity=vel * 0.9), at=at + BAR * 2)
 
-song._effects = {
+song.effects = {
     "harpsichord": lambda s, sr: reverb(s, sr, room_size=0.45, wet=0.12),
 }

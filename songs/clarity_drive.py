@@ -209,7 +209,7 @@ arp.extend(repeat([r(BAR)], 4))
 # lead → delay (375ms ping-pong, feedback=0.3)
 # arp → chorus + reverb
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: reverb(s, sr, room_size=0.7, wet=0.3),
     "lead": lambda s, sr: delay(s, sr, delay_ms=375.0, feedback=0.3, wet=0.25, ping_pong=True),
     "arp": lambda s, sr: reverb(compress(s, sr, ratio=3.0, wet=0.5), sr, room_size=0.5, wet=0.2),

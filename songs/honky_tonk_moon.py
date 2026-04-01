@@ -199,7 +199,7 @@ for i, track in enumerate(song.tracks):
     if track.name == "steel":
         song.tracks[i] = track.fade_in(beats=4.0)
 
-song._effects = {
+song.effects = {
     "steel": lambda s, sr: slapback(reverb(s, sr, room_size=0.5, wet=0.2), sr, wet=0.15),
     "rhythm": lambda s, sr: reverb(s, sr, room_size=0.3, wet=0.1),
 }

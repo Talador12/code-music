@@ -71,7 +71,7 @@ for _ in range(12):
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.42))
 hat.extend([Note("F", 5, E8)] * (12 * 8))
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: distortion(s, drive=4.0, tone=0.65, wet=0.75),
     "bass": lambda s, sr: distortion(
         compress(s, sr, threshold=0.4, ratio=6.0, makeup_gain=1.2), drive=2.0, tone=0.5, wet=0.4

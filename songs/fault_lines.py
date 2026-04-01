@@ -149,7 +149,7 @@ for _ in range(8):
     snare.extend([r(E8), r(E8), r(E8), Note("D", 3, E8), r(E8), Note("D", 3, E8), r(E8)])
     hat.extend(hat_pat)
 
-song._effects = {
+song.effects = {
     "guitar": lambda s, sr: distortion(
         reverb(s, sr, room_size=0.35, wet=0.1), drive=3.5, tone=0.65, wet=0.7
     ),

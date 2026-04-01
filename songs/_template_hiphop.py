@@ -68,7 +68,7 @@ mel.extend([r(BAR)] * 4)
 # TODO: add your melody here
 mel.extend([r(BAR)] * 4)
 
-song._effects = {
+song.effects = {
     "comp": lambda s, sr: tape_sat(
         reverb(s, sr, room_size=0.4, wet=0.15), sr, drive=1.5, warmth=0.4, wet=0.3
     ),

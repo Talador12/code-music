@@ -255,7 +255,7 @@ hat.extend(bars(4))
 kick.extend(bars(4))
 snare.extend(bars(4))
 
-song._effects = {
+song.effects = {
     "lead": lambda s, sr: reverb(s, sr, room_size=0.25, wet=0.08),
     "harm": lambda s, sr: reverb(s, sr, room_size=0.25, wet=0.08),
 }

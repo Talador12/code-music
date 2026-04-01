@@ -49,7 +49,7 @@ melody = humanize(
 )
 mel.extend(melody)
 
-song._effects = {
+song.effects = {
     "rhodes": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.45, wet=0.15), sr, rate_hz=0.5, wet=0.18
     ),

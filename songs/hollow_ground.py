@@ -112,7 +112,7 @@ noise.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "sub_B": lambda s, sr: lowpass(s, sr, cutoff_hz=80.0),
     "sub_F#": lambda s, sr: lowpass(s, sr, cutoff_hz=100.0),
     "strings": lambda s, sr: tremolo(

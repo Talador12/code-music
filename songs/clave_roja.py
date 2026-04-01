@@ -91,7 +91,7 @@ for _ in range(12):
         ]
     )
 
-song._effects = {
+song.effects = {
     "trumpet": lambda s, sr: reverb(s, sr, room_size=0.35, wet=0.12),
     "bass": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.1),
 }

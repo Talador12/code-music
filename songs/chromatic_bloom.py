@@ -99,7 +99,7 @@ for _ in range(16):
         bass.add(Note(ch.root, ch.octave - 1, BAR * 0.5, velocity=0.82))
         bass.add(r(BAR * 0.5))
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.4, wet=0.15), width=1.7),
     "lead": lambda s, sr: eq(
         delay(s, sr, delay_ms=250.0, feedback=0.25, wet=0.15),

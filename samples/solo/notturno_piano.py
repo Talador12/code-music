@@ -54,7 +54,7 @@ nocturne = humanize(
 )
 rh.extend(nocturne)
 
-song._effects = {
+song.effects = {
     "lh": lambda s, sr: reverb(s, sr, room_size=0.6, wet=0.2),
     "rh": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.65, wet=0.25), sr, rate_hz=0.25, depth_ms=1.5, wet=0.06

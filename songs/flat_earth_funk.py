@@ -76,7 +76,7 @@ lead_lick = [
 for _ in range(3):
     lead.extend(lead_lick)
 
-song._effects = {
+song.effects = {
     "clav": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0),
     "lead": lambda s, sr: reverb(s, sr, room_size=0.4, wet=0.15),
 }

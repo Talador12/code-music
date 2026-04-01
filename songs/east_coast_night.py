@@ -111,7 +111,7 @@ phrase = humanize(
 )
 mel.extend(phrase * 4)
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: bitcrush(
         tape_sat(reverb(s, sr, room_size=0.45, wet=0.2), sr, drive=1.6, warmth=0.5, wet=0.4),
         sr,

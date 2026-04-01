@@ -89,7 +89,7 @@ mel.extend(melody * 2)
 hat = song.add_track(Track(name="hat", instrument="drums_hat", volume=0.18))
 hat.extend([Note("F", 5, EIGHTH, velocity=0.2)] * (32 * 8))
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: bitcrush(
         tape_sat(reverb(s, sr, room_size=0.7, wet=0.35), sr, drive=1.5, warmth=0.6, wet=0.5),
         sr,

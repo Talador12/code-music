@@ -40,7 +40,7 @@ for inst, oct, pan_v, vol in [
     )
     tr.extend(charge)
 
-song._effects = {
+song.effects = {
     k: lambda s, sr: reverb(s, sr, room_size=0.75, wet=0.22)
     for k in ("trumpet", "trombone", "french_horn", "brass_section")
 }

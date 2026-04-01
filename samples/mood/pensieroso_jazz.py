@@ -63,7 +63,7 @@ solo = [
 ]
 sax.extend(solo)
 
-song._effects = {
+song.effects = {
     "sax": lambda s, sr: delay(
         reverb(s, sr, room_size=0.4, wet=0.15), sr, delay_ms=272.0, feedback=0.25, wet=0.12
     ),

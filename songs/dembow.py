@@ -74,7 +74,7 @@ mel = [
 ]
 lead.extend(mel * 3)
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: compress(s, sr, threshold=0.4, ratio=6.0, makeup_gain=1.2),
     "lead": lambda s, sr: delay(s, sr, delay_ms=158.0, feedback=0.2, wet=0.12),
 }

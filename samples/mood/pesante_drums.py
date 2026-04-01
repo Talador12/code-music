@@ -81,7 +81,7 @@ horn.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=80.0),
     "tuba": lambda s, sr: reverb(s, sr, room_size=0.92, wet=0.4),
     "trombone": lambda s, sr: reverb(s, sr, room_size=0.92, wet=0.4),

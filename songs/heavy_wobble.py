@@ -134,7 +134,7 @@ lead.extend(
 )
 lead.extend(bars(12))
 
-song._effects = {
+song.effects = {
     "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=100.0),
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.8, wet=0.45), width=1.9),
     "lead": lambda s, sr: delay(s, sr, delay_ms=429.0, feedback=0.4, wet=0.3),

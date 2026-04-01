@@ -43,7 +43,7 @@ rh = humanize(
 )
 piano.extend(rh)
 
-song._effects = {
+song.effects = {
     "piano": lambda s, sr: chorus(
         reverb(s, sr, room_size=0.55, wet=0.22),
         sr,

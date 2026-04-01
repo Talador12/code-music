@@ -40,7 +40,7 @@ pent = humanize(
 )
 vib.extend(pent)
 
-song._effects = {
+song.effects = {
     "vibes": lambda s, sr: tremolo(
         chorus(reverb(s, sr, room_size=0.72, wet=0.38), sr, rate_hz=0.35, wet=0.22),
         sr,

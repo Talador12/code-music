@@ -135,7 +135,7 @@ sitar.extend(
     )
 )
 
-song._effects = {
+song.effects = {
     "drone": lambda s, sr: lowpass(reverb(s, sr, room_size=0.85, wet=0.4), sr, cutoff_hz=200.0),
     "koto": lambda s, sr: reverb(s, sr, room_size=0.65, damping=0.45, wet=0.22),
     "sitar": lambda s, sr: delay(

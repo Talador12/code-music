@@ -129,7 +129,7 @@ lead.extend(chorus_mel)
 lead.extend([r(BAR)] * 2)
 lead.extend(chorus_mel)
 
-song._effects = {
+song.effects = {
     "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.6, wet=0.25), width=1.6),
     "lead": lambda s, sr: delay(s, sr, delay_ms=258.0, feedback=0.25, wet=0.12, ping_pong=False),
     "bass": lambda s, sr: compress(s, sr, threshold=0.5, ratio=4.0, makeup_gain=1.1),
