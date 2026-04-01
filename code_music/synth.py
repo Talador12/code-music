@@ -636,13 +636,22 @@ class Synth:
 
         has_instrument_tracks = bool(song.tracks)
         has_poly_tracks = bool(getattr(song, "poly_tracks", []))
+        has_sample_tracks = bool(getattr(song, "sample_tracks", []))
         has_voice_tracks = bool(getattr(song, "voice_tracks", []))
 
-        if not has_instrument_tracks and not has_poly_tracks and not has_voice_tracks:
+        if (
+            not has_instrument_tracks
+            and not has_poly_tracks
+            and not has_sample_tracks
+            and not has_voice_tracks
+        ):
             return np.zeros((self.sample_rate, 2))  # 1s silence
 
         effects: dict = getattr(song, "_effects", {})
-        total_beats = song.total_beats if (has_instrument_tracks or has_poly_tracks) else 8.0
+        has_timed_tracks = (
+            has_instrument_tracks or has_poly_tracks or has_sample_tracks or has_voice_tracks
+        )
+        total_beats = song.total_beats if has_timed_tracks else 8.0
         beat_sec = 60.0 / song.bpm
         total_samples = int(total_beats * beat_sec * self.sample_rate) + self.sample_rate
 

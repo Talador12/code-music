@@ -61,7 +61,7 @@ code-music generates full album packages in `dist/albums/<name>/`:
 
 ```bash
 make album-edm_progressive    # renders Machine Dreams album
-make albums                   # renders all 22 genre albums
+make albums                   # renders all genre albums
 ```
 
 For DistroKid album upload:

@@ -7,7 +7,7 @@ The circle of fifths is the organizing principle of Western tonality.
 Moving clockwise = add a sharp. Counter-clockwise = add a flat.
 
 Run:
-    make preview-_circle_of_fifths
+    make play-scale-circle_of_fifths
     code-music scales/_circle_of_fifths.py -o /tmp/circle.wav
 
 Also useful as a reference for key relationships:

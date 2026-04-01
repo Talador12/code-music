@@ -146,6 +146,16 @@ class TestSong:
         song = Song(bpm=60)
         assert math.isclose(song.beat_duration_sec, 1.0)
 
+    def test_total_beats_includes_voice_tracks(self):
+        from code_music.voice import VoiceClip, VoiceTrack
+
+        song = Song(bpm=120)
+        vt = VoiceTrack(name="vox")
+        vt.add(VoiceClip("this line starts later", rate=100), beat_offset=5.0)
+        song.add_voice_track(vt)
+
+        assert song.total_beats > 5.0
+
 
 class TestChordVoicing:
     def test_spread_widens_range(self):
@@ -297,6 +307,7 @@ class TestSongMerge:
         import numpy as np
 
         from code_music.synth import Synth
+
         s1 = Song(bpm=120, sample_rate=22050)
         t1 = s1.add_track(Track(instrument="sine"))
         t1.add(Note("C", 4, 1.0))
@@ -389,6 +400,7 @@ class TestChordVoicings:
         import numpy as np
 
         from code_music.synth import Synth
+
         for key, chord in Chord("F", "maj7", 3, duration=1.0).voicings().items():
             song = Song(bpm=120, sample_rate=22050)
             tr = song.add_track(Track(instrument="piano"))
@@ -405,9 +417,20 @@ class TestSongInfo:
     def test_contains_all_keys(self):
         s = Song(title="Test", bpm=120)
         info = s.info()
-        for key in ("title", "bpm", "duration_sec", "total_beats", "time_sig",
-                     "key_sig", "composer", "sample_rate", "tracks",
-                     "poly_tracks", "voice_tracks", "track_names"):
+        for key in (
+            "title",
+            "bpm",
+            "duration_sec",
+            "total_beats",
+            "time_sig",
+            "key_sig",
+            "composer",
+            "sample_rate",
+            "tracks",
+            "poly_tracks",
+            "voice_tracks",
+            "track_names",
+        ):
             assert key in info, f"missing key: {key}"
 
     def test_title_and_bpm(self):
@@ -480,6 +503,7 @@ class TestShellVoicing:
         import numpy as np
 
         from code_music.synth import Synth
+
         song = Song(bpm=120, sample_rate=22050)
         tr = song.add_track(Track(instrument="piano"))
         tr.add(Chord("A", "min7", 3, duration=2.0).shell_voicing())
@@ -491,8 +515,8 @@ class TestShellVoicing:
 class TestTrackQuantize:
     def test_snaps_to_grid(self):
         t = Track()
-        t.add(Note("C", 4, 0.33))   # ~1/3 beat
-        t.add(Note("E", 4, 0.78))   # ~3/4 beat
+        t.add(Note("C", 4, 0.33))  # ~1/3 beat
+        t.add(Note("E", 4, 0.78))  # ~3/4 beat
         q = t.quantize(grid=0.25)
         assert q.beats[0].event.duration == 0.25  # snapped to 0.25
         assert q.beats[1].event.duration == 0.75  # snapped to 0.75
@@ -506,7 +530,7 @@ class TestTrackQuantize:
 
     def test_minimum_duration_is_grid(self):
         t = Track()
-        t.add(Note("C", 4, 0.01))   # very short
+        t.add(Note("C", 4, 0.01))  # very short
         q = t.quantize(grid=0.25)
         assert q.beats[0].event.duration == 0.25  # at least one grid unit
 
@@ -534,6 +558,7 @@ class TestTrackQuantize:
 class TestExportStems:
     def test_creates_files(self):
         import tempfile
+
         song = Song(title="Stem Test", bpm=120, sample_rate=22050)
         song.add_track(Track(name="kick", instrument="drums_kick")).add(Note("C", 2, 2.0))
         song.add_track(Track(name="bass", instrument="bass")).add(Note("E", 2, 2.0))
@@ -547,6 +572,7 @@ class TestExportStems:
     def test_stem_files_have_audio(self):
         import tempfile
         import wave
+
         song = Song(title="Stem Test", bpm=120, sample_rate=22050)
         song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 4, 1.0))
         with tempfile.TemporaryDirectory() as tmp:
@@ -579,6 +605,7 @@ class TestSongMaster:
         import numpy as np
 
         from code_music.synth import Synth
+
         s = Song(bpm=120, sample_rate=22050)
         tr = s.add_track(Track(instrument="piano"))
         tr.add(Note("C", 4, 2.0))
@@ -591,6 +618,7 @@ class TestSongMaster:
         import numpy as np
 
         from code_music.synth import Synth
+
         # Unmastered
         s1 = Song(bpm=120, sample_rate=22050)
         tr1 = s1.add_track(Track(instrument="sine"))
@@ -612,6 +640,7 @@ class TestSampleTrack:
         import wave as _wave
 
         import numpy as np
+
         n = int(sr * dur)
         t = np.linspace(0, dur, n, endpoint=False)
         mono = (np.sin(2 * np.pi * freq * t) * 0.5 * 32767).astype(np.int16)
@@ -626,6 +655,7 @@ class TestSampleTrack:
         from pathlib import Path
 
         from code_music import SampleTrack
+
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "test.wav"
             self._make_wav(wav)
@@ -635,6 +665,7 @@ class TestSampleTrack:
 
     def test_trigger_chaining(self):
         from code_music import SampleTrack
+
         st = SampleTrack(name="x", wav_path="/dev/null")
         result = st.trigger(at=0.0).trigger(at=1.0).trigger(at=2.0)
         assert result is st
@@ -642,6 +673,7 @@ class TestSampleTrack:
 
     def test_total_beats(self):
         from code_music import SampleTrack
+
         st = SampleTrack(name="x", wav_path="/dev/null")
         st.trigger(at=0.0).trigger(at=4.0)
         assert st.total_beats == 5.0  # last trigger + 1 beat tail
@@ -654,6 +686,7 @@ class TestSampleTrack:
 
         from code_music import SampleTrack, Song
         from code_music.synth import Synth
+
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "test.wav"
             self._make_wav(wav, sr=22050)
@@ -661,12 +694,18 @@ class TestSampleTrack:
             st.trigger(at=0.0).trigger(at=2.0)
             song = Song(title="Sample Test", bpm=120, sample_rate=22050)
             song.add_sample_track(st)
-            # Need at least one regular track for total_beats
-            from code_music import Note, Track
-            tr = song.add_track(Track(instrument="sine"))
-            tr.add(Note("C", 4, 4.0))
             samples = Synth(22050).render_song(song)
             assert np.max(np.abs(samples)) > 0.01
+
+    def test_song_total_beats_includes_sample_tracks(self):
+        from code_music import SampleTrack, Song
+
+        st = SampleTrack(name="oneshot", wav_path="/dev/null")
+        st.trigger(at=2.5)
+        song = Song(bpm=120)
+        song.add_sample_track(st)
+
+        assert song.total_beats == 3.5
 
     def test_pitch_shift(self):
         import tempfile
@@ -674,6 +713,7 @@ class TestSampleTrack:
 
         from code_music import Note, SampleTrack, Song, Track
         from code_music.synth import Synth
+
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "test.wav"
             self._make_wav(wav, freq=440.0, sr=22050)

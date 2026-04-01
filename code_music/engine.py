@@ -1666,7 +1666,18 @@ class Song:
     def total_beats(self) -> float:
         seq_beats = max((t.total_beats for t in self.tracks), default=0.0)
         poly_beats = max((t.total_beats for t in self.poly_tracks), default=0.0)
-        return max(seq_beats, poly_beats)
+        sample_beats = max((t.total_beats for t in self.sample_tracks), default=0.0)
+
+        voice_beats = 0.0
+        for track in self.voice_tracks:
+            estimate = getattr(track, "estimate_total_beats", None)
+            if callable(estimate):
+                try:
+                    voice_beats = max(voice_beats, float(estimate(self.bpm)))
+                except Exception:
+                    continue
+
+        return max(seq_beats, poly_beats, sample_beats, voice_beats)
 
     @property
     def duration_sec(self) -> float:

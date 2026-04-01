@@ -61,7 +61,7 @@ legato(notes, overlap=0.1)     # extend each note by 0.1 beats
 pizzicato(notes)                # staccato at 15% — plucked strings
 ```
 
-## All scales (32 types)
+## Scales reference (full set)
 
 ```python
 from code_music import scale, SCALES
@@ -95,6 +95,9 @@ scale("E", "arabic",          4)    # double harmonic
 scale("D", "japanese",        4)    # Hirajoshi
 scale("E", "in_sen",          4)
 scale("C", "persian",         4)
+
+# Reference path (special ordering helper)
+# make play-scale-circle_of_fifths
 ```
 
 ## All chord shapes
@@ -262,6 +265,16 @@ song.add_voice_track(
     )
 )
 # backends: "say" (macOS, zero deps), "bark" (AI), "elevenlabs", "openai"
+# optional per-clip pacing: pause_short_sec / pause_terminal_sec
+# (override punctuation pause timing used for voice timeline estimation)
+# convenience constructors:
+#   VoiceClip.narration("...")  # slower, more pauses
+#   VoiceClip.rap("...")        # faster, tighter pauses
+
+# voice-only timeline note:
+# estimated duration uses text length + clip rate + punctuation pauses
+# (commas, semicolons, colons, and sentence endings) so render length
+# better matches natural phrasing before synthesis runs.
 ```
 
 ---

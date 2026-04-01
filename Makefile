@@ -18,13 +18,13 @@ PLAY   := afplay   # macOS. Linux: swap to `aplay`
 SONGS        := $(filter-out songs/_%.py, $(wildcard songs/*.py))
 SONG_NAMES   := $(notdir $(basename $(SONGS)))
 
-SCALES_PY    := $(wildcard scales/*.py)
+SCALES_PY    := $(filter-out scales/_%.py, $(wildcard scales/*.py))
 SCALE_NAMES  := $(notdir $(basename $(SCALES_PY)))
 
 SAMPLE_DIRS  := bass brass chords drums edm ensemble highs instruments \
                 jazz keyboards mood orchestral solo strings synths \
                 techniques voices waves woodwinds
-SAMPLE_PYS   := $(foreach d,$(SAMPLE_DIRS),$(wildcard samples/$(d)/*.py))
+SAMPLE_PYS   := $(filter-out %/_%.py,$(foreach d,$(SAMPLE_DIRS),$(wildcard samples/$(d)/*.py)))
 SAMPLE_NAMES := $(notdir $(basename $(SAMPLE_PYS)))
 
 ALBUM_STEMS  := ambient_cinematic anthology classical_orchestral cosmic_electro \
@@ -169,17 +169,10 @@ list-samples: ## [Create] List all available sample preview names
 gen-album: ## [Create] Generate a procedural album (GENRE=ambient SEED=42 TRACKS=5)
 	$(BIN)/python scripts/gen_album.py --genre $(or $(GENRE),ambient) --seed $(or $(SEED),42) --tracks $(or $(TRACKS),5)
 
-list-albums: ## [Create] List all 22 genre albums with track counts and render status
+list-albums: ## [Create] List all genre albums with track counts and render status
 	$(BIN)/python -m albums.render --list
 
-play-album-anthology: ## [Vibe] Render and play The Anthology (one track per genre)
-	@$(MAKE) album-anthology
-	@for f in dist/albums/anthology/*.wav; do \
-		echo "  ▶ $$(basename $$f)"; \
-		$(PLAY) "$$f"; \
-	done
-
-albums: ## [Create] Render all 22 genre albums (WAV + FLAC + MP3 + liner notes + playlist)
+albums: ## [Create] Render all genre albums (WAV + FLAC + MP3 + liner notes + playlist)
 	$(BIN)/python -m albums.render --all
 
 # Per-album render + play rules (generated)
@@ -191,8 +184,8 @@ album-$(1): ## [Create] Render album: $(1)
 
 play-album-$(1): album-$(1) ## [Vibe] Render and play album: $(1)
 	@for f in dist/albums/$(1)/*.wav; do \
-		echo "  ▶ $$(basename $$f)"; \
-		$(PLAY) "$$f"; \
+		echo "  ▶ $$$${f##*/}"; \
+		$(PLAY) "$$$$f"; \
 	done
 endef
 $(foreach a,$(ALBUM_STEMS),$(eval $(call ALBUM_RULE,$(a))))
@@ -208,7 +201,7 @@ $(foreach s,$(SAMPLE_NAMES),$(eval $(call PREVIEW_RULE,$(s))))
 #                         [EXPLORE] Scales & theory                            #
 ################################################################################
 
-play-scales: scales ## [Explore] Play all 32 scales (all 12 keys) with name + progress bar
+play-scales: scales ## [Explore] Play the full guided scale set (all 12 keys) with name + progress bar
 	$(BIN)/python -m scripts.play_scales
 
 play-scales-arp: ## [Explore] Play all scales as 1-3-5-8 arpeggios (renders on the fly)
@@ -222,10 +215,10 @@ play-scales-arp-group: ## [Explore] Play one group as arpeggios — GROUP=blues|
 	@test -n "$(GROUP)" || (echo "Usage: make play-scales-arp-group GROUP=blues"; exit 1)
 	$(BIN)/python -m scripts.play_scales --group $(GROUP) --arp
 
-list-scales: ## [Explore] List all 32 scales with render status
+list-scales: ## [Explore] List all scale demos with render status
 	$(BIN)/python -m scripts.play_scales --list
 
-scales: $(WAV_SCALES) ## [Explore] Render all 32 scale types × 12 keys → dist/scales/
+scales: $(WAV_SCALES) ## [Explore] Render all scale demos → dist/scales/
 
 notation-abc: $(ABC_SONGS) ## [Explore] Export all songs as ABC notation — paste into abc.rectanglered.com
 notation-lily: $(LY_SONGS) ## [Explore] Export all songs as LilyPond — compile: lilypond <file>.ly → PDF
@@ -238,6 +231,10 @@ play-scale-$(1): dist/scales/$(1).wav ## [Explore] Play scale: $(1) (all 12 keys
 	$(PLAY) dist/scales/$(1).wav
 endef
 $(foreach s,$(SCALE_NAMES),$(eval $(call PLAY_SCALE_RULE,$(s))))
+
+# Friendly alias for internal reference scale file.
+play-scale-circle_of_fifths: dist/scales/circle_of_fifths.wav ## [Explore] Play reference: circle of fifths major scales
+	$(PLAY) dist/scales/circle_of_fifths.wav
 
 ################################################################################
 #                           [Dev] Build & test                                 #
@@ -278,6 +275,10 @@ dist/mp3/%.mp3: songs/%.py
 	$(CM) $< --mp3 -o $@
 
 dist/scales/%.wav: scales/%.py
+	@mkdir -p dist/scales
+	$(CM) $< -o $@
+
+dist/scales/circle_of_fifths.wav: scales/_circle_of_fifths.py
 	@mkdir -p dist/scales
 	$(CM) $< -o $@
 
@@ -378,4 +379,3 @@ render-one: ## [Dev] Render one song to all formats (WAV+FLAC+MP3). Usage: make 
 	$(CM) songs/$(SONG).py -o dist/wav/$(SONG).wav
 	$(CM) songs/$(SONG).py --flac -o dist/flac/$(SONG).flac 2>/dev/null || echo "  (FLAC skipped — install ffmpeg)"
 	$(CM) songs/$(SONG).py --mp3 -o dist/mp3/$(SONG).mp3 2>/dev/null || echo "  (MP3 skipped — install ffmpeg)"
-

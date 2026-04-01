@@ -17,10 +17,10 @@ code_music/
 
 songs/           Full compositions — each defines a `song` variable
 samples/         Short instrument/technique demos
-scales/          32 scale types × 12 keys
+scales/          Guided scale demos + grouping metadata
 styles/          Genre theory profiles (pure Python dicts)
 scripts/         Interactive tools (scale player, arp renderer)
-tests/           pytest suite — 213 tests
+tests/           pytest suite
 ```
 
 ## Data flow
@@ -29,6 +29,7 @@ tests/           pytest suite — 213 tests
 Song (engine.py)
   └─ Track[] → Synth.render_track() → mono float64 numpy array
   └─ VoiceTrack[] → voice.render_voice_track() → stereo float64
+       └─ timeline sizing uses VoiceTrack.estimate_total_beats(bpm)
   └─ song._effects dict → applied per-track post-render
   └─ all tracks mixed → master bus → tanh soft clip → stereo float64
        └─ export_wav / export_mp3 / export_flac / export_midi / notation

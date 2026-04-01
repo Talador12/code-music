@@ -4,6 +4,7 @@ import numpy as np
 
 from code_music.engine import Chord, Note, Song, Track
 from code_music.synth import Synth
+from code_music.voice import VoiceClip, VoiceTrack
 
 
 class TestSynth:
@@ -59,3 +60,21 @@ class TestSynth:
             tr.add(Note("A", 4, duration=2.0))
         samples = self.synth.render_song(song)
         assert np.max(np.abs(samples)) <= 1.0 + 1e-6
+
+    def test_voice_only_song_uses_estimated_timeline(self, monkeypatch):
+        def fake_generate(_clip, sample_rate=22050):
+            frames = int(sample_rate * 0.25)
+            return np.ones((frames, 2), dtype=np.float64) * 0.2
+
+        monkeypatch.setattr("code_music.voice.generate", fake_generate)
+
+        song = Song(bpm=120, sample_rate=22050)
+        vt = VoiceTrack(name="vox")
+        vt.add(VoiceClip("hello world", backend="say", rate=100), beat_offset=0.0)
+        song.add_voice_track(vt)
+
+        samples = self.synth.render_song(song)
+
+        # Should use voice estimate (around 2-3 beats), not legacy 8-beat fallback.
+        assert samples.shape[0] < int(4.0 * song.sample_rate)
+        assert np.max(np.abs(samples)) > 0.0

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -93,6 +94,12 @@ ELEVENLABS_VOICES = {
     "thomas": "GBv7mTt0atIp3Br8iCZE",
 }
 
+# Voice timeline estimation tuning
+_SHORT_PAUSE_RE = re.compile(r"[,;:]")
+_TERMINAL_PAUSE_RE = re.compile(r"[.!?]")
+_SHORT_PAUSE_SEC = 0.12
+_TERMINAL_PAUSE_SEC = 0.22
+
 
 # ---------------------------------------------------------------------------
 # Auto-detect available backends
@@ -143,6 +150,8 @@ class VoiceClip:
         pitch:      Pitch shift semitones after generation (all backends, via resampling).
         volume:     0.0–1.0 gain applied to this clip.
         pan:        Stereo position -1.0 (L) to 1.0 (R).
+        pause_short_sec:    Optional punctuation pause override for [,;:] per mark.
+        pause_terminal_sec: Optional punctuation pause override for [.?!] per mark.
     """
 
     text: str
@@ -152,6 +161,30 @@ class VoiceClip:
     pitch: float = 0.0  # semitones, applied post-generation
     volume: float = 0.8
     pan: float = 0.0
+    pause_short_sec: float | None = None
+    pause_terminal_sec: float | None = None
+
+    @classmethod
+    def narration(cls, text: str, **kwargs) -> "VoiceClip":
+        """Construct a narration-oriented clip with calmer pacing defaults."""
+        params = {
+            "rate": 92,
+            "pause_short_sec": 0.18,
+            "pause_terminal_sec": 0.34,
+        }
+        params.update(kwargs)
+        return cls(text=text, **params)
+
+    @classmethod
+    def rap(cls, text: str, **kwargs) -> "VoiceClip":
+        """Construct a rhythm-forward clip with faster flow defaults."""
+        params = {
+            "rate": 148,
+            "pause_short_sec": 0.04,
+            "pause_terminal_sec": 0.09,
+        }
+        params.update(kwargs)
+        return cls(text=text, **params)
 
 
 @dataclass
@@ -171,6 +204,38 @@ class VoiceTrack:
     def add(self, clip: VoiceClip, beat_offset: float = 0.0) -> "VoiceTrack":
         self.clips.append((clip, beat_offset))
         return self
+
+    def estimate_total_beats(self, bpm: float) -> float:
+        """Estimate track duration in beats without synthesizing audio.
+
+        Uses a lightweight text/rate heuristic so voice-only songs can allocate
+        a reasonable timeline before any backend generation happens.
+        """
+        if not self.clips:
+            return 0.0
+
+        beat_sec = 60.0 / max(bpm, 1.0)
+        max_end = 0.0
+        for clip, beat_offset in self.clips:
+            text = clip.text.strip()
+            words = max(1, len([w for w in text.split() if w]))
+            base_sec = max(words * 0.42, len(text) / 14.0, 0.5)
+            rate_factor = min(3.0, max(0.5, clip.rate / 100.0))
+
+            # Add brief pause estimates for punctuation-heavy phrasing.
+            commas = len(_SHORT_PAUSE_RE.findall(text))
+            terminals = len(_TERMINAL_PAUSE_RE.findall(text))
+            short_pause = _SHORT_PAUSE_SEC if clip.pause_short_sec is None else clip.pause_short_sec
+            terminal_pause = (
+                _TERMINAL_PAUSE_SEC if clip.pause_terminal_sec is None else clip.pause_terminal_sec
+            )
+            punct_sec = commas * short_pause + terminals * terminal_pause
+
+            est_sec = (base_sec / rate_factor) + punct_sec
+            est_beats = est_sec / beat_sec
+            max_end = max(max_end, beat_offset + est_beats)
+
+        return max_end + 0.5
 
 
 # ---------------------------------------------------------------------------

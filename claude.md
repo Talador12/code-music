@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.0.0 — 60 songs, 327 tests, full roadmap complete
+## Status: v1.4.0+ — 80 songs, 403 tests, v1.5 started
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 60 | Albums: 22 | Scales: 32 | Samples: 100+ | Styles: 7
+### Songs: 80 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -105,3 +105,37 @@
 - [x] Audio sample import — load a WAV as a Track instrument (sampling)
 - [x] Reach 80 songs (80 total)
 - [x] Tag v1.3.0 release
+
+## v1.5 Roadmap
+
+- [x] Sample-only song timing: include `sample_tracks` in `Song.total_beats`
+- [x] Sample-only rendering: remove need for dummy instrument track
+- [x] Voice-only song timing: estimate `VoiceTrack` duration for `Song.total_beats`
+- [x] Voice-only rendering: use `Song.total_beats` (drop 8-beat synth fallback path)
+- [x] Voice timing heuristic: account for punctuation pauses (commas / sentence endings)
+- [x] Voice timing docs: document estimation model for creators/developers
+- [x] Voice pacing API: per-clip pause overrides (`pause_short_sec`, `pause_terminal_sec`)
+- [x] Voice convenience API: `VoiceClip.narration(...)` and `VoiceClip.rap(...)`
+- [x] Voice sample: add side-by-side pacing demo (`samples/voices/voice_pacing_demo.py`)
+- [x] Makefile cleanup: remove duplicate `play-album-anthology` target warning
+- [x] Makefile bugfix: album play loop prints/plays real filenames (shell-safe basename)
+- [x] Makefile regression tests: cover sample target discovery + album play shell vars
+- [x] Makefile regression tests: assert no duplicate-target warnings + non-anthology album coverage
+- [x] Makefile regression tests: assert per-album glob paths in generated play commands
+- [x] Makefile regression tests: assert generated `play-<song>` target renders expected WAV path
+- [x] Makefile regression tests: representative `play-<song>` targets stay generated across genres
+- [x] Makefile regression tests: representative `preview-<sample>` targets stay generated across sample groups
+- [x] Makefile regression tests: representative `play-scale-<mode>` targets stay generated across scale families
+- [x] Makefile regression tests: representative `album-<name>` targets stay generated across album groups
+- [x] Makefile scale cleanup: hide underscore/internal scale targets from generated `play-scale-*` rules
+- [x] Makefile hidden-target guardrails: keep internal song/album helper files out of generated targets
+- [x] Makefile UX: expose friendly `play-scale-circle_of_fifths` alias while keeping underscore target private
+- [x] Docs: surface `play-scale-circle_of_fifths` in listener/theory/README command guides
+- [x] README UX: split quick-play commands into song vs scale sections for faster scanning
+- [x] Listener UX: add "Start here" command block grouping songs/scales/samples
+- [x] Makefile regression tests: dynamically enforce hidden-target rules for all underscore files
+- [x] Makefile sample cleanup: filter underscore sample files from generated preview targets
+- [x] Test hygiene: remove empty-parametrize skip in Makefile tests (now fully green)
+- [x] Make help regression tests: expose circle-of-fifths alias, keep internal targets hidden from help output
+- [x] List command regression tests: keep friendly names in list output and hide internal template stems
+- [x] List command regression tests: ensure `list-samples` never leaks underscore preview targets

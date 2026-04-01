@@ -125,6 +125,20 @@ song._effects = {
 }
 ```
 
+## Add voice with one-line pacing presets
+
+```python
+from code_music import Song, VoiceClip, VoiceTrack
+
+song = Song(title="Voice Presets", bpm=96)
+vox = song.add_voice_track(VoiceTrack(name="vox"))
+
+vox.add(VoiceClip.narration("welcome to code music", voice="Samantha", backend="say"), beat_offset=0.0)
+vox.add(VoiceClip.rap("welcome to code music", voice="Zarvox", backend="say"), beat_offset=8.0)
+```
+
+Want a ready-made example? Start from `samples/voices/voice_pacing_demo.py`.
+
 ## Steal from an existing song
 
 The simplest way to learn: open any file in `songs/` and modify it.

@@ -12,6 +12,23 @@ make dev
 
 That's it. You now have everything.
 
+## Start here (60 seconds)
+
+If you only run a few commands, use these:
+
+```bash
+# Songs
+make play-trance_odyssey
+make play-tank_bebop
+
+# Scales and keys
+make play-scales
+make play-scale-circle_of_fifths
+
+# Samples
+make preview-voice_pacing_demo
+```
+
 ## Play a song
 
 ```bash
@@ -36,8 +53,9 @@ Every scale plays through all 12 keys. The name and a description show
 on screen while it plays.
 
 ```bash
-make play-scales              # 32 scales, straight (piano)
+make play-scales              # full guided scale set, straight (piano)
 make play-scales-arp          # same scales, played as arpeggios
+make play-scale-circle_of_fifths  # cycle all keys in circle-of-fifths order
 ```
 
 Want just one group?
@@ -62,6 +80,7 @@ make preview-choir_swell           # choir swell, minor → major resolution
 make preview-dark_arp              # phrygian arpeggio, alluring
 make preview-noir_trumpet          # Miles Davis cool jazz trumpet
 make preview-war_drums             # low brass + tremolo strings, vast
+make preview-voice_pacing_demo     # narration vs rap pacing side-by-side
 
 # Or list everything available:
 make list-samples

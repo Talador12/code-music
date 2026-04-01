@@ -61,6 +61,33 @@ class TestVoiceClipDefaults:
         assert clip.backend == "auto"
 
 
+class TestVoiceClipPresets:
+    def test_narration_factory_defaults(self):
+        clip = VoiceClip.narration("welcome to the long-form version")
+        assert clip.rate == 92
+        assert clip.pause_short_sec == 0.18
+        assert clip.pause_terminal_sec == 0.34
+
+    def test_rap_factory_defaults(self):
+        clip = VoiceClip.rap("bars on bars")
+        assert clip.rate == 148
+        assert clip.pause_short_sec == 0.04
+        assert clip.pause_terminal_sec == 0.09
+
+    def test_factory_kwargs_override_defaults(self):
+        clip = VoiceClip.narration(
+            "custom narrator",
+            voice="Daniel",
+            rate=105,
+            pause_short_sec=0.2,
+            backend="say",
+        )
+        assert clip.voice == "Daniel"
+        assert clip.rate == 105
+        assert clip.pause_short_sec == 0.2
+        assert clip.backend == "say"
+
+
 class TestGenerateSayBackend:
     """These tests only run on macOS where say + afconvert are available."""
 
@@ -160,14 +187,72 @@ class TestVoiceTrack:
         assert result.shape[0] > 0
 
 
+class TestVoiceTrackEstimate:
+    def test_empty_is_zero(self):
+        track = VoiceTrack(name="vox")
+        assert track.estimate_total_beats(bpm=120) == 0.0
+
+    def test_includes_beat_offset(self):
+        track = VoiceTrack(name="vox")
+        track.add(VoiceClip("short phrase", rate=100), beat_offset=6.0)
+        assert track.estimate_total_beats(bpm=120) > 6.0
+
+    def test_slower_rate_estimates_longer(self):
+        text = "this is a somewhat longer phrase for timing estimation"
+        slow = VoiceTrack(name="slow").add(VoiceClip(text, rate=70), beat_offset=0.0)
+        fast = VoiceTrack(name="fast").add(VoiceClip(text, rate=170), beat_offset=0.0)
+        assert slow.estimate_total_beats(bpm=120) > fast.estimate_total_beats(bpm=120)
+
+    def test_punctuation_adds_pause_time(self):
+        plain = VoiceTrack(name="plain").add(
+            VoiceClip("hello world this is flowing", rate=100), beat_offset=0.0
+        )
+        punct = VoiceTrack(name="punct").add(
+            VoiceClip("hello, world. this is flowing!", rate=100), beat_offset=0.0
+        )
+        assert punct.estimate_total_beats(bpm=120) > plain.estimate_total_beats(bpm=120)
+
+    def test_terminal_punctuation_matters(self):
+        no_stop = VoiceTrack(name="nostop").add(
+            VoiceClip("we keep going and going", rate=100), beat_offset=0.0
+        )
+        with_stop = VoiceTrack(name="withstop").add(
+            VoiceClip("we keep going and going.", rate=100), beat_offset=0.0
+        )
+        assert with_stop.estimate_total_beats(bpm=120) > no_stop.estimate_total_beats(bpm=120)
+
+    def test_pause_overrides_can_shorten_estimate(self):
+        text = "pause, pause."
+        default = VoiceTrack(name="default").add(VoiceClip(text, rate=100), beat_offset=0.0)
+        clipped = VoiceTrack(name="clipped").add(
+            VoiceClip(text, rate=100, pause_short_sec=0.0, pause_terminal_sec=0.0),
+            beat_offset=0.0,
+        )
+        assert clipped.estimate_total_beats(bpm=120) < default.estimate_total_beats(bpm=120)
+
+    def test_pause_overrides_can_lengthen_estimate(self):
+        text = "wait, wait?"
+        default = VoiceTrack(name="default").add(VoiceClip(text, rate=100), beat_offset=0.0)
+        stretched = VoiceTrack(name="stretched").add(
+            VoiceClip(text, rate=100, pause_short_sec=0.4, pause_terminal_sec=0.8),
+            beat_offset=0.0,
+        )
+        assert stretched.estimate_total_beats(bpm=120) > default.estimate_total_beats(bpm=120)
+
+
 class TestLyrics:
     def test_from_text_parses_lines(self):
         from code_music.voice import Lyrics
-        lyrics = Lyrics.from_text("""
+
+        lyrics = Lyrics.from_text(
+            """
             hello world
             second line
             third line
-        """, start_beat=0.0, beats_per_line=4.0)
+        """,
+            start_beat=0.0,
+            beats_per_line=4.0,
+        )
         assert len(lyrics.lines) == 3
         assert lyrics.lines[0] == (0.0, "hello world")
         assert lyrics.lines[1] == (4.0, "second line")
@@ -175,12 +260,14 @@ class TestLyrics:
 
     def test_from_text_custom_start(self):
         from code_music.voice import Lyrics
+
         lyrics = Lyrics.from_text("one\ntwo", start_beat=8.0, beats_per_line=2.0)
         assert lyrics.lines[0][0] == 8.0
         assert lyrics.lines[1][0] == 10.0
 
     def test_from_text_skips_empty_lines(self):
         from code_music.voice import Lyrics
+
         lyrics = Lyrics.from_text("""
             line one
 
@@ -190,12 +277,14 @@ class TestLyrics:
 
     def test_manual_lyrics(self):
         from code_music.voice import Lyrics
+
         lyrics = Lyrics([(0.0, "hello"), (2.5, "world")])
         assert len(lyrics.lines) == 2
         assert lyrics.lines[1] == (2.5, "world")
 
     def test_to_voice_track(self):
         from code_music.voice import Lyrics, VoiceTrack
+
         lyrics = Lyrics.from_text("hello\nworld", beats_per_line=4.0)
         vt = lyrics.to_voice_track(name="vox", voice="Samantha", backend="say")
         assert isinstance(vt, VoiceTrack)
@@ -208,6 +297,7 @@ class TestLyrics:
 
     def test_to_voice_track_voice_params(self):
         from code_music.voice import Lyrics
+
         lyrics = Lyrics([(0.0, "test")])
         vt = lyrics.to_voice_track(voice="Zarvox", rate=80, volume=0.5, pan=-0.3)
         clip = vt.clips[0][0]

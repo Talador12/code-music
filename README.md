@@ -45,7 +45,7 @@ code-music my_track.py --flac    # → Spotify-ready FLAC
 git clone https://github.com/Talador12/code-music
 cd code-music
 make dev          # creates .venv, installs deps, checks ffmpeg
-make test         # 213 tests, all green
+make test         # full pytest suite
 ```
 
 Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
@@ -54,9 +54,9 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `songs/` | 13 full songs — lo-fi, trance, bebop, symphony, ambient, EDM |
+| `songs/` | 80 full songs across 20+ genres |
 | `samples/` | 100+ short instrument and technique demos |
-| `scales/` | 32 scale types × all 12 keys, straight and arpeggio modes |
+| `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
 | `scripts/` | Interactive scale/arp player with progress bar |
 | `code_music/` | The engine, synth, effects, export, notation, voice |
@@ -64,15 +64,21 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 ## Play something right now
 
 ```bash
+# Songs
 make play-trance_odyssey      # 90s uplifting trance
 make play-tank_bebop          # Cowboy Bebop big-band jazz
 make play-deep_space_drift    # Brian Eno ambient
 make play-clarity_drive       # Zedd-style festival EDM
 make play-symphony_no1        # original orchestral movement
+make preview-voice_pacing_demo # narration vs rap pacing demo
+```
 
-# Hear every scale with in-place progress bar
+```bash
+# Scales and key relationships
 make play-scales
 make play-scales-arp          # same scales as arpeggios
+make play-scales-group GROUP=world
+make play-scale-circle_of_fifths # key relationship reference run
 ```
 
 ## Export to Spotify
