@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v3.1.0 — 135 songs, 714 tests, tagged
+## Status: v3.2.0 — 135 songs, 714 tests, tagged
 
 ## What's built
 
@@ -298,3 +298,11 @@
 - [x] `py.typed` marker for PEP 561 type checker support
 - [x] 5 new songs (135 total): ambient_techno, bluegrass_picking, garage_rock, prog_metal (5/4), ragtime_rag
 - [x] Tag v3.1.0 release
+
+## v3.2 Roadmap — Documentation Quality
+
+- [x] Fix README hero code: `_effects` lambda → `EffectsChain` + `play(song)`
+- [x] Fix developer docs: `song._effects` hook → `song.effects` + EffectsChain example
+- [x] Fix developer data-flow diagram: `_effects` → `effects`
+- [x] Audit all docs/README/AGENTS.md/examples for stale `_effects` refs — zero remaining
+- [x] Tag v3.2.0 release

@@ -30,7 +30,7 @@ Song (engine.py)
   └─ Track[] → Synth.render_track() → mono float64 numpy array
   └─ VoiceTrack[] → voice.render_voice_track() → stereo float64
        └─ timeline sizing uses VoiceTrack.estimate_total_beats(bpm)
-  └─ song._effects dict → applied per-track post-render
+  └─ song.effects dict → EffectsChain or callable per-track, applied post-render
   └─ all tracks mixed → master bus → tanh soft clip → stereo float64
        └─ export_wav / export_mp3 / export_flac / export_midi / notation
 ```
@@ -133,19 +133,23 @@ make play-my_song              # renders + plays
 make songs-all                 # included in batch renders automatically
 ```
 
-## The `song._effects` hook
+## The `song.effects` hook
 
-Post-render per-track effect chain:
+Post-render per-track effect chain using `EffectsChain`:
 
 ```python
-song._effects = {
-    "track_name": lambda stereo_array, sample_rate: effect_fn(stereo_array, sample_rate),
+from code_music import EffectsChain, reverb, delay
+
+song.effects = {
+    "pad": EffectsChain().add(reverb, room_size=0.7, wet=0.3),
+    "lead": EffectsChain().add(delay, delay_ms=250, wet=0.2).add(reverb, room_size=0.4, wet=0.15),
 }
 ```
 
 Applied in `Synth.render_song()` after each track is rendered to stereo,
 before mixing into the master bus. Exceptions are caught silently — a buggy
-effect never crashes the render.
+effect never crashes the render. Plain callables `(samples, sr) → samples`
+also work for backward compatibility.
 
 ## Adding a new notation exporter
 

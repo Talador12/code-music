@@ -22,7 +22,7 @@ a single scale all the way to full multi-track songs with orchestral
 instruments, EDM synthesis, jazz arpeggios, and effects chains.
 
 ```python
-from code_music import Song, Track, Note, Chord, scale, reverb
+from code_music import Song, Track, Note, Chord, EffectsChain, scale, reverb, play
 
 song = Song(title="My Track", bpm=120)
 
@@ -32,7 +32,9 @@ lead = song.add_track(Track(instrument="piano",  volume=0.8))
 pad.add(Chord("A", "min7", 3, duration=8.0))
 lead.extend(scale("A", "pentatonic", octave=5))
 
-song._effects = {"pad": lambda s, sr: reverb(s, sr, wet=0.4)}
+song.effects = {"pad": EffectsChain().add(reverb, room_size=0.7, wet=0.4)}
+
+play(song)  # hear it instantly
 ```
 
 ```bash
