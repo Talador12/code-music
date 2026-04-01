@@ -62,7 +62,7 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 | Directory | What's there |
 |---|---|
 | `examples/` | 8 step-by-step tutorials: hello world → live coding |
-| `songs/` | 130 full songs across 50+ genres |
+| `songs/` | 135 full songs across 50+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |

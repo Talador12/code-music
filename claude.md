@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v3.0.0 — 130 songs, 709 tests, tagged
+## Status: v3.1.0 — 135 songs, 714 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 130 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 135 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -289,3 +289,12 @@
 - [x] Ruff: E501 exemption for song/sample/example/album files (music data, not logic)
 - [x] 5 new songs (130 total): dub_reggae, motown_groove, electro_swing, dark_ambient, math_rock
 - [x] Tag v3.0.0 release
+
+## v3.1 Roadmap — Discoverability & Final Polish
+
+- [x] GitHub repo: 10 topics (python, music, audio, synthesis, midi, generative-music, dsp, wav, music-generation, creative-coding)
+- [x] GitHub repo description updated with pip install command
+- [x] GitHub homepage set to README anchor
+- [x] `py.typed` marker for PEP 561 type checker support
+- [x] 5 new songs (135 total): ambient_techno, bluegrass_picking, garage_rock, prog_metal (5/4), ragtime_rag
+- [x] Tag v3.1.0 release
