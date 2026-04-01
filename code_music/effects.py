@@ -1411,7 +1411,7 @@ def eq(
 class _Step:
     """One link in an EffectsChain."""
 
-    __slots__ = ("fn", "wet", "bypass", "label")
+    __slots__ = ("fn", "wet", "bypass", "label", "kwargs")
 
     def __init__(
         self,
@@ -1419,11 +1419,13 @@ class _Step:
         wet: float = 1.0,
         bypass: bool = False,
         label: str = "",
+        kwargs: dict | None = None,
     ) -> None:
         self.fn = fn
         self.wet = max(0.0, min(wet, 1.0))
         self.bypass = bypass
         self.label = label or getattr(fn, "__name__", "effect")
+        self.kwargs = kwargs or {}
 
     def __repr__(self) -> str:
         state = "bypass" if self.bypass else f"wet={self.wet:.2f}"
@@ -1486,7 +1488,7 @@ class EffectsChain:
         else:
             bound_fn = effect_fn
 
-        self._steps.append(_Step(bound_fn, wet=wet, bypass=bypass, label=label))
+        self._steps.append(_Step(bound_fn, wet=wet, bypass=bypass, label=label, kwargs=kwargs))
         return self
 
     def remove(self, index: int) -> "EffectsChain":
@@ -1537,3 +1539,59 @@ class EffectsChain:
     def steps(self) -> list[_Step]:
         """Read-only view of the chain's steps."""
         return list(self._steps)
+
+    # -- Serialization -----------------------------------------------------
+
+    def to_dict(self) -> list[dict]:
+        """Serialize the chain to a list of plain dicts.
+
+        Each step becomes ``{"effect": "<name>", "wet": float, "bypass": bool, **kwargs}``.
+        Only works for steps added via ``add(effect_fn, **kwargs)`` where kwargs
+        were captured. Bare lambdas or pre-bound callables serialize with just
+        the label and wet/bypass (no kwargs).
+
+        Example::
+
+            data = chain.to_dict()
+            # [{"effect": "reverb", "wet": 0.3, "bypass": false, "room_size": 0.7}]
+        """
+        result = []
+        for step in self._steps:
+            entry: dict = {
+                "effect": step.label,
+                "wet": step.wet,
+                "bypass": step.bypass,
+            }
+            entry.update(step.kwargs)
+            result.append(entry)
+        return result
+
+    @classmethod
+    def from_dict(cls, data: list[dict]) -> "EffectsChain":
+        """Reconstruct an EffectsChain from serialized dicts.
+
+        Looks up effect functions by name from this module's public API.
+
+        Example::
+
+            chain = EffectsChain.from_dict([
+                {"effect": "reverb", "wet": 0.3, "room_size": 0.7},
+                {"effect": "delay", "wet": 0.2, "delay_ms": 375},
+            ])
+        """
+        import sys
+
+        module = sys.modules[__name__]
+        chain = cls()
+        for entry in data:
+            name = entry["effect"]
+            wet = entry.get("wet", 1.0)
+            bypass = entry.get("bypass", False)
+            kwargs = {k: v for k, v in entry.items() if k not in ("effect", "wet", "bypass")}
+
+            fn = getattr(module, name, None)
+            if fn is None or not callable(fn):
+                raise ValueError(f"Unknown effect function: {name!r}")
+
+            chain.add(fn, wet=wet, bypass=bypass, label=name, **kwargs)
+        return chain

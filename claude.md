@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.0.0 — 105 songs, 481 tests, tagged
+## Status: v2.1.0 — 105 songs, 508 tests, tagged
 
 ## What's built
 
@@ -186,3 +186,12 @@
 - [x] 5 new songs (105 total): repeat_offender, concat_highway, afro_house, raga_dawn, mashup_machine
 - [x] 14 new tests for Section.repeat, Track.concat, _effects deprecation
 - [x] Tag v2.0.0 release
+
+## v2.1 Roadmap
+
+- [x] `Track.transpose(semitones)` — new Track with all Notes/Chords shifted
+- [x] `Track.loop(n)` — repeat existing beats N times
+- [x] `Song.render()` — convenience wrapper for Synth().render_song()
+- [x] `EffectsChain.to_dict()`/`from_dict()` — serialization + round-trip restore
+- [x] 27 new tests across all 4 features
+- [x] Tag v2.1.0 release

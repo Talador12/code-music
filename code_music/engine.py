@@ -1413,6 +1413,72 @@ class Track:
         scaled.velocity = event.velocity * max(0.0, min(factor, 1.0))
         return scaled
 
+    def transpose(self, semitones: int) -> "Track":
+        """Return a new Track with all pitched events shifted by *semitones*.
+
+        Rests pass through unchanged. Chords are transposed note-by-note.
+        Track metadata (instrument, volume, pan, etc.) is preserved.
+
+        Example::
+
+            harmony = melody.transpose(7)   # up a perfect fifth
+            low = melody.transpose(-12)     # down one octave
+        """
+        import copy
+
+        transposed = self._clone_empty()
+        for beat in self.beats:
+            if beat.event is None:
+                transposed.beats.append(Beat(event=None))
+                continue
+
+            event = beat.event
+            if isinstance(event, Note):
+                if event.pitch is None:
+                    transposed.beats.append(Beat(event=copy.copy(event)))
+                elif isinstance(event.pitch, int):
+                    transposed.add(
+                        Note(
+                            event.pitch + semitones,
+                            event.octave,
+                            event.duration,
+                            velocity=event.velocity,
+                        )
+                    )
+                else:
+                    midi = note_name_to_midi(str(event.pitch), event.octave) + semitones
+                    new_name, new_oct = midi_to_note_name(midi)
+                    transposed.add(Note(new_name, new_oct, event.duration, velocity=event.velocity))
+            elif isinstance(event, Chord):
+                new_root_midi = note_name_to_midi(str(event.root), event.octave) + semitones
+                new_root, new_oct = midi_to_note_name(new_root_midi)
+                transposed.add(
+                    Chord(
+                        new_root,
+                        event.shape,
+                        new_oct,
+                        duration=event.duration,
+                        velocity=event.velocity,
+                    )
+                )
+            else:
+                transposed.beats.append(Beat(event=copy.copy(event)))
+        return transposed
+
+    def loop(self, n: int) -> "Track":
+        """Return a new Track with existing beats repeated *n* times.
+
+        Preserves track metadata. Original track is not mutated.
+
+        Example::
+
+            four_bar_riff = bass.loop(4)   # riff plays 4 times
+        """
+        looped = self._clone_empty()
+        for _ in range(n):
+            looped.beats.extend(Beat(event=b.event) for b in self.beats)
+        return looped
+
     @property
     def total_beats(self) -> float:
         return sum(b.duration for b in self.beats)
@@ -1928,6 +1994,23 @@ class Song:
     @property
     def duration_sec(self) -> float:
         return self.total_beats * self.beat_duration_sec
+
+    def render(self):
+        """Render the song to a stereo float64 numpy array.
+
+        Convenience wrapper — equivalent to ``Synth(self.sample_rate).render_song(self)``.
+
+        Returns:
+            Stereo float64 array of shape (N, 2).
+
+        Example::
+
+            audio = song.render()
+            export_wav(audio, "my_song.wav", song.sample_rate)
+        """
+        from .synth import Synth
+
+        return Synth(sample_rate=self.sample_rate).render_song(self)
 
 
 # ---------------------------------------------------------------------------
