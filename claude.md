@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.6.0 — 90 songs, 437 tests, tagged
+## Status: v1.6.0+ — 90 songs, 453 tests, v1.7 in progress
 
 ## What's built
 
@@ -151,3 +151,13 @@
 - [x] Add `sounddevice` as optional dependency with clear install instructions
 - [x] Reach 90 songs (5 new: honky_tonk_moon, samba_de_janeiro, celtic_crossing, two_step_garage, minimal_pulse)
 - [x] Tag v1.6.0 release
+
+## v1.7 Roadmap
+
+- [x] EffectsChain class: ordered steps with per-step wet/dry, bypass, kwargs binding
+- [x] Song.effects dict: proper attribute replacing _effects hack, backward-compatible
+- [x] Synth renderer: prefers song.effects, falls back to song._effects
+- [ ] Migrate 2-3 existing songs to EffectsChain as proof
+- [ ] Update docs with EffectsChain usage
+- [ ] Reach 95 songs
+- [ ] Tag v1.7.0 release

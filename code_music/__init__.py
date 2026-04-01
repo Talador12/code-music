@@ -1,6 +1,7 @@
 """code-music: write code blocks, export audio."""
 
 from .effects import (
+    EffectsChain,
     autotune,
     bandpass,
     bitcrush,
@@ -191,6 +192,7 @@ __all__ = [
     "export_abc",
     "export_musicxml",
     # effects
+    "EffectsChain",
     "reverb",
     "delay",
     "chorus",

@@ -7,6 +7,7 @@ All inner loops use scipy/numpy — no Python sample-level loops.
 from __future__ import annotations
 
 import math
+from typing import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -1400,3 +1401,139 @@ def eq(
         result[:, 1] = sig.sosfilt(sos, result[:, 1])
 
     return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# EffectsChain — ordered, per-step wet/dry and bypass
+# ---------------------------------------------------------------------------
+
+
+class _Step:
+    """One link in an EffectsChain."""
+
+    __slots__ = ("fn", "wet", "bypass", "label")
+
+    def __init__(
+        self,
+        fn: Callable[[FloatArray, int], FloatArray],
+        wet: float = 1.0,
+        bypass: bool = False,
+        label: str = "",
+    ) -> None:
+        self.fn = fn
+        self.wet = max(0.0, min(wet, 1.0))
+        self.bypass = bypass
+        self.label = label or getattr(fn, "__name__", "effect")
+
+    def __repr__(self) -> str:
+        state = "bypass" if self.bypass else f"wet={self.wet:.2f}"
+        return f"Step({self.label!r}, {state})"
+
+
+class EffectsChain:
+    """Ordered chain of audio effects with per-step wet/dry and bypass.
+
+    Replaces the old ``song._effects = { name: lambda }`` pattern with
+    a composable, inspectable object.
+
+    Example::
+
+        from code_music.effects import EffectsChain, reverb, delay, compress
+
+        chain = (
+            EffectsChain()
+            .add(reverb, room_size=0.7, wet=0.3)
+            .add(delay, delay_ms=375, feedback=0.3, wet=0.25)
+            .add(compress, threshold=0.6, ratio=4.0)
+        )
+
+        # Apply to a track
+        song.effects["pad"] = chain
+
+        # Or call directly
+        processed = chain(samples, sample_rate)
+    """
+
+    def __init__(self) -> None:
+        self._steps: list[_Step] = []
+
+    # -- Building ----------------------------------------------------------
+
+    def add(
+        self,
+        effect_fn: Callable,
+        *,
+        wet: float = 1.0,
+        bypass: bool = False,
+        label: str = "",
+        **kwargs,
+    ) -> "EffectsChain":
+        """Append an effect to the chain.
+
+        Args:
+            effect_fn: Any code-music effect function (e.g. ``reverb``).
+            wet:       Dry/wet mix for this step (0.0 = fully dry, 1.0 = fully wet).
+            bypass:    If True, this step is skipped during processing.
+            label:     Optional human-readable name for this step.
+            **kwargs:  Extra keyword arguments forwarded to *effect_fn*.
+
+        Returns:
+            self, for chaining.
+        """
+        if kwargs:
+            bound_fn = lambda s, sr, _fn=effect_fn, _kw=kwargs: _fn(s, sr, **_kw)  # noqa: E731
+            bound_fn.__name__ = label or getattr(effect_fn, "__name__", "effect")
+        else:
+            bound_fn = effect_fn
+
+        self._steps.append(_Step(bound_fn, wet=wet, bypass=bypass, label=label))
+        return self
+
+    def remove(self, index: int) -> "EffectsChain":
+        """Remove the step at *index*."""
+        del self._steps[index]
+        return self
+
+    def set_bypass(self, index: int, bypass: bool = True) -> "EffectsChain":
+        """Enable or disable bypass on the step at *index*."""
+        self._steps[index].bypass = bypass
+        return self
+
+    def set_wet(self, index: int, wet: float) -> "EffectsChain":
+        """Set wet/dry mix on the step at *index*."""
+        self._steps[index].wet = max(0.0, min(wet, 1.0))
+        return self
+
+    # -- Processing --------------------------------------------------------
+
+    def __call__(self, samples: FloatArray, sample_rate: int) -> FloatArray:
+        """Run *samples* through the chain in order."""
+        result = samples
+        for step in self._steps:
+            if step.bypass:
+                continue
+            processed = step.fn(result, sample_rate)
+            if step.wet >= 1.0:
+                result = processed
+            elif step.wet <= 0.0:
+                continue
+            else:
+                result = result * (1.0 - step.wet) + processed * step.wet
+        return result
+
+    # -- Introspection -----------------------------------------------------
+
+    def __len__(self) -> int:
+        return len(self._steps)
+
+    def __repr__(self) -> str:
+        steps = ", ".join(repr(s) for s in self._steps)
+        return f"EffectsChain([{steps}])"
+
+    def __iter__(self):
+        return iter(self._steps)
+
+    @property
+    def steps(self) -> list[_Step]:
+        """Read-only view of the chain's steps."""
+        return list(self._steps)

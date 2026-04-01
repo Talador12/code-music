@@ -1484,6 +1484,7 @@ class Song:
     time_sig_map: list[tuple[float, int, int]] = field(default_factory=list)
     composer: str = ""
     key_sig: str = "C"
+    effects: dict = field(default_factory=dict)  # track_name → callable or EffectsChain
 
     def add_time_sig_change(self, at_beat: float, numerator: int, denominator: int) -> "Song":
         """Schedule a time signature change at a specific beat offset.

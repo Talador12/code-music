@@ -647,7 +647,9 @@ class Synth:
         ):
             return np.zeros((self.sample_rate, 2))  # 1s silence
 
-        effects: dict = getattr(song, "_effects", {})
+        # Support both new song.effects dict and legacy song._effects dict.
+        # EffectsChain objects and plain callables are both accepted as values.
+        effects: dict = getattr(song, "effects", {}) or getattr(song, "_effects", {})
         has_timed_tracks = (
             has_instrument_tracks or has_poly_tracks or has_sample_tracks or has_voice_tracks
         )
