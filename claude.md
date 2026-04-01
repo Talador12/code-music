@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.5.0 — 85 songs, 428 tests, tagged
+## Status: v1.5.0+ — 85 songs, 437 tests, v1.6 in progress
 
 ## What's built
 
@@ -144,3 +144,10 @@
 - [x] Engine: `Song.arrange(sections)` — compose from named Section blocks
 - [x] Reach 85 songs (5 new: arranged_journey, fade_to_dawn, flat_earth_funk, gb_waltz, eb_minor_elegy)
 - [x] Tag v1.5.0 release
+
+## v1.6 Roadmap
+
+- [x] Real-time playback: `play(song)` function + `code-music --play` CLI flag
+- [ ] Add `sounddevice` as optional dependency with clear install instructions
+- [ ] Reach 90 songs
+- [ ] Tag v1.6.0 release

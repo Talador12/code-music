@@ -21,6 +21,20 @@ def _load_song(script: Path):
     return mod.song
 
 
+def _play_once(script: Path, args) -> int:
+    """Load a song and play it immediately without file export."""
+    from .playback import play
+
+    try:
+        song = _load_song(script)
+    except Exception as e:
+        print(f"error loading {script.name}: {e}", file=sys.stderr)
+        return 1
+
+    play(song, bpm=args.bpm)
+    return 0
+
+
 def _render_once(script: Path, args) -> int:
     """Load, render, and export a single song. Returns exit code."""
     from .export import export_flac, export_mp3, export_ogg, export_wav
@@ -78,7 +92,7 @@ def _render_once(script: Path, args) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="code-music",
-        description="Render a code-music script to WAV, MP3, OGG, FLAC, or MIDI.",
+        description="Render or play a code-music script.",
     )
     parser.add_argument("script", type=Path, help="Python song script (must define `song`)")
     parser.add_argument(
@@ -93,6 +107,11 @@ def main(argv: list[str] | None = None) -> int:
     fmt_group.add_argument("--ogg", action="store_true", help="Export as OGG Vorbis (lossy)")
     fmt_group.add_argument("--flac", action="store_true", help="Export as FLAC (lossless)")
     fmt_group.add_argument("--midi", action="store_true", help="Export as MIDI (.mid)")
+    fmt_group.add_argument(
+        "--play",
+        action="store_true",
+        help="Play immediately without saving a file (uses sounddevice or system player)",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--watch",
@@ -106,7 +125,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {script} not found", file=sys.stderr)
         return 1
 
-    if args.watch:
+    if args.play:
+        print(f"Loading {script.name}...")
+        return _play_once(script, args)
+    elif args.watch:
         print(f"Watching {script.name} — will re-render on save. Ctrl+C to stop.")
         last_mtime = 0.0
         try:
