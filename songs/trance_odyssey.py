@@ -20,6 +20,7 @@ Techniques used:
 
 from code_music import (
     Chord,
+    EffectsChain,
     Note,
     Song,
     Track,
@@ -147,11 +148,11 @@ for _ in range(32):  # bars 5-36
         arp_tr.extend(arp(ch, pattern="up_down", rate=0.25, octaves=2))
 
 # ── Effects ───────────────────────────────────────────────────────────────
-song._effects = {
-    "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.6, wet=0.25), width=1.8),
-    "lead": lambda s, sr: delay(s, sr, delay_ms=217.0, feedback=0.3, wet=0.2, ping_pong=True),
-    "strings": lambda s, sr: gate(
-        reverb(s, sr, room_size=0.4, wet=0.2), sr, rate_hz=4.0, shape="trapezoid"
-    ),
-    "arp": lambda s, sr: reverb(s, sr, room_size=0.5, wet=0.2),
+song.effects = {
+    "pad": EffectsChain().add(reverb, room_size=0.6, wet=0.25).add(stereo_width, width=1.8),
+    "lead": EffectsChain().add(delay, delay_ms=217.0, feedback=0.3, wet=0.2, ping_pong=True),
+    "strings": EffectsChain()
+    .add(reverb, room_size=0.4, wet=0.2)
+    .add(gate, rate_hz=4.0, shape="trapezoid"),
+    "arp": EffectsChain().add(reverb, room_size=0.5, wet=0.2),
 }

@@ -164,6 +164,28 @@ song.key_sig = "Bb"    # for sheet music export
 song.composer = "K. Adler"
 ```
 
+## EffectsChain (v1.7+)
+
+```python
+from code_music import EffectsChain, reverb, delay, compress, stereo_width
+
+# Build an ordered chain — each step has its own wet/dry and bypass
+chain = (
+    EffectsChain()
+    .add(reverb, room_size=0.7, wet=0.3)
+    .add(delay, delay_ms=375, feedback=0.3, wet=0.25)
+    .add(compress, threshold=0.6, ratio=4.0)
+)
+
+song.effects["pad"] = chain              # assign to a track
+processed = chain(samples, sample_rate)  # or call directly
+
+chain.set_bypass(1, True)   # mute the delay step
+chain.set_wet(0, 0.5)       # pull reverb to 50% wet
+len(chain)                   # 3 steps
+repr(chain)                  # inspectable
+```
+
 ## All effects
 
 ```python

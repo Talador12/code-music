@@ -117,19 +117,33 @@ note = Note("G", 4, HALF)       # two beats
 note = Note("E", 4, DOTTED_QUARTER)  # one and a half beats
 ```
 
-## Add reverb to make it sound bigger
+## Add effects with EffectsChain
 
 ```python
-from code_music import Song, Track, Note, reverb
+from code_music import Song, Track, Note, EffectsChain, reverb, delay, compress
 
-song = Song(title="With Reverb", bpm=90)
+song = Song(title="With Effects", bpm=90)
 piano = song.add_track(Track(name="piano", instrument="piano"))
 piano.add(Note("C", 4, 4.0))
 
-# Apply reverb to the piano track when rendering
-song._effects = {
-    "piano": lambda s, sr: reverb(s, sr, room_size=0.7, wet=0.3)
-}
+# Build a chain: reverb → delay → compress
+song.effects["piano"] = (
+    EffectsChain()
+    .add(reverb, room_size=0.7, wet=0.3)       # big room
+    .add(delay, delay_ms=375, wet=0.2)          # quarter-note echo
+    .add(compress, threshold=0.6, ratio=4.0)    # tame peaks
+)
+```
+
+Each step has its own wet/dry and bypass:
+
+```python
+chain = EffectsChain()
+chain.add(reverb, room_size=0.7, wet=0.5)   # 50% wet reverb
+chain.add(delay, delay_ms=200, bypass=True)  # delay off for now
+
+chain.set_bypass(1, False)   # turn delay on
+chain.set_wet(0, 0.3)        # pull reverb back to 30%
 ```
 
 ## Add voice with one-line pacing presets

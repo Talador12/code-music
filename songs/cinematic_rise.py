@@ -24,6 +24,7 @@ Structure (100 BPM):
 
 from code_music import (
     Chord,
+    EffectsChain,
     Note,
     Song,
     Track,
@@ -235,16 +236,16 @@ solo_vc.extend(
 )
 
 # ── Effects ───────────────────────────────────────────────────────────────
-song._effects = {
-    "sub": lambda s, sr: lowpass(s, sr, cutoff_hz=100.0, q=0.5),
-    "vln1": lambda s, sr: reverb(s, sr, room_size=0.8, damping=0.4, wet=0.3),
-    "vln2": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.35),
-    "cello": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.3),
-    "solo_vc": lambda s, sr: reverb(s, sr, room_size=0.9, wet=0.4),
-    "choir": lambda s, sr: stereo_width(
-        reverb(s, sr, room_size=0.9, damping=0.5, wet=0.45), width=1.8
-    ),
-    "trumpet": lambda s, sr: reverb(s, sr, room_size=0.8, wet=0.25),
-    "trombone": lambda s, sr: reverb(s, sr, room_size=0.8, wet=0.25),
-    "french_horn": lambda s, sr: reverb(s, sr, room_size=0.85, wet=0.3),
+song.effects = {
+    "sub": EffectsChain().add(lowpass, cutoff_hz=100.0, q=0.5),
+    "vln1": EffectsChain().add(reverb, room_size=0.8, damping=0.4, wet=0.3),
+    "vln2": EffectsChain().add(reverb, room_size=0.85, wet=0.35),
+    "cello": EffectsChain().add(reverb, room_size=0.85, wet=0.3),
+    "solo_vc": EffectsChain().add(reverb, room_size=0.9, wet=0.4),
+    "choir": EffectsChain()
+    .add(reverb, room_size=0.9, damping=0.5, wet=0.45)
+    .add(stereo_width, width=1.8),
+    "trumpet": EffectsChain().add(reverb, room_size=0.8, wet=0.25),
+    "trombone": EffectsChain().add(reverb, room_size=0.8, wet=0.25),
+    "french_horn": EffectsChain().add(reverb, room_size=0.85, wet=0.3),
 }

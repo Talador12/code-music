@@ -157,7 +157,7 @@
 - [x] EffectsChain class: ordered steps with per-step wet/dry, bypass, kwargs binding
 - [x] Song.effects dict: proper attribute replacing _effects hack, backward-compatible
 - [x] Synth renderer: prefers song.effects, falls back to song._effects
-- [ ] Migrate 2-3 existing songs to EffectsChain as proof
-- [ ] Update docs with EffectsChain usage
+- [x] Migrate 3 songs to EffectsChain (fade_to_dawn, trance_odyssey, cinematic_rise)
+- [x] Update docs with EffectsChain usage (creators + theory)
 - [ ] Reach 95 songs
 - [ ] Tag v1.7.0 release

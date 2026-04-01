@@ -7,7 +7,7 @@ create a breathing texture.
 Style: Brian Eno ambient, E major, 72 BPM.
 """
 
-from code_music import Chord, Note, Song, Track, reverb, stereo_width
+from code_music import Chord, EffectsChain, Note, Song, Track, reverb, stereo_width
 
 song = Song(title="Fade to Dawn", bpm=72)
 
@@ -36,7 +36,7 @@ song.add_track(pad.fade_in(beats=16.0).fade_out(beats=16.0))
 song.add_track(shimmer.fade_in(beats=24.0).fade_out(beats=24.0))
 song.add_track(drone.fade_in(beats=8.0).fade_out(beats=8.0))
 
-song._effects = {
-    "pad": lambda s, sr: stereo_width(reverb(s, sr, room_size=0.85, wet=0.45), width=1.8),
-    "shimmer": lambda s, sr: reverb(s, sr, room_size=0.7, wet=0.35),
+song.effects = {
+    "pad": EffectsChain().add(reverb, room_size=0.85, wet=0.45).add(stereo_width, width=1.8),
+    "shimmer": EffectsChain().add(reverb, room_size=0.7, wet=0.35),
 }
