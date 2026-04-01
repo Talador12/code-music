@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.8.0 — 125 songs, 694 tests, tagged
+## Status: v2.9.0 — 125 songs, 704 tests, tagged
 
 ## What's built
 
@@ -266,3 +266,15 @@
 - [x] `make examples` + `make play-examples` Makefile targets
 - [x] 5 new songs (125 total): west_coast_g_funk, flamenco_fire, shoegaze_haze, trip_hop_noir, hawaiian_slack_key
 - [x] Tag v2.8.0 release
+
+## v2.9 Roadmap — UX Polish
+
+- [x] Fix `--import-midi` requiring dummy script arg (script now optional via `nargs='?'`)
+- [x] `code-music --new my_song.py` scaffolds a starter song with template
+- [x] `code-music --list-instruments` shows all 65+ synth presets
+- [x] `Track.__repr__` — concise: name, instrument, beat count, total_beats, volume
+- [x] `Song.__repr__` — concise: title, bpm, track count, duration, track names
+- [x] CLI help text rewrite: description + epilog with 8 usage examples
+- [x] Clear error message when no script provided
+- [x] 10 new tests (repr, --import-midi no-script, --list-instruments, --new, help text, no-script error)
+- [x] Tag v2.9.0 release

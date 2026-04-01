@@ -21,6 +21,49 @@ def _load_song(script: Path):
     return mod.song
 
 
+_STARTER_TEMPLATE = '''\
+"""%(name)s — My new song.
+
+Run:  code-music %(filename)s --play
+"""
+
+from code_music import Chord, EffectsChain, Note, Song, Track, reverb, scale
+
+song = Song(title="%(title)s", bpm=120)
+
+# Add tracks — try: piano, sawtooth, bass, pad, organ, pluck, drums_kick, drums_snare
+melody = song.add_track(Track(name="melody", instrument="piano", volume=0.6))
+melody.extend([
+    Note("C", 4, 1.0),
+    Note("E", 4, 1.0),
+    Note("G", 4, 1.0),
+    Note("C", 5, 2.0),
+])
+
+bass = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
+bass.extend([Note("C", 2, 2.0), Note("G", 2, 2.0)])
+
+# Effects — reverb, delay, compress, distortion, lowpass, highpass, stereo_width, ...
+song.effects = {
+    "melody": EffectsChain().add(reverb, room_size=0.5, wet=0.2),
+}
+'''
+
+
+def _scaffold_song(path: Path) -> int:
+    """Create a new starter song file at *path*."""
+    if path.exists():
+        print(f"error: {path} already exists", file=sys.stderr)
+        return 1
+    name = path.stem
+    title = name.replace("_", " ").title()
+    content = _STARTER_TEMPLATE % {"name": name, "filename": path.name, "title": title}
+    path.write_text(content)
+    print(f"  Created {path}")
+    print(f"  Run: code-music {path} --play")
+    return 0
+
+
 def _play_once(script: Path, args) -> int:
     """Load a song and play it immediately without file export."""
     from .playback import play
@@ -92,12 +135,31 @@ def _render_once(script: Path, args) -> int:
 def main(argv: list[str] | None = None) -> int:
     from . import __version__
 
+    epilog = """\
+examples:
+  code-music my_song.py                 render to WAV
+  code-music my_song.py --play          render + play immediately
+  code-music my_song.py --flac          render to FLAC (Spotify-ready)
+  code-music my_song.py --watch --play  live coding: auto-play on save
+  code-music my_song.py --info          show metadata without rendering
+  code-music --import-midi song.mid     import MIDI → render to WAV
+  code-music --new my_song.py           scaffold a starter song file
+  code-music --list-instruments         show all available instruments
+"""
     parser = argparse.ArgumentParser(
         prog="code-music",
-        description="Render or play a code-music script.",
+        description="Write music in Python. Render to WAV, FLAC, MP3, MIDI — or play instantly.",
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=f"code-music {__version__}")
-    parser.add_argument("script", type=Path, help="Python song script (must define `song`)")
+    parser.add_argument(
+        "script",
+        type=Path,
+        nargs="?",
+        default=None,
+        help="Python song script (must define `song`)",
+    )
     parser.add_argument(
         "-o",
         "--output",
@@ -120,7 +182,19 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         metavar="FILE",
-        help="Import a .mid file as a Song (ignores script argument)",
+        help="Import a .mid file as a Song and render it",
+    )
+    parser.add_argument(
+        "--new",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Scaffold a new starter song file",
+    )
+    parser.add_argument(
+        "--list-instruments",
+        action="store_true",
+        help="List all available synth instruments and exit",
     )
     parser.add_argument(
         "--info",
@@ -135,7 +209,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    # ── MIDI import mode ────────────────────────────────────────────────
+    # ── Standalone commands (no script required) ─────────────────────────
+    if args.list_instruments:
+        from .synth import Synth
+
+        instruments = sorted(Synth.PRESETS.keys())
+        print(f"{len(instruments)} instruments available:\n")
+        for name in instruments:
+            print(f"  {name}")
+        return 0
+
+    if args.new:
+        return _scaffold_song(args.new)
+
+    # ── MIDI import mode (no script required) ──────────────────────────
     if args.import_midi:
         from .midi import import_midi
 
@@ -163,7 +250,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  Exported: {result}")
         return 0
 
-    # ── Normal script mode ────────────────────────────────────────────────
+    # ── Normal script mode (script required from here) ─────────────────
+    if args.script is None:
+        parser.error(
+            "a script argument is required (or use --import-midi, --new, --list-instruments)"
+        )
     script: Path = args.script.resolve()
     if not script.exists():
         print(f"error: {script} not found", file=sys.stderr)

@@ -1642,6 +1642,14 @@ class Track:
                 filtered.add(Note.rest(beat.duration))
         return filtered
 
+    def __repr__(self) -> str:
+        n = len(self.beats)
+        tb = self.total_beats
+        return (
+            f"Track({self.name!r}, instrument={self.instrument!r}, "
+            f"beats={n}, total_beats={tb:.1f}, vol={self.volume:.2f})"
+        )
+
     @property
     def total_beats(self) -> float:
         return sum(b.duration for b in self.beats)
@@ -1764,6 +1772,17 @@ class Song:
     key_sig: str = "C"
     effects: dict = field(default_factory=dict)  # track_name → callable or EffectsChain
     bpm_map: list[float] = field(default_factory=list)  # per-beat BPM values (from bpm_ramp)
+
+    def __repr__(self) -> str:
+        t = len(self.tracks)
+        names = [tr.name for tr in self.tracks[:5]]
+        if len(self.tracks) > 5:
+            names.append("...")
+        return (
+            f"Song({self.title!r}, bpm={self.bpm}, tracks={t}, "
+            f"beats={self.total_beats:.0f}, dur={self.duration_sec:.1f}s, "
+            f"names={names})"
+        )
 
     def __setattr__(self, name: str, value: object) -> None:
         if name == "_effects":
