@@ -1531,6 +1531,20 @@ class Track:
 
         return before, after
 
+    def slice(self, start_beat: float, end_beat: float) -> "Track":
+        """Extract a subsection from *start_beat* to *end_beat*.
+
+        Equivalent to ``split(start).after → split(end).before`` but in one pass.
+        Events straddling the boundaries are trimmed to fit.
+
+        Example::
+
+            chorus = full_track.slice(32.0, 64.0)  # bars 9-16
+        """
+        _, after_start = self.split(start_beat)
+        extract, _ = after_start.split(end_beat - start_beat)
+        return extract
+
     def filter(self, predicate) -> "Track":
         """Return a new Track with only beats where *predicate(event)* is True.
 
@@ -2068,6 +2082,136 @@ class Song:
     @property
     def duration_sec(self) -> float:
         return self.total_beats * self.beat_duration_sec
+
+    def to_dict(self) -> dict:
+        """Serialize the Song to a plain dict (JSON-compatible).
+
+        Includes title, bpm, time_sig, key_sig, bpm_map, effects (via
+        EffectsChain.to_dict), and all tracks with their note/chord data.
+
+        Example::
+
+            data = song.to_dict()
+            import json
+            json.dumps(data)  # fully JSON-serializable
+        """
+        tracks_data = []
+        for track in self.tracks:
+            beats_data = []
+            for beat in track.beats:
+                if beat.event is None:
+                    beats_data.append({"type": "rest", "duration": beat.duration})
+                elif isinstance(beat.event, Note):
+                    e = beat.event
+                    beats_data.append(
+                        {
+                            "type": "note",
+                            "pitch": e.pitch,
+                            "octave": e.octave,
+                            "duration": e.duration,
+                            "velocity": e.velocity,
+                        }
+                    )
+                elif isinstance(beat.event, Chord):
+                    e = beat.event
+                    beats_data.append(
+                        {
+                            "type": "chord",
+                            "root": e.root,
+                            "shape": e.shape,
+                            "octave": e.octave,
+                            "duration": e.duration,
+                            "velocity": e.velocity,
+                        }
+                    )
+            tracks_data.append(
+                {
+                    "name": track.name,
+                    "instrument": track.instrument,
+                    "volume": track.volume,
+                    "pan": track.pan,
+                    "swing": track.swing,
+                    "density": track.density,
+                    "beats": beats_data,
+                }
+            )
+
+        fx_data = {}
+        for name, chain in self.effects.items():
+            if hasattr(chain, "to_dict"):
+                fx_data[name] = chain.to_dict()
+
+        return {
+            "title": self.title,
+            "bpm": self.bpm,
+            "sample_rate": self.sample_rate,
+            "time_sig": list(self.time_sig),
+            "key_sig": self.key_sig,
+            "composer": self.composer,
+            "bpm_map": self.bpm_map,
+            "tracks": tracks_data,
+            "effects": fx_data,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Song":
+        """Reconstruct a Song from a dict produced by ``to_dict()``.
+
+        Example::
+
+            song = Song.from_dict(data)
+            audio = song.render()
+        """
+        from .effects import EffectsChain
+
+        song = cls(
+            title=data.get("title", "untitled"),
+            bpm=data.get("bpm", 120.0),
+            sample_rate=data.get("sample_rate", 44100),
+            time_sig=tuple(data.get("time_sig", [4, 4])),
+            key_sig=data.get("key_sig", "C"),
+            composer=data.get("composer", ""),
+            bpm_map=data.get("bpm_map", []),
+        )
+
+        for td in data.get("tracks", []):
+            track = Track(
+                name=td.get("name", ""),
+                instrument=td.get("instrument", "sine"),
+                volume=td.get("volume", 0.8),
+                pan=td.get("pan", 0.0),
+                swing=td.get("swing", 0.0),
+                density=td.get("density", 1.0),
+            )
+            for bd in td.get("beats", []):
+                btype = bd.get("type", "rest")
+                if btype == "rest":
+                    track.add(Note.rest(bd["duration"]))
+                elif btype == "note":
+                    track.add(
+                        Note(
+                            bd["pitch"],
+                            bd.get("octave", 4),
+                            bd["duration"],
+                            velocity=bd.get("velocity", 0.8),
+                        )
+                    )
+                elif btype == "chord":
+                    track.add(
+                        Chord(
+                            bd["root"],
+                            bd["shape"],
+                            bd.get("octave", 3),
+                            duration=bd["duration"],
+                            velocity=bd.get("velocity", 0.8),
+                        )
+                    )
+            song.add_track(track)
+
+        for name, chain_data in data.get("effects", {}).items():
+            song.effects[name] = EffectsChain.from_dict(chain_data)
+
+        return song
 
     def render(self):
         """Render the song to a stereo float64 numpy array.

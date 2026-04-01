@@ -119,6 +119,11 @@ def main(argv: list[str] | None = None) -> int:
         metavar="FILE",
         help="Import a .mid file as a Song (ignores script argument)",
     )
+    parser.add_argument(
+        "--info",
+        action="store_true",
+        help="Show song metadata (title, BPM, duration, tracks) without rendering",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--watch",
@@ -161,7 +166,19 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {script} not found", file=sys.stderr)
         return 1
 
-    if args.play and not args.watch:
+    if args.info:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        info = song.info()
+        for k, v in info.items():
+            print(f"  {k}: {v}")
+        return 0
+    elif args.play and not args.watch:
         print(f"Loading {script.name}...")
         return _play_once(script, args)
     elif args.watch:

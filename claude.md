@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.2.0 — 110 songs, 528 tests, tagged
+## Status: v2.3.0 — 110 songs, 653 tests, tagged
 
 ## What's built
 
@@ -206,3 +206,12 @@
 - [x] 5 new songs (110 total): tempo_drift, split_personality, filter_funk, canon_machine, accelerando_chase
 - [x] 20 new tests for bpm_map, split, filter
 - [x] Tag v2.2.0 release
+
+## v2.3 Roadmap
+
+- [x] `Track.slice(start_beat, end_beat)` — extract a subsection
+- [x] `Song.to_dict()` / `Song.from_dict()` — full JSON-compatible serialization
+- [x] CLI `--info` flag — show title/BPM/duration/tracks without rendering
+- [x] Song smoke tests: 110 parametrized tests verify every song imports + defines `song`
+- [x] 15 feature tests (slice, serialization round-trip, CLI info)
+- [x] Tag v2.3.0 release
