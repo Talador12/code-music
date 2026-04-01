@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.5.0-rc — 85 songs, 428 tests, ready to tag
+## Status: v1.5.0 — 85 songs, 428 tests, tagged
 
 ## What's built
 
@@ -143,4 +143,4 @@
 - [x] Engine: `Track.fade_in()` / `Track.fade_out()` — beat-level velocity ramps
 - [x] Engine: `Song.arrange(sections)` — compose from named Section blocks
 - [x] Reach 85 songs (5 new: arranged_journey, fade_to_dawn, flat_earth_funk, gb_waltz, eb_minor_elegy)
-- [ ] Tag v1.5.0 release
+- [x] Tag v1.5.0 release
