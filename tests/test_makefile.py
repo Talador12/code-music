@@ -8,10 +8,13 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+HAS_VENV = (ROOT / ".venv" / "bin" / "python").exists()
 INTERNAL_SCALE_STEMS = sorted(p.stem for p in (ROOT / "scales").glob("_*.py"))
 INTERNAL_SONG_STEMS = sorted(p.stem for p in (ROOT / "songs").glob("_*.py"))
 INTERNAL_ALBUM_STEMS = sorted(p.stem for p in (ROOT / "albums").glob("_*.py"))
 INTERNAL_SAMPLE_STEMS = sorted(p.stem for p in (ROOT / "samples").glob("**/_*.py"))
+
+requires_venv = pytest.mark.skipif(not HAS_VENV, reason=".venv not present (CI uses system Python)")
 
 
 def _run_make(*args: str) -> subprocess.CompletedProcess[str]:
@@ -158,17 +161,20 @@ def test_make_help_excludes_internal_targets() -> None:
     assert "album-_album" not in result.stdout
 
 
+@requires_venv
 def test_list_scales_uses_friendly_circle_name_not_internal_stem() -> None:
     result = _run_make("list-scales")
     assert "Circle of Fifths" in result.stdout
     assert "_circle_of_fifths" not in result.stdout
 
 
+@requires_venv
 def test_list_songs_excludes_internal_templates() -> None:
     result = _run_make("list-songs")
     assert "_template_" not in result.stdout
 
 
+@requires_venv
 def test_list_samples_excludes_internal_preview_stems() -> None:
     result = _run_make("list-samples")
     assert "preview-_" not in result.stdout
