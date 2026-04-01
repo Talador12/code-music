@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.5.0+ — 85 songs, 437 tests, v1.6 in progress
+## Status: v1.6.0-rc — 90 songs, 437 tests, ready to tag
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 85 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 90 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -149,5 +149,5 @@
 
 - [x] Real-time playback: `play(song)` function + `code-music --play` CLI flag
 - [x] Add `sounddevice` as optional dependency with clear install instructions
-- [ ] Reach 90 songs
+- [x] Reach 90 songs (5 new: honky_tonk_moon, samba_de_janeiro, celtic_crossing, two_step_garage, minimal_pulse)
 - [ ] Tag v1.6.0 release
