@@ -90,10 +90,13 @@ def _render_once(script: Path, args) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from . import __version__
+
     parser = argparse.ArgumentParser(
         prog="code-music",
         description="Render or play a code-music script.",
     )
+    parser.add_argument("--version", action="version", version=f"code-music {__version__}")
     parser.add_argument("script", type=Path, help="Python song script (must define `song`)")
     parser.add_argument(
         "-o",

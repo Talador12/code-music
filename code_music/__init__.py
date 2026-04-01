@@ -1,5 +1,12 @@
 """code-music: write code blocks, export audio."""
 
+from importlib.metadata import PackageNotFoundError, version
+
+try:
+    __version__ = version("code-music")
+except PackageNotFoundError:
+    __version__ = "0.0.0-dev"
+
 from .effects import (
     EffectsChain,
     autotune,
@@ -109,6 +116,7 @@ from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
 
 __all__ = [
+    "__version__",
     # durations
     "WHOLE",
     "HALF",

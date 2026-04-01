@@ -4,9 +4,24 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-music"
-version = "0.2.0"
+version = "2.5.0"
 description = "Code-generated music: write blocks of code, export Spotify-ready audio"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
+authors = [{ name = "Keith Adler", email = "kadler@cloudflare.com" }]
+keywords = ["music", "audio", "synthesis", "generative", "midi", "wav", "dsp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: Multimedia :: Sound/Audio :: Synthesis",
+    "Topic :: Artistic Software",
+]
 dependencies = [
     "numpy>=1.26",
     "scipy>=1.12",
@@ -16,6 +31,11 @@ dependencies = [
 [project.optional-dependencies]
 play = ["sounddevice>=0.4"]
 dev = ["pytest>=8", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/Talador12/code-music"
+Repository = "https://github.com/Talador12/code-music"
+Issues = "https://github.com/Talador12/code-music/issues"
 
 [project.scripts]
 code-music = "code_music.cli:main"

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.4.0 — 115 songs, 673 tests, tagged
+## Status: v2.5.0 — 115 songs, 676 tests, tagged
 
 ## What's built
 
@@ -225,3 +225,14 @@
 - [x] 5 new songs (115 total): merged_grooves, time_warp, persian_nights, stutter_step, json_roundtrip
 - [x] 15 new tests for merge, stretch, export/load JSON
 - [x] Tag v2.4.0 release
+
+## v2.5 Roadmap — Packaging & Distribution
+
+- [x] `__version__` via `importlib.metadata` in `__init__.py`
+- [x] CLI `--version` flag (`code-music --version`)
+- [x] PyPI metadata: license, authors, readme, keywords, classifiers, urls in pyproject.toml
+- [x] Version bumped to 2.5.0 (was 0.2.0)
+- [x] `pip install code-music` instructions in README
+- [x] PyPI publish job in CI (Trusted Publisher via `pypa/gh-action-pypi-publish`)
+- [x] 3 new tests (__version__ importable, semver format, CLI --version)
+- [x] Tag v2.5.0 release

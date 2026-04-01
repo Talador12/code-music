@@ -39,7 +39,14 @@ song._effects = {"pad": lambda s, sr: reverb(s, sr, wet=0.4)}
 code-music my_track.py --flac    # → Spotify-ready FLAC
 ```
 
-## Quick setup
+## Install
+
+```bash
+pip install code-music              # from PyPI
+pip install code-music[play]        # + real-time playback (sounddevice)
+```
+
+Or develop from source:
 
 ```bash
 git clone https://github.com/Talador12/code-music
