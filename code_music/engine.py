@@ -1650,6 +1650,12 @@ class Track:
             f"beats={n}, total_beats={tb:.1f}, vol={self.volume:.2f})"
         )
 
+    def __len__(self) -> int:
+        return len(self.beats)
+
+    def __bool__(self) -> bool:
+        return len(self.beats) > 0
+
     @property
     def total_beats(self) -> float:
         return sum(b.duration for b in self.beats)
@@ -1783,6 +1789,12 @@ class Song:
             f"beats={self.total_beats:.0f}, dur={self.duration_sec:.1f}s, "
             f"names={names})"
         )
+
+    def __len__(self) -> int:
+        return len(self.tracks)
+
+    def __bool__(self) -> bool:
+        return len(self.tracks) > 0
 
     def __setattr__(self, name: str, value: object) -> None:
         if name == "_effects":

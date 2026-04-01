@@ -257,14 +257,18 @@ class Synth:
     # Waveform generators
     # ------------------------------------------------------------------
 
+    _harmonics_cache: dict[str, int] = {}
+
     def _wave(self, wave: str, freq: float, n_samples: int) -> FloatArray:
         """Generate waveform using additive/spectral synthesis (fully vectorised)."""
         t = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
-        # Look up harmonics from ANY matching preset key that uses this wave name
-        harmonics = next(
-            (p["harmonics"] for p in self.PRESETS.values() if p.get("wave") == wave),
-            8,
-        )
+        # Cache harmonics lookup per wave type (called ~1000x per render)
+        if wave not in self._harmonics_cache:
+            self._harmonics_cache[wave] = next(
+                (p["harmonics"] for p in self.PRESETS.values() if p.get("wave") == wave),
+                8,
+            )
+        harmonics = self._harmonics_cache[wave]
 
         if wave == "sine":
             return np.sin(2 * np.pi * freq * t)

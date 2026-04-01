@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.9.0 — 125 songs, 704 tests, tagged
+## Status: v3.0.0 — 130 songs, 709 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 125 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 130 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -278,3 +278,14 @@
 - [x] Clear error message when no script provided
 - [x] 10 new tests (repr, --import-midi no-script, --list-instruments, --new, help text, no-script error)
 - [x] Tag v2.9.0 release
+
+## v3.0 Roadmap — Performance & Polish
+
+- [x] Profile render pipeline (identified _wave 44%, effects 24%, butter-per-note)
+- [x] Cache harmonics lookup in Synth._wave() (was O(presets) per call → O(1))
+- [x] CLI `--benchmark` flag: render + report timing without export
+- [x] `Song.__len__` (returns track count), `Song.__bool__` (has tracks)
+- [x] `Track.__len__` (returns beat count), `Track.__bool__` (has beats)
+- [x] Ruff: E501 exemption for song/sample/example/album files (music data, not logic)
+- [x] 5 new songs (130 total): dub_reggae, motown_groove, electro_swing, dark_ambient, math_rock
+- [x] Tag v3.0.0 release

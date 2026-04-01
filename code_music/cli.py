@@ -203,6 +203,11 @@ examples:
     )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Render and report timing without saving a file",
+    )
+    parser.add_argument(
         "--watch",
         action="store_true",
         help="Re-render on file save (live coding mode). Polls every second.",
@@ -260,7 +265,25 @@ examples:
         print(f"error: {script} not found", file=sys.stderr)
         return 1
 
-    if args.info:
+    if args.benchmark:
+        from .synth import Synth
+
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        print(f"  Benchmarking '{song.title}' — {song.duration_sec:.1f}s @ {song.bpm} BPM ...")
+        t0 = time.monotonic()
+        samples = Synth(song.sample_rate).render_song(song)
+        elapsed = time.monotonic() - t0
+        ratio = song.duration_sec / elapsed if elapsed > 0 else float("inf")
+        print(f"  Rendered in {elapsed:.2f}s ({ratio:.1f}x realtime)")
+        print(f"  {samples.shape[0]} samples, {samples.shape[1]} channels")
+        return 0
+    elif args.info:
         try:
             song = _load_song(script)
         except Exception as e:

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-music"
-version = "2.9.0"
+version = "3.0.0"
 description = "Code-generated music: write blocks of code, export Spotify-ready audio"
 readme = "README.md"
 license = "MIT"
@@ -46,3 +46,9 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"songs/*.py" = ["E501"]
+"samples/**/*.py" = ["E501"]
+"examples/*.py" = ["E501"]
+"albums/*.py" = ["E501"]
