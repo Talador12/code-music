@@ -79,6 +79,9 @@ make play-scales
 make play-scales-arp          # same scales as arpeggios
 make play-scales-group GROUP=world
 make play-scale-circle_of_fifths # key relationship reference run
+
+# Direct playback (no file written)
+code-music songs/trance_odyssey.py --play
 ```
 
 ## Export to Spotify

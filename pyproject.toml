@@ -14,6 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+play = ["sounddevice>=0.4"]
 dev = ["pytest>=8", "ruff>=0.4"]
 
 [project.scripts]

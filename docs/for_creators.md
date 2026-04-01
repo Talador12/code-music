@@ -37,6 +37,13 @@ melody.add(Note("C", 4, duration=2.0))
 
 ```bash
 make play-my_first_song       # renders and plays immediately
+
+# Or play directly from Python (no file saved):
+code-music songs/my_first_song.py --play
+
+# Or from inside a script:
+from code_music import play
+play(song)
 ```
 
 ## Add a chord (multiple notes at once)

@@ -148,6 +148,6 @@
 ## v1.6 Roadmap
 
 - [x] Real-time playback: `play(song)` function + `code-music --play` CLI flag
-- [ ] Add `sounddevice` as optional dependency with clear install instructions
+- [x] Add `sounddevice` as optional dependency with clear install instructions
 - [ ] Reach 90 songs
 - [ ] Tag v1.6.0 release

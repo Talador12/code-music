@@ -12,6 +12,18 @@ make dev
 
 That's it. You now have everything.
 
+For instant playback without rendering to disk, install the optional player:
+
+```bash
+pip install sounddevice
+```
+
+Then use `--play` on any song:
+
+```bash
+code-music songs/trance_odyssey.py --play
+```
+
 ## Start here (60 seconds)
 
 If you only run a few commands, use these:
