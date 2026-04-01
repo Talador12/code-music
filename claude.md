@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.7.0 — 120 songs, 689 tests, tagged
+## Status: v2.8.0 — 125 songs, 694 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 120 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 125 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -259,3 +259,10 @@
 - [x] README: examples table + "Learn by example" section
 - [x] Smoke tests for all 8 examples
 - [x] Tag v2.7.0 release
+
+## v2.8 Roadmap
+
+- [x] Fix PyPI publish CI: add `environment: pypi` for OIDC Trusted Publisher
+- [x] `make examples` + `make play-examples` Makefile targets
+- [x] 5 new songs (125 total): west_coast_g_funk, flamenco_fire, shoegaze_haze, trip_hop_noir, hawaiian_slack_key
+- [x] Tag v2.8.0 release

@@ -246,6 +246,21 @@ lint: ## [Dev] Run ruff check on all Python files
 test: ## [Dev] Run pytest test suite
 	$(BIN)/pytest tests/ -v
 
+examples: ## [Explore] Render all 8 tutorial examples → dist/examples/
+	@mkdir -p dist/examples
+	@count=0; for f in examples/0*.py; do \
+		stem=$$(basename "$$f" .py); \
+		echo "  [$$((count+1))] $$stem"; \
+		$(CM) "$$f" -o "dist/examples/$${stem}.wav" 2>&1 | tail -1; \
+		count=$$((count+1)); \
+	done; echo "  Rendered $$count examples"
+
+play-examples: examples ## [Explore] Render and play all 8 examples in order
+	@for f in dist/examples/*.wav; do \
+		echo "  ▶ $${f##*/}"; \
+		$(PLAY) "$$f"; \
+	done
+
 songs-wav: $(WAV_SONGS) ## [Dev] Render all songs → dist/wav/ (lossless PCM)
 songs-flac: $(FLAC_SONGS) ## [Dev] Render all songs → dist/flac/ (lossless compressed, Spotify preferred)
 songs-mp3: $(MP3_SONGS) ## [Dev] Render all songs → dist/mp3/ (lossy 320kbps)
