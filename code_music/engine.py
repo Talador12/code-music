@@ -1479,6 +1479,79 @@ class Track:
             looped.beats.extend(Beat(event=b.event) for b in self.beats)
         return looped
 
+    def split(self, at_beat: float) -> tuple["Track", "Track"]:
+        """Split the track at *at_beat*, returning (before, after).
+
+        If a note/rest straddles the split point, it is divided into two
+        with the appropriate durations. Both tracks preserve metadata.
+
+        Example::
+
+            intro, body = full_track.split(at_beat=16.0)
+        """
+        import copy
+
+        before = self._clone_empty()
+        after = self._clone_empty()
+        cursor = 0.0
+        split_done = False
+
+        for beat in self.beats:
+            if split_done:
+                after.beats.append(Beat(event=copy.copy(beat.event) if beat.event else None))
+                continue
+
+            end = cursor + beat.duration
+            if end <= at_beat:
+                before.beats.append(Beat(event=copy.copy(beat.event) if beat.event else None))
+            elif cursor >= at_beat:
+                after.beats.append(Beat(event=copy.copy(beat.event) if beat.event else None))
+                split_done = True
+            else:
+                # Straddles the split point
+                left_dur = at_beat - cursor
+                right_dur = end - at_beat
+                if beat.event is None:
+                    before.add(Note.rest(left_dur))
+                    after.add(Note.rest(right_dur))
+                elif isinstance(beat.event, Note):
+                    e = beat.event
+                    before.add(Note(e.pitch, e.octave, left_dur, velocity=e.velocity))
+                    after.add(Note(e.pitch, e.octave, right_dur, velocity=e.velocity))
+                elif isinstance(beat.event, Chord):
+                    e = beat.event
+                    before.add(
+                        Chord(e.root, e.shape, e.octave, duration=left_dur, velocity=e.velocity)
+                    )
+                    after.add(
+                        Chord(e.root, e.shape, e.octave, duration=right_dur, velocity=e.velocity)
+                    )
+                split_done = True
+            cursor = end
+
+        return before, after
+
+    def filter(self, predicate) -> "Track":
+        """Return a new Track with only beats where *predicate(event)* is True.
+
+        Beats that fail the predicate are replaced with rests of the same
+        duration, preserving timeline alignment.
+
+        Example::
+
+            loud = track.filter(lambda e: e.velocity > 0.5)
+            only_c = track.filter(lambda e: getattr(e, 'pitch', None) == 'C')
+        """
+        filtered = self._clone_empty()
+        for beat in self.beats:
+            if beat.event is not None and predicate(beat.event):
+                import copy
+
+                filtered.beats.append(Beat(event=copy.copy(beat.event)))
+            else:
+                filtered.add(Note.rest(beat.duration))
+        return filtered
+
     @property
     def total_beats(self) -> float:
         return sum(b.duration for b in self.beats)
@@ -1600,6 +1673,7 @@ class Song:
     composer: str = ""
     key_sig: str = "C"
     effects: dict = field(default_factory=dict)  # track_name → callable or EffectsChain
+    bpm_map: list[float] = field(default_factory=list)  # per-beat BPM values (from bpm_ramp)
 
     def __setattr__(self, name: str, value: object) -> None:
         if name == "_effects":
@@ -2274,8 +2348,8 @@ def bpm_ramp(
     """Return a list of per-beat BPM values for a gradual tempo change.
 
     Useful for ritardando (slowing down), accelerando (speeding up),
-    or rubato (free tempo). The returned list can be used with a custom
-    render loop, or passed to the `bpm_map` field on a Song.
+    or rubato (free tempo). Assign to ``song.bpm_map`` and the synth
+    renderer will use per-beat tempo instead of a flat BPM.
 
     Args:
         start_bpm:    Starting tempo.
@@ -2290,7 +2364,7 @@ def bpm_ramp(
 
         # Ritardando over 4 bars: 120 BPM → 80 BPM
         ramp = bpm_ramp(120, 80, bars=4)
-        # Then use with render_with_bpm_map(song, ramp)
+        song.bpm_map = ramp
     """
     total_beats = bars * beats_per_bar
     return [

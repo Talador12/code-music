@@ -519,7 +519,13 @@ class Synth:
     # Track → mono array
     # ------------------------------------------------------------------
 
-    def render_track(self, track: Track, bpm: float, total_beats: float) -> FloatArray:
+    def render_track(
+        self,
+        track: Track,
+        bpm: float,
+        total_beats: float,
+        bpm_map: list[float] | None = None,
+    ) -> FloatArray:
         """Render one track to a mono float64 array."""
         preset_key = track.instrument if track.instrument in self.PRESETS else "sine"
         preset = self.PRESETS[preset_key]
@@ -538,8 +544,17 @@ class Synth:
 
         cursor = 0
         beat_idx = 0  # counts 8th-note grid steps for swing
+        cumulative_beat = 0.0
         for beat in track.beats:
-            dur_sec = beat.duration * beat_sec
+            # Use per-beat BPM from map if available
+            if bpm_map:
+                map_idx = min(int(cumulative_beat), len(bpm_map) - 1)
+                local_bpm = bpm_map[map_idx] if map_idx >= 0 else bpm
+                local_beat_sec = 60.0 / local_bpm
+            else:
+                local_beat_sec = beat_sec
+            dur_sec = beat.duration * local_beat_sec
+            cumulative_beat += beat.duration
 
             # Swing: delay every odd (2nd, 4th, ...) 8th-note step
             swing_offset = 0
@@ -661,7 +676,8 @@ class Synth:
 
         # ── Instrument tracks ──────────────────────────────────────────────
         for track in song.tracks:
-            mono = self.render_track(track, song.bpm, total_beats)
+            bmap = getattr(song, "bpm_map", None) or None
+            mono = self.render_track(track, song.bpm, total_beats, bpm_map=bmap)
             n = min(len(mono), total_samples)
             angle = (track.pan + 1) / 2 * math.pi / 2
             l_gain = math.cos(angle)

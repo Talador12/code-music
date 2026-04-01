@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v2.1.0 — 105 songs, 508 tests, tagged
+## Status: v2.2.0 — 110 songs, 528 tests, tagged
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 105 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 110 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -195,3 +195,14 @@
 - [x] `EffectsChain.to_dict()`/`from_dict()` — serialization + round-trip restore
 - [x] 27 new tests across all 4 features
 - [x] Tag v2.1.0 release
+
+## v2.2 Roadmap
+
+- [x] Wire up `bpm_ramp`: add `Song.bpm_map` field + Synth per-beat tempo rendering
+- [x] `Track.split(at_beat)` — split track into two at a given beat position
+- [x] `Track.filter(predicate)` — new track with matching beats, rests for rejected
+- [x] AGENTS.md migration: `_effects` → `effects` + EffectsChain example
+- [x] Fix `bpm_ramp`/`accelerando`/`ritardando` docstrings (remove nonexistent function refs)
+- [x] 5 new songs (110 total): tempo_drift, split_personality, filter_funk, canon_machine, accelerando_chase
+- [x] 20 new tests for bpm_map, split, filter
+- [x] Tag v2.2.0 release
