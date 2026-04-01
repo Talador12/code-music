@@ -178,6 +178,16 @@ Or from the command line:
 code-music dummy.py --import-midi my_track.mid -o my_track.wav
 ```
 
+## Live coding (instant feedback)
+
+Edit a song and hear changes immediately:
+
+```bash
+code-music songs/my_song.py --watch --play
+```
+
+Every time you save the file, it re-renders and plays automatically. No manual steps.
+
 ## Steal from an existing song
 
 The simplest way to learn: open any file in `songs/` and modify it.

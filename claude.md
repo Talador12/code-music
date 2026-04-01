@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.8.0 — 100 songs, 467 tests, tagged
+## Status: v1.9.0 — 100 songs, 467 tests, tagged
 
 ## What's built
 
@@ -170,3 +170,8 @@
 - [x] CLI `--import-midi` flag renders .mid directly to WAV
 - [x] Update docs with MIDI import usage (creators, theory, developers, README)
 - [x] Tag v1.8.0 release
+
+## v1.9 Roadmap
+
+- [x] Live coding: `--watch --play` auto-renders and plays on every file save
+- [x] Tag v1.9.0 release

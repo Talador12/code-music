@@ -107,10 +107,10 @@ def main(argv: list[str] | None = None) -> int:
     fmt_group.add_argument("--ogg", action="store_true", help="Export as OGG Vorbis (lossy)")
     fmt_group.add_argument("--flac", action="store_true", help="Export as FLAC (lossless)")
     fmt_group.add_argument("--midi", action="store_true", help="Export as MIDI (.mid)")
-    fmt_group.add_argument(
+    parser.add_argument(
         "--play",
         action="store_true",
-        help="Play immediately without saving a file (uses sounddevice or system player)",
+        help="Play immediately (combinable with --watch for live coding)",
     )
     parser.add_argument(
         "--import-midi",
@@ -161,19 +161,23 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {script} not found", file=sys.stderr)
         return 1
 
-    if args.play:
+    if args.play and not args.watch:
         print(f"Loading {script.name}...")
         return _play_once(script, args)
     elif args.watch:
-        print(f"Watching {script.name} — will re-render on save. Ctrl+C to stop.")
+        mode = "render + play" if args.play else "render"
+        print(f"Watching {script.name} ({mode}) — Ctrl+C to stop.")
         last_mtime = 0.0
         try:
             while True:
                 mtime = script.stat().st_mtime
                 if mtime != last_mtime:
                     last_mtime = mtime
-                    print(f"\n[{time.strftime('%H:%M:%S')}] Change detected — rendering ...")
-                    _render_once(script, args)
+                    print(f"\n[{time.strftime('%H:%M:%S')}] Change detected ...")
+                    if args.play:
+                        _play_once(script, args)
+                    else:
+                        _render_once(script, args)
                 time.sleep(1.0)
         except KeyboardInterrupt:
             print("\nWatch mode stopped.")
