@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.4.0+ — 80 songs, 428 tests, v1.5 in progress
+## Status: v1.5.0-rc — 85 songs, 428 tests, ready to tag
 
 ## What's built
 
@@ -32,7 +32,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 80 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 85 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -142,5 +142,5 @@
 - [x] Engine: `normalize_note_name()` + `ENHARMONICS` table for clean flat→sharp resolution
 - [x] Engine: `Track.fade_in()` / `Track.fade_out()` — beat-level velocity ramps
 - [x] Engine: `Song.arrange(sections)` — compose from named Section blocks
-- [ ] Reach 85 songs
+- [x] Reach 85 songs (5 new: arranged_journey, fade_to_dawn, flat_earth_funk, gb_waltz, eb_minor_elegy)
 - [ ] Tag v1.5.0 release
