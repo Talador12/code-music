@@ -1,12 +1,15 @@
-"""MIDI export — write a Song to a standard .mid file (no external deps).
+"""MIDI import/export — read and write standard .mid files (no external deps).
 
-Implements a minimal subset of the MIDI spec (SMF type 1) using only
+Implements a minimal subset of the MIDI spec (SMF type 0 and 1) using only
 the Python standard library. No mido, no music21 required.
 
 Usage::
 
-    from code_music.midi import export_midi
+    from code_music.midi import export_midi, import_midi
     export_midi(song, "my_song.mid")
+
+    song = import_midi("existing.mid")
+    song.bpm = 140  # re-tempo
 """
 
 from __future__ import annotations
@@ -14,7 +17,7 @@ from __future__ import annotations
 import struct
 from pathlib import Path
 
-from .engine import Chord, Note, Song, Track
+from .engine import Chord, Note, Song, Track, midi_to_note_name
 
 # ---------------------------------------------------------------------------
 # MIDI constants
@@ -284,3 +287,248 @@ def export_midi(song: Song, path: str | Path, ticks_per_beat: int = 480) -> Path
     # ── Write file ─────────────────────────────────────────────────────────
     out.write_bytes(header + tempo_track + b"".join(track_chunks))
     return out
+
+
+# ---------------------------------------------------------------------------
+# MIDI Import — parse .mid → Song
+# ---------------------------------------------------------------------------
+
+
+def _read_var_len(data: bytes, offset: int) -> tuple[int, int]:
+    """Read a MIDI variable-length quantity. Returns (value, new_offset)."""
+    value = 0
+    while True:
+        b = data[offset]
+        value = (value << 7) | (b & 0x7F)
+        offset += 1
+        if not (b & 0x80):
+            break
+    return value, offset
+
+
+def _parse_track_chunk(data: bytes, offset: int) -> tuple[list[tuple[int, bytes]], int]:
+    """Parse a single MTrk chunk into (events, new_offset).
+
+    Each event is (absolute_tick, raw_event_bytes).
+    """
+    if data[offset : offset + 4] != b"MTrk":
+        raise ValueError(f"Expected MTrk at offset {offset}")
+    length = struct.unpack(">I", data[offset + 4 : offset + 8])[0]
+    chunk_end = offset + 8 + length
+    pos = offset + 8
+
+    events: list[tuple[int, bytes]] = []
+    abs_tick = 0
+    running_status = 0
+
+    while pos < chunk_end:
+        delta, pos = _read_var_len(data, pos)
+        abs_tick += delta
+
+        byte = data[pos]
+
+        # Meta event
+        if byte == 0xFF:
+            meta_type = data[pos + 1]
+            meta_len, pos = _read_var_len(data, pos + 2)
+            meta_data = data[pos : pos + meta_len]
+            pos += meta_len
+            # Store tempo meta events for BPM extraction
+            events.append((abs_tick, bytes([0xFF, meta_type]) + meta_data))
+            continue
+
+        # SysEx
+        if byte in (0xF0, 0xF7):
+            sysex_len, pos = _read_var_len(data, pos + 1)
+            pos += sysex_len
+            continue
+
+        # Channel event
+        if byte & 0x80:
+            running_status = byte
+            pos += 1
+        else:
+            byte = running_status
+
+        msg_type = byte & 0xF0
+        if msg_type in (0x80, 0x90, 0xA0, 0xB0, 0xE0):
+            # Two data bytes
+            d1 = data[pos]
+            d2 = data[pos + 1]
+            pos += 2
+            events.append((abs_tick, bytes([byte, d1, d2])))
+        elif msg_type in (0xC0, 0xD0):
+            # One data byte
+            d1 = data[pos]
+            pos += 1
+            events.append((abs_tick, bytes([byte, d1])))
+
+    return events, chunk_end
+
+
+def _reverse_gm_program(program: int) -> str:
+    """Map a GM program number back to a code-music instrument name."""
+    # Build reverse lookup (prefer shorter/more-common names)
+    _REVERSE: dict[int, str] = {}
+    preferred = [
+        "piano",
+        "organ",
+        "strings",
+        "violin",
+        "cello",
+        "contrabass",
+        "trumpet",
+        "trombone",
+        "french_horn",
+        "tuba",
+        "flute",
+        "oboe",
+        "clarinet",
+        "bassoon",
+        "saxophone",
+        "guitar_acoustic",
+        "harp",
+        "bass",
+        "pad",
+        "sawtooth",
+        "square",
+        "sine",
+    ]
+    for name in reversed(preferred):
+        if name in GM_PROGRAMS:
+            _REVERSE[GM_PROGRAMS[name]] = name
+    for name, prog in GM_PROGRAMS.items():
+        if prog not in _REVERSE:
+            _REVERSE[prog] = name
+    return _REVERSE.get(program, "piano")
+
+
+def import_midi(
+    path: str | Path,
+    title: str | None = None,
+    instrument: str | None = None,
+) -> Song:
+    """Parse a Standard MIDI File into a Song.
+
+    Args:
+        path:       Path to a .mid or .midi file.
+        title:      Optional song title (defaults to filename stem).
+        instrument: Force all tracks to use this instrument (otherwise
+                    inferred from GM program change events).
+
+    Returns:
+        A Song with one Track per MIDI channel that contains note data.
+
+    Notes:
+        - Supports SMF type 0 (single track) and type 1 (multi-track).
+        - Tempo is extracted from the first tempo meta event.
+        - Drum channel (10 / index 9) maps to ``drums_kick`` by default.
+        - Velocity is preserved as Note.velocity (0.0–1.0).
+    """
+    data = Path(path).read_bytes()
+
+    # ── Parse header ──────────────────────────────────────────────────────
+    if data[:4] != b"MThd":
+        raise ValueError("Not a valid MIDI file (missing MThd header)")
+    _hdr_len, fmt, n_tracks, tpb = struct.unpack(">IHHH", data[4:14])
+    if fmt > 1:
+        raise ValueError(f"SMF type {fmt} is not supported (only type 0 and 1)")
+
+    # ── Parse all track chunks ────────────────────────────────────────────
+    all_events: list[list[tuple[int, bytes]]] = []
+    pos = 14
+    for _ in range(n_tracks):
+        events, pos = _parse_track_chunk(data, pos)
+        all_events.append(events)
+
+    # ── Extract tempo ─────────────────────────────────────────────────────
+    tempo_us = 500_000  # default 120 BPM
+    for track_events in all_events:
+        for _tick, ev in track_events:
+            if len(ev) >= 5 and ev[0] == 0xFF and ev[1] == 0x51:
+                tempo_us = int.from_bytes(ev[2:5], "big")
+                break
+
+    bpm = 60_000_000 / tempo_us
+
+    # ── Flatten all events into per-channel buckets ───────────────────────
+    # (absolute_tick, event_bytes)
+    channel_events: dict[int, list[tuple[int, bytes]]] = {}
+    channel_program: dict[int, int] = {}
+
+    for track_events in all_events:
+        for tick, ev in track_events:
+            if not ev or ev[0] == 0xFF:
+                continue
+            ch = ev[0] & 0x0F
+            msg_type = ev[0] & 0xF0
+
+            # Program change
+            if msg_type == 0xC0 and len(ev) >= 2:
+                channel_program[ch] = ev[1]
+                continue
+
+            # Note on / note off
+            if msg_type in (0x80, 0x90) and len(ev) >= 3:
+                channel_events.setdefault(ch, []).append((tick, ev))
+
+    # ── Convert channel events to Tracks ──────────────────────────────────
+    song_title = title or Path(path).stem.replace("_", " ").title()
+    song = Song(title=song_title, bpm=round(bpm, 1))
+
+    for ch in sorted(channel_events.keys()):
+        events = sorted(channel_events[ch], key=lambda e: e[0])
+        is_drum = ch == _DRUM_CHANNEL
+
+        if instrument:
+            inst = instrument
+        elif is_drum:
+            inst = "drums_kick"
+        else:
+            inst = _reverse_gm_program(channel_program.get(ch, 0))
+
+        track = Track(name=f"ch{ch + 1}", instrument=inst)
+
+        # Build note-on/note-off pairs
+        active: dict[int, tuple[int, float]] = {}  # pitch → (start_tick, velocity)
+        notes: list[tuple[int, int, float, float]] = []  # (start, end, pitch_midi, vel)
+
+        for tick, ev in events:
+            msg_type = ev[0] & 0xF0
+            pitch = ev[1]
+            vel = ev[2] / 127.0 if len(ev) > 2 else 0.8
+
+            if msg_type == 0x90 and ev[2] > 0:
+                active[pitch] = (tick, vel)
+            elif msg_type == 0x80 or (msg_type == 0x90 and ev[2] == 0):
+                if pitch in active:
+                    start_tick, start_vel = active.pop(pitch)
+                    notes.append((start_tick, tick, pitch, start_vel))
+
+        # Close any still-active notes at the last event tick
+        last_tick = events[-1][0] if events else 0
+        for pitch, (start_tick, vel) in active.items():
+            notes.append((start_tick, last_tick + tpb, pitch, vel))
+
+        notes.sort(key=lambda n: n[0])
+
+        # Convert to code-music Notes with rest-fill
+        cursor_ticks = 0
+        for start, end, midi_pitch, vel in notes:
+            if start > cursor_ticks:
+                gap_beats = (start - cursor_ticks) / tpb
+                if gap_beats > 0.001:
+                    track.add(Note.rest(gap_beats))
+
+            dur_beats = max(0.0625, (end - start) / tpb)
+            if is_drum:
+                name, octave = "C", 2
+            else:
+                name, octave = midi_to_note_name(midi_pitch)
+            track.add(Note(name, octave, dur_beats, velocity=vel))
+            cursor_ticks = end
+
+        if track.beats:
+            song.add_track(track)
+
+    return song

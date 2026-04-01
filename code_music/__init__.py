@@ -101,7 +101,7 @@ from .engine import (
     voice_lead,
 )
 from .export import export_flac, export_mp3, export_ogg, export_wav
-from .midi import export_midi
+from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
 from .playback import play
 from .synth import Synth
@@ -187,6 +187,7 @@ __all__ = [
     "export_ogg",
     "export_flac",
     "export_midi",
+    "import_midi",
     # notation export
     "export_lilypond",
     "export_abc",

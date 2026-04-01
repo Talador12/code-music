@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v1.7.0+ — 100 songs, 453 tests, century milestone
+## Status: v1.7.0+ — 100 songs, 467 tests, v1.8 in progress
 
 ## What's built
 
@@ -165,6 +165,8 @@
 ## v1.8 Roadmap
 
 - [x] Reach 100 songs (5 new: accordion_polka, cumbia_luna, jungle_pressure, drift_phonk, hardstyle_anthem)
-- [ ] MIDI import: parse .mid files into Song objects
-- [ ] CLI --import flag for MIDI files
+- [x] MIDI import: `import_midi()` parses .mid → Song (SMF type 0/1, zero deps)
+- [x] `midi_to_note_name()` utility in engine.py
+- [x] CLI `--import-midi` flag renders .mid directly to WAV
+- [ ] Update docs with MIDI import usage
 - [ ] Tag v1.8.0 release

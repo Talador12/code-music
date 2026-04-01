@@ -212,6 +212,21 @@ def note_name_to_midi(name: str, octave: int = 4) -> int:
     return (octave + 1) * 12 + semitone
 
 
+def midi_to_note_name(midi_num: int) -> tuple[str, int]:
+    """Convert a MIDI note number to (note_name, octave).
+
+    Example::
+
+        >>> midi_to_note_name(60)
+        ('C', 4)
+        >>> midi_to_note_name(61)
+        ('C#', 4)
+    """
+    octave = (midi_num // 12) - 1
+    semitone = midi_num % 12
+    return NOTE_NAMES[semitone], octave
+
+
 @dataclass
 class Note:
     """A single pitched note with duration and velocity.

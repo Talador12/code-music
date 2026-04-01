@@ -112,6 +112,13 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Play immediately without saving a file (uses sounddevice or system player)",
     )
+    parser.add_argument(
+        "--import-midi",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Import a .mid file as a Song (ignores script argument)",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--watch",
@@ -120,6 +127,35 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    # ── MIDI import mode ────────────────────────────────────────────────
+    if args.import_midi:
+        from .midi import import_midi
+
+        midi_path = args.import_midi.resolve()
+        if not midi_path.exists():
+            print(f"error: {midi_path} not found", file=sys.stderr)
+            return 1
+
+        print(f"Importing {midi_path.name}...")
+        song = import_midi(midi_path)
+        if args.bpm:
+            song.bpm = args.bpm
+        print(f"  Imported '{song.title}' — {len(song.tracks)} tracks, {song.bpm} BPM")
+
+        out_path = args.output or midi_path.with_suffix(".wav")
+        from .export import export_wav
+        from .synth import Synth
+
+        print(f"  Rendering '{song.title}' — {song.duration_sec:.1f}s ...")
+        t0 = time.monotonic()
+        samples = Synth(song.sample_rate).render_song(song)
+        elapsed = time.monotonic() - t0
+        print(f"  Rendered in {elapsed:.1f}s")
+        result = export_wav(samples, out_path, song.sample_rate)
+        print(f"  Exported: {result}")
+        return 0
+
+    # ── Normal script mode ────────────────────────────────────────────────
     script: Path = args.script.resolve()
     if not script.exists():
         print(f"error: {script} not found", file=sys.stderr)
