@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v8.0.0 — 155 songs, 857 tests, granular + physical modeling + Pattern language
+## Status: v9.0.0 — 160 songs, 880 tests, spectral processing + timbre analysis
 
 ## What's built
 
@@ -52,6 +52,17 @@
 - Pattern.polymeter(): layer patterns of different lengths (LCM cycling)
 - Pattern.to_notes(): convert to Note list for Track integration
 
+### Spectral Processing
+- SoundDesigner.spectral(fn): FFT-based post-processing on rendered audio
+- Built-in: spectral_freeze, spectral_shift, spectral_smear
+- Chain multiple .spectral() calls, custom lambda support
+
+### Timbre Analysis
+- SoundDesigner.analyze() -> Timbre: spectral fingerprint (centroid, bandwidth, flatness, rolloff, RMS)
+- Timbre.distance(): perceptual distance between sounds
+- Timbre.morph(): interpolate between timbres
+- Timbre.to_dict(): JSON-serializable
+
 ### Synth (80+ presets)
 - Velocity-to-timbre, Karplus-Strong physical models
 - Wobble bass, formant vowels, FM synthesis, per-note LFO filter
@@ -68,7 +79,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 155 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 160 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -475,16 +486,20 @@ techniques that only SuperCollider/CSound/Faust currently offer.
 - [ ] Bowed string model (future)
 
 ### Phase 5: Spectral Processing
-- [ ] `SoundDesigner.spectral(process_fn)` — FFT → manipulate → IFFT
-- [ ] Spectral freeze, smear, shift, stretch
-- [ ] Cross-synthesis: apply spectrum of one sound to another
-- [ ] Vocoder built on spectral processing
+- [x] `SoundDesigner.spectral(process_fn)` — FFT → manipulate → IFFT
+- [x] `spectral_freeze(amount)` — sustain spectral content (STFT-based)
+- [x] `spectral_shift(semitones)` — frequency bin shifting
+- [x] `spectral_smear(amount)` — blur spectral magnitudes
+- [x] Chain multiple .spectral() calls, custom lambda support
+- [ ] Cross-synthesis: apply spectrum of one sound to another (future)
+- [ ] Vocoder built on spectral processing (future)
 
 ### Phase 6: Timbre as Data
-- [ ] `SoundDesigner.analyze()` → spectral fingerprint dict
-- [ ] `timbre_a.distance(timbre_b)` — perceptual distance metric
-- [ ] `timbre_a.morph(timbre_b, amount=0.5)` — interpolate between timbres
-- [ ] Timbres are JSON-serializable, diffable, versionable
+- [x] `SoundDesigner.analyze()` → Timbre object with spectral fingerprint
+- [x] `timbre.distance(other)` — weighted Euclidean on normalized features
+- [x] `timbre.morph(other, amount)` — interpolate between timbres
+- [x] `timbre.to_dict()` — JSON-serializable
+- [x] Features: centroid, bandwidth, flatness, rolloff, RMS
 
 ## v8.0 Roadmap — Pattern Language (TidalCycles expressiveness in Python)
 
@@ -770,3 +785,61 @@ The human stays in control; AI suggests, fills gaps, and extends ideas.
 - [ ] `examples/16_ai_assist.py` — AI-assisted composition tutorial
 - [ ] 5 songs composed with AI assistance (185 total)
 - [ ] Tag v18.0.0 release
+
+## v19.0 Roadmap — Microtonal & Alternative Tuning
+
+Break free from 12-tone equal temperament. Support any tuning system —
+just intonation, quarter-tones, Bohlen-Pierce, historical temperaments,
+and user-defined scales.
+
+### Phase 1: Tuning System Core
+- [ ] `Tuning` class: define pitch-to-frequency mapping
+- [ ] Built-in tunings: 12-TET (default), just intonation, Pythagorean, meantone
+- [ ] `Tuning.from_cents(cent_list)` — build from cent values
+- [ ] `Tuning.from_ratios(ratio_list)` — build from frequency ratios
+- [ ] `Song(tuning=Tuning.just_intonation())` — song-level tuning override
+
+### Phase 2: Microtonal Scales
+- [ ] Quarter-tone scales (24-TET)
+- [ ] Bohlen-Pierce (13 steps in a tritave)
+- [ ] Gamelan slendro/pelog (5/7 unequal steps)
+- [ ] `scale("C", "bohlen_pierce", tuning=Tuning.bp13())` — tuning-aware scale()
+- [ ] Note names extend: `C4+50c` (50 cents sharp), `D4-25c` (25 cents flat)
+
+### Phase 3: Historical Temperaments
+- [ ] Well temperament (Werckmeister III, Kirnberger III)
+- [ ] Equal temperament variants (19-TET, 31-TET, 53-TET)
+- [ ] A/B comparison: render same melody in two tunings
+
+### Phase 4: Tests + docs + songs
+- [ ] `examples/17_microtonal.py` — tuning systems tutorial
+- [ ] 5 microtonal songs (190 total)
+- [ ] Tag v19.0.0 release
+
+## v20.0 Roadmap — Song Structure Intelligence
+
+Understand and manipulate song structure at a higher level than individual
+notes — verses, choruses, builds, drops, transitions.
+
+### Phase 1: Structure Primitives
+- [ ] `Verse`, `Chorus`, `Bridge`, `Intro`, `Outro` — named Section subclasses
+- [ ] `Song.structure` property: ordered list of structural sections
+- [ ] Auto-detect structure from existing songs via repetition analysis
+- [ ] `Song.map()` → ASCII art structure visualization
+
+### Phase 2: Transition System
+- [ ] `Transition(from_section, to_section, type)` — fill, riser, drop, crossfade
+- [ ] Built-in transitions: drum fill, filter sweep, reverse cymbal, silence gap
+- [ ] `Song.auto_transition()` — add transitions between all sections
+- [ ] `SoundDesigner`-based transition sounds (risers, impacts, sweeps)
+
+### Phase 3: Arrangement Templates
+- [ ] `ArrangementTemplate` — predefined structures (AABA, ABAB, verse-chorus-bridge)
+- [ ] `Song.apply_template(template)` — restructure song to match template
+- [ ] Genre-specific templates: pop, EDM (build-drop), jazz (head-solo-head)
+- [ ] `code-music arrange song.py --template edm_drop` CLI
+
+### Phase 4: Tests + docs + songs
+- [ ] `examples/18_structure.py` — song structure and arrangement tutorial
+- [ ] 5 structurally complex songs (195 total)
+- [ ] Tag v20.0.0 release

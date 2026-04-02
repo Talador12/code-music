@@ -295,6 +295,15 @@ guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998)
 flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97)
 ```
 
+## Spectral effects — otherworldly sound manipulation
+
+```python
+from code_music.sound_design import spectral_freeze, spectral_shift, spectral_smear
+
+frozen = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.85))
+shifted = SoundDesigner("up").add_osc("saw").spectral(spectral_shift(7.0))
+```
+
 ## Chord types
 
 ```

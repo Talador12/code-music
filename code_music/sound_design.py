@@ -22,6 +22,8 @@ Example::
 
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 from numpy.typing import NDArray
 
@@ -456,6 +458,7 @@ class SoundDesigner:
         self._wavetable_layers: list[_WavetableLayer] = []
         self._granular_layers: list[_GranularSpec] = []
         self._physical_layers: list[_PhysicalModelSpec] = []
+        self._spectral_procs: list = []  # list of callables (audio, sr) -> audio
         self._env: tuple[float, float, float, float] = (0.01, 0.1, 0.8, 0.3)
         self._filter: _FilterSpec | None = None
         self._lfos: list[_LFOSpec] = []
@@ -629,6 +632,27 @@ class SoundDesigner:
         if model_type not in _PHYSICAL_MODELS:
             raise ValueError(f"Unknown model {model_type!r}. Choose: {sorted(_PHYSICAL_MODELS)}")
         self._physical_layers.append(_PhysicalModelSpec(model_type, dict(kwargs), volume))
+        return self
+
+    # -- Spectral processing -----------------------------------------------
+
+    def spectral(self, process_fn: "Callable") -> "SoundDesigner":
+        """Add a spectral processing step (FFT → manipulate → IFFT).
+
+        The process_fn receives (audio_array, sample_rate) and must return
+        a float64 array of the same length.
+
+        Use the built-in spectral functions or write your own:
+        - ``spectral_freeze(amount)`` — freeze spectral content (sustain)
+        - ``spectral_shift(semitones)`` — shift spectrum up/down
+        - ``spectral_smear(amount)`` — blur spectral content across bins
+
+        Example::
+
+            from code_music.sound_design import spectral_freeze
+            sd = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.8))
+        """
+        self._spectral_procs.append(process_fn)
         return self
 
     # -- Envelope ----------------------------------------------------------
@@ -932,6 +956,10 @@ class SoundDesigner:
                 b, a = _biquad_coeffs(self._filter.filter_type, cutoff, sr, self._filter.resonance)
                 mix = _apply_biquad(mix, b, a)
 
+        # -- Spectral processing -------------------------------------------
+        for proc in self._spectral_procs:
+            mix = proc(mix, sr)
+
         # -- ADSR envelope -------------------------------------------------
         env = _adsr(n, sr, *self._env)
         mix *= env
@@ -945,6 +973,21 @@ class SoundDesigner:
         return np.clip(mix, -1.0, 1.0)
 
     # -- Convenience -------------------------------------------------------
+
+    def analyze(self, freq: float = 440.0, duration: float = 1.0, sr: int = 22050) -> "Timbre":
+        """Analyze the timbre of this sound design.
+
+        Renders the sound and computes spectral features: centroid, bandwidth,
+        flatness, rolloff, and RMS energy. Returns a ``Timbre`` object for
+        comparison and morphing.
+
+        Example::
+
+            t = SoundDesigner("saw").add_osc("sawtooth").analyze()
+            print(t)  # Timbre(centroid=2200Hz, bw=1800Hz, ...)
+        """
+        audio = self.render(freq, duration, sr)
+        return _analyze_audio(audio, sr)
 
     def preview(self, freq: float = 440.0, duration: float = 2.0, sr: int = 22050) -> None:
         """Render at the given frequency and play immediately."""
@@ -1125,6 +1168,8 @@ class SoundDesigner:
             parts.append(f"granular={len(self._granular_layers)}")
         if self._physical_layers:
             parts.append(f"physical={len(self._physical_layers)}")
+        if self._spectral_procs:
+            parts.append(f"spectral={len(self._spectral_procs)}")
         if self._filter:
             parts.append(f"filter={self._filter.filter_type}")
         parts.append(f"lfos={len(self._lfos)}")
@@ -1253,6 +1298,211 @@ wt_morph_pad = (
     .filter("lowpass", cutoff=2000, resonance=0.5)
     .lfo("filter_cutoff", rate=0.2, depth=0.4)
 )
+
+# ---------------------------------------------------------------------------
+# Spectral processing functions (for use with SoundDesigner.spectral())
+# ---------------------------------------------------------------------------
+
+
+def spectral_freeze(amount: float = 0.8) -> "Callable":
+    """Create a spectral freeze function — sustains spectral content.
+
+    Higher amount = more frozen (static, drone-like).
+    """
+
+    def _process(audio: FloatArray, sr: int) -> FloatArray:
+        hop = 512
+        win = 2048
+        n = len(audio)
+        if n < win:
+            return audio
+        # STFT
+        num_frames = (n - win) // hop + 1
+        frames = np.zeros((num_frames, win))
+        for i in range(num_frames):
+            start = i * hop
+            frames[i] = audio[start : start + win] * np.hanning(win)
+        spectra = np.fft.rfft(frames, axis=1)
+        magnitudes = np.abs(spectra)
+        phases = np.angle(spectra)
+        # Freeze: blend each frame's magnitude with the average
+        avg_mag = np.mean(magnitudes, axis=0)
+        for i in range(num_frames):
+            magnitudes[i] = magnitudes[i] * (1 - amount) + avg_mag * amount
+        # ISTFT
+        spectra = magnitudes * np.exp(1j * phases)
+        frames = np.fft.irfft(spectra, n=win, axis=1)
+        out = np.zeros(n)
+        for i in range(num_frames):
+            start = i * hop
+            end = min(start + win, n)
+            out[start:end] += frames[i][: end - start]
+        peak = np.max(np.abs(out))
+        if peak > 0:
+            out /= peak
+        return out
+
+    return _process
+
+
+def spectral_shift(semitones: float = 7.0) -> "Callable":
+    """Create a spectral shift function — shifts all frequencies up/down.
+
+    Positive semitones = shift up, negative = shift down.
+    """
+
+    def _process(audio: FloatArray, sr: int) -> FloatArray:
+        ratio = 2.0 ** (semitones / 12.0)
+        n = len(audio)
+        spectrum = np.fft.rfft(audio)
+        shifted = np.zeros_like(spectrum)
+        for i in range(len(spectrum)):
+            new_i = int(i * ratio)
+            if 0 <= new_i < len(shifted):
+                shifted[new_i] += spectrum[i]
+        out = np.fft.irfft(shifted, n=n)
+        peak = np.max(np.abs(out))
+        if peak > 0:
+            out /= peak
+        return out
+
+    return _process
+
+
+def spectral_smear(amount: float = 0.5) -> "Callable":
+    """Create a spectral smear function — blurs spectral content across bins.
+
+    Creates ghostly, diffuse textures.
+    """
+
+    def _process(audio: FloatArray, sr: int) -> FloatArray:
+        spectrum = np.fft.rfft(audio)
+        magnitudes = np.abs(spectrum)
+        phases = np.angle(spectrum)
+        # Gaussian-like blur on magnitudes
+        kernel_size = max(1, int(amount * 50))
+        kernel = np.ones(kernel_size) / kernel_size
+        smeared = np.convolve(magnitudes, kernel, mode="same")
+        out = np.fft.irfft(smeared * np.exp(1j * phases), n=len(audio))
+        peak = np.max(np.abs(out))
+        if peak > 0:
+            out /= peak
+        return out
+
+    return _process
+
+
+# ---------------------------------------------------------------------------
+# Timbre analysis (v9.0)
+# ---------------------------------------------------------------------------
+
+
+class Timbre:
+    """Spectral fingerprint of a rendered sound.
+
+    Captures the frequency content of a SoundDesigner's output for comparison,
+    distance measurement, and interpolation.
+
+    Example::
+
+        t1 = SoundDesigner("saw").add_osc("sawtooth").analyze()
+        t2 = SoundDesigner("sine").add_osc("sine").analyze()
+        print(t1.distance(t2))       # perceptual distance
+        hybrid = t1.morph(t2, 0.5)   # interpolated timbre
+    """
+
+    def __init__(
+        self,
+        centroid: float,
+        bandwidth: float,
+        flatness: float,
+        rolloff: float,
+        rms: float,
+        spectrum: FloatArray,
+    ) -> None:
+        self.centroid = centroid  # spectral centroid in Hz
+        self.bandwidth = bandwidth  # spectral bandwidth in Hz
+        self.flatness = flatness  # 0 = tonal, 1 = noisy
+        self.rolloff = rolloff  # frequency below which 85% of energy lies
+        self.rms = rms  # root mean square energy
+        self.spectrum = spectrum  # magnitude spectrum (normalized)
+
+    def distance(self, other: "Timbre") -> float:
+        """Perceptual distance between two timbres (0 = identical)."""
+        # Weighted Euclidean on normalized features
+        c_diff = (self.centroid - other.centroid) / 10000.0
+        b_diff = (self.bandwidth - other.bandwidth) / 5000.0
+        f_diff = self.flatness - other.flatness
+        r_diff = (self.rolloff - other.rolloff) / 10000.0
+        e_diff = self.rms - other.rms
+        return float(np.sqrt(c_diff**2 + b_diff**2 + f_diff**2 + r_diff**2 + e_diff**2))
+
+    def morph(self, other: "Timbre", amount: float = 0.5) -> "Timbre":
+        """Interpolate between two timbres."""
+        a = 1.0 - amount
+        b = amount
+        min_len = min(len(self.spectrum), len(other.spectrum))
+        return Timbre(
+            centroid=self.centroid * a + other.centroid * b,
+            bandwidth=self.bandwidth * a + other.bandwidth * b,
+            flatness=self.flatness * a + other.flatness * b,
+            rolloff=self.rolloff * a + other.rolloff * b,
+            rms=self.rms * a + other.rms * b,
+            spectrum=self.spectrum[:min_len] * a + other.spectrum[:min_len] * b,
+        )
+
+    def to_dict(self) -> dict:
+        """Serialize timbre fingerprint."""
+        return {
+            "centroid": self.centroid,
+            "bandwidth": self.bandwidth,
+            "flatness": self.flatness,
+            "rolloff": self.rolloff,
+            "rms": self.rms,
+        }
+
+    def __repr__(self) -> str:
+        return (
+            f"Timbre(centroid={self.centroid:.0f}Hz, bw={self.bandwidth:.0f}Hz, "
+            f"flat={self.flatness:.3f}, rolloff={self.rolloff:.0f}Hz, rms={self.rms:.3f})"
+        )
+
+
+def _analyze_audio(audio: FloatArray, sr: int) -> "Timbre":
+    """Compute spectral features from a rendered audio array."""
+    spectrum = np.abs(np.fft.rfft(audio))
+    freqs = np.fft.rfftfreq(len(audio), d=1.0 / sr)
+
+    # Normalize spectrum
+    total = np.sum(spectrum)
+    if total == 0:
+        return Timbre(0.0, 0.0, 0.0, 0.0, 0.0, spectrum)
+
+    norm = spectrum / total
+
+    # Spectral centroid
+    centroid = float(np.sum(freqs * norm))
+
+    # Spectral bandwidth
+    bandwidth = float(np.sqrt(np.sum(((freqs - centroid) ** 2) * norm)))
+
+    # Spectral flatness (geometric mean / arithmetic mean of magnitudes)
+    eps = 1e-10
+    log_spec = np.log(spectrum + eps)
+    geo_mean = np.exp(np.mean(log_spec))
+    arith_mean = np.mean(spectrum)
+    flatness = float(geo_mean / (arith_mean + eps))
+
+    # Spectral rolloff (85%)
+    cumsum = np.cumsum(spectrum)
+    rolloff_idx = np.searchsorted(cumsum, 0.85 * total)
+    rolloff = float(freqs[min(rolloff_idx, len(freqs) - 1)])
+
+    # RMS
+    rms = float(np.sqrt(np.mean(audio**2)))
+
+    return Timbre(centroid, bandwidth, flatness, rolloff, rms, spectrum / (np.max(spectrum) + eps))
+
 
 # ---------------------------------------------------------------------------
 # Granular Presets

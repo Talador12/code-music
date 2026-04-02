@@ -241,6 +241,35 @@ tr.extend(p.to_notes(duration=0.5))     # convert to Notes
 Mini-notation: `~` = rest, `*N` = repeat, `[a b]` = subdivide, `?` = 50% chance.
 Transforms: `reverse`, `rotate`, `fast`, `slow`, `degrade`, `every`, `choose`, `cat`.
 
+## Spectral processing
+
+FFT-based manipulation applied during SoundDesigner.render():
+
+```python
+from code_music.sound_design import spectral_freeze, spectral_shift, spectral_smear
+
+sd = SoundDesigner("x").add_osc("sawtooth").spectral(spectral_freeze(0.85))
+sd = SoundDesigner("x").add_osc("saw").spectral(spectral_shift(7.0))      # shift up 7 semitones
+sd = SoundDesigner("x").add_osc("sq").spectral(spectral_smear(0.6))       # blur frequency bins
+sd.spectral(lambda audio, sr: custom_fft_process(audio))                   # custom fn
+```
+
+Chain multiple `.spectral()` calls. Applied after oscillator mix, before ADSR envelope.
+
+## Timbre analysis
+
+Spectral fingerprinting for sound comparison and morphing:
+
+```python
+t = SoundDesigner("saw").add_osc("sawtooth").analyze()  # -> Timbre object
+t.centroid     # spectral centroid (brightness) in Hz
+t.bandwidth    # spectral spread in Hz
+t.flatness     # 0 = tonal, 1 = noisy
+t.distance(t2) # perceptual distance
+t.morph(t2, 0.5) # interpolate between timbres
+t.to_dict()    # JSON-serializable
+```
+
 ## Conventions
 
 - One `song` variable per file in `songs/`.

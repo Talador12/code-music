@@ -115,7 +115,7 @@ from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
 from .pattern import Pattern
 from .playback import play
-from .sound_design import SoundDesigner, Wavetable
+from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -171,6 +171,7 @@ __all__ = [
     "euclid",
     "Pattern",
     "SoundDesigner",
+    "Timbre",
     "Wavetable",
     "detect_key",
     "generate_melody",

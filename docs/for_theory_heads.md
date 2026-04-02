@@ -448,6 +448,44 @@ Pattern.polymeter(Pattern("C4 E4 G4"), Pattern("A3 B3"))  # LCM = 6
 tr.extend(p.to_notes(duration=0.5, default_octave=4))
 ```
 
+## Spectral processing (v9.0+)
+
+```python
+from code_music.sound_design import spectral_freeze, spectral_shift, spectral_smear
+
+# Freeze spectral content (drone/sustain effect)
+sd = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.85))
+
+# Shift all frequencies up/down by semitones
+sd = SoundDesigner("shifted").add_osc("saw").spectral(spectral_shift(7.0))
+
+# Blur spectral bins (ghostly, diffuse texture)
+sd = SoundDesigner("ghost").add_osc("square").spectral(spectral_smear(0.6))
+
+# Chain multiple spectral processors
+sd = SoundDesigner("x").add_osc("saw").spectral(spectral_freeze(0.7)).spectral(spectral_smear(0.3))
+
+# Custom processor: (audio, sr) -> audio
+sd.spectral(lambda audio, sr: np.fft.irfft(np.fft.rfft(audio)[::-1], n=len(audio)))
+```
+
+## Timbre analysis (v9.0+)
+
+```python
+from code_music import Timbre
+
+t1 = SoundDesigner("saw").add_osc("sawtooth").analyze()
+t2 = SoundDesigner("sine").add_osc("sine").analyze()
+
+print(t1)              # Timbre(centroid=4009Hz, bw=3290Hz, flat=0.326, ...)
+t1.distance(t2)        # perceptual distance (0 = identical)
+hybrid = t1.morph(t2, 0.5)  # interpolated fingerprint
+t1.to_dict()           # JSON-serializable
+```
+
+Features: centroid (brightness), bandwidth (spread), flatness (tonal vs noisy),
+rolloff (energy distribution), RMS (loudness).
+
 ## Voice synthesis
 
 ```python

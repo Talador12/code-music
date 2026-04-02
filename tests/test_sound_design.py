@@ -588,3 +588,138 @@ class TestSoundDesignerRepr:
     def test_repr_shows_physical(self):
         sd = SoundDesigner("p").physical_model("modal")
         assert "physical=1" in repr(sd)
+
+    def test_repr_shows_spectral(self):
+        from code_music.sound_design import spectral_freeze
+
+        sd = SoundDesigner("s").spectral(spectral_freeze(0.5))
+        assert "spectral=1" in repr(sd)
+
+
+class TestSpectralProcessing:
+    def test_spectral_freeze_renders(self):
+        from code_music.sound_design import spectral_freeze
+
+        sd = SoundDesigner("test").add_osc("sawtooth").spectral(spectral_freeze(0.8))
+        audio = sd.render(440.0, 0.5, SR)
+        assert len(audio) > 0
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_spectral_shift_renders(self):
+        from code_music.sound_design import spectral_shift
+
+        sd = SoundDesigner("test").add_osc("sawtooth").spectral(spectral_shift(7.0))
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_spectral_shift_down(self):
+        from code_music.sound_design import spectral_shift
+
+        sd = SoundDesigner("test").add_osc("sawtooth").spectral(spectral_shift(-5.0))
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_spectral_smear_renders(self):
+        from code_music.sound_design import spectral_smear
+
+        sd = SoundDesigner("test").add_osc("sawtooth").spectral(spectral_smear(0.5))
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_spectral_chain(self):
+        from code_music.sound_design import spectral_freeze, spectral_smear
+
+        sd = (
+            SoundDesigner("test")
+            .add_osc("sawtooth")
+            .spectral(spectral_freeze(0.5))
+            .spectral(spectral_smear(0.3))
+        )
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_spectral_custom_fn(self):
+        def reverse_spectrum(audio, sr):
+            spec = np.fft.rfft(audio)
+            spec = spec[::-1]
+            out = np.fft.irfft(spec, n=len(audio))
+            return out
+
+        sd = SoundDesigner("test").add_osc("sine").spectral(reverse_spectrum)
+        audio = sd.render(440.0, 0.5, SR)
+        assert len(audio) > 0
+
+    def test_spectral_in_song(self):
+        from code_music.sound_design import spectral_freeze
+
+        sd = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.7))
+        song = Song(title="Spectral Test", bpm=120, sample_rate=SR)
+        song.register_instrument("frozen", sd)
+        tr = song.add_track(Track(instrument="frozen"))
+        tr.add(Note("C", 4, 2.0))
+        audio = song.render()
+        assert np.max(np.abs(audio)) > 0.0
+
+
+class TestTimbreAnalysis:
+    def test_analyze_returns_timbre(self):
+        from code_music import Timbre
+
+        sd = SoundDesigner("test").add_osc("sawtooth")
+        t = sd.analyze()
+        assert isinstance(t, Timbre)
+        assert t.centroid > 0
+        assert t.bandwidth > 0
+        assert 0 <= t.flatness <= 1
+        assert t.rms > 0
+
+    def test_different_waves_different_timbres(self):
+        t_saw = SoundDesigner("saw").add_osc("sawtooth").analyze()
+        t_sine = SoundDesigner("sine").add_osc("sine").analyze()
+        # Sawtooth should have higher centroid (brighter)
+        assert t_saw.centroid > t_sine.centroid
+        # Distance should be > 0
+        assert t_saw.distance(t_sine) > 0.1
+
+    def test_timbre_distance_self_is_zero(self):
+        t = SoundDesigner("test").add_osc("sine").analyze()
+        assert t.distance(t) < 0.001
+
+    def test_timbre_morph(self):
+        t1 = SoundDesigner("saw").add_osc("sawtooth").analyze()
+        t2 = SoundDesigner("sine").add_osc("sine").analyze()
+        hybrid = t1.morph(t2, 0.5)
+        # Hybrid centroid should be between the two
+        assert min(t1.centroid, t2.centroid) <= hybrid.centroid <= max(t1.centroid, t2.centroid)
+
+    def test_timbre_morph_extremes(self):
+        t1 = SoundDesigner("saw").add_osc("sawtooth").analyze()
+        t2 = SoundDesigner("sine").add_osc("sine").analyze()
+        full_t1 = t1.morph(t2, 0.0)
+        assert abs(full_t1.centroid - t1.centroid) < 1.0
+
+    def test_timbre_to_dict(self):
+        t = SoundDesigner("test").add_osc("sine").analyze()
+        d = t.to_dict()
+        assert "centroid" in d
+        assert "bandwidth" in d
+        assert "flatness" in d
+        assert "rolloff" in d
+        assert "rms" in d
+
+    def test_timbre_repr(self):
+        t = SoundDesigner("test").add_osc("sine").analyze()
+        r = repr(t)
+        assert "Timbre" in r
+        assert "centroid" in r
+
+    def test_analyze_fm_instrument(self):
+        sd = SoundDesigner("fm").fm("sine", mod_ratio=2.0, mod_index=5.0)
+        t = sd.analyze()
+        assert t.centroid > 0
+
+    def test_analyze_noise_instrument(self):
+        sd = SoundDesigner("noise").noise("white", volume=1.0, seed=42)
+        t = sd.analyze()
+        # White noise should be flat (high flatness)
+        assert t.flatness > 0.1
