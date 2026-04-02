@@ -48,6 +48,8 @@
           <option value="chords">Chords + Scale</option>
           <option value="effects">Effects Chain</option>
           <option value="arrangement">Arrangement</option>
+          <option value="generative">Generative (AI Composer)</option>
+          <option value="analysis">Key Detection</option>
         </select>
         <button id="run" disabled>Run &amp; Play</button>
       </div>
@@ -132,6 +134,37 @@ song.arrange(
     volumes={"pad": 0.35, "lead": 0.55},
 )
 song.effects = {"pad": EffectsChain().add(reverb, room_size=0.6, wet=0.3)}
+`,
+      generative: `from code_music import generate_song
+
+# Generate a complete multi-track song from a genre template.
+# Available: lo_fi, jazz, ambient, edm, rock, classical, funk, hip_hop
+# Change the seed for a different song. Same seed = same song.
+
+song = generate_song(
+    genre="jazz",       # try different genres!
+    bars=8,
+    seed=42,            # change this for a new composition
+    sample_rate=22050,
+)
+`,
+      analysis: `from code_music import Song, Track, Note, Chord, detect_key, generate_song
+
+# Build a song in G major
+song = Song(title="Key Detection", bpm=120, sample_rate=22050)
+pad = song.add_track(Track(name="pad", instrument="pad", volume=0.4))
+pad.add(Chord("G", "maj", 3, duration=4.0))
+pad.add(Chord("C", "maj", 3, duration=4.0))
+pad.add(Chord("D", "maj", 3, duration=4.0))
+pad.add(Chord("G", "maj", 3, duration=4.0))
+
+lead = song.add_track(Track(name="lead", instrument="piano", volume=0.6))
+for n in ["G", "A", "B", "D", "E", "D", "B", "G"]:
+    lead.add(Note(n, 5, 1.0))
+
+# Detect its key using Krumhansl-Kessler analysis
+root, mode, conf = detect_key(song)
+print(f"Detected: {root} {mode} ({conf:.0%} confidence)")
 `,
     };
 

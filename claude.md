@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v5.0.0 — 140 songs, 734 tests, generative + analysis, tagged
+## Status: v5.1.0 — 140 songs, 736 tests, generative + analysis + playground examples, tagged
 
 ## What's built
 
@@ -345,3 +345,14 @@
 - [x] CLI `--random [genre]`: generate and play a random song on the fly
 - [x] 15 new tests (generate all genres, determinism, render, key detection C/Am/G/chords/empty/generated, CLI genre error)
 - [x] Tag v5.0.0 release
+
+## v5.1 Roadmap — Surface v5 Features Everywhere
+
+- [x] Playground: added "Generative (AI Composer)" + "Key Detection" to examples dropdown
+- [x] `examples/09_generative.py` — generate_song() tutorial with genre/seed/bars docs
+- [x] `examples/10_analysis.py` — detect_key() tutorial with manual + generated songs
+- [x] README: added generate_song + detect_key + --random to quick-start code blocks
+- [x] README: updated examples table (now 10 entries)
+- [x] Landing page: updated version + description to mention "AI composer"
+- [x] 2 new example smoke tests
+- [x] Tag v5.1.0 release

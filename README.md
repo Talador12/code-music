@@ -100,6 +100,22 @@ code-music songs/my_wip.py --watch --play
 
 # Import and render a MIDI file
 code-music dummy.py --import-midi my_track.mid -o remix.wav
+
+# Generate a random song and play it (no script needed)
+code-music --random
+code-music --random jazz
+```
+
+```python
+# Generate a complete song from a genre template
+from code_music import generate_song, detect_key, play
+
+song = generate_song("lo_fi", bars=16, seed=42)
+play(song)
+
+# Analyze any song's key
+root, mode, conf = detect_key(song)
+print(f"{root} {mode} ({conf:.0%})")
 ```
 
 ## Learn by example
@@ -116,9 +132,12 @@ The `examples/` directory walks through the entire API step by step:
 | 06 | `midi_roundtrip.py` | Export to MIDI, import back, remix |
 | 07 | `json_save_load.py` | Song.export_json / Song.load_json |
 | 08 | `live_coding.py` | --watch --play for instant feedback |
+| 09 | `generative.py` | generate_song() — full AI-composed songs |
+| 10 | `analysis.py` | detect_key() — Krumhansl-Kessler key analysis |
 
 ```bash
 code-music examples/01_hello_world.py --play    # start here
+code-music --random jazz                        # or just generate one
 ```
 
 ## Export to Spotify
