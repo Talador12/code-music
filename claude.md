@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v5.1.0 — 140 songs, 736 tests, generative + analysis + playground examples, tagged
+## Status: v5.1.0 — 140 songs, 736 tests, v6.0 sound design roadmap planned
 
 ## What's built
 
@@ -356,3 +356,49 @@
 - [x] Landing page: updated version + description to mention "AI composer"
 - [x] 2 new example smoke tests
 - [x] Tag v5.1.0 release
+
+## v6.0 Roadmap — Custom Sound Design (from scratch, zero deps)
+
+Design your own instruments from raw oscillators, noise, filters, and envelopes.
+No WAV files, no external libraries — pure numpy synthesis. Then use them at
+any pitch in any song, just like built-in presets.
+
+### Phase 1: SoundDesigner class — build sounds from primitives
+- [ ] `SoundDesigner` class in `code_music/sound_design.py`
+- [ ] Oscillator layer: `osc(wave, freq, duration)` — sine, saw, square, triangle, noise
+- [ ] Multi-oscillator stacking: `add_osc(wave, detune_cents, volume)` — layer oscillators with detuning
+- [ ] ADSR envelope: `envelope(attack, decay, sustain, release)` — per-layer or master
+- [ ] Filter: `filter(type, cutoff, resonance)` — lowpass, highpass, bandpass built-in (scipy-free, biquad)
+- [ ] LFO modulation: `lfo(target, rate, depth)` — modulate pitch, filter cutoff, or volume
+- [ ] Noise generator: `noise(type)` — white, pink, brown noise layers
+- [ ] `render(freq, duration, sr)` → mono float64 array — renders the designed sound at any pitch
+
+### Phase 2: Register as instrument — use in any song
+- [ ] `Synth.register(name, sound_designer)` — registers a SoundDesigner as a playable instrument
+- [ ] Registered instruments work with `Track(instrument="my_kick")` — same API as built-in presets
+- [ ] Pitch follows Note frequency automatically (oscillator ratios preserved, not absolute freqs)
+- [ ] `Song.register_instrument(name, designer)` — song-level registration for portability
+
+### Phase 3: Preset library — built-in designed sounds
+- [ ] Design 5+ sounds using SoundDesigner that aren't possible with current presets:
+  - Supersaw (8-voice detuned sawtooth stack)
+  - 808 sub (pitch-drop sine + saturation + long release)
+  - Metallic hit (inharmonic partials + noise burst)
+  - Vocal pad (formant-filtered multi-osc)
+  - Plucked string (Karplus-Strong from noise impulse, no hardcoded preset)
+- [ ] Ship as `code_music.sound_design.presets` — importable, tweakable
+
+### Phase 4: Export / reuse
+- [ ] `SoundDesigner.to_dict()` / `from_dict()` — serialize designs to JSON
+- [ ] `SoundDesigner.to_wav(path, freq, duration)` — render and save as WAV for use in SampleTrack
+- [ ] `SoundDesigner.preview(freq, duration)` — render + play immediately
+
+### Phase 5: Tests + examples + docs
+- [ ] Tests: render at multiple pitches, register + play in Song, serialization round-trip
+- [ ] `examples/11_sound_design.py` — tutorial: build a supersaw from scratch, use in a song
+- [ ] Playground: add "Sound Design" example to dropdown
+- [ ] Update for_creators.md and for_theory_heads.md with sound design section
+
+### Phase 6: Songs showcasing custom sounds
+- [ ] 5 songs that define their own instruments via SoundDesigner (no built-in presets)
+- [ ] Tag v6.0.0 release
