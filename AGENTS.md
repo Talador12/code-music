@@ -32,6 +32,7 @@ code_music/         Python package
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
   sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
   pattern.py        Pattern — mini-notation, transforms, polymeter
+  automation.py     Automation curves, ModMatrix, song_overlay/append/extract
   mastering.py      LUFS metering, true peak limiting, dithering, stereo analysis
   export.py         export_wav / export_flac / export_mp3 / export_ogg
   cli.py            code-music <script.py> [--wav|--flac|--mp3|--ogg] [-o path]
@@ -269,6 +270,28 @@ t.flatness     # 0 = tonal, 1 = noisy
 t.distance(t2) # perceptual distance
 t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
+```
+
+## Automation & modulation
+
+Parameter curves and modulation routing in `code_music/automation.py`:
+
+```python
+from code_music.automation import Automation, ModMatrix, song_overlay, song_append, song_extract
+
+# Keyframed curves (linear, exponential, smoothstep)
+vol = Automation([(0, 0.0), (4, 0.8), (12, 0.3)])
+values = vol.sample(bpm=120, sr=44100, duration_beats=16)
+
+# Modulation matrix (LFO, random, envelope sources)
+mm = ModMatrix()
+mm.connect("lfo1", "pad.volume", amount=0.3, rate=0.5)
+signal = mm.generate_mod_signal("lfo1", n, sr, rate=0.5)
+
+# Song composition
+song_overlay(base, other, at_beat=4.0)       # overlay tracks at offset
+combined = song_append(a, b)                  # concatenate songs
+stems = song_extract(song, ["kick", "lead"])  # extract tracks
 ```
 
 ## Mastering pipeline

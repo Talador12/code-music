@@ -486,6 +486,36 @@ t1.to_dict()           # JSON-serializable
 Features: centroid (brightness), bandwidth (spread), flatness (tonal vs noisy),
 rolloff (energy distribution), RMS (loudness).
 
+## Automation & modulation (v11.0+)
+
+```python
+from code_music.automation import Automation, ModMatrix
+
+# Keyframed parameter curves with interpolation
+vol = Automation([(0, 0.0), (4, 0.8), (12, 0.8), (16, 0.0)])
+vol.value_at(8)                    # interpolated value at beat 8
+values = vol.sample(bpm=120, sr=44100, duration_beats=16)  # per-sample array
+
+# Modes: 'linear' (default), 'exponential', 'smoothstep'
+smooth = Automation([(0, 0.0), (8, 1.0)], mode="smoothstep")
+
+# Modulation matrix
+mm = ModMatrix()
+mm.connect("lfo1", "pad.volume", amount=0.3, rate=0.5)
+mm.connect("random", "lead.pan", amount=0.2)
+signal = mm.generate_mod_signal("lfo1", n_samples, sr, rate=0.5)
+```
+
+## Song composition utilities (v11.0+)
+
+```python
+from code_music.automation import song_overlay, song_append, song_extract
+
+song_overlay(base, other, at_beat=4.0)   # drop tracks at offset
+combined = song_append(section_a, section_b)  # concatenate end-to-end
+stems = song_extract(song, ["kick", "lead"])  # pull specific tracks
+```
+
 ## Mastering pipeline (v10.0+)
 
 ```python

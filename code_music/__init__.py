@@ -7,6 +7,7 @@ try:
 except PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
+from .automation import Automation, ModMatrix, song_append, song_extract, song_overlay
 from .effects import (
     EffectsChain,
     autotune,
@@ -209,6 +210,12 @@ __all__ = [
     "eq",
     # synth
     "Synth",
+    # automation
+    "Automation",
+    "ModMatrix",
+    "song_overlay",
+    "song_append",
+    "song_extract",
     # mastering
     "measure_lufs",
     "normalize_lufs",

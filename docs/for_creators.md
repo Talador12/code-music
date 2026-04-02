@@ -304,6 +304,25 @@ frozen = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.
 shifted = SoundDesigner("up").add_osc("saw").spectral(spectral_shift(7.0))
 ```
 
+## Automation — animate parameters over time
+
+```python
+from code_music.automation import Automation
+
+vol = Automation([(0, 0.0), (4, 0.8), (12, 0.8), (16, 0.0)])  # fade in/out
+print(vol.value_at(8))  # 0.8
+```
+
+## Combine songs — overlay, append, extract
+
+```python
+from code_music.automation import song_overlay, song_append, song_extract
+
+combined = song_append(intro, main)          # A then B
+song_overlay(base, drums, at_beat=8.0)       # add drums at beat 8
+stems = song_extract(song, ["kick", "bass"]) # pull specific tracks
+```
+
 ## Master your songs for streaming
 
 ```python

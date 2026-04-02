@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v10.0.0 — 165 songs, 907 tests, production mastering pipeline
+## Status: v11.0.0 — 170 songs, 942 tests, automation + modulation + song composition
 
 ## What's built
 
@@ -63,6 +63,13 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### Automation & Modulation
+- Automation class: keyframed parameter curves (linear, exponential, smoothstep)
+- value_at() interpolation, sample() for per-sample arrays
+- ModMatrix: route LFO/random/envelope sources to any destination
+- generate_mod_signal() for LFO, random (smoothed), envelope sources
+- Song composition: song_overlay, song_append, song_extract utilities
+
 ### Mastering Pipeline
 - mastering.py: LUFS metering (ITU-R BS.1770 simplified), normalize_lufs, true_peak_limit
 - TPDF dithering for 16/24-bit export, stereo_analysis (correlation/width/balance)
@@ -84,7 +91,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 165 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 170 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -564,18 +571,20 @@ Every parameter should be automatable. Move from static values to envelopes
 over time — the difference between a sketch and a finished production.
 
 ### Phase 1: Parameter Automation
-- [ ] `Automation(param, keyframes)` — time-value curves for any numeric param
-- [ ] `Track.automate("volume", [(0, 0.0), (4, 0.8), (12, 0.3)])` — per-track
-- [ ] `Song.automate("bpm", [(0, 120), (16, 140)])` — replaces bpm_ramp with general system
-- [ ] Linear, exponential, and smoothstep interpolation modes
-- [ ] `EffectsChain.automate(step_idx, "wet", [(0, 0), (8, 0.5)])` — per-effect param
+- [x] `Automation(keyframes, mode)` — time-value curves with linear/exponential/smoothstep
+- [x] `value_at(beat)` — interpolated value at any beat position
+- [x] `sample(bpm, sr, duration_beats)` — per-sample array for rendering
+- [x] Linear, exponential, and smoothstep interpolation modes
+- [ ] `Track.automate("volume", auto)` — per-track integration (future)
+- [ ] `EffectsChain.automate(step_idx, "wet", auto)` — per-effect param (future)
 
 ### Phase 2: Modulation Matrix
-- [ ] `ModMatrix` — route any source to any destination with scaling
-- [ ] Sources: LFO, envelope follower, random, note velocity, beat position
-- [ ] Destinations: volume, pan, filter cutoff, effect params, pitch
-- [ ] `song.mod_matrix.connect(source="lfo1", dest="pad.filter_cutoff", amount=0.5)`
-- [ ] Visualizable as a routing table in `__repr__`
+- [x] `ModMatrix` — route sources to destinations with amount + rate
+- [x] Sources: lfo1, lfo2, random (smoothed), envelope (attack-release)
+- [x] `generate_mod_signal(source, n, sr, rate)` — per-sample modulation signal
+- [x] Chaining: `mm.connect(...).connect(...)`
+- [x] `routes` property and `__repr__` for inspection
+- [ ] Direct integration with Synth render pipeline (future)
 
 ### Phase 3: Sidechain Automation
 - [ ] Envelope follower source: `EnvFollower(track_name)` — derives amplitude from another track
@@ -594,10 +603,10 @@ Make code-music multiplayer. Two people should be able to work on the same song
 from different files and merge the result.
 
 ### Phase 1: Song Merge Improvements
-- [ ] `Song.overlay(other, at_beat)` — drop another song's tracks at a specific beat offset
-- [ ] `Song.append(other)` — concatenate songs end-to-end (auto-adjusts beat offsets)
-- [ ] `Song.extract_tracks(names)` — pull specific tracks into a new Song
-- [ ] Conflict resolution: track name collisions get `_2` suffix
+- [x] `song_overlay(base, other, at_beat)` — drop tracks at beat offset, `_2` suffix on collision
+- [x] `song_append(first, second)` — concatenate end-to-end, same-name tracks merge
+- [x] `song_extract(song, track_names)` — pull specific tracks + effects into new Song
+- [x] Conflict resolution: track name collisions get `_2` suffix
 
 ### Phase 2: Stem Import/Export
 - [ ] `Song.import_stems(directory)` — load a folder of WAVs as SampleTracks
@@ -906,3 +915,60 @@ Make code-music fast enough for real-time and large-scale batch rendering.
 - [ ] `examples/20_performance.py` — optimization patterns tutorial
 - [ ] 5 performance-intensive songs (205 total)
 - [ ] Tag v22.0.0 release
+
+## v23.0 Roadmap — Audio Import & Sampling
+
+Load external audio files, slice them, and use them as instruments alongside
+synthesized sounds.
+
+### Phase 1: Audio File Loading
+- [ ] `load_audio(path)` — load WAV/FLAC/MP3 → float64 array (mono or stereo)
+- [ ] Automatic sample rate conversion to match Song.sample_rate
+- [ ] `AudioClip` class: start/end markers, loop points, pitch detection
+- [ ] `SampleTrack` improvements: trigger AudioClips at note events
+
+### Phase 2: Slicing & Chopping
+- [ ] `AudioClip.slice(n)` — split audio into N equal slices
+- [ ] `AudioClip.detect_transients()` — find onset points for auto-slicing
+- [ ] `AudioClip.slice_at(beats)` — slice at specific beat positions
+- [ ] REX-style playback: trigger slices from Pattern or Note sequence
+
+### Phase 3: Pitch Shifting & Time Stretching
+- [ ] `AudioClip.pitch_shift(semitones)` — shift pitch without changing duration
+- [ ] `AudioClip.time_stretch(ratio)` — change duration without changing pitch
+- [ ] Phase vocoder implementation (numpy-only)
+- [ ] Granular time stretching (leverages existing granular engine)
+
+### Phase 4: Tests + docs + songs
+- [ ] `examples/21_sampling.py` — load, slice, pitch-shift tutorial
+- [ ] 5 sample-based songs (210 total)
+- [ ] Tag v23.0.0 release
+
+## v24.0 Roadmap — Web Audio Export & Embeddable Player
+
+Make songs playable in the browser without any server or backend. Pure
+client-side audio from Python-generated data.
+
+### Phase 1: JSON Song Format
+- [ ] `Song.to_json()` — serialize entire song (notes, instruments, effects) to JSON
+- [ ] `Song.from_json(data)` — reconstruct from JSON
+- [ ] SoundDesigner serialization included (already has to_dict/from_dict)
+- [ ] Compact format: ~10KB for a typical 16-bar song
+
+### Phase 2: Web Audio Renderer
+- [ ] JavaScript Web Audio API renderer that reads the JSON format
+- [ ] Oscillator mapping: code-music instrument names → Web Audio oscillators
+- [ ] Effect mapping: reverb → ConvolverNode, delay → DelayNode, filter → BiquadFilterNode
+- [ ] SoundDesigner → Web Audio: FM synthesis via OscillatorNode frequency modulation
+
+### Phase 3: Embeddable Player Widget
+- [ ] `<code-music-player>` web component (shadow DOM, zero dependencies)
+- [ ] Waveform visualization, play/pause, track mute/solo
+- [ ] `Song.to_html(path)` — generate standalone HTML file with embedded player
+- [ ] GitHub Pages integration: `make web-player` builds playable gallery
+
+### Phase 4: Tests + docs
+- [ ] `examples/22_web_export.py` — export to JSON + HTML tutorial
+- [ ] Browser-based integration tests (Playwright)
+- [ ] 5 songs with web player exports (215 total)
+- [ ] Tag v24.0.0 release
