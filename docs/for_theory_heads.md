@@ -486,6 +486,36 @@ t1.to_dict()           # JSON-serializable
 Features: centroid (brightness), bandwidth (spread), flatness (tonal vs noisy),
 rolloff (energy distribution), RMS (loudness).
 
+## Music theory intelligence (v12.0+)
+
+```python
+from code_music.theory import chord_scale, available_tensions, generate_bass_line, generate_drums
+
+# What scales work over Cmin7?
+chord_scale("C", "min7")          # → ["aeolian", "dorian", "phrygian", ...]
+
+# What tensions are available?
+available_tensions("G", "dom7")   # → ["9", "#11", "13", ...]
+
+# Generate bass from chords
+bass = generate_bass_line([("C","min7"), ("G","dom7")], style="walking", seed=42)
+
+# Generate genre drums
+drums = generate_drums("jazz", bars=4)  # → {"kick":[...], "snare":[...], "hat":[...]}
+```
+
+Bass styles: `root`, `root_fifth`, `walking`, `syncopated`
+Drum genres: `rock`, `jazz`, `electronic`, `latin`, `hiphop`
+
+## Song diffing (v12.0+)
+
+```python
+from code_music.theory import song_diff, song_patch, Change
+
+changes = song_diff(song_a, song_b)  # → [Change("added","bass",...)]
+song_patch(base, changes)            # apply changes to base song
+```
+
 ## Automation & modulation (v11.0+)
 
 ```python

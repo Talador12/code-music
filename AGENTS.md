@@ -32,6 +32,7 @@ code_music/         Python package
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
   sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
   pattern.py        Pattern — mini-notation, transforms, polymeter
+  theory.py        Chord-scale theory, bass/drum generators, song diff/patch
   automation.py     Automation curves, ModMatrix, song_overlay/append/extract
   mastering.py      LUFS metering, true peak limiting, dithering, stereo analysis
   export.py         export_wav / export_flac / export_mp3 / export_ogg
@@ -271,6 +272,26 @@ t.distance(t2) # perceptual distance
 t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
 ```
+
+## Music theory intelligence
+
+Chord-scale theory, smart generators, and song diffing in `code_music/theory.py`:
+
+```python
+from code_music.theory import chord_scale, available_tensions, generate_bass_line, generate_drums, song_diff, song_patch
+
+chord_scale("C", "min7")          # → ["aeolian", "dorian", "phrygian", ...]
+available_tensions("G", "dom7")   # → ["9", "#11", "13", ...]
+
+bass = generate_bass_line([("C","min7"),("G","dom7")], style="walking", seed=42)
+drums = generate_drums("jazz", bars=4)  # → {"kick":[...], "snare":[...], "hat":[...]}
+
+changes = song_diff(song_a, song_b)     # → [Change("added","bass",...), ...]
+song_patch(base, changes)               # apply diff to reconstruct
+```
+
+Bass styles: `root`, `root_fifth`, `walking`, `syncopated`
+Drum genres: `rock`, `jazz`, `electronic`, `latin`, `hiphop`
 
 ## Automation & modulation
 

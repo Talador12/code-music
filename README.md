@@ -65,8 +65,8 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `examples/` | 17 step-by-step tutorials: hello world → automation |
-| `songs/` | 170 full songs across 55+ genres |
+| `examples/` | 18 step-by-step tutorials: hello world → music theory |
+| `songs/` | 175 full songs across 55+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
@@ -154,6 +154,7 @@ The `examples/` directory walks through the entire API step by step:
 | 15 | `spectral_and_timbre.py` | FFT freeze/shift/smear, timbre analysis |
 | 16 | `mastering.py` | LUFS normalization, true peak limiting, stereo analysis |
 | 17 | `automation.py` | Parameter automation, mod matrix, song composition |
+| 18 | `theory.py` | Chord-scale theory, bass/drum generators, song diffing |
 
 ```bash
 code-music examples/01_hello_world.py --play    # start here

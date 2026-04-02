@@ -304,6 +304,15 @@ frozen = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.
 shifted = SoundDesigner("up").add_osc("saw").spectral(spectral_shift(7.0))
 ```
 
+## Theory-generated parts — bass lines and drums in one call
+
+```python
+from code_music.theory import generate_bass_line, generate_drums
+
+bass = generate_bass_line([("C","min7"), ("G","dom7")], style="walking")
+drums = generate_drums("jazz", bars=4)
+```
+
 ## Automation — animate parameters over time
 
 ```python

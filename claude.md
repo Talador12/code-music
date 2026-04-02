@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v11.0.0 — 170 songs, 942 tests, automation + modulation + song composition
+## Status: v12.0.0 — 175 songs, 983 tests, theory intelligence + song diffing
 
 ## What's built
 
@@ -63,6 +63,13 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### Music Theory Intelligence
+- chord_scale(): compatible scales for chord improvisation (14 scales × all chord types)
+- available_tensions(): 9th/11th/13th analysis for any chord
+- generate_bass_line(): root, root_fifth, walking, syncopated styles
+- generate_drums(): rock, jazz, electronic, latin, hiphop genre patterns
+- song_diff/song_patch: structural diff + patch for collaboration
+
 ### Automation & Modulation
 - Automation class: keyframed parameter curves (linear, exponential, smoothstep)
 - value_at() interpolation, sample() for per-sample arrays
@@ -91,7 +98,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 170 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 175 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -615,10 +622,10 @@ from different files and merge the result.
 - [ ] Round-trip: export stems → reimport → identical render
 
 ### Phase 3: Song Diffing
-- [ ] `song_diff(a, b)` — structural diff showing added/removed/changed tracks, notes, effects
-- [ ] Human-readable output: "Track 'lead' added 4 notes at beat 8"
-- [ ] Machine-readable: returns a list of `Change` objects for programmatic use
-- [ ] `song_patch(base, changes)` — apply a diff to reconstruct a song
+- [x] `song_diff(a, b)` — structural diff (added/removed/modified tracks, bpm, title, volume, pan)
+- [x] Machine-readable: returns list of `Change` objects (change_type, track_name, detail)
+- [x] `song_patch(base, changes)` — apply diff to modify a song (add/remove tracks, modify props)
+- [ ] Human-readable formatting: "Track 'lead' added 4 notes at beat 8" (future)
 
 ### Phase 4: Collaborative Workflow
 - [ ] `code-music merge song_a.py song_b.py -o merged.py` CLI
@@ -664,17 +671,17 @@ Make the engine understand music theory deeply enough to suggest, correct,
 and generate with real harmonic awareness.
 
 ### Phase 1: Chord-Scale Theory
-- [ ] `chord_scale(chord)` — returns compatible scales for improvisation
-- [ ] `available_tensions(chord)` — 9th, 11th, 13th options that don't clash
-- [ ] `voice_lead(prog, voice_count=4)` improvements: SATB rules, parallel 5th avoidance
-- [ ] `analyze_harmony(song)` — full roman numeral + function analysis (tonic/subdominant/dominant)
+- [x] `chord_scale(root, shape)` — compatible scales for any chord (14 scale types)
+- [x] `available_tensions(root, shape)` — 9th, 11th, 13th that don't clash
+- [ ] `voice_lead(prog, voice_count=4)` improvements: SATB rules, parallel 5th avoidance (future)
+- [ ] `analyze_harmony(song)` — full roman numeral + function analysis (future)
 
 ### Phase 2: Intelligent Generation
 - [ ] `generate_song()` improvements: key changes, modulation, bridge sections
-- [ ] `generate_bass_line(chords, style)` — walking bass, root-fifth, syncopated
-- [ ] `generate_drums(genre, fills_every=8)` — pattern-based with fills and variations
-- [ ] `generate_melody(chords, contour)` — melody that follows harmonic rhythm
-- [ ] Counterpoint generator: `generate_counterpoint(melody, species=1)`
+- [x] `generate_bass_line(chords, style)` — root, root_fifth, walking, syncopated (4 styles)
+- [x] `generate_drums(genre, bars)` — rock, jazz, electronic, latin, hiphop (5 genres)
+- [ ] `generate_melody(chords, contour)` — melody that follows harmonic rhythm (future)
+- [ ] Counterpoint generator: `generate_counterpoint(melody, species=1)` (future)
 
 ### Phase 3: Analysis Dashboard
 - [ ] `Song.analyze()` — returns full report: key, tempo, chord progression, density, dynamics
@@ -972,3 +979,58 @@ client-side audio from Python-generated data.
 - [ ] Browser-based integration tests (Playwright)
 - [ ] 5 songs with web player exports (215 total)
 - [ ] Tag v24.0.0 release
+
+## v25.0 Roadmap — Song Versioning & History
+
+Full undo/redo and version history for songs, enabling non-destructive
+editing workflows.
+
+### Phase 1: Snapshot System
+- [ ] `Song.snapshot()` → immutable copy of current state
+- [ ] `Song.history` — ordered list of snapshots with timestamps
+- [ ] `Song.undo()` / `Song.redo()` — navigate history
+- [ ] Auto-snapshot on every structural change (add_track, extend, etc)
+
+### Phase 2: Named Versions
+- [ ] `Song.tag(name)` — name a snapshot (like git tags)
+- [ ] `Song.checkout(tag_name)` — restore a named version
+- [ ] `Song.compare(tag_a, tag_b)` — diff between two versions
+- [ ] Version log: `Song.log()` → list of (timestamp, tag, change_summary)
+
+### Phase 3: Branch & Merge
+- [ ] `Song.branch(name)` — fork the song for experimentation
+- [ ] `Song.merge(branch_name)` — merge a branch back (uses song_diff internally)
+- [ ] Conflict detection: overlapping track modifications flagged
+- [ ] `Song.branches` — list all named branches
+
+### Phase 4: Tests + docs
+- [ ] `examples/23_versioning.py` — snapshot, undo, branch tutorial
+- [ ] 5 songs demonstrating version workflows (220 total)
+- [ ] Tag v25.0.0 release
+
+## v26.0 Roadmap — Music Notation Rendering
+
+Generate sheet music directly from Song objects — readable by musicians,
+printable as PDF.
+
+### Phase 1: ASCII Tab
+- [ ] `Song.to_tab()` — guitar/bass tablature in ASCII
+- [ ] `Song.to_lead_sheet()` — chord symbols + melody (ASCII)
+- [ ] Time signature awareness (4/4, 3/4, 6/8)
+- [ ] Key signature detection (uses detect_key())
+
+### Phase 2: SVG Score
+- [ ] `Song.to_svg()` — vector score with proper notation
+- [ ] Notes, rests, beams, ties, slurs rendered as SVG paths
+- [ ] Multi-staff: treble + bass clef for piano, single staff for melody
+- [ ] Dynamic markings from volume automation
+
+### Phase 3: PDF Export
+- [ ] `Song.to_pdf(path)` — render SVG to PDF (reportlab or Cairo)
+- [ ] Page layout: A4/Letter, title, composer, tempo marking
+- [ ] `code-music score songs/my_track.py -o score.pdf` CLI
+
+### Phase 4: Tests + docs
+- [ ] `examples/24_notation.py` — generate tab + SVG + PDF
+- [ ] 5 songs with notation exports (225 total)
+- [ ] Tag v26.0.0 release

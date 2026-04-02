@@ -126,6 +126,15 @@ from .pattern import Pattern
 from .playback import play
 from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
+from .theory import (
+    Change,
+    available_tensions,
+    chord_scale,
+    generate_bass_line,
+    generate_drums,
+    song_diff,
+    song_patch,
+)
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
 
@@ -210,6 +219,14 @@ __all__ = [
     "eq",
     # synth
     "Synth",
+    # theory
+    "chord_scale",
+    "available_tensions",
+    "generate_bass_line",
+    "generate_drums",
+    "song_diff",
+    "song_patch",
+    "Change",
     # automation
     "Automation",
     "ModMatrix",
