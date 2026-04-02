@@ -152,6 +152,53 @@ Built-in presets: `supersaw`, `sub_808`, `metallic_hit`, `vocal_pad`, `plucked_s
 
 Serialize with `to_dict()`/`from_dict()`. Export to WAV with `to_wav()`. Preview with `preview()`.
 
+## FM synthesis
+
+Frequency modulation creates complex timbres from simple oscillators:
+
+```python
+# DX7-style electric piano
+epiano = SoundDesigner("epiano").fm("sine", mod_ratio=2.0, mod_index=3.5)
+
+# Multi-operator (stack .fm() calls)
+bell = (
+    SoundDesigner("bell")
+    .fm("sine", mod_ratio=1.414, mod_index=8.0, volume=0.7)
+    .fm("sine", mod_ratio=3.0, mod_index=2.0, volume=0.3)
+)
+```
+
+- `mod_ratio`: modulator/carrier frequency ratio. Integer = harmonic, non-integer = metallic.
+- `mod_index`: modulation depth. 0 = pure tone, 5+ = rich harmonics.
+- FM presets: `fm_electric_piano`, `fm_bell`, `fm_brass`, `fm_bass`
+
+## Wavetable synthesis
+
+Custom single-cycle waveforms:
+
+```python
+from code_music import Wavetable
+
+wt = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25])   # from harmonics
+wt = Wavetable.from_wave("sawtooth")                     # from named shape
+hybrid = wt.morph(Wavetable.from_wave("square"), 0.4)    # interpolate
+sd = SoundDesigner("x").add_wavetable(wt, volume=0.6, detune_cents=5)
+```
+
+Wavetable presets: `wt_organ`, `wt_bright_lead`, `wt_morph_pad`
+
+## Euclidean rhythms
+
+Bjorklund algorithm distributes N hits across M slots:
+
+```python
+from code_music import euclid
+
+tr.extend(euclid(3, 8, "C", 4, 0.5))              # tresillo
+tr.extend(euclid(5, 16, "D", 4, 0.25))            # son clave
+tr.extend(euclid(3, 8, "C", 4, 0.5, rotation=2))  # rotated
+```
+
 ## Conventions
 
 - One `song` variable per file in `songs/`.

@@ -335,7 +335,55 @@ restored = SoundDesigner.from_dict(data)
 wobble.to_wav("wobble_c4.wav", freq=261.63, duration=2.0)
 ```
 
-Built-in presets: `supersaw`, `sub_808`, `metallic_hit`, `vocal_pad`, `plucked_string`
+Built-in presets: `supersaw`, `sub_808`, `metallic_hit`, `vocal_pad`, `plucked_string`,
+`fm_electric_piano`, `fm_bell`, `fm_brass`, `fm_bass`, `wt_organ`, `wt_bright_lead`, `wt_morph_pad`
+
+## FM synthesis (v7.0+)
+
+```python
+# Frequency modulation: modulator oscillator modulates carrier frequency
+epiano = SoundDesigner("epiano").fm("sine", mod_ratio=2.0, mod_index=3.5)
+
+# Multi-operator (stack .fm() calls like DX7 operators)
+bell = (
+    SoundDesigner("bell")
+    .fm("sine", mod_ratio=1.414, mod_index=8.0, volume=0.7)   # inharmonic = metallic
+    .fm("sine", mod_ratio=3.0, mod_index=2.0, volume=0.3)
+)
+
+# mod_ratio: modulator/carrier freq ratio. Integer = harmonic, non-integer = metallic.
+# mod_index: modulation depth. 0 = pure carrier, 5+ = rich harmonics.
+```
+
+## Wavetable synthesis (v7.0+)
+
+```python
+from code_music import Wavetable
+
+# Build from harmonic amplitudes (additive → single cycle)
+wt = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25])
+
+# Build from named wave shape
+wt_saw = Wavetable.from_wave("sawtooth")
+
+# Morph between two wavetables
+hybrid = wt_saw.morph(Wavetable.from_wave("square"), 0.4)
+
+# Use as oscillator in SoundDesigner
+sd = SoundDesigner("custom").add_wavetable(wt, volume=0.6, detune_cents=5)
+```
+
+## Euclidean rhythms (v7.0+)
+
+```python
+from code_music import euclid
+
+# Bjorklund algorithm: distribute N hits across M slots
+tr.extend(euclid(3, 8, "C", 4, 0.5))           # tresillo [x..x..x.]
+tr.extend(euclid(5, 8, "C", 4, 0.5))           # West African
+tr.extend(euclid(5, 16, "C", 4, 0.25))         # son clave
+tr.extend(euclid(3, 8, "C", 4, 0.5, rotation=2))  # rotated pattern
+```
 
 Oscillators: `sine`, `sawtooth`, `square`, `triangle`
 Noise: `white`, `pink` (1/f), `brown` (cumulative)

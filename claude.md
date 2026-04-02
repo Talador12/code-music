@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v6.0.0 — 145 songs, 769 tests, custom sound design shipped
+## Status: v7.0.0 — 150 songs, 808 tests, FM + wavetable synthesis + euclidean rhythms
 
 ## What's built
 
@@ -23,7 +23,21 @@
 - Serialization: to_dict/from_dict round-trip, to_wav export, preview playback
 - Biquad filter (scipy-free): lowpass, highpass, bandpass
 
-### Synth (65+ presets)
+### FM Synthesis
+- SoundDesigner.fm(): carrier wave, mod_ratio, mod_index, volume — stack for multi-operator
+- 4 FM presets (fm_electric_piano, fm_bell, fm_brass, fm_bass)
+
+### Wavetable Synthesis
+- Wavetable class: from_harmonics, from_wave, morph between shapes
+- SoundDesigner.add_wavetable(): use custom waveforms as oscillators
+- 3 wavetable presets (wt_organ, wt_bright_lead, wt_morph_pad)
+
+### Euclidean Rhythms
+- euclid(hits, steps): Bjorklund algorithm for mathematically-perfect beat distribution
+- Rotation parameter for shifted patterns
+- Tresillo, son clave, bossa nova — all generated from (N, M) pairs
+
+### Synth (75+ presets)
 - Velocity-to-timbre, Karplus-Strong physical models
 - Wobble bass, formant vowels, FM synthesis, per-note LFO filter
 - Full orchestral + percussion + EDM + voice presets
@@ -39,7 +53,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 145 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 150 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -419,15 +433,17 @@ and has no composition integration. We stay pure numpy but add synthesis
 techniques that only SuperCollider/CSound/Faust currently offer.
 
 ### Phase 1: FM Synthesis
-- [ ] `SoundDesigner.fm(carrier, modulator, mod_index)` — frequency modulation
-- [ ] Multi-operator FM (2-op, 4-op, 6-op like DX7)
-- [ ] FM presets: electric piano, bell, brass, bass
+- [x] `SoundDesigner.fm(carrier_wave, mod_ratio, mod_index, volume)` — frequency modulation
+- [x] Multi-operator FM (stack .fm() calls, unlimited operators)
+- [x] FM presets: fm_electric_piano, fm_bell, fm_brass, fm_bass
 
 ### Phase 2: Wavetable Synthesis
-- [ ] `SoundDesigner.wavetable(table)` — user-defined single-cycle waveforms
-- [ ] `Wavetable.from_harmonics(amplitudes)` — additive → wavetable
-- [ ] `Wavetable.morph(other, amount)` — interpolate between two wavetables
-- [ ] Wavetable scanning with LFO
+- [x] `SoundDesigner.add_wavetable(table, volume, detune_cents)` — user-defined single-cycle waveforms
+- [x] `Wavetable.from_harmonics(amplitudes)` — additive → wavetable
+- [x] `Wavetable.from_wave(name)` — built-in wave shapes
+- [x] `Wavetable.morph(other, amount)` — interpolate between two wavetables
+- [x] Wavetable presets: wt_organ, wt_bright_lead, wt_morph_pad
+- [ ] Wavetable scanning with LFO (future)
 
 ### Phase 3: Granular Synthesis
 - [ ] `SoundDesigner.granular(source, grain_size, density, scatter)`
@@ -460,7 +476,7 @@ Haskell + SuperCollider. We bring pattern transforms to Python.
 
 - [ ] `Pattern` class: `p("C3 E3 G3 C4")` mini-notation for note sequences
 - [ ] Pattern transforms: `p.reverse()`, `p.every(4, reverse)`, `p.jux(rev)`
-- [ ] Euclidean rhythms: `p.euclid(5, 8)` — distribute N hits over M slots
+- [x] Euclidean rhythms: `euclid(hits, steps)` — Bjorklund algorithm (shipped v7.0)
 - [ ] Polyrhythm: `p.polymeter(p1, p2)` — layer patterns of different lengths
 - [ ] Stochastic patterns: `p.choose(["C3", "E3", "G3"])`, `p.degrade(0.3)`
 - [ ] Pattern → Track conversion: `pattern.to_track(instrument="supersaw")`
@@ -622,3 +638,60 @@ and generate with real harmonic awareness.
 - [ ] `examples/13_theory.py` — chord-scale theory, voice leading, analysis
 - [ ] 5 songs generated with advanced theory features (165 total)
 - [ ] Tag v14.0.0 release
+
+## v15.0 Roadmap — Spatial Audio & Immersive Sound
+
+Move beyond stereo. Binaural, ambisonics, and 3D positioning for
+headphone and multi-speaker experiences.
+
+### Phase 1: Binaural Rendering
+- [ ] `SpatialPanner(azimuth, elevation, distance)` — HRTF-based binaural panning
+- [ ] Built-in KEMAR HRTF dataset (compact, numpy-only)
+- [ ] `Track.spatial(azimuth=45, elevation=0, distance=2.0)` — per-track positioning
+- [ ] Head tracking simulation: `Track.orbit(rate, radius)` — sound orbits the listener
+
+### Phase 2: Ambisonics
+- [ ] First-order ambisonics (B-format: W, X, Y, Z channels)
+- [ ] Encode stereo or mono tracks to B-format
+- [ ] Decode B-format to binaural, stereo, quad, or 5.1
+- [ ] Ambisonic reverb: early reflections from encoded room geometry
+
+### Phase 3: Distance & Room Modeling
+- [ ] Distance attenuation (inverse-square, configurable rolloff)
+- [ ] Simple room model: dimensions → early reflections + late tail
+- [ ] Doppler effect for moving sources
+- [ ] Air absorption filter (high-frequency rolloff with distance)
+
+### Phase 4: Tests + docs + songs
+- [ ] Tests for binaural, ambisonics, distance modeling
+- [ ] `examples/14_spatial.py` — 3D audio positioning tutorial
+- [ ] 5 spatial audio songs (170 total)
+- [ ] Tag v15.0.0 release
+
+## v16.0 Roadmap — Plugin Ecosystem & Extension API
+
+Let the community extend code-music without forking. Clean plugin interface
+for instruments, effects, generators, and exporters.
+
+### Phase 1: Plugin Interface
+- [ ] `@register_instrument` decorator — third-party instruments auto-discovered
+- [ ] `@register_effect` decorator — third-party effects
+- [ ] `@register_generator` decorator — third-party song generators
+- [ ] Entry-point based discovery (`[project.entry-points."code_music.plugins"]`)
+
+### Phase 2: Instrument Packs
+- [ ] `code-music install-pack <name>` CLI — pip install + register
+- [ ] Pack format: Python package with `instruments/`, `effects/`, `generators/`
+- [ ] Built-in pack: `code-music-vintage` (FM pianos, analog strings, tape effects)
+
+### Phase 3: Community Infrastructure
+- [ ] `code-music share <song.py>` — upload song + custom instruments as a gist
+- [ ] `code-music import <url>` — download and run shared songs
+- [ ] Online preset browser: browse community SoundDesigner presets
+- [ ] `make gallery-community` — auto-build gallery from shared presets
+
+### Phase 4: Tests + docs
+- [ ] Plugin API tests, pack install tests, share/import tests
+- [ ] `examples/15_plugins.py` — write and register a custom plugin
+- [ ] 5 songs using community-style plugins (175 total)
+- [ ] Tag v16.0.0 release

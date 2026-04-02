@@ -1065,6 +1065,93 @@ def prob(note: "Note | Chord | None", p: float = 0.8) -> "Note | Chord | None":
     return Note.rest(dur)
 
 
+def euclid(
+    hits: int,
+    steps: int,
+    note: str = "C",
+    octave: int = 4,
+    duration: float = 0.5,
+    rotation: int = 0,
+) -> list["Note"]:
+    """Generate a Euclidean rhythm — evenly distribute hits across steps.
+
+    The Bjorklund algorithm distributes N onsets as evenly as possible over
+    M time slots. Produces rhythms found in world music: tresillo (3,8),
+    son clave (5,16), bossa nova (5,16 rot 2), etc.
+
+    Args:
+        hits:     Number of active beats (onsets).
+        steps:    Total number of time slots.
+        note:     Note name for active beats.
+        octave:   Note octave.
+        duration: Duration of each step in beats.
+        rotation: Rotate the pattern by N steps (shifts downbeat).
+
+    Returns:
+        List of Notes and rests (rest = Note.rest(duration)).
+
+    Example::
+
+        # Tresillo rhythm (3 hits in 8 slots)
+        tr.extend(euclid(3, 8, "C", 4, 0.5))
+
+        # Son clave
+        tr.extend(euclid(5, 16, "D", 4, 0.25))
+
+        # Hi-hat pattern (6 of 8)
+        hat.extend(euclid(6, 8, "F#", 6, 0.5))
+    """
+    if hits < 0 or steps <= 0 or hits > steps:
+        raise ValueError(f"euclid requires 0 <= hits <= steps > 0, got hits={hits}, steps={steps}")
+
+    # Bjorklund algorithm
+    pattern = [1] * hits + [0] * (steps - hits)
+    if hits == 0 or hits == steps:
+        pass  # trivial cases
+    else:
+        groups: list[list[int]] = [[b] for b in pattern]
+        while True:
+            # Split into two groups: the "main" group and the "remainder"
+            # Find where the values change
+            first_val = groups[0]
+            remainder_start = -1
+            for i in range(1, len(groups)):
+                if groups[i] != first_val:
+                    remainder_start = i
+                    break
+            if remainder_start == -1:
+                break
+            remainder_count = len(groups) - remainder_start
+            if remainder_count <= 1:
+                break
+            # Distribute remainder onto main
+            new_groups: list[list[int]] = []
+            main_count = remainder_start
+            pairs = min(main_count, remainder_count)
+            for i in range(pairs):
+                new_groups.append(groups[i] + groups[remainder_start + i])
+            # Leftovers from either side
+            for i in range(pairs, main_count):
+                new_groups.append(groups[i])
+            for i in range(pairs, remainder_count):
+                new_groups.append(groups[remainder_start + i])
+            groups = new_groups
+        pattern = [b for g in groups for b in g]
+
+    # Apply rotation
+    if rotation != 0:
+        rotation = rotation % steps
+        pattern = pattern[rotation:] + pattern[:rotation]
+
+    result: list[Note] = []
+    for beat in pattern:
+        if beat:
+            result.append(Note(note, octave, duration))
+        else:
+            result.append(Note.rest(duration))
+    return result
+
+
 def chord_prog(
     roots: list[str],
     shapes: list[str],

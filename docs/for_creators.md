@@ -261,6 +261,22 @@ Noise types: `white`, `pink`, `brown`
 Filters: `lowpass`, `highpass`, `bandpass`
 LFO targets: `filter_cutoff`, `pitch`, `volume`
 
+## FM synthesis — make sounds like a DX7
+
+```python
+# Electric piano from frequency modulation
+epiano = SoundDesigner("epiano").fm("sine", mod_ratio=2.0, mod_index=3.5)
+```
+
+## Euclidean rhythms — perfect beat distribution
+
+```python
+from code_music import euclid
+
+# 3 hits in 8 slots = tresillo rhythm (Afro-Cuban)
+hat.extend(euclid(3, 8, "F#", 6, 0.5))
+```
+
 ## Chord types
 
 ```

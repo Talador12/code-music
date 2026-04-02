@@ -217,6 +217,25 @@ class _FilterSpec:
         self.resonance = resonance
 
 
+class _FMLayer:
+    __slots__ = ("carrier_wave", "mod_ratio", "mod_index", "volume")
+
+    def __init__(self, carrier_wave: str, mod_ratio: float, mod_index: float, volume: float):
+        self.carrier_wave = carrier_wave
+        self.mod_ratio = mod_ratio
+        self.mod_index = mod_index
+        self.volume = volume
+
+
+class _WavetableLayer:
+    __slots__ = ("table", "volume", "detune_cents")
+
+    def __init__(self, table: FloatArray, volume: float, detune_cents: float):
+        self.table = table
+        self.volume = volume
+        self.detune_cents = detune_cents
+
+
 class _LFOSpec:
     __slots__ = ("target", "rate", "depth", "wave")
 
@@ -225,6 +244,85 @@ class _LFOSpec:
         self.rate = rate
         self.depth = depth
         self.wave = wave
+
+
+# ---------------------------------------------------------------------------
+# Wavetable helpers
+# ---------------------------------------------------------------------------
+
+
+class Wavetable:
+    """A single-cycle waveform stored as a numpy array.
+
+    Example::
+
+        wt = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25])
+        organ = SoundDesigner("organ").add_wavetable(wt, volume=0.6)
+    """
+
+    def __init__(self, table: FloatArray) -> None:
+        self.table = np.asarray(table, dtype=np.float64)
+        peak = np.max(np.abs(self.table))
+        if peak > 0:
+            self.table /= peak
+
+    @classmethod
+    def from_harmonics(cls, amplitudes: list[float], size: int = 2048) -> "Wavetable":
+        """Build a wavetable from harmonic amplitudes (additive synthesis).
+
+        Args:
+            amplitudes: Amplitude of each harmonic (1st = fundamental).
+            size:       Number of samples in the single-cycle table.
+        """
+        t = np.linspace(0, 2 * np.pi, size, endpoint=False)
+        wave = np.zeros(size)
+        for k, amp in enumerate(amplitudes, 1):
+            wave += amp * np.sin(k * t)
+        return cls(wave)
+
+    @classmethod
+    def from_wave(cls, wave: str, size: int = 2048) -> "Wavetable":
+        """Build a wavetable from a named wave shape."""
+        if wave == "sine":
+            t = np.linspace(0, 2 * np.pi, size, endpoint=False)
+            return cls(np.sin(t))
+        elif wave == "sawtooth":
+            return cls(np.linspace(-1, 1, size, endpoint=False))
+        elif wave == "square":
+            table = np.ones(size)
+            table[size // 2 :] = -1.0
+            return cls(table)
+        elif wave == "triangle":
+            half = size // 2
+            table = np.concatenate([np.linspace(-1, 1, half), np.linspace(1, -1, size - half)])
+            return cls(table)
+        else:
+            raise ValueError(f"Unknown wave {wave!r}")
+
+    def morph(self, other: "Wavetable", amount: float = 0.5) -> "Wavetable":
+        """Interpolate between this wavetable and another.
+
+        Args:
+            other:  Target wavetable.
+            amount: 0.0 = fully self, 1.0 = fully other.
+        """
+        size = max(len(self.table), len(other.table))
+        a = np.interp(
+            np.linspace(0, len(self.table) - 1, size), np.arange(len(self.table)), self.table
+        )
+        b = np.interp(
+            np.linspace(0, len(other.table) - 1, size), np.arange(len(other.table)), other.table
+        )
+        return Wavetable(a * (1.0 - amount) + b * amount)
+
+    def to_list(self) -> list[float]:
+        """Serialize to a plain list (JSON-compatible)."""
+        return self.table.tolist()
+
+    @classmethod
+    def from_list(cls, data: list[float]) -> "Wavetable":
+        """Reconstruct from a serialized list."""
+        return cls(np.array(data, dtype=np.float64))
 
 
 class SoundDesigner:
@@ -251,6 +349,8 @@ class SoundDesigner:
         self.name = name
         self._oscs: list[_OscLayer] = []
         self._noises: list[_NoiseLayer] = []
+        self._fm_layers: list[_FMLayer] = []
+        self._wavetable_layers: list[_WavetableLayer] = []
         self._env: tuple[float, float, float, float] = (0.01, 0.1, 0.8, 0.3)
         self._filter: _FilterSpec | None = None
         self._lfos: list[_LFOSpec] = []
@@ -291,6 +391,75 @@ class SoundDesigner:
         if noise_type not in _NOISE_FUNCS:
             raise ValueError(f"Unknown noise {noise_type!r}. Choose: {sorted(_NOISE_FUNCS)}")
         self._noises.append(_NoiseLayer(noise_type, volume, seed))
+        return self
+
+    # -- FM synthesis ------------------------------------------------------
+
+    def fm(
+        self,
+        carrier_wave: str = "sine",
+        mod_ratio: float = 2.0,
+        mod_index: float = 5.0,
+        volume: float = 1.0,
+    ) -> "SoundDesigner":
+        """Add an FM synthesis layer.
+
+        Frequency modulation: a modulator oscillator modulates the frequency
+        of a carrier oscillator. Creates complex, evolving timbres — bells,
+        electric pianos, metallic sounds, bass.
+
+        Args:
+            carrier_wave: Carrier waveform (sine, sawtooth, square, triangle).
+            mod_ratio:    Modulator freq / carrier freq. Integer ratios = harmonic,
+                          non-integer = inharmonic/metallic.
+            mod_index:    Modulation depth. Higher = more harmonics.
+                          0 = pure carrier. 1-3 = subtle. 5+ = aggressive.
+            volume:       Layer volume (0.0-1.0).
+
+        Example::
+
+            # DX7-style electric piano (2:1 ratio, moderate index)
+            epiano = SoundDesigner("epiano").fm("sine", mod_ratio=2.0, mod_index=3.5)
+
+            # Bell (inharmonic ratio for metallic partials)
+            bell = SoundDesigner("bell").fm("sine", mod_ratio=1.414, mod_index=8.0)
+        """
+        if carrier_wave not in _OSC_FUNCS:
+            raise ValueError(f"Unknown wave {carrier_wave!r}. Choose: {sorted(_OSC_FUNCS)}")
+        self._fm_layers.append(_FMLayer(carrier_wave, mod_ratio, mod_index, volume))
+        return self
+
+    # -- Wavetable synthesis -----------------------------------------------
+
+    def add_wavetable(
+        self,
+        wavetable: "Wavetable | list[float]",
+        volume: float = 1.0,
+        detune_cents: float = 0.0,
+    ) -> "SoundDesigner":
+        """Add a wavetable oscillator layer.
+
+        Reads a single-cycle waveform from a Wavetable object and uses it
+        as the oscillator source. Design arbitrary waveforms, build them
+        from harmonics, or morph between shapes.
+
+        Args:
+            wavetable:    Wavetable object or raw list of float samples.
+            volume:       Layer volume (0.0-1.0).
+            detune_cents: Detune from base frequency in cents.
+
+        Example::
+
+            wt = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25, 0.1])
+            sd = SoundDesigner("custom_organ").add_wavetable(wt)
+        """
+        if isinstance(wavetable, list):
+            table = np.array(wavetable, dtype=np.float64)
+        elif isinstance(wavetable, Wavetable):
+            table = wavetable.table.copy()
+        else:
+            table = np.asarray(wavetable, dtype=np.float64)
+        self._wavetable_layers.append(_WavetableLayer(table, volume, detune_cents))
         return self
 
     # -- Envelope ----------------------------------------------------------
@@ -398,7 +567,8 @@ class SoundDesigner:
 
         # -- Mix oscillator layers -----------------------------------------
         mix = np.zeros(n)
-        if not self._oscs and not self._noises:
+        has_sources = self._oscs or self._noises or self._fm_layers or self._wavetable_layers
+        if not has_sources:
             # Default: single sine
             self._oscs.append(_OscLayer("sine", 0.0, 1.0, 1))
 
@@ -454,6 +624,58 @@ class SoundDesigner:
         for nl in self._noises:
             noise_func = _NOISE_FUNCS[nl.noise_type]
             mix += noise_func(n, nl.seed) * nl.volume
+
+        # -- FM synthesis layers -------------------------------------------
+        for fm_layer in self._fm_layers:
+            carrier_freq = freq * pitch_mod if freq_env is None else freq_env * pitch_mod
+            mod_freq = carrier_freq * fm_layer.mod_ratio
+            # Modulator signal
+            mod_phase = np.cumsum(mod_freq / sr) * 2 * np.pi
+            modulator = np.sin(mod_phase) * fm_layer.mod_index * carrier_freq
+            # Carrier with frequency modulation
+            carrier_inst_freq = carrier_freq + modulator
+            carrier_phase = np.cumsum(carrier_inst_freq / sr) * 2 * np.pi
+            if fm_layer.carrier_wave == "sine":
+                layer = np.sin(carrier_phase)
+            elif fm_layer.carrier_wave == "sawtooth":
+                layer = 2.0 * (
+                    carrier_phase / (2 * np.pi) - np.floor(carrier_phase / (2 * np.pi) + 0.5)
+                )
+            elif fm_layer.carrier_wave == "square":
+                layer = np.sign(np.sin(carrier_phase))
+            elif fm_layer.carrier_wave == "triangle":
+                layer = (
+                    2.0
+                    * np.abs(
+                        2.0
+                        * (
+                            carrier_phase / (2 * np.pi)
+                            - np.floor(carrier_phase / (2 * np.pi) + 0.5)
+                        )
+                    )
+                    - 1.0
+                )
+            else:
+                layer = np.sin(carrier_phase)
+            mix += layer * fm_layer.volume
+
+        # -- Wavetable layers ----------------------------------------------
+        for wt_layer in self._wavetable_layers:
+            detune_ratio = 2.0 ** (wt_layer.detune_cents / 1200.0)
+            wt_freq = (
+                freq * detune_ratio * pitch_mod
+                if freq_env is None
+                else freq_env * detune_ratio * pitch_mod
+            )
+            phase = np.cumsum(wt_freq / sr)  # phase in cycles (0..N)
+            table_len = len(wt_layer.table)
+            # Map phase to table indices with linear interpolation
+            table_pos = (phase % 1.0) * table_len
+            idx0 = table_pos.astype(np.intp) % table_len
+            idx1 = (idx0 + 1) % table_len
+            frac = table_pos - np.floor(table_pos)
+            layer = wt_layer.table[idx0] * (1.0 - frac) + wt_layer.table[idx1] * frac
+            mix += layer * wt_layer.volume
 
         # Normalize if clipping
         peak = np.max(np.abs(mix))
@@ -544,6 +766,23 @@ class SoundDesigner:
             "noises": [
                 {"type": n.noise_type, "volume": n.volume, "seed": n.seed} for n in self._noises
             ],
+            "fm_layers": [
+                {
+                    "carrier_wave": fm.carrier_wave,
+                    "mod_ratio": fm.mod_ratio,
+                    "mod_index": fm.mod_index,
+                    "volume": fm.volume,
+                }
+                for fm in self._fm_layers
+            ],
+            "wavetable_layers": [
+                {
+                    "table": wt.table.tolist(),
+                    "volume": wt.volume,
+                    "detune_cents": wt.detune_cents,
+                }
+                for wt in self._wavetable_layers
+            ],
             "envelope": {
                 "attack": self._env[0],
                 "decay": self._env[1],
@@ -580,6 +819,19 @@ class SoundDesigner:
             )
         for n in data.get("noises", []):
             sd.noise(n["type"], n.get("volume", 0.5), n.get("seed"))
+        for fm_data in data.get("fm_layers", []):
+            sd.fm(
+                fm_data.get("carrier_wave", "sine"),
+                fm_data.get("mod_ratio", 2.0),
+                fm_data.get("mod_index", 5.0),
+                fm_data.get("volume", 1.0),
+            )
+        for wt_data in data.get("wavetable_layers", []):
+            sd.add_wavetable(
+                wt_data["table"],
+                wt_data.get("volume", 1.0),
+                wt_data.get("detune_cents", 0.0),
+            )
         env = data.get("envelope", {})
         if env:
             sd.envelope(
@@ -607,6 +859,10 @@ class SoundDesigner:
         parts = [f"SoundDesigner({self.name!r}"]
         parts.append(f"oscs={len(self._oscs)}")
         parts.append(f"noises={len(self._noises)}")
+        if self._fm_layers:
+            parts.append(f"fm={len(self._fm_layers)}")
+        if self._wavetable_layers:
+            parts.append(f"wavetables={len(self._wavetable_layers)}")
         if self._filter:
             parts.append(f"filter={self._filter.filter_type}")
         parts.append(f"lfos={len(self._lfos)}")
@@ -666,10 +922,87 @@ plucked_string = (
     .filter("lowpass", cutoff=3000, resonance=0.5)
 )
 
+# ---------------------------------------------------------------------------
+# FM Synthesis Presets
+# ---------------------------------------------------------------------------
+
+fm_electric_piano = (
+    SoundDesigner("fm_electric_piano")
+    .fm("sine", mod_ratio=2.0, mod_index=3.5, volume=0.8)
+    .fm("sine", mod_ratio=1.0, mod_index=0.5, volume=0.2)
+    .envelope(attack=0.005, decay=0.4, sustain=0.2, release=0.5)
+    .filter("lowpass", cutoff=4000, resonance=0.3)
+)
+
+fm_bell = (
+    SoundDesigner("fm_bell")
+    .fm("sine", mod_ratio=1.414, mod_index=8.0, volume=0.7)
+    .fm("sine", mod_ratio=3.0, mod_index=2.0, volume=0.3)
+    .envelope(attack=0.001, decay=1.0, sustain=0.0, release=0.8)
+)
+
+fm_brass = (
+    SoundDesigner("fm_brass")
+    .fm("sine", mod_ratio=1.0, mod_index=5.0, volume=0.6)
+    .fm("sine", mod_ratio=3.0, mod_index=3.0, volume=0.3)
+    .add_osc("sawtooth", volume=0.15)
+    .envelope(attack=0.05, decay=0.15, sustain=0.7, release=0.3)
+    .filter("lowpass", cutoff=3000, resonance=0.8)
+)
+
+fm_bass = (
+    SoundDesigner("fm_bass")
+    .fm("sine", mod_ratio=1.0, mod_index=4.0, volume=0.9)
+    .envelope(attack=0.005, decay=0.3, sustain=0.4, release=0.2)
+    .filter("lowpass", cutoff=500, resonance=1.0)
+)
+
+# ---------------------------------------------------------------------------
+# Wavetable Presets
+# ---------------------------------------------------------------------------
+
+_wt_organ_table = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25, 0.0, 0.125, 0.0, 0.06])
+wt_organ = (
+    SoundDesigner("wt_organ")
+    .add_wavetable(_wt_organ_table, volume=0.5)
+    .add_wavetable(_wt_organ_table, volume=0.4, detune_cents=5)
+    .add_wavetable(_wt_organ_table, volume=0.4, detune_cents=-5)
+    .envelope(attack=0.02, decay=0.05, sustain=0.8, release=0.3)
+)
+
+_wt_bright = Wavetable.from_harmonics([1.0, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2, 0.15, 0.1, 0.08])
+wt_bright_lead = (
+    SoundDesigner("wt_bright_lead")
+    .add_wavetable(_wt_bright, volume=0.6)
+    .add_wavetable(_wt_bright, volume=0.3, detune_cents=8)
+    .add_wavetable(_wt_bright, volume=0.3, detune_cents=-8)
+    .envelope(attack=0.01, decay=0.1, sustain=0.6, release=0.3)
+    .filter("lowpass", cutoff=5000, resonance=0.7)
+    .lfo("filter_cutoff", rate=2.0, depth=0.3)
+)
+
+_wt_morph = Wavetable.from_wave("sawtooth").morph(Wavetable.from_wave("square"), 0.5)
+wt_morph_pad = (
+    SoundDesigner("wt_morph_pad")
+    .add_wavetable(_wt_morph, volume=0.4)
+    .add_wavetable(_wt_morph, volume=0.3, detune_cents=3)
+    .add_wavetable(_wt_morph, volume=0.3, detune_cents=-3)
+    .envelope(attack=0.4, decay=0.2, sustain=0.5, release=0.8)
+    .filter("lowpass", cutoff=2000, resonance=0.5)
+    .lfo("filter_cutoff", rate=0.2, depth=0.4)
+)
+
 PRESETS = {
     "supersaw": supersaw,
     "sub_808": sub_808,
     "metallic_hit": metallic_hit,
     "vocal_pad": vocal_pad,
     "plucked_string": plucked_string,
+    "fm_electric_piano": fm_electric_piano,
+    "fm_bell": fm_bell,
+    "fm_brass": fm_brass,
+    "fm_bass": fm_bass,
+    "wt_organ": wt_organ,
+    "wt_bright_lead": wt_bright_lead,
+    "wt_morph_pad": wt_morph_pad,
 }

@@ -65,8 +65,8 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `examples/` | 11 step-by-step tutorials: hello world → sound design |
-| `songs/` | 145 full songs across 55+ genres |
+| `examples/` | 12 step-by-step tutorials: hello world → FM synthesis |
+| `songs/` | 150 full songs across 55+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
@@ -148,6 +148,7 @@ The `examples/` directory walks through the entire API step by step:
 | 09 | `generative.py` | generate_song() — full AI-composed songs |
 | 10 | `analysis.py` | detect_key() — Krumhansl-Kessler key analysis |
 | 11 | `sound_design.py` | SoundDesigner — build instruments from scratch |
+| 12 | `fm_and_wavetables.py` | FM synthesis, wavetables, euclidean rhythms |
 
 ```bash
 code-music examples/01_hello_world.py --play    # start here

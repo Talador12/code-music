@@ -79,6 +79,7 @@ from .engine import (
     decrescendo,
     detect_key,
     doit,
+    euclid,
     fall,
     flip,
     generate_melody,
@@ -113,7 +114,7 @@ from .export import export_flac, export_mp3, export_ogg, export_wav
 from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
 from .playback import play
-from .sound_design import SoundDesigner
+from .sound_design import SoundDesigner, Wavetable
 from .synth import Synth
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -166,7 +167,9 @@ __all__ = [
     "chord_prog",
     "crescendo",
     "decrescendo",
+    "euclid",
     "SoundDesigner",
+    "Wavetable",
     "detect_key",
     "generate_melody",
     "generate_song",

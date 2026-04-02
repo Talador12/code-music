@@ -51,6 +51,7 @@
           <option value="generative">Generative (AI Composer)</option>
           <option value="analysis">Key Detection</option>
           <option value="sounddesign">Sound Design</option>
+          <option value="fmsynthesis">FM Synthesis</option>
         </select>
         <button id="run" disabled>Run &amp; Play</button>
       </div>
@@ -182,6 +183,31 @@ lead = song.add_track(Track(name="lead", instrument="my_lead", volume=0.5))
 lead.extend(scale("C", "pentatonic_minor", octave=5, length=8))
 
 song.effects = {"lead": EffectsChain().add(reverb, room_size=0.7, wet=0.3)}
+`,
+      fmsynthesis: `from code_music import Song, Track, Note, SoundDesigner, Wavetable, EffectsChain, reverb, euclid
+
+# FM synthesis: modulate a carrier's frequency with another oscillator
+epiano = (
+    SoundDesigner("epiano")
+    .fm("sine", mod_ratio=2.0, mod_index=3.5, volume=0.8)
+    .envelope(attack=0.005, decay=0.4, sustain=0.2, release=0.5)
+)
+
+# Wavetable: custom waveform from harmonic amplitudes
+organ_wt = Wavetable.from_harmonics([1.0, 0.5, 0.0, 0.25, 0.0, 0.125])
+organ = SoundDesigner("organ").add_wavetable(organ_wt)
+
+song = Song(title="FM + Wavetable", bpm=110, sample_rate=22050)
+song.register_instrument("epiano", epiano)
+song.register_instrument("organ", organ)
+
+keys = song.add_track(Track(name="keys", instrument="epiano", volume=0.5))
+keys.extend(euclid(5, 8, "D", 4, 1.0))  # euclidean rhythm
+
+bass = song.add_track(Track(name="bass", instrument="organ", volume=0.5))
+bass.extend(euclid(3, 8, "D", 2, 1.0))  # tresillo
+
+song.effects = {"keys": EffectsChain().add(reverb, room_size=0.7, wet=0.3)}
 `,
       analysis: `from code_music import Song, Track, Note, Chord, detect_key, generate_song
 
