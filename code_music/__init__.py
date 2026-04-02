@@ -113,6 +113,7 @@ from .engine import (
 from .export import export_flac, export_mp3, export_ogg, export_wav
 from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
+from .pattern import Pattern
 from .playback import play
 from .sound_design import SoundDesigner, Wavetable
 from .synth import Synth
@@ -168,6 +169,7 @@ __all__ = [
     "crescendo",
     "decrescendo",
     "euclid",
+    "Pattern",
     "SoundDesigner",
     "Wavetable",
     "detect_key",

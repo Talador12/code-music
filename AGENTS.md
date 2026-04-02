@@ -27,10 +27,11 @@ Requires Python 3.11+. FLAC/MP3/OGG export requires ffmpeg (`brew install ffmpeg
 
 ```
 code_music/         Python package
-  engine.py         Note, Chord, Beat, Track, Song, scale()
+  engine.py         Note, Chord, Beat, Track, Song, scale(), euclid()
   synth.py          Synth — renders Song → stereo float64 numpy array
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
-  sound_design.py   SoundDesigner — build instruments from oscillators/noise/filters
+  sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
+  pattern.py        Pattern — mini-notation, transforms, polymeter
   export.py         export_wav / export_flac / export_mp3 / export_ogg
   cli.py            code-music <script.py> [--wav|--flac|--mp3|--ogg] [-o path]
 
@@ -198,6 +199,47 @@ tr.extend(euclid(3, 8, "C", 4, 0.5))              # tresillo
 tr.extend(euclid(5, 16, "D", 4, 0.25))            # son clave
 tr.extend(euclid(3, 8, "C", 4, 0.5, rotation=2))  # rotated
 ```
+
+## Granular synthesis
+
+Scatter tiny grains of sound for cloud-like textures:
+
+```python
+cloud = SoundDesigner("cloud").granular(grain_size=0.06, density=20, scatter=0.7, seed=42)
+```
+
+Presets: `grain_cloud`, `grain_shimmer`
+
+## Physical modeling
+
+Simulate real instruments with waveguides and resonators:
+
+```python
+guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998, brightness=0.5)
+flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97)
+gong = SoundDesigner("gong").physical_model("modal")
+```
+
+Models: `karplus_strong` (plucked string), `waveguide_pipe` (blown pipe), `modal` (struck body)
+Presets: `pm_guitar`, `pm_flute`, `pm_gong`
+
+## Pattern language
+
+TidalCycles-inspired note sequences with functional transforms:
+
+```python
+from code_music import Pattern
+
+p = Pattern("C4 E4 G4 C5")             # from mini-notation
+p = Pattern("C4 ~ E4")                  # ~ = rest
+p.reverse().every(4, lambda x: x.reverse())
+p.degrade(0.5, seed=42)                 # randomly drop notes
+Pattern.polymeter(p1, p2)               # layer different-length patterns
+tr.extend(p.to_notes(duration=0.5))     # convert to Notes
+```
+
+Mini-notation: `~` = rest, `*N` = repeat, `[a b]` = subdivide, `?` = 50% chance.
+Transforms: `reverse`, `rotate`, `fast`, `slow`, `degrade`, `every`, `choose`, `cat`.
 
 ## Conventions
 

@@ -390,6 +390,64 @@ Noise: `white`, `pink` (1/f), `brown` (cumulative)
 Filters: `lowpass`, `highpass`, `bandpass` (biquad, scipy-free)
 LFO targets: `filter_cutoff`, `pitch`, `volume`
 
+## Granular synthesis (v8.0+)
+
+```python
+# Scatter tiny grains of sound for cloud textures
+cloud = (
+    SoundDesigner("cloud")
+    .add_osc("sine", volume=0.3)
+    .granular(grain_size=0.06, density=20, scatter=0.7, volume=0.7, seed=42)
+)
+# grain_size: seconds per grain (0.01-0.2)
+# density: grains per second
+# scatter: timing randomness (0=even, 1=random)
+```
+
+Granular presets: `grain_cloud`, `grain_shimmer`
+
+## Physical modeling (v8.0+)
+
+```python
+# Karplus-Strong plucked string
+guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998, brightness=0.5)
+
+# Waveguide pipe/flute
+flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97, brightness=0.65)
+
+# Modal synthesis (struck metal)
+gong = SoundDesigner("gong").physical_model("modal")
+```
+
+Physical modeling presets: `pm_guitar`, `pm_flute`, `pm_gong`
+
+## Pattern language (v8.0+)
+
+```python
+from code_music import Pattern
+
+# Mini-notation: spaces separate notes, ~ = rest, *N = repeat, [] = subdivide
+p = Pattern("C4 E4 G4 C5")
+p = Pattern("C4 ~ E4")           # with rest
+p = Pattern("C4*4")              # repeat 4x
+p = Pattern("[C4 E4] G4")        # subdivision (flattened)
+
+# Transforms (all return new Pattern, immutable)
+p.reverse()                       # reverse order
+p.rotate(2)                       # shift by N steps
+p.fast(3)                         # repeat 3x (speed up)
+p.slow(2)                         # insert rests (slow down)
+p.degrade(0.5, seed=42)          # randomly drop notes
+p.every(4, lambda x: x.reverse())  # apply fn to every Nth rep
+p.choose(seed=42)                 # shuffle
+
+# Polymeter: layer patterns of different lengths (cycles at own rate)
+Pattern.polymeter(Pattern("C4 E4 G4"), Pattern("A3 B3"))  # LCM = 6
+
+# Convert to Notes for use in a Track
+tr.extend(p.to_notes(duration=0.5, default_octave=4))
+```
+
 ## Voice synthesis
 
 ```python

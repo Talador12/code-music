@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v7.0.0 — 150 songs, 808 tests, FM + wavetable synthesis + euclidean rhythms
+## Status: v8.0.0 — 155 songs, 857 tests, granular + physical modeling + Pattern language
 
 ## What's built
 
@@ -37,7 +37,22 @@
 - Rotation parameter for shifted patterns
 - Tresillo, son clave, bossa nova — all generated from (N, M) pairs
 
-### Synth (75+ presets)
+### Granular Synthesis
+- SoundDesigner.granular(): grain_size, density, scatter, seed — cloud textures
+- 2 presets (grain_cloud, grain_shimmer)
+
+### Physical Modeling
+- Karplus-Strong plucked string, waveguide pipe/flute, modal struck body
+- SoundDesigner.physical_model(): karplus_strong, waveguide_pipe, modal
+- 3 presets (pm_guitar, pm_flute, pm_gong)
+
+### Pattern Language
+- Pattern class: mini-notation parser ("C4 E4 ~ G4"), transforms, polymeter
+- Transforms: reverse, rotate, fast, slow, degrade, every, choose, cat
+- Pattern.polymeter(): layer patterns of different lengths (LCM cycling)
+- Pattern.to_notes(): convert to Note list for Track integration
+
+### Synth (80+ presets)
 - Velocity-to-timbre, Karplus-Strong physical models
 - Wobble bass, formant vowels, FM synthesis, per-note LFO filter
 - Full orchestral + percussion + EDM + voice presets
@@ -53,7 +68,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 150 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 155 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -446,16 +461,18 @@ techniques that only SuperCollider/CSound/Faust currently offer.
 - [ ] Wavetable scanning with LFO (future)
 
 ### Phase 3: Granular Synthesis
-- [ ] `SoundDesigner.granular(source, grain_size, density, scatter)`
-- [ ] Source can be another SoundDesigner, a WAV, or generated noise
-- [ ] Time-stretch and pitch-shift via grain manipulation
-- [ ] Granular cloud textures for ambient/experimental music
+- [x] `SoundDesigner.granular(grain_size, density, scatter, volume, seed)`
+- [x] Source: base frequency sine grains with Hann windowing
+- [x] Granular cloud textures for ambient/experimental music
+- [x] 2 presets: grain_cloud, grain_shimmer
+- [ ] Time-stretch and pitch-shift via grain manipulation (future)
 
 ### Phase 4: Physical Modeling
-- [ ] Karplus-Strong string (already exists in presets, extract to SoundDesigner)
-- [ ] Waveguide flute/pipe model
-- [ ] Modal synthesis (struck/plucked resonant body)
-- [ ] Bowed string model
+- [x] Karplus-Strong plucked string with decay and brightness params
+- [x] Waveguide pipe/flute model with feedback and brightness
+- [x] Modal synthesis (struck resonant body with configurable modes)
+- [x] 3 presets: pm_guitar, pm_flute, pm_gong
+- [ ] Bowed string model (future)
 
 ### Phase 5: Spectral Processing
 - [ ] `SoundDesigner.spectral(process_fn)` — FFT → manipulate → IFFT
@@ -474,13 +491,13 @@ techniques that only SuperCollider/CSound/Faust currently offer.
 TidalCycles has the most expressive pattern system ever built, but requires
 Haskell + SuperCollider. We bring pattern transforms to Python.
 
-- [ ] `Pattern` class: `p("C3 E3 G3 C4")` mini-notation for note sequences
-- [ ] Pattern transforms: `p.reverse()`, `p.every(4, reverse)`, `p.jux(rev)`
+- [x] `Pattern` class: `p("C3 E3 G3 C4")` mini-notation for note sequences
+- [x] Pattern transforms: `p.reverse()`, `p.every(4, fn)`, `p.rotate(n)`, `p.fast(n)`, `p.slow(n)`
 - [x] Euclidean rhythms: `euclid(hits, steps)` — Bjorklund algorithm (shipped v7.0)
-- [ ] Polyrhythm: `p.polymeter(p1, p2)` — layer patterns of different lengths
-- [ ] Stochastic patterns: `p.choose(["C3", "E3", "G3"])`, `p.degrade(0.3)`
-- [ ] Pattern → Track conversion: `pattern.to_track(instrument="supersaw")`
-- [ ] Mini-notation parser: `"[C3 E3] G3 [A3 B3 C4]"` — brackets for subdivisions
+- [x] Polyrhythm: `Pattern.polymeter(p1, p2)` — layer patterns of different lengths (LCM cycling)
+- [x] Stochastic patterns: `p.choose(seed)`, `p.degrade(0.5, seed)`
+- [x] Pattern → Track conversion: `p.to_notes(duration, default_octave, velocity)`
+- [x] Mini-notation parser: `"[C3 E3] G3"` brackets, `~` rests, `*N` repeat, `?` random
 
 ## v9.0 Roadmap — Gallery & Showcase
 
@@ -695,3 +712,61 @@ for instruments, effects, generators, and exporters.
 - [ ] `examples/15_plugins.py` — write and register a custom plugin
 - [ ] 5 songs using community-style plugins (175 total)
 - [ ] Tag v16.0.0 release
+
+## v17.0 Roadmap — Visual Score & Waveform Rendering
+
+Generate visual representations of songs — piano rolls, waveform plots,
+spectrograms, and notation directly from Song objects.
+
+### Phase 1: Piano Roll
+- [ ] `Song.piano_roll()` → PIL Image or matplotlib figure
+- [ ] Color-coded tracks, time axis in beats, pitch axis in semitones
+- [ ] `code-music songs/my_track.py --piano-roll -o roll.png` CLI
+- [ ] SVG output for web embedding
+
+### Phase 2: Waveform Visualization
+- [ ] `Song.waveform()` → per-track waveform plots
+- [ ] Envelope overlay showing ADSR shape
+- [ ] Master waveform with peak/RMS markers
+- [ ] `code-music songs/my_track.py --waveform -o wave.png`
+
+### Phase 3: Spectrogram
+- [ ] `Song.spectrogram()` → STFT-based frequency × time plot
+- [ ] Log-frequency axis (musical), linear-frequency option
+- [ ] Per-track spectrograms for mix analysis
+- [ ] Mel spectrogram option for perceptual representation
+
+### Phase 4: Integrated Web Viewer
+- [ ] Extend playground with live waveform/piano-roll visualization
+- [ ] `make visualize-all` — batch render visual scores for all songs
+- [ ] 5 songs with accompanying visual scores (180 total)
+- [ ] Tag v17.0.0 release
+
+## v18.0 Roadmap — AI-Assisted Composition
+
+Use LLMs and ML models to assist composition — not replace it.
+The human stays in control; AI suggests, fills gaps, and extends ideas.
+
+### Phase 1: Melody Continuation
+- [ ] `continue_melody(notes, bars=4)` — extend a melodic fragment using Markov chains
+- [ ] Style-aware: learns transition probabilities from existing songs in the library
+- [ ] `continue_melody(notes, style="jazz")` — style-specific models from songs/ corpus
+- [ ] Respects current key and scale (uses detect_key() internally)
+
+### Phase 2: Accompaniment Generation
+- [ ] `auto_accompany(melody, style)` — generate bass + chords from a melody
+- [ ] Voice-leading aware: applies voice_lead() to generated progressions
+- [ ] Drum pattern matching: selects appropriate euclidean patterns for genre
+- [ ] `Song.fill_tracks(["bass", "drums"])` — auto-fill empty tracks
+
+### Phase 3: Arrangement Suggestions
+- [ ] `suggest_arrangement(song)` — returns a Section list based on song structure analysis
+- [ ] Detects repetition, suggests intro/verse/chorus/bridge boundaries
+- [ ] `Song.auto_arrange()` — applies suggested arrangement in place
+- [ ] Build/drop detection for electronic music arrangements
+
+### Phase 4: Tests + docs + songs
+- [ ] Tests for melody continuation, accompaniment, arrangement
+- [ ] `examples/16_ai_assist.py` — AI-assisted composition tutorial
+- [ ] 5 songs composed with AI assistance (185 total)
+- [ ] Tag v18.0.0 release

@@ -277,6 +277,24 @@ from code_music import euclid
 hat.extend(euclid(3, 8, "F#", 6, 0.5))
 ```
 
+## Pattern language — write melodies as text
+
+```python
+from code_music import Pattern
+
+melody = Pattern("C5 E5 G5 C6")          # notes from a string
+bass = Pattern("C3 ~ ~ C3")              # ~ = rest
+evolving = melody.every(4, lambda p: p.reverse())  # vary every 4th rep
+tr.extend(evolving.to_notes(0.5))        # convert to Notes
+```
+
+## Physical modeling — simulate real instruments
+
+```python
+guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998)
+flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97)
+```
+
 ## Chord types
 
 ```

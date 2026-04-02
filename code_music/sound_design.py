@@ -246,6 +246,109 @@ class _LFOSpec:
         self.wave = wave
 
 
+class _GranularSpec:
+    __slots__ = ("grain_size", "density", "scatter", "volume", "seed")
+
+    def __init__(
+        self, grain_size: float, density: float, scatter: float, volume: float, seed: int | None
+    ):
+        self.grain_size = grain_size
+        self.density = density
+        self.scatter = scatter
+        self.volume = volume
+        self.seed = seed
+
+
+class _PhysicalModelSpec:
+    __slots__ = ("model_type", "params", "volume")
+
+    def __init__(self, model_type: str, params: dict, volume: float):
+        self.model_type = model_type
+        self.params = params
+        self.volume = volume
+
+
+# ---------------------------------------------------------------------------
+# Physical modeling algorithms
+# ---------------------------------------------------------------------------
+
+
+def _karplus_strong(
+    freq: float, n: int, sr: int, decay: float = 0.996, brightness: float = 0.5
+) -> FloatArray:
+    """Karplus-Strong plucked string synthesis."""
+    period = max(2, int(sr / freq))
+    rng = np.random.default_rng(42)
+    buf = rng.uniform(-1, 1, period).astype(np.float64)
+    out = np.zeros(n)
+    for i in range(n):
+        idx = i % period
+        out[i] = buf[idx]
+        # Average filter with brightness control
+        next_idx = (idx + 1) % period
+        buf[idx] = decay * (brightness * buf[idx] + (1 - brightness) * buf[next_idx])
+    return out
+
+
+def _waveguide_pipe(
+    freq: float, n: int, sr: int, feedback: float = 0.98, brightness: float = 0.6
+) -> FloatArray:
+    """Simple waveguide pipe/flute model — bidirectional delay line."""
+    half_period = max(1, int(sr / freq / 2))
+    rng = np.random.default_rng(99)
+    # Excite with a short noise burst
+    excite_len = min(int(sr * 0.005), n)
+    excite = rng.standard_normal(excite_len) * 0.5
+    # Two delay lines (forward and backward)
+    delay_a = np.zeros(half_period)
+    delay_b = np.zeros(half_period)
+    out = np.zeros(n)
+    for i in range(n):
+        idx = i % half_period
+        # Inject excitation at the start
+        inp = excite[i] if i < excite_len else 0.0
+        # Read from delay lines
+        out_a = delay_a[idx]
+        out_b = delay_b[idx]
+        # Low-pass and reflect
+        out[i] = out_a + out_b
+        delay_a[idx] = (inp + feedback * (-out_b)) * brightness + (feedback * (-out_b)) * (
+            1 - brightness
+        )
+        delay_b[idx] = feedback * (-out_a)
+    # Normalize
+    peak = np.max(np.abs(out))
+    if peak > 0:
+        out /= peak
+    return out
+
+
+def _modal_synth(
+    freq: float, n: int, sr: int, modes: list[tuple[float, float, float]] | None = None
+) -> FloatArray:
+    """Modal synthesis — struck resonant body with configurable modes.
+
+    Each mode is (freq_ratio, amplitude, decay_rate). Default modes approximate
+    a struck metal bar.
+    """
+    if modes is None:
+        modes = [(1.0, 1.0, 4.0), (2.76, 0.5, 6.0), (5.4, 0.3, 8.0), (8.93, 0.15, 12.0)]
+    t = np.arange(n) / sr
+    out = np.zeros(n)
+    for ratio, amp, decay_rate in modes:
+        mode_freq = freq * ratio
+        if mode_freq >= sr / 2:
+            continue
+        out += amp * np.sin(2 * np.pi * mode_freq * t) * np.exp(-decay_rate * t)
+    peak = np.max(np.abs(out))
+    if peak > 0:
+        out /= peak
+    return out
+
+
+_PHYSICAL_MODELS = {"karplus_strong", "waveguide_pipe", "modal"}
+
+
 # ---------------------------------------------------------------------------
 # Wavetable helpers
 # ---------------------------------------------------------------------------
@@ -351,6 +454,8 @@ class SoundDesigner:
         self._noises: list[_NoiseLayer] = []
         self._fm_layers: list[_FMLayer] = []
         self._wavetable_layers: list[_WavetableLayer] = []
+        self._granular_layers: list[_GranularSpec] = []
+        self._physical_layers: list[_PhysicalModelSpec] = []
         self._env: tuple[float, float, float, float] = (0.01, 0.1, 0.8, 0.3)
         self._filter: _FilterSpec | None = None
         self._lfos: list[_LFOSpec] = []
@@ -462,6 +567,70 @@ class SoundDesigner:
         self._wavetable_layers.append(_WavetableLayer(table, volume, detune_cents))
         return self
 
+    # -- Granular synthesis ------------------------------------------------
+
+    def granular(
+        self,
+        grain_size: float = 0.05,
+        density: float = 10.0,
+        scatter: float = 0.3,
+        volume: float = 1.0,
+        seed: int | None = None,
+    ) -> "SoundDesigner":
+        """Add a granular synthesis layer.
+
+        Splits a source (noise or the current osc mix) into tiny grains and
+        scatters them in time. Creates cloud-like textures, time-stretch effects,
+        and atmospheric soundscapes.
+
+        Args:
+            grain_size: Size of each grain in seconds (0.01–0.2).
+            density:    Average grains per second.
+            scatter:    Timing randomness (0 = even, 1 = fully random).
+            volume:     Layer volume.
+            seed:       Random seed for reproducible grain patterns.
+
+        Example::
+
+            cloud = SoundDesigner("cloud").granular(grain_size=0.08, density=15, scatter=0.5)
+        """
+        self._granular_layers.append(_GranularSpec(grain_size, density, scatter, volume, seed))
+        return self
+
+    # -- Physical modeling -------------------------------------------------
+
+    def physical_model(
+        self,
+        model_type: str = "karplus_strong",
+        volume: float = 1.0,
+        **kwargs: float,
+    ) -> "SoundDesigner":
+        """Add a physical modeling synthesis layer.
+
+        Simulates real-world instruments using waveguides and resonant models.
+
+        Args:
+            model_type: Model to use:
+                - ``karplus_strong``: plucked string (guitar, harp, koto).
+                  Params: decay (0.99–0.999), brightness (0–1).
+                - ``waveguide_pipe``: blown pipe/flute.
+                  Params: feedback (0.9–0.99), brightness (0–1).
+                - ``modal``: struck resonant body (bell, bar, gong).
+                  Params: (uses default metal bar modes).
+            volume:     Layer volume.
+            **kwargs:   Model-specific parameters.
+
+        Example::
+
+            guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998)
+            flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97)
+            gong = SoundDesigner("gong").physical_model("modal")
+        """
+        if model_type not in _PHYSICAL_MODELS:
+            raise ValueError(f"Unknown model {model_type!r}. Choose: {sorted(_PHYSICAL_MODELS)}")
+        self._physical_layers.append(_PhysicalModelSpec(model_type, dict(kwargs), volume))
+        return self
+
     # -- Envelope ----------------------------------------------------------
 
     def envelope(
@@ -567,7 +736,14 @@ class SoundDesigner:
 
         # -- Mix oscillator layers -----------------------------------------
         mix = np.zeros(n)
-        has_sources = self._oscs or self._noises or self._fm_layers or self._wavetable_layers
+        has_sources = (
+            self._oscs
+            or self._noises
+            or self._fm_layers
+            or self._wavetable_layers
+            or self._granular_layers
+            or self._physical_layers
+        )
         if not has_sources:
             # Default: single sine
             self._oscs.append(_OscLayer("sine", 0.0, 1.0, 1))
@@ -677,6 +853,54 @@ class SoundDesigner:
             layer = wt_layer.table[idx0] * (1.0 - frac) + wt_layer.table[idx1] * frac
             mix += layer * wt_layer.volume
 
+        # -- Granular synthesis layers -------------------------------------
+        for gran in self._granular_layers:
+            rng = np.random.default_rng(gran.seed)
+            grain_samples = max(1, int(gran.grain_size * sr))
+            num_grains = max(1, int(gran.density * duration))
+            grain_out = np.zeros(n)
+            # Generate a source grain from the base frequency
+            grain_t = np.arange(grain_samples) / sr
+            grain_src = np.sin(2 * np.pi * freq * grain_t)
+            # Apply Hann window to each grain for smooth overlap
+            grain_window = np.hanning(grain_samples)
+            grain_src *= grain_window
+            # Place grains
+            for _ in range(num_grains):
+                # Evenly spaced with scatter
+                base_pos = rng.uniform(0, n - grain_samples) if gran.scatter > 0 else 0
+                pos = int(np.clip(base_pos, 0, n - grain_samples))
+                grain_out[pos : pos + grain_samples] += grain_src
+            # Normalize grain output
+            grain_peak = np.max(np.abs(grain_out))
+            if grain_peak > 0:
+                grain_out /= grain_peak
+            mix += grain_out * gran.volume
+
+        # -- Physical modeling layers --------------------------------------
+        for phys in self._physical_layers:
+            if phys.model_type == "karplus_strong":
+                layer = _karplus_strong(
+                    freq,
+                    n,
+                    sr,
+                    decay=phys.params.get("decay", 0.996),
+                    brightness=phys.params.get("brightness", 0.5),
+                )
+            elif phys.model_type == "waveguide_pipe":
+                layer = _waveguide_pipe(
+                    freq,
+                    n,
+                    sr,
+                    feedback=phys.params.get("feedback", 0.98),
+                    brightness=phys.params.get("brightness", 0.6),
+                )
+            elif phys.model_type == "modal":
+                layer = _modal_synth(freq, n, sr)
+            else:
+                layer = np.zeros(n)
+            mix += layer * phys.volume
+
         # Normalize if clipping
         peak = np.max(np.abs(mix))
         if peak > 1.0:
@@ -783,6 +1007,24 @@ class SoundDesigner:
                 }
                 for wt in self._wavetable_layers
             ],
+            "granular_layers": [
+                {
+                    "grain_size": g.grain_size,
+                    "density": g.density,
+                    "scatter": g.scatter,
+                    "volume": g.volume,
+                    "seed": g.seed,
+                }
+                for g in self._granular_layers
+            ],
+            "physical_layers": [
+                {
+                    "model_type": p.model_type,
+                    "params": p.params,
+                    "volume": p.volume,
+                }
+                for p in self._physical_layers
+            ],
             "envelope": {
                 "attack": self._env[0],
                 "decay": self._env[1],
@@ -832,6 +1074,22 @@ class SoundDesigner:
                 wt_data.get("volume", 1.0),
                 wt_data.get("detune_cents", 0.0),
             )
+        for g_data in data.get("granular_layers", []):
+            sd.granular(
+                g_data.get("grain_size", 0.05),
+                g_data.get("density", 10.0),
+                g_data.get("scatter", 0.3),
+                g_data.get("volume", 1.0),
+                g_data.get("seed"),
+            )
+        for p_data in data.get("physical_layers", []):
+            sd._physical_layers.append(
+                _PhysicalModelSpec(
+                    p_data["model_type"],
+                    p_data.get("params", {}),
+                    p_data.get("volume", 1.0),
+                )
+            )
         env = data.get("envelope", {})
         if env:
             sd.envelope(
@@ -863,6 +1121,10 @@ class SoundDesigner:
             parts.append(f"fm={len(self._fm_layers)}")
         if self._wavetable_layers:
             parts.append(f"wavetables={len(self._wavetable_layers)}")
+        if self._granular_layers:
+            parts.append(f"granular={len(self._granular_layers)}")
+        if self._physical_layers:
+            parts.append(f"physical={len(self._physical_layers)}")
         if self._filter:
             parts.append(f"filter={self._filter.filter_type}")
         parts.append(f"lfos={len(self._lfos)}")
@@ -992,6 +1254,50 @@ wt_morph_pad = (
     .lfo("filter_cutoff", rate=0.2, depth=0.4)
 )
 
+# ---------------------------------------------------------------------------
+# Granular Presets
+# ---------------------------------------------------------------------------
+
+grain_cloud = (
+    SoundDesigner("grain_cloud")
+    .add_osc("sine", volume=0.3)
+    .granular(grain_size=0.06, density=20, scatter=0.7, volume=0.7, seed=42)
+    .envelope(attack=0.5, decay=0.3, sustain=0.4, release=1.0)
+    .filter("lowpass", cutoff=3000, resonance=0.4)
+)
+
+grain_shimmer = (
+    SoundDesigner("grain_shimmer")
+    .noise("white", volume=0.2, seed=10)
+    .granular(grain_size=0.03, density=30, scatter=0.5, volume=0.8, seed=77)
+    .envelope(attack=0.3, decay=0.2, sustain=0.5, release=0.8)
+    .filter("bandpass", cutoff=4000, resonance=1.5)
+)
+
+# ---------------------------------------------------------------------------
+# Physical Modeling Presets
+# ---------------------------------------------------------------------------
+
+pm_guitar = (
+    SoundDesigner("pm_guitar")
+    .physical_model("karplus_strong", volume=0.9, decay=0.998, brightness=0.5)
+    .envelope(attack=0.001, decay=0.5, sustain=0.1, release=0.3)
+)
+
+pm_flute = (
+    SoundDesigner("pm_flute")
+    .physical_model("waveguide_pipe", volume=0.8, feedback=0.97, brightness=0.65)
+    .envelope(attack=0.05, decay=0.1, sustain=0.7, release=0.3)
+    .filter("lowpass", cutoff=4000, resonance=0.3)
+)
+
+pm_gong = (
+    SoundDesigner("pm_gong")
+    .physical_model("modal", volume=0.9)
+    .envelope(attack=0.001, decay=1.5, sustain=0.1, release=1.0)
+    .filter("lowpass", cutoff=6000, resonance=0.5)
+)
+
 PRESETS = {
     "supersaw": supersaw,
     "sub_808": sub_808,
@@ -1005,4 +1311,9 @@ PRESETS = {
     "wt_organ": wt_organ,
     "wt_bright_lead": wt_bright_lead,
     "wt_morph_pad": wt_morph_pad,
+    "grain_cloud": grain_cloud,
+    "grain_shimmer": grain_shimmer,
+    "pm_guitar": pm_guitar,
+    "pm_flute": pm_flute,
+    "pm_gong": pm_gong,
 }

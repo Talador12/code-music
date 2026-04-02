@@ -52,6 +52,7 @@
           <option value="analysis">Key Detection</option>
           <option value="sounddesign">Sound Design</option>
           <option value="fmsynthesis">FM Synthesis</option>
+          <option value="patterns">Patterns</option>
         </select>
         <button id="run" disabled>Run &amp; Play</button>
       </div>
@@ -183,6 +184,29 @@ lead = song.add_track(Track(name="lead", instrument="my_lead", volume=0.5))
 lead.extend(scale("C", "pentatonic_minor", octave=5, length=8))
 
 song.effects = {"lead": EffectsChain().add(reverb, room_size=0.7, wet=0.3)}
+`,
+      patterns: `from code_music import Song, Track, Pattern, EffectsChain, euclid, reverb
+
+# Build note sequences from mini-notation strings
+melody = Pattern("C5 E5 G5 C6 G5 E5 D5 C5")
+bass = Pattern("C3 ~ ~ C3 ~ Eb3 ~ G3")
+
+# Transform: every 4th rep, reverse the melody
+evolving = melody.every(4, lambda p: p.reverse())
+
+song = Song(title="Patterns", bpm=120, sample_rate=22050)
+lead = song.add_track(Track(name="lead", instrument="piano", volume=0.6))
+lead.extend(evolving.to_notes(0.5))
+
+bass_tr = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
+bass_tr.extend(bass.to_notes(0.5))
+bass_tr.extend(bass.to_notes(0.5))
+
+kick = song.add_track(Track(name="kick", instrument="drums_kick", volume=0.7))
+for _ in range(4):
+    kick.extend(euclid(3, 8, "C", 2, 0.5))
+
+song.effects = {"lead": EffectsChain().add(reverb, room_size=0.4, wet=0.2)}
 `,
       fmsynthesis: `from code_music import Song, Track, Note, SoundDesigner, Wavetable, EffectsChain, reverb, euclid
 

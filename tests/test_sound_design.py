@@ -469,6 +469,100 @@ class TestEuclideanRhythm:
         assert audio.shape[0] > 0
 
 
+class TestGranularSynthesis:
+    def test_granular_renders(self):
+        sd = SoundDesigner("gran").granular(grain_size=0.05, density=10, seed=42)
+        audio = sd.render(440.0, 0.5, SR)
+        assert len(audio) > 0
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_granular_with_osc(self):
+        sd = SoundDesigner("gran_osc").add_osc("sine", volume=0.3).granular(density=15, seed=7)
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_granular_serialization(self):
+        original = SoundDesigner("gran_ser").granular(
+            grain_size=0.04, density=12, scatter=0.6, seed=42
+        )
+        restored = SoundDesigner.from_dict(original.to_dict())
+        assert len(restored._granular_layers) == 1
+        assert restored._granular_layers[0].density == 12.0
+
+    def test_granular_presets_render(self):
+        for name in ["grain_cloud", "grain_shimmer"]:
+            assert name in PRESETS
+            audio = PRESETS[name].render(261.63, 0.5, SR)
+            assert np.max(np.abs(audio)) > 0.0, f"{name} is silent"
+
+    def test_granular_in_song(self):
+        sd = SoundDesigner("cloud").granular(grain_size=0.05, density=10, seed=42)
+        song = Song(title="Gran Test", bpm=120, sample_rate=SR)
+        song.register_instrument("cloud", sd)
+        tr = song.add_track(Track(instrument="cloud"))
+        tr.add(Note("C", 4, 2.0))
+        audio = song.render()
+        assert np.max(np.abs(audio)) > 0.0
+
+
+class TestPhysicalModeling:
+    def test_karplus_strong_renders(self):
+        sd = SoundDesigner("ks").physical_model("karplus_strong")
+        audio = sd.render(440.0, 0.5, SR)
+        assert len(audio) > 0
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_waveguide_pipe_renders(self):
+        sd = SoundDesigner("pipe").physical_model("waveguide_pipe")
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_modal_renders(self):
+        sd = SoundDesigner("modal").physical_model("modal")
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_unknown_model_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError, match="Unknown model"):
+            SoundDesigner("test").physical_model("didgeridoo")
+
+    def test_physical_with_params(self):
+        sd = SoundDesigner("ks").physical_model("karplus_strong", decay=0.999, brightness=0.7)
+        audio = sd.render(440.0, 0.5, SR)
+        assert np.max(np.abs(audio)) > 0.0
+
+    def test_physical_at_multiple_pitches(self):
+        sd = SoundDesigner("ks").physical_model("karplus_strong")
+        for freq in [130.81, 261.63, 523.25]:
+            audio = sd.render(freq, 0.5, SR)
+            assert np.max(np.abs(audio)) > 0.0
+
+    def test_physical_serialization(self):
+        original = SoundDesigner("ks_ser").physical_model("karplus_strong", decay=0.998)
+        data = original.to_dict()
+        assert len(data["physical_layers"]) == 1
+        restored = SoundDesigner.from_dict(data)
+        assert len(restored._physical_layers) == 1
+        assert restored._physical_layers[0].model_type == "karplus_strong"
+
+    def test_physical_presets_render(self):
+        for name in ["pm_guitar", "pm_flute", "pm_gong"]:
+            assert name in PRESETS
+            audio = PRESETS[name].render(261.63, 0.5, SR)
+            assert np.max(np.abs(audio)) > 0.0, f"{name} is silent"
+
+    def test_physical_in_song(self):
+        sd = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998)
+        song = Song(title="Phys Test", bpm=120, sample_rate=SR)
+        song.register_instrument("guitar", sd)
+        tr = song.add_track(Track(instrument="guitar"))
+        tr.add(Note("E", 4, 2.0))
+        audio = song.render()
+        assert np.max(np.abs(audio)) > 0.0
+
+
 class TestSoundDesignerRepr:
     def test_repr_is_concise(self):
         sd = SoundDesigner("test").add_osc("sine").add_osc("sawtooth").filter("lowpass")
@@ -486,3 +580,11 @@ class TestSoundDesignerRepr:
         wt = Wavetable.from_wave("sine")
         sd = SoundDesigner("wt").add_wavetable(wt)
         assert "wavetables=1" in repr(sd)
+
+    def test_repr_shows_granular(self):
+        sd = SoundDesigner("g").granular()
+        assert "granular=1" in repr(sd)
+
+    def test_repr_shows_physical(self):
+        sd = SoundDesigner("p").physical_model("modal")
+        assert "physical=1" in repr(sd)
