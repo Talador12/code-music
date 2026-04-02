@@ -32,6 +32,7 @@ code_music/         Python package
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
   sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
   pattern.py        Pattern — mini-notation, transforms, polymeter
+  mastering.py      LUFS metering, true peak limiting, dithering, stereo analysis
   export.py         export_wav / export_flac / export_mp3 / export_ogg
   cli.py            code-music <script.py> [--wav|--flac|--mp3|--ogg] [-o path]
 
@@ -268,6 +269,21 @@ t.flatness     # 0 = tonal, 1 = noisy
 t.distance(t2) # perceptual distance
 t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
+```
+
+## Mastering pipeline
+
+Production-ready mastering in `code_music/mastering.py`:
+
+```python
+from code_music.mastering import measure_lufs, normalize_lufs, true_peak_limit, dither, stereo_analysis, master_audio
+
+lufs = measure_lufs(audio, sr)             # ITU-R BS.1770 (K-weighted)
+audio = normalize_lufs(audio, sr, -14.0)   # target LUFS for streaming
+audio = true_peak_limit(audio, sr, -1.0)   # 4x oversampled ISP limiter
+audio = dither(audio, bit_depth=16)        # TPDF dithering
+info = stereo_analysis(audio)              # {correlation, width, balance, mid_rms, side_rms}
+mastered = master_audio(audio, sr)         # full chain in one call
 ```
 
 ## Conventions

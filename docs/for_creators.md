@@ -304,6 +304,17 @@ frozen = SoundDesigner("frozen").add_osc("sawtooth").spectral(spectral_freeze(0.
 shifted = SoundDesigner("up").add_osc("saw").spectral(spectral_shift(7.0))
 ```
 
+## Master your songs for streaming
+
+```python
+from code_music.mastering import master_audio, measure_lufs
+
+audio = song.render()
+print(f"Before: {measure_lufs(audio, 44100):.1f} LUFS")
+mastered = master_audio(audio, 44100, target_lufs=-14.0)  # Spotify-ready
+print(f"After: {measure_lufs(mastered, 44100):.1f} LUFS")
+```
+
 ## Chord types
 
 ```

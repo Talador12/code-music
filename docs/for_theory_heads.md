@@ -486,6 +486,22 @@ t1.to_dict()           # JSON-serializable
 Features: centroid (brightness), bandwidth (spread), flatness (tonal vs noisy),
 rolloff (energy distribution), RMS (loudness).
 
+## Mastering pipeline (v10.0+)
+
+```python
+from code_music.mastering import measure_lufs, normalize_lufs, true_peak_limit, dither, stereo_analysis, master_audio
+
+audio = song.render()
+lufs = measure_lufs(audio, sr)              # ITU-R BS.1770-4 simplified
+audio = normalize_lufs(audio, sr, -14.0)    # target LUFS for streaming
+audio = true_peak_limit(audio, sr, -1.0)    # ISP limiting at -1 dBFS
+audio = dither(audio, bit_depth=16)         # TPDF dithering
+info = stereo_analysis(audio)               # correlation, width, balance, mid/side RMS
+
+# Or all at once:
+mastered = master_audio(audio, sr, target_lufs=-14.0, ceiling_db=-1.0, dither_bits=16)
+```
+
 ## Voice synthesis
 
 ```python

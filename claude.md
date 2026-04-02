@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v9.0.0 — 160 songs, 880 tests, spectral processing + timbre analysis
+## Status: v10.0.0 — 165 songs, 907 tests, production mastering pipeline
 
 ## What's built
 
@@ -63,6 +63,11 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### Mastering Pipeline
+- mastering.py: LUFS metering (ITU-R BS.1770 simplified), normalize_lufs, true_peak_limit
+- TPDF dithering for 16/24-bit export, stereo_analysis (correlation/width/balance)
+- master_audio(): full chain (normalize → limit → dither) in one call
+
 ### Synth (80+ presets)
 - Velocity-to-timbre, Karplus-Strong physical models
 - Wobble bass, formant vowels, FM synthesis, per-note LFO filter
@@ -79,7 +84,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 160 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 165 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -543,13 +548,15 @@ The entire library showcased through curated, categorized demos.
 
 Bridge the gap from "cool demo" to "this goes on Spotify."
 
-- [ ] `Song.master()` improvements: LUFS loudness targeting (-14 LUFS for streaming)
-- [ ] Dithering (TPDF) for 16-bit export
-- [ ] True peak limiting (ISP)
-- [ ] Stereo imaging analysis + correction
-- [ ] `code-music master song.wav --target-lufs=-14 --format=flac` CLI
-- [ ] Batch mastering: `make master` processes all songs to release-ready specs
-- [ ] Metadata embedding (ID3 tags for MP3, Vorbis comments for FLAC/OGG)
+- [x] `measure_lufs()` — ITU-R BS.1770-4 simplified K-weighted loudness metering
+- [x] `normalize_lufs(audio, sr, target=-14.0)` — LUFS loudness targeting for streaming
+- [x] `dither(audio, bit_depth=16)` — TPDF dithering for 16/24-bit export
+- [x] `true_peak_limit(audio, sr, ceiling_db=-1.0)` — 4× oversampled ISP limiter
+- [x] `stereo_analysis(audio)` — correlation, width, balance, mid/side RMS
+- [x] `master_audio()` — full chain: normalize → limit → dither
+- [ ] `code-music master song.wav --target-lufs=-14 --format=flac` CLI (future)
+- [ ] Batch mastering: `make master` processes all songs (future)
+- [ ] Metadata embedding (ID3 tags for MP3, Vorbis comments for FLAC/OGG) (future)
 
 ## v11.0 Roadmap — Automation & Modulation Matrix
 
@@ -843,3 +850,59 @@ notes — verses, choruses, builds, drops, transitions.
 - [ ] `examples/18_structure.py` — song structure and arrangement tutorial
 - [ ] 5 structurally complex songs (195 total)
 - [ ] Tag v20.0.0 release
+
+## v21.0 Roadmap — MIDI I/O & DAW Integration
+
+Full bidirectional MIDI support — import from any DAW, export to any DAW,
+real-time MIDI input for live performance.
+
+### Phase 1: MIDI Import Enhancements
+- [ ] `import_midi()` improvements: tempo changes, time signatures, CC automation
+- [ ] Multi-track import with instrument mapping (GM → code-music presets)
+- [ ] Velocity → volume mapping with configurable curves
+- [ ] MIDI file analysis: key detection, chord extraction, structure detection
+
+### Phase 2: MIDI Export Enhancements
+- [ ] `export_midi()` improvements: CC automation, program changes, tempo maps
+- [ ] Per-track MIDI channel assignment
+- [ ] Pattern → MIDI conversion: `pattern.to_midi(path)`
+- [ ] SoundDesigner params → CC automation (filter cutoff → CC74, etc)
+
+### Phase 3: Real-Time MIDI Input
+- [ ] `midi_input(port)` — listen on a MIDI port, convert to Notes in real-time
+- [ ] `Song.record_midi(port, duration)` — record MIDI into a Track
+- [ ] Quantization: snap recorded notes to grid (1/4, 1/8, 1/16)
+- [ ] Live monitoring: play SoundDesigner instruments from MIDI keyboard
+
+### Phase 4: Tests + docs + songs
+- [ ] `examples/19_midi.py` — MIDI import/export/record tutorial
+- [ ] 5 songs created from MIDI imports (200 total)
+- [ ] Tag v21.0.0 release
+
+## v22.0 Roadmap — Performance Optimization & Streaming
+
+Make code-music fast enough for real-time and large-scale batch rendering.
+
+### Phase 1: Rendering Performance
+- [ ] NumPy vectorization audit — eliminate remaining Python loops in hot paths
+- [ ] Pre-compute SoundDesigner wavetables at registration (not per-note)
+- [ ] Parallel track rendering with multiprocessing.Pool
+- [ ] Benchmark suite: `make bench` reports render time per song
+
+### Phase 2: Streaming Render
+- [ ] `Song.render_stream(chunk_size)` — yield audio chunks (generator)
+- [ ] Enables real-time playback of arbitrarily long songs
+- [ ] Streaming export: write to WAV while rendering (constant memory)
+- [ ] Progress callback for long renders
+
+### Phase 3: Caching
+- [ ] `SoundDesigner.render()` LRU cache keyed on (freq, duration, sr)
+- [ ] Track-level render cache (invalidated on note/effect changes)
+- [ ] `Song.render(cache=True)` — skip unchanged tracks on re-render
+- [ ] Cache statistics: `Song.cache_info()` → hit rate, memory usage
+
+### Phase 4: Tests + docs
+- [ ] Benchmark tests with regression detection
+- [ ] `examples/20_performance.py` — optimization patterns tutorial
+- [ ] 5 performance-intensive songs (205 total)
+- [ ] Tag v22.0.0 release
