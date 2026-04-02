@@ -232,6 +232,35 @@ drums_kick    drums_snare   drums_hat         drums_808
 choir_aah     choir_ooh     vibraphone        marimba
 ```
 
+## Design your own instruments
+
+Build sounds from raw oscillators — no WAV files, no external libraries:
+
+```python
+from code_music import SoundDesigner, Song, Track, Note
+
+# Design a thick supersaw lead
+my_lead = (
+    SoundDesigner("my_lead")
+    .add_osc("sawtooth", detune_cents=0, volume=0.3)
+    .add_osc("sawtooth", detune_cents=10, volume=0.25)
+    .add_osc("sawtooth", detune_cents=-10, volume=0.25)
+    .envelope(attack=0.02, decay=0.1, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.6)
+)
+
+# Register it and use like any built-in instrument
+song = Song(title="Custom Sound", bpm=120)
+song.register_instrument("my_lead", my_lead)
+lead = song.add_track(Track(instrument="my_lead"))
+lead.add(Note("C", 5, 2.0))
+```
+
+Available oscillators: `sine`, `sawtooth`, `square`, `triangle`
+Noise types: `white`, `pink`, `brown`
+Filters: `lowpass`, `highpass`, `bandpass`
+LFO targets: `filter_cutoff`, `pitch`, `volume`
+
 ## Chord types
 
 ```

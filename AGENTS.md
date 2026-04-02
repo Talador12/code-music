@@ -30,6 +30,7 @@ code_music/         Python package
   engine.py         Note, Chord, Beat, Track, Song, scale()
   synth.py          Synth — renders Song → stereo float64 numpy array
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
+  sound_design.py   SoundDesigner — build instruments from oscillators/noise/filters
   export.py         export_wav / export_flac / export_mp3 / export_ogg
   cli.py            code-music <script.py> [--wav|--flac|--mp3|--ogg] [-o path]
 
@@ -120,6 +121,37 @@ All take `(samples: ndarray, sample_rate: int, **kwargs)` → `ndarray`.
 3. Min requirements: 30s, 44100 Hz stereo
 4. FLAC preferred; MP3 320k also accepted
 
+## Sound design
+
+Build instruments from raw oscillators — no WAV files, no external libraries:
+
+```python
+from code_music import SoundDesigner, Song, Track, Note
+
+lead = (
+    SoundDesigner("my_lead")
+    .add_osc("sawtooth", detune_cents=0, volume=0.3)
+    .add_osc("sawtooth", detune_cents=10, volume=0.25)
+    .add_osc("sawtooth", detune_cents=-10, volume=0.25)
+    .envelope(attack=0.02, decay=0.1, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.6)
+    .lfo("filter_cutoff", rate=0.4, depth=0.6)
+)
+
+song = Song(title="Custom", bpm=128)
+song.register_instrument("my_lead", lead)
+tr = song.add_track(Track(instrument="my_lead"))
+tr.add(Note("C", 5, 2.0))
+```
+
+Oscillators: `sine`, `sawtooth`, `square`, `triangle`
+Noise: `white`, `pink`, `brown`
+Filters: `lowpass`, `highpass`, `bandpass` (biquad, scipy-free)
+LFO targets: `filter_cutoff`, `pitch`, `volume`
+Built-in presets: `supersaw`, `sub_808`, `metallic_hit`, `vocal_pad`, `plucked_string`
+
+Serialize with `to_dict()`/`from_dict()`. Export to WAV with `to_wav()`. Preview with `preview()`.
+
 ## Conventions
 
 - One `song` variable per file in `songs/`.
@@ -127,3 +159,13 @@ All take `(samples: ndarray, sample_rate: int, **kwargs)` → `ndarray`.
 - `dist/` is gitignored — never commit rendered audio.
 - Tests use `sample_rate=22050` for speed; production uses `44100`.
 - Per-track effects live in `song.effects` dict (name → EffectsChain or callable).
+- Custom instruments use `song.register_instrument(name, SoundDesigner)`.
+- Scale names: `pentatonic` (major), `pentatonic_minor`, `pentatonic_blues` — NOT `minor_pentatonic`.
+
+## AI workflow notes
+
+- Songs using SoundDesigner must register instruments before adding tracks.
+- The `SoundDesigner.render()` method returns mono float64 — the Synth converts to stereo.
+- All 5 built-in SoundDesigner presets live in `code_music.sound_design.PRESETS`.
+- Smoke tests auto-discover songs and examples — no manual test registration needed.
+- When adding new songs: verify scale names against `SCALES` dict keys in engine.py.

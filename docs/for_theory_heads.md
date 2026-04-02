@@ -292,6 +292,56 @@ song = import_midi("piano_piece.mid", instrument="pad")
 # code-music dummy.py --import-midi existing.mid -o remix.wav
 ```
 
+## Sound design (v6.0+)
+
+Build instruments from oscillators, noise, filters, LFOs, and envelopes:
+
+```python
+from code_music import SoundDesigner
+from code_music.sound_design import PRESETS  # 5 built-in designs
+
+# Multi-oscillator with detuning + filter + LFO
+wobble = (
+    SoundDesigner("wobble")
+    .add_osc("sawtooth", detune_cents=0, volume=0.4)
+    .add_osc("sawtooth", detune_cents=5, volume=0.3)
+    .add_osc("sawtooth", detune_cents=-5, volume=0.3)
+    .noise("pink", volume=0.1)                         # noise layer
+    .envelope(attack=0.2, decay=0.1, sustain=0.6, release=0.5)
+    .filter("lowpass", cutoff=2000, resonance=1.5)
+    .lfo("filter_cutoff", rate=0.4, depth=0.6)         # wobble the filter
+)
+
+# Pitch envelope for kick/808 sounds
+kick = (
+    SoundDesigner("kick")
+    .add_osc("sine", volume=1.0)
+    .envelope(attack=0.001, decay=0.3, sustain=0.0, release=0.15)
+    .pitch_envelope(start_multiplier=6.0, end_multiplier=1.0, duration=0.03)
+)
+
+# Register and use in a song
+song.register_instrument("wobble", wobble)
+tr = song.add_track(Track(instrument="wobble"))
+
+# Render standalone
+audio = wobble.render(freq=440.0, duration=2.0, sr=44100)  # mono float64
+
+# Serialize / restore
+data = wobble.to_dict()           # JSON-compatible dict
+restored = SoundDesigner.from_dict(data)
+
+# Export to WAV
+wobble.to_wav("wobble_c4.wav", freq=261.63, duration=2.0)
+```
+
+Built-in presets: `supersaw`, `sub_808`, `metallic_hit`, `vocal_pad`, `plucked_string`
+
+Oscillators: `sine`, `sawtooth`, `square`, `triangle`
+Noise: `white`, `pink` (1/f), `brown` (cumulative)
+Filters: `lowpass`, `highpass`, `bandpass` (biquad, scipy-free)
+LFO targets: `filter_cutoff`, `pitch`, `volume`
+
 ## Voice synthesis
 
 ```python

@@ -1778,6 +1778,25 @@ class Song:
     key_sig: str = "C"
     effects: dict = field(default_factory=dict)  # track_name → callable or EffectsChain
     bpm_map: list[float] = field(default_factory=list)  # per-beat BPM values (from bpm_ramp)
+    _custom_instruments: dict = field(default_factory=dict)  # name → SoundDesigner
+
+    def register_instrument(self, name: str, designer: object) -> "Song":
+        """Register a custom SoundDesigner as a playable instrument.
+
+        After registration, any Track with ``instrument=name`` will use
+        the designer for rendering instead of the built-in synth presets.
+
+        Returns self for chaining.
+
+        Example::
+
+            from code_music.sound_design import SoundDesigner
+            kick = SoundDesigner("my_kick").add_osc("sine").pitch_envelope(4.0, 1.0, 0.04)
+            song.register_instrument("my_kick", kick)
+            tr = song.add_track(Track(instrument="my_kick"))
+        """
+        self._custom_instruments[name] = designer
+        return self
 
     def __repr__(self) -> str:
         t = len(self.tracks)

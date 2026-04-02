@@ -258,6 +258,17 @@ class Synth:
     # ------------------------------------------------------------------
 
     _harmonics_cache: dict[str, int] = {}
+    _custom_instruments: dict[str, object] = {}  # name → SoundDesigner
+
+    @classmethod
+    def register(cls, name: str, designer: object) -> None:
+        """Register a SoundDesigner as a playable instrument.
+
+        After registration, any Track with ``instrument=name`` will use the
+        designer's ``render(freq, duration, sr)`` method instead of the
+        built-in additive synthesis.
+        """
+        cls._custom_instruments[name] = designer
 
     def _wave(self, wave: str, freq: float, n_samples: int) -> FloatArray:
         """Generate waveform using additive/spectral synthesis (fully vectorised)."""
@@ -416,10 +427,18 @@ class Synth:
     # Per-note rendering
     # ------------------------------------------------------------------
 
-    def _render_note(self, note: Note, n_samples: int, preset: dict) -> FloatArray:
+    def _render_note(
+        self, note: Note, n_samples: int, preset: dict, instrument_name: str = ""
+    ) -> FloatArray:
         freq = note.freq
         if freq is None or freq <= 0:
             return np.zeros(n_samples)
+
+        # Check for custom SoundDesigner instruments first
+        designer = self._custom_instruments.get(instrument_name)
+        if designer is not None and hasattr(designer, "render"):
+            duration = n_samples / self.sample_rate
+            return designer.render(freq, duration, self.sample_rate)[:n_samples]
 
         wave_type = preset.get("wave", "sine")
         # Pitch-drop envelope: kick drums, 808, timpani, tom
@@ -590,7 +609,9 @@ class Synth:
             # Mix all notes in the beat
             mixed = np.zeros(n_samples)
             for note in notes:
-                mixed += self._render_note(note, n_samples, preset)
+                mixed += self._render_note(
+                    note, n_samples, preset, instrument_name=track.instrument
+                )
             if len(notes) > 1:
                 mixed /= len(notes) ** 0.5  # RMS normalization
 
@@ -632,7 +653,7 @@ class Synth:
             n_samples = int(note.duration * beat_sec * self.sample_rate)
             if n_samples < 1 or start_sample >= total_samples:
                 continue
-            rendered = self._render_note(note, n_samples, preset)
+            rendered = self._render_note(note, n_samples, preset, instrument_name=ptrack.instrument)
             end_sample = min(start_sample + n_samples, total_samples)
             clip_len = end_sample - start_sample
             buf[start_sample:end_sample, 0] += rendered[:clip_len] * l_gain * ptrack.volume
@@ -652,6 +673,10 @@ class Synth:
         chain before being mixed into the master bus.
         """
         import math
+
+        # Register song-level custom instruments
+        for name, designer in getattr(song, "_custom_instruments", {}).items():
+            self._custom_instruments[name] = designer
 
         has_instrument_tracks = bool(song.tracks)
         has_poly_tracks = bool(getattr(song, "poly_tracks", []))

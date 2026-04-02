@@ -50,6 +50,7 @@
           <option value="arrangement">Arrangement</option>
           <option value="generative">Generative (AI Composer)</option>
           <option value="analysis">Key Detection</option>
+          <option value="sounddesign">Sound Design</option>
         </select>
         <button id="run" disabled>Run &amp; Play</button>
       </div>
@@ -147,6 +148,40 @@ song = generate_song(
     seed=42,            # change this for a new composition
     sample_rate=22050,
 )
+`,
+      sounddesign: `from code_music import Song, Track, Note, Chord, SoundDesigner, EffectsChain, reverb, scale
+
+# Design a supersaw lead from raw oscillators
+my_lead = (
+    SoundDesigner("my_lead")
+    .add_osc("sawtooth", detune_cents=0, volume=0.3)
+    .add_osc("sawtooth", detune_cents=10, volume=0.25)
+    .add_osc("sawtooth", detune_cents=-10, volume=0.25)
+    .envelope(attack=0.02, decay=0.1, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.6)
+)
+
+# Design an 808 bass
+my_808 = (
+    SoundDesigner("my_808")
+    .add_osc("sine", volume=1.0)
+    .envelope(attack=0.001, decay=0.5, sustain=0.0, release=0.3)
+    .pitch_envelope(start_multiplier=3.5, end_multiplier=1.0, duration=0.04)
+    .filter("lowpass", cutoff=180, resonance=0.9)
+)
+
+song = Song(title="Sound Design", bpm=128, sample_rate=22050)
+song.register_instrument("my_lead", my_lead)
+song.register_instrument("my_808", my_808)
+
+bass = song.add_track(Track(name="bass", instrument="my_808", volume=0.7))
+for _ in range(4):
+    bass.add(Note("C", 2, 2.0))
+
+lead = song.add_track(Track(name="lead", instrument="my_lead", volume=0.5))
+lead.extend(scale("C", "pentatonic_minor", octave=5, length=8))
+
+song.effects = {"lead": EffectsChain().add(reverb, room_size=0.7, wet=0.3)}
 `,
       analysis: `from code_music import Song, Track, Note, Chord, detect_key, generate_song
 

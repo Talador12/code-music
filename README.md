@@ -65,8 +65,8 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `examples/` | 8 step-by-step tutorials: hello world → live coding |
-| `songs/` | 140 full songs across 55+ genres |
+| `examples/` | 11 step-by-step tutorials: hello world → sound design |
+| `songs/` | 145 full songs across 55+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
@@ -116,6 +116,19 @@ play(song)
 # Analyze any song's key
 root, mode, conf = detect_key(song)
 print(f"{root} {mode} ({conf:.0%})")
+
+# Design instruments from raw oscillators
+from code_music import SoundDesigner
+
+supersaw = (
+    SoundDesigner("supersaw")
+    .add_osc("sawtooth", detune_cents=0, volume=0.3)
+    .add_osc("sawtooth", detune_cents=10, volume=0.25)
+    .add_osc("sawtooth", detune_cents=-10, volume=0.25)
+    .envelope(attack=0.02, decay=0.1, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.6)
+)
+song.register_instrument("supersaw", supersaw)
 ```
 
 ## Learn by example
@@ -134,6 +147,7 @@ The `examples/` directory walks through the entire API step by step:
 | 08 | `live_coding.py` | --watch --play for instant feedback |
 | 09 | `generative.py` | generate_song() — full AI-composed songs |
 | 10 | `analysis.py` | detect_key() — Krumhansl-Kessler key analysis |
+| 11 | `sound_design.py` | SoundDesigner — build instruments from scratch |
 
 ```bash
 code-music examples/01_hello_world.py --play    # start here

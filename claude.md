@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v5.1.0 — 140 songs, 736 tests, v6.0 sound design roadmap planned
+## Status: v6.0.0 — 145 songs, 769 tests, custom sound design shipped
 
 ## What's built
 
@@ -15,6 +15,13 @@
 - crescendo, decrescendo, triplets, tuplets, all ornaments
 - Lyrics class (text → voice track pipeline)
 - 20+ chord shapes, 35+ scale modes
+
+### Sound Design
+- SoundDesigner class: oscillators, noise, filters, LFO, ADSR, pitch envelope
+- 5 built-in designed presets (supersaw, sub_808, metallic_hit, vocal_pad, plucked_string)
+- Register as instrument: song.register_instrument(name, designer)
+- Serialization: to_dict/from_dict round-trip, to_wav export, preview playback
+- Biquad filter (scipy-free): lowpass, highpass, bandpass
 
 ### Synth (65+ presets)
 - Velocity-to-timbre, Karplus-Strong physical models
@@ -32,7 +39,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 140 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 145 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -364,41 +371,254 @@ No WAV files, no external libraries — pure numpy synthesis. Then use them at
 any pitch in any song, just like built-in presets.
 
 ### Phase 1: SoundDesigner class — build sounds from primitives
-- [ ] `SoundDesigner` class in `code_music/sound_design.py`
-- [ ] Oscillator layer: `osc(wave, freq, duration)` — sine, saw, square, triangle, noise
-- [ ] Multi-oscillator stacking: `add_osc(wave, detune_cents, volume)` — layer oscillators with detuning
-- [ ] ADSR envelope: `envelope(attack, decay, sustain, release)` — per-layer or master
-- [ ] Filter: `filter(type, cutoff, resonance)` — lowpass, highpass, bandpass built-in (scipy-free, biquad)
-- [ ] LFO modulation: `lfo(target, rate, depth)` — modulate pitch, filter cutoff, or volume
-- [ ] Noise generator: `noise(type)` — white, pink, brown noise layers
-- [ ] `render(freq, duration, sr)` → mono float64 array — renders the designed sound at any pitch
+- [x] `SoundDesigner` class in `code_music/sound_design.py`
+- [x] Oscillator layer: `osc(wave, freq, duration)` — sine, saw, square, triangle, noise
+- [x] Multi-oscillator stacking: `add_osc(wave, detune_cents, volume)` — layer oscillators with detuning
+- [x] ADSR envelope: `envelope(attack, decay, sustain, release)` — per-layer or master
+- [x] Filter: `filter(type, cutoff, resonance)` — lowpass, highpass, bandpass built-in (scipy-free, biquad)
+- [x] LFO modulation: `lfo(target, rate, depth)` — modulate pitch, filter cutoff, or volume
+- [x] Noise generator: `noise(type)` — white, pink, brown noise layers
+- [x] `render(freq, duration, sr)` → mono float64 array — renders the designed sound at any pitch
 
 ### Phase 2: Register as instrument — use in any song
-- [ ] `Synth.register(name, sound_designer)` — registers a SoundDesigner as a playable instrument
-- [ ] Registered instruments work with `Track(instrument="my_kick")` — same API as built-in presets
-- [ ] Pitch follows Note frequency automatically (oscillator ratios preserved, not absolute freqs)
-- [ ] `Song.register_instrument(name, designer)` — song-level registration for portability
+- [x] `Synth.register(name, sound_designer)` — registers a SoundDesigner as a playable instrument
+- [x] Registered instruments work with `Track(instrument="my_kick")` — same API as built-in presets
+- [x] Pitch follows Note frequency automatically (oscillator ratios preserved, not absolute freqs)
+- [x] `Song.register_instrument(name, designer)` — song-level registration for portability
 
 ### Phase 3: Preset library — built-in designed sounds
-- [ ] Design 5+ sounds using SoundDesigner that aren't possible with current presets:
-  - Supersaw (8-voice detuned sawtooth stack)
-  - 808 sub (pitch-drop sine + saturation + long release)
-  - Metallic hit (inharmonic partials + noise burst)
-  - Vocal pad (formant-filtered multi-osc)
-  - Plucked string (Karplus-Strong from noise impulse, no hardcoded preset)
-- [ ] Ship as `code_music.sound_design.presets` — importable, tweakable
+- [x] Design 5+ sounds using SoundDesigner that aren't possible with current presets:
+  - Supersaw (7-voice detuned sawtooth stack)
+  - 808 sub (pitch-drop sine + long release + LP filter)
+  - Metallic hit (inharmonic partials + noise burst + bandpass)
+  - Vocal pad (detuned sawtooths + bandpass + LFO filter)
+  - Plucked string (white noise + triangle + LP filter)
+- [x] Ship as `code_music.sound_design.PRESETS` — importable, tweakable
 
 ### Phase 4: Export / reuse
-- [ ] `SoundDesigner.to_dict()` / `from_dict()` — serialize designs to JSON
-- [ ] `SoundDesigner.to_wav(path, freq, duration)` — render and save as WAV for use in SampleTrack
-- [ ] `SoundDesigner.preview(freq, duration)` — render + play immediately
+- [x] `SoundDesigner.to_dict()` / `from_dict()` — serialize designs to JSON
+- [x] `SoundDesigner.to_wav(path, freq, duration)` — render and save as WAV for use in SampleTrack
+- [x] `SoundDesigner.preview(freq, duration)` — render + play immediately
 
 ### Phase 5: Tests + examples + docs
-- [ ] Tests: render at multiple pitches, register + play in Song, serialization round-trip
-- [ ] `examples/11_sound_design.py` — tutorial: build a supersaw from scratch, use in a song
-- [ ] Playground: add "Sound Design" example to dropdown
-- [ ] Update for_creators.md and for_theory_heads.md with sound design section
+- [x] Tests: render at multiple pitches, register + play in Song, serialization round-trip (27 tests)
+- [x] `examples/11_sound_design.py` — tutorial: build a supersaw from scratch, use in a song
+- [x] Playground: add "Sound Design" example to dropdown
+- [x] Update for_creators.md and for_theory_heads.md with sound design section
+- [x] Update README: examples table (11 entries), SoundDesigner quick-start code block
+- [x] Update landing page version + description
 
 ### Phase 6: Songs showcasing custom sounds
-- [ ] 5 songs that define their own instruments via SoundDesigner (no built-in presets)
-- [ ] Tag v6.0.0 release
+- [x] 5 songs using only SoundDesigner instruments (synth_lab, oscillator_garden, waveform_rider, noise_floor, custom_kit)
+- [x] Tag v6.0.0 release
+
+## v7.0 Roadmap — Advanced Synthesis (SuperCollider-depth, Python ergonomics)
+
+No other Python library does this. pyo comes closest but hits CPython's ceiling
+and has no composition integration. We stay pure numpy but add synthesis
+techniques that only SuperCollider/CSound/Faust currently offer.
+
+### Phase 1: FM Synthesis
+- [ ] `SoundDesigner.fm(carrier, modulator, mod_index)` — frequency modulation
+- [ ] Multi-operator FM (2-op, 4-op, 6-op like DX7)
+- [ ] FM presets: electric piano, bell, brass, bass
+
+### Phase 2: Wavetable Synthesis
+- [ ] `SoundDesigner.wavetable(table)` — user-defined single-cycle waveforms
+- [ ] `Wavetable.from_harmonics(amplitudes)` — additive → wavetable
+- [ ] `Wavetable.morph(other, amount)` — interpolate between two wavetables
+- [ ] Wavetable scanning with LFO
+
+### Phase 3: Granular Synthesis
+- [ ] `SoundDesigner.granular(source, grain_size, density, scatter)`
+- [ ] Source can be another SoundDesigner, a WAV, or generated noise
+- [ ] Time-stretch and pitch-shift via grain manipulation
+- [ ] Granular cloud textures for ambient/experimental music
+
+### Phase 4: Physical Modeling
+- [ ] Karplus-Strong string (already exists in presets, extract to SoundDesigner)
+- [ ] Waveguide flute/pipe model
+- [ ] Modal synthesis (struck/plucked resonant body)
+- [ ] Bowed string model
+
+### Phase 5: Spectral Processing
+- [ ] `SoundDesigner.spectral(process_fn)` — FFT → manipulate → IFFT
+- [ ] Spectral freeze, smear, shift, stretch
+- [ ] Cross-synthesis: apply spectrum of one sound to another
+- [ ] Vocoder built on spectral processing
+
+### Phase 6: Timbre as Data
+- [ ] `SoundDesigner.analyze()` → spectral fingerprint dict
+- [ ] `timbre_a.distance(timbre_b)` — perceptual distance metric
+- [ ] `timbre_a.morph(timbre_b, amount=0.5)` — interpolate between timbres
+- [ ] Timbres are JSON-serializable, diffable, versionable
+
+## v8.0 Roadmap — Pattern Language (TidalCycles expressiveness in Python)
+
+TidalCycles has the most expressive pattern system ever built, but requires
+Haskell + SuperCollider. We bring pattern transforms to Python.
+
+- [ ] `Pattern` class: `p("C3 E3 G3 C4")` mini-notation for note sequences
+- [ ] Pattern transforms: `p.reverse()`, `p.every(4, reverse)`, `p.jux(rev)`
+- [ ] Euclidean rhythms: `p.euclid(5, 8)` — distribute N hits over M slots
+- [ ] Polyrhythm: `p.polymeter(p1, p2)` — layer patterns of different lengths
+- [ ] Stochastic patterns: `p.choose(["C3", "E3", "G3"])`, `p.degrade(0.3)`
+- [ ] Pattern → Track conversion: `pattern.to_track(instrument="supersaw")`
+- [ ] Mini-notation parser: `"[C3 E3] G3 [A3 B3 C4]"` — brackets for subdivisions
+
+## v9.0 Roadmap — Gallery & Showcase
+
+The entire library showcased through curated, categorized demos.
+
+### Instrument Gallery
+- [ ] `gallery/instruments/` — one file per SoundDesigner preset, renders to WAV
+- [ ] Each file: design → render at C3/C4/C5 → play all three pitches
+- [ ] `make gallery-instruments` — renders all, creates HTML index with audio players
+- [ ] Web gallery page on GitHub Pages with waveform visualizations
+
+### Synthesis Technique Gallery
+- [ ] `gallery/techniques/` — FM, wavetable, granular, physical modeling, spectral
+- [ ] Each technique: minimal example + full song using only that technique
+- [ ] Side-by-side comparisons (same melody, different synthesis)
+
+### Song Showcase
+- [ ] `gallery/songs/` — curated "best of" with descriptions and audio
+- [ ] Organized by genre, mood, and synthesis technique used
+- [ ] `make gallery` — builds entire gallery site to `dist/gallery/`
+
+### Scale & Theory Gallery
+- [ ] `gallery/scales/` — every scale rendered with the same instrument for comparison
+- [ ] `gallery/chords/` — every chord shape rendered and visualized
+- [ ] `gallery/progressions/` — common progressions in all keys
+
+## v10.0 Roadmap — Production Pipeline
+
+Bridge the gap from "cool demo" to "this goes on Spotify."
+
+- [ ] `Song.master()` improvements: LUFS loudness targeting (-14 LUFS for streaming)
+- [ ] Dithering (TPDF) for 16-bit export
+- [ ] True peak limiting (ISP)
+- [ ] Stereo imaging analysis + correction
+- [ ] `code-music master song.wav --target-lufs=-14 --format=flac` CLI
+- [ ] Batch mastering: `make master` processes all songs to release-ready specs
+- [ ] Metadata embedding (ID3 tags for MP3, Vorbis comments for FLAC/OGG)
+
+## v11.0 Roadmap — Automation & Modulation Matrix
+
+Every parameter should be automatable. Move from static values to envelopes
+over time — the difference between a sketch and a finished production.
+
+### Phase 1: Parameter Automation
+- [ ] `Automation(param, keyframes)` — time-value curves for any numeric param
+- [ ] `Track.automate("volume", [(0, 0.0), (4, 0.8), (12, 0.3)])` — per-track
+- [ ] `Song.automate("bpm", [(0, 120), (16, 140)])` — replaces bpm_ramp with general system
+- [ ] Linear, exponential, and smoothstep interpolation modes
+- [ ] `EffectsChain.automate(step_idx, "wet", [(0, 0), (8, 0.5)])` — per-effect param
+
+### Phase 2: Modulation Matrix
+- [ ] `ModMatrix` — route any source to any destination with scaling
+- [ ] Sources: LFO, envelope follower, random, note velocity, beat position
+- [ ] Destinations: volume, pan, filter cutoff, effect params, pitch
+- [ ] `song.mod_matrix.connect(source="lfo1", dest="pad.filter_cutoff", amount=0.5)`
+- [ ] Visualizable as a routing table in `__repr__`
+
+### Phase 3: Sidechain Automation
+- [ ] Envelope follower source: `EnvFollower(track_name)` — derives amplitude from another track
+- [ ] Classic sidechain pump: `mod_matrix.connect(source=EnvFollower("kick"), dest="pad.volume", amount=-0.8)`
+- [ ] Ducking without the `sidechain()` effect — works at mix level
+
+### Phase 4: Tests + docs + songs
+- [ ] Tests for automation curves, mod matrix routing, envelope follower
+- [ ] `examples/12_automation.py` — automate filter sweeps and volume fades
+- [ ] 5 songs showcasing automation (150 total)
+- [ ] Tag v11.0.0 release
+
+## v12.0 Roadmap — Collaboration & Stems
+
+Make code-music multiplayer. Two people should be able to work on the same song
+from different files and merge the result.
+
+### Phase 1: Song Merge Improvements
+- [ ] `Song.overlay(other, at_beat)` — drop another song's tracks at a specific beat offset
+- [ ] `Song.append(other)` — concatenate songs end-to-end (auto-adjusts beat offsets)
+- [ ] `Song.extract_tracks(names)` — pull specific tracks into a new Song
+- [ ] Conflict resolution: track name collisions get `_2` suffix
+
+### Phase 2: Stem Import/Export
+- [ ] `Song.import_stems(directory)` — load a folder of WAVs as SampleTracks
+- [ ] `Song.export_stems()` improvements: include effects, master chain per-stem option
+- [ ] Stem naming convention: `{song_title}_{track_name}.wav`
+- [ ] Round-trip: export stems → reimport → identical render
+
+### Phase 3: Song Diffing
+- [ ] `song_diff(a, b)` — structural diff showing added/removed/changed tracks, notes, effects
+- [ ] Human-readable output: "Track 'lead' added 4 notes at beat 8"
+- [ ] Machine-readable: returns a list of `Change` objects for programmatic use
+- [ ] `song_patch(base, changes)` — apply a diff to reconstruct a song
+
+### Phase 4: Collaborative Workflow
+- [ ] `code-music merge song_a.py song_b.py -o merged.py` CLI
+- [ ] Git-friendly: JSON serialization enables standard diff/merge tools
+- [ ] `make collab` target: renders all songs, exports stems to shared folder
+- [ ] 5 songs built collaboratively from merged parts (155 total)
+- [ ] Tag v12.0.0 release
+
+## v13.0 Roadmap — Live Performance Mode
+
+Real-time loop-based performance in the terminal. Think Ableton Live's
+session view, but in Python.
+
+### Phase 1: Clip System
+- [ ] `Clip(track, start_beat, end_beat)` — loopable section of a track
+- [ ] `Clip.loop(n)` — repeat N times, `Clip.loop_forever()` — until stopped
+- [ ] `ClipSlot` — holds a clip + play/stop state
+- [ ] Clips quantize to bar boundaries (configurable grid)
+
+### Phase 2: Session View
+- [ ] `Session(bpm)` — holds a grid of ClipSlots (tracks × scenes)
+- [ ] `Session.play_scene(idx)` — trigger all clips in a scene row
+- [ ] `Session.stop_track(name)` — stop a specific track
+- [ ] Mix-level controls: volume, pan, mute, solo per track
+
+### Phase 3: Real-Time Rendering
+- [ ] Session renders in real-time using sounddevice stream callback
+- [ ] Clip transitions: crossfade, hard cut, or beat-synced
+- [ ] Effect bypass toggling in real-time
+- [ ] BPM changes apply at next bar boundary
+
+### Phase 4: TUI Dashboard
+- [ ] `code-music session song.py` — launches terminal session view
+- [ ] Grid display: tracks as columns, scenes as rows, colors for playing/queued/stopped
+- [ ] Keyboard shortcuts: 1-9 for scenes, q/w/e/r for track mute, space for stop-all
+- [ ] MIDI input support (optional): trigger clips from a MIDI controller
+- [ ] 5 songs with session arrangements (160 total)
+- [ ] Tag v13.0.0 release
+
+## v14.0 Roadmap — Music Theory Intelligence
+
+Make the engine understand music theory deeply enough to suggest, correct,
+and generate with real harmonic awareness.
+
+### Phase 1: Chord-Scale Theory
+- [ ] `chord_scale(chord)` — returns compatible scales for improvisation
+- [ ] `available_tensions(chord)` — 9th, 11th, 13th options that don't clash
+- [ ] `voice_lead(prog, voice_count=4)` improvements: SATB rules, parallel 5th avoidance
+- [ ] `analyze_harmony(song)` — full roman numeral + function analysis (tonic/subdominant/dominant)
+
+### Phase 2: Intelligent Generation
+- [ ] `generate_song()` improvements: key changes, modulation, bridge sections
+- [ ] `generate_bass_line(chords, style)` — walking bass, root-fifth, syncopated
+- [ ] `generate_drums(genre, fills_every=8)` — pattern-based with fills and variations
+- [ ] `generate_melody(chords, contour)` — melody that follows harmonic rhythm
+- [ ] Counterpoint generator: `generate_counterpoint(melody, species=1)`
+
+### Phase 3: Analysis Dashboard
+- [ ] `Song.analyze()` — returns full report: key, tempo, chord progression, density, dynamics
+- [ ] Harmonic rhythm visualization (chord changes over time)
+- [ ] Melodic contour analysis: step/skip/leap statistics
+- [ ] Tension/release curve: consonance score over time
+
+### Phase 4: Theory Examples + Tests
+- [ ] `examples/13_theory.py` — chord-scale theory, voice leading, analysis
+- [ ] 5 songs generated with advanced theory features (165 total)
+- [ ] Tag v14.0.0 release
