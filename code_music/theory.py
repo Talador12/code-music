@@ -922,6 +922,103 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def lydian_run(
+    root: str,
+    octave: int = 5,
+    length: int = 8,
+    duration: float = 0.25,
+) -> list[Note]:
+    """Generate a lydian scale run (#4 gives bright, floating quality).
+
+    Args:
+        root:     Starting note.
+        octave:   Starting octave.
+        length:   Number of notes.
+        duration: Duration per note.
+    """
+    root_semi = _semi(root)
+    lydian = [0, 2, 4, 6, 7, 9, 11]  # 1 2 3 #4 5 6 7
+    result: list[Note] = []
+    for i in range(length):
+        idx = i % len(lydian)
+        oct_off = i // len(lydian)
+        semi = (root_semi + lydian[idx]) % 12
+        result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
+    return result
+
+
+def mixolydian_lick(
+    root: str,
+    octave: int = 5,
+    duration: float = 0.25,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a mixolydian lick (b7 gives bluesy/rock dominant quality).
+
+    Args:
+        root:     Root note.
+        octave:   Octave.
+        duration: Duration per note.
+        seed:     Random seed.
+    """
+    import random
+
+    rng = random.Random(seed)
+    root_semi = _semi(root)
+    mixo = [0, 2, 4, 5, 7, 9, 10]  # 1 2 3 4 5 6 b7
+    mixo_notes = [_NOTE_NAMES[(root_semi + i) % 12] for i in mixo]
+    lick_len = rng.randint(6, 10)
+    result: list[Note] = []
+    for _ in range(lick_len):
+        result.append(Note(rng.choice(mixo_notes), octave, duration))
+    result.append(Note(root, octave, duration * 2))  # resolve to root
+    return result
+
+
+def modal_interchange(
+    chords: list[tuple[str, str]],
+    key: str = "C",
+    target_mode: str = "minor",
+) -> list[tuple[str, str]]:
+    """Borrow chords from a parallel mode for harmonic color.
+
+    Takes a progression in the key and substitutes chords that exist
+    in the target mode but not the original major scale. Classic
+    technique: borrowing bIII, bVI, bVII, iv from minor.
+
+    Args:
+        chords:      Original progression [(root, shape), ...].
+        key:         Key root.
+        target_mode: Mode to borrow from ('minor', 'dorian', 'mixolydian').
+
+    Returns:
+        New progression with some chords borrowed from target mode.
+    """
+    key_semi = _semi(key)
+    mode_intervals = _SCALE_INTERVALS.get(
+        target_mode, _SCALE_INTERVALS.get("aeolian", [0, 2, 3, 5, 7, 8, 10])
+    )
+    # Build borrowed chord lookup
+    borrowed: dict[int, tuple[str, str]] = {}
+    _degree_shapes_minor = {0: "min", 2: "dim", 3: "maj", 5: "min", 7: "min", 8: "maj", 10: "maj"}
+    for interval in mode_intervals:
+        semi = (key_semi + interval) % 12
+        shape = _degree_shapes_minor.get(interval, "maj")
+        borrowed[semi] = (_NOTE_NAMES[semi], shape)
+
+    result: list[tuple[str, str]] = []
+    for root, shape in chords:
+        root_semi = _semi(root)
+        # If chord is diatonic to major, sometimes swap with borrowed
+        if root_semi in borrowed and shape == "maj":
+            b_root, b_shape = borrowed[root_semi]
+            if b_shape != shape:  # only swap if it's actually different
+                result.append((b_root, b_shape))
+                continue
+        result.append((root, shape))
+    return result
+
+
 def whole_tone_run(
     root: str,
     octave: int = 4,
