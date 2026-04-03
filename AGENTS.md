@@ -432,6 +432,7 @@ Eight releases shipped in a single conversation:
 | v15.0 | Tab, harmony analysis, song maps | 1054 | 190 | — |
 | v16.0 | Chord melody, counterpoint, summary | 1076 | 195 | — |
 | v17.0 | 200-song milestone, showcase songs | 1081 | 200 | — |
+| v18.0 | ABC notation, arrangement, transitions | 1101 | 205 | — |
 
 Next up from roadmap: v15 (spatial audio), v17 (visual scores), v19 (microtonal).
 Foundational items done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v18 Phase 1 (melody),

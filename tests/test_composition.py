@@ -12,8 +12,12 @@ from code_music.composition import (
     Outro,
     Verse,
     continue_melody,
+    generate_arrangement,
+    generate_fill,
+    generate_riser,
     song_map,
     song_summary,
+    to_abc,
     to_lead_sheet,
     to_tab,
 )
@@ -304,3 +308,105 @@ class TestAnalyzeHarmony:
         song = Song(title="Test", bpm=120, sample_rate=SR)
         result = analyze_harmony(song, key="C")
         assert result == []
+
+
+class TestToABC:
+    def test_basic(self):
+        song = Song(title="ABC Test", bpm=120, sample_rate=SR, key_sig="C")
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        tr.add(Note("C", 5, 1.0))
+        tr.add(Note("D", 5, 1.0))
+        result = to_abc(song)
+        assert "X:1" in result
+        assert "T:ABC Test" in result
+        assert "K:C" in result
+
+    def test_contains_notes(self):
+        song = Song(title="T", bpm=120, sample_rate=SR, key_sig="C")
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        tr.add(Note("C", 4, 1.0))
+        result = to_abc(song)
+        assert "C" in result.split("\n")[-1]
+
+    def test_empty_song(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        result = to_abc(song)
+        assert "z4" in result
+
+    def test_rests(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        tr.add(Note.rest(1.0))
+        tr.add(Note("C", 5, 1.0))
+        result = to_abc(song)
+        assert "z" in result.split("\n")[-1]
+
+    def test_returns_string(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 1.0))
+        assert isinstance(to_abc(song), str)
+
+
+class TestGenerateArrangement:
+    def test_basic(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="kick", instrument="drums_kick")).extend(
+            [Note("C", 2, 1.0) for _ in range(16)]
+        )
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note("C", 5, 1.0) for _ in range(16)]
+        )
+        arr = generate_arrangement(song)
+        assert len(arr) > 0
+        assert "label" in arr[0]
+        assert "start_bar" in arr[0]
+
+    def test_returns_list(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
+        assert isinstance(generate_arrangement(song), list)
+
+    def test_labels_exist(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note("C", 5, 1.0) for _ in range(16)]
+        )
+        arr = generate_arrangement(song)
+        for section in arr:
+            assert section["label"] in ("intro", "verse", "chorus", "breakdown", "outro")
+
+
+class TestGenerateFill:
+    def test_snare_roll(self):
+        fill = generate_fill(bars=1, style="snare_roll")
+        assert len(fill) > 0
+        assert all(isinstance(n, Note) for n in fill)
+
+    def test_buildup(self):
+        fill = generate_fill(bars=1, style="buildup")
+        assert len(fill) > 0
+
+    def test_crash(self):
+        fill = generate_fill(bars=1, style="crash")
+        assert fill[0].pitch == "C"
+
+    def test_tom_cascade(self):
+        fill = generate_fill(bars=1, style="tom_cascade")
+        assert len(fill) > 0
+
+
+class TestGenerateRiser:
+    def test_basic(self):
+        riser = generate_riser(bars=1)
+        assert len(riser) > 0
+        assert all(isinstance(n, Note) for n in riser)
+
+    def test_ascending(self):
+        riser = generate_riser(bars=1, start_note="C", octave=3)
+        # Should be chromatic ascending
+        assert riser[0].pitch == "C"
+        assert riser[1].pitch == "C#"
+
+    def test_custom_start(self):
+        riser = generate_riser(bars=1, start_note="G")
+        assert riser[0].pitch == "G"

@@ -570,3 +570,243 @@ def song_map(song: Song, beats_per_bar: int = 4) -> str:
         lines.append(row)
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# ABC notation export
+# ---------------------------------------------------------------------------
+
+_PITCH_TO_ABC = {
+    "C": "C",
+    "C#": "^C",
+    "Db": "_D",
+    "D": "D",
+    "D#": "^D",
+    "Eb": "_E",
+    "E": "E",
+    "F": "F",
+    "F#": "^F",
+    "Gb": "_G",
+    "G": "G",
+    "G#": "^G",
+    "Ab": "_A",
+    "A": "A",
+    "A#": "^A",
+    "Bb": "_B",
+    "B": "B",
+}
+
+
+def _note_to_abc(pitch: str, octave: int, duration: float) -> str:
+    """Convert a note to ABC notation."""
+    abc = _PITCH_TO_ABC.get(pitch, pitch)
+    if octave >= 5:
+        abc = abc[0].lower() + abc[1:] if len(abc) > 1 else abc.lower()
+        if octave >= 6:
+            abc += "'" * (octave - 5)
+    elif octave <= 3:
+        abc += "," * (4 - octave)
+    if duration == 0.5:
+        abc += "/2"
+    elif duration == 2.0:
+        abc += "2"
+    elif duration == 4.0:
+        abc += "4"
+    elif duration != 1.0 and duration == int(duration):
+        abc += str(int(duration))
+    return abc
+
+
+def to_abc(song: Song, track_name: str | None = None) -> str:
+    """Export a song track as ABC notation.
+
+    Args:
+        song:       Song to export.
+        track_name: Track to export. If None, uses first melodic track.
+
+    Returns:
+        ABC notation string (parseable by abc2midi, EasyABC, etc).
+    """
+    target = None
+    if track_name:
+        for t in song.tracks:
+            if t.name == track_name:
+                target = t
+                break
+    if target is None:
+        for t in song.tracks:
+            for b in t.beats:
+                if b.event and isinstance(b.event, Note) and b.event.pitch is not None:
+                    target = t
+                    break
+            if target:
+                break
+
+    lines = [
+        "X:1",
+        f"T:{song.title}",
+        f"M:{song.time_sig[0]}/{song.time_sig[1]}",
+        "L:1/4",
+        f"Q:{song.bpm:.0f}",
+        f"K:{song.key_sig}",
+    ]
+
+    if target is None:
+        lines.append("z4|")
+        return "\n".join(lines)
+
+    bar_beats = 0.0
+    beats_per_bar = song.time_sig[0]
+    abc_line = ""
+    for beat in target.beats:
+        if beat.event is None:
+            continue
+        if isinstance(beat.event, Note):
+            if beat.event.pitch is None:
+                abc_line += "z"
+                if beat.event.duration == 2.0:
+                    abc_line += "2"
+                elif beat.event.duration == 0.5:
+                    abc_line += "/2"
+            else:
+                abc_line += _note_to_abc(
+                    str(beat.event.pitch), beat.event.octave, beat.event.duration
+                )
+            bar_beats += beat.event.duration
+        if bar_beats >= beats_per_bar:
+            abc_line += "|"
+            bar_beats = 0.0
+
+    if not abc_line.endswith("|"):
+        abc_line += "|"
+    lines.append(abc_line)
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Arrangement detection
+# ---------------------------------------------------------------------------
+
+
+def generate_arrangement(song: Song, beats_per_bar: int = 4) -> list[dict]:
+    """Auto-detect song structure by analyzing density changes.
+
+    Args:
+        song:          Song to analyze.
+        beats_per_bar: Beats per bar.
+
+    Returns:
+        List of dicts: {start_bar, end_bar, label, tracks_active}.
+    """
+    total_beats = 0.0
+    for track in song.tracks:
+        track_dur = sum(b.event.duration if b.event else 0 for b in track.beats)
+        total_beats = max(total_beats, track_dur)
+    total_bars = max(1, int(total_beats / beats_per_bar))
+
+    bar_density: dict[str, list[int]] = {}
+    for track in song.tracks:
+        counts = [0] * total_bars
+        pos = 0.0
+        for beat in track.beats:
+            if beat.event:
+                bar_idx = min(int(pos / beats_per_bar), total_bars - 1)
+                if isinstance(beat.event, Note) and beat.event.pitch is not None:
+                    counts[bar_idx] += 1
+                elif isinstance(beat.event, Chord):
+                    counts[bar_idx] += 1
+                pos += beat.event.duration
+        bar_density[track.name] = counts
+
+    sections: list[dict] = []
+    prev_active = -1
+    section_start = 0
+    for bar in range(total_bars):
+        active = sum(1 for n in bar_density if bar_density[n][bar] > 0)
+        if active != prev_active and bar > 0:
+            pos_ratio = section_start / max(total_bars, 1)
+            density_ratio = prev_active / max(len(bar_density), 1)
+            label = _label_section(pos_ratio, density_ratio)
+            active_tracks = [n for n in bar_density if any(bar_density[n][section_start:bar])]
+            sections.append(
+                {
+                    "start_bar": section_start,
+                    "end_bar": bar,
+                    "label": label,
+                    "tracks_active": active_tracks,
+                }
+            )
+            section_start = bar
+        prev_active = active
+
+    if section_start < total_bars:
+        pos_ratio = section_start / max(total_bars, 1)
+        density_ratio = prev_active / max(len(bar_density), 1)
+        label = _label_section(pos_ratio, density_ratio)
+        active_tracks = [n for n in bar_density if any(bar_density[n][section_start:total_bars])]
+        sections.append(
+            {
+                "start_bar": section_start,
+                "end_bar": total_bars,
+                "label": label,
+                "tracks_active": active_tracks,
+            }
+        )
+
+    return sections
+
+
+def _label_section(pos_ratio: float, density_ratio: float) -> str:
+    if pos_ratio < 0.1:
+        return "intro"
+    elif pos_ratio > 0.85:
+        return "outro"
+    elif density_ratio > 0.7:
+        return "chorus"
+    elif density_ratio < 0.3:
+        return "breakdown"
+    else:
+        return "verse"
+
+
+# ---------------------------------------------------------------------------
+# Transition generators
+# ---------------------------------------------------------------------------
+
+
+def generate_fill(bars: int = 1, style: str = "snare_roll", duration: float = 0.25) -> list[Note]:
+    """Generate a drum fill for transitions between sections."""
+    total = int(4 / duration) * bars
+    if style == "snare_roll":
+        return [Note("D", 4, duration) for _ in range(total)]
+    elif style == "buildup":
+        result: list[Note] = []
+        for i in range(total):
+            if i < total // 3:
+                result.append(Note("D", 4, duration) if i % 4 == 0 else Note.rest(duration))
+            elif i < 2 * total // 3:
+                result.append(Note("D", 4, duration) if i % 2 == 0 else Note.rest(duration))
+            else:
+                result.append(Note("D", 4, duration))
+        return result
+    elif style == "crash":
+        return [Note("C", 6, duration)] + [Note.rest(duration)] * (total - 1)
+    elif style == "tom_cascade":
+        toms = ["G", "E", "C", "A"]
+        return [Note(toms[i % len(toms)], 3, duration) for i in range(total)]
+    return [Note("D", 4, duration) for _ in range(total)]
+
+
+def generate_riser(
+    bars: int = 2, start_note: str = "C", octave: int = 3, duration: float = 0.5
+) -> list[Note]:
+    """Generate an ascending chromatic riser for building tension."""
+    _notes = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+    total = int(4 / duration) * bars
+    start_idx = _notes.index(start_note) if start_note in _notes else 0
+    result: list[Note] = []
+    for i in range(total):
+        note_idx = (start_idx + i) % 12
+        oct = min(octave + (start_idx + i) // 12, 7)
+        result.append(Note(_notes[note_idx], oct, duration))
+    return result
