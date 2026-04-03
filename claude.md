@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v22.0.0 — 225 songs, 1176 tests, humanize + transpose + tempo detect
+## Status: v23.0.0 — 230 songs, 1192 tests, scale info + chord extensions + merge tracks
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 225 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 230 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

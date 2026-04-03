@@ -790,6 +790,109 @@ def detect_tempo(audio, sr: int = 44100) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Scale info & chord extensions
+# ---------------------------------------------------------------------------
+
+
+def scale_info(scale_name: str, root: str = "C") -> dict:
+    """Describe a scale with intervals, note names, and compatible chords.
+
+    Args:
+        scale_name: Scale name (major, minor, dorian, etc).
+        root:       Root note.
+
+    Returns:
+        Dict with name, root, notes, intervals, chord_fits.
+    """
+    # Alias common names
+    aliases = {"minor": "aeolian", "natural_minor": "aeolian"}
+    scale_name = aliases.get(scale_name, scale_name)
+    if scale_name not in _SCALE_INTERVALS:
+        raise ValueError(f"Unknown scale {scale_name!r}")
+
+    root_semi = _semi(root)
+    intervals = _SCALE_INTERVALS[scale_name]
+    notes = [_NOTE_NAMES[(root_semi + i) % 12] for i in intervals]
+
+    # Find chords whose tones are subsets of this scale
+    scale_pcs = {(root_semi + i) % 12 for i in intervals}
+    chord_fits: list[str] = []
+    for degree_idx, interval in enumerate(intervals):
+        degree_root = _NOTE_NAMES[(root_semi + interval) % 12]
+        for shape, semis in _CHORD_SEMI.items():
+            chord_pcs = {(root_semi + interval + s) % 12 for s in semis}
+            if chord_pcs.issubset(scale_pcs):
+                chord_fits.append(f"{degree_root}{shape}")
+
+    return {
+        "name": scale_name,
+        "root": root,
+        "notes": notes,
+        "intervals": intervals,
+        "chord_fits": chord_fits,
+    }
+
+
+def chord_extensions(
+    root: str,
+    shape: str,
+    extensions: list[str] | None = None,
+) -> list[Note]:
+    """Add extensions (9th, 11th, 13th) to a chord.
+
+    Args:
+        root:       Chord root note.
+        shape:      Base chord quality.
+        extensions: List of extensions to add: '9', '11', '13', 'b9', '#9', '#11', 'b13'.
+                    If None, adds available tensions automatically.
+
+    Returns:
+        List of Notes forming the extended chord.
+    """
+    if shape not in _CHORD_SEMI:
+        raise ValueError(f"Unknown chord shape {shape!r}")
+
+    root_semi = _semi(root)
+    base_semis = list(_CHORD_SEMI[shape])
+
+    tension_map = {"b9": 1, "9": 2, "#9": 3, "11": 5, "#11": 6, "b13": 8, "13": 9}
+
+    if extensions is None:
+        extensions = available_tensions(root, shape)
+
+    for ext in extensions:
+        if ext in tension_map:
+            base_semis.append(tension_map[ext])
+
+    return [
+        Note(_NOTE_NAMES[(root_semi + s) % 12], 3 + s // 12, 4.0) for s in sorted(set(base_semis))
+    ]
+
+
+def merge_tracks(tracks_notes: list[list[Note]]) -> list[Note]:
+    """Merge multiple note lists into a single interleaved list.
+
+    Takes notes from each list in round-robin order.
+
+    Args:
+        tracks_notes: List of note lists to merge.
+
+    Returns:
+        Single merged list.
+    """
+    if not tracks_notes:
+        return []
+
+    result: list[Note] = []
+    max_len = max(len(t) for t in tracks_notes)
+    for i in range(max_len):
+        for track in tracks_notes:
+            if i < len(track):
+                result.append(track[i])
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Chord voicing generators
 # ---------------------------------------------------------------------------
 
