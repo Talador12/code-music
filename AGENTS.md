@@ -436,7 +436,7 @@ Eight releases shipped in a single conversation:
 | v19.0 | analyze_song, intro/outro gen, HTML export | 1121 | 210 | — |
 | v20.0 | SVG waveform, variations, tempo maps | 1143 | 215 | — |
 
-Completed roadmap items across v6-v19:
+Completed roadmap items across v6-v20:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
 - v10: LUFS mastering, true peak limiting, dithering, stereo analysis
 - v11: Automation curves, mod matrix, song overlay/append/extract
@@ -447,9 +447,15 @@ Completed roadmap items across v6-v19:
 - v15-v19: Tab, song maps, song summary, ABC notation, arrangement detection,
   generate_fill, generate_riser, analyze_song, generate_intro/outro, to_html
 
-All composition.py features now: continue_melody, Verse/Chorus/Bridge/Intro/Outro,
+All composition.py features: continue_melody, Verse/Chorus/Bridge/Intro/Outro,
 to_lead_sheet, to_tab, song_map, song_summary, to_abc, generate_arrangement,
-generate_fill, generate_riser, analyze_song, generate_intro, generate_outro, to_html.
+generate_fill, generate_riser, analyze_song, generate_intro, generate_outro,
+to_html, to_svg_waveform, tempo_map.
 
-Next up: v19 (microtonal tuning), v22 (performance), v23 (audio import/sampling),
-v25 (versioning/history). Most analysis/composition tools now complete.
+All theory.py features: chord_scale, available_tensions, generate_bass_line,
+generate_drums, generate_chord_melody, generate_counterpoint, generate_variation,
+analyze_harmony, song_diff, song_patch.
+
+Next up: v19-roadmap (microtonal tuning), v22 (performance/caching),
+v23 (audio import/sampling), v25 (versioning/history).
+Most analysis/composition/theory tools now complete.
