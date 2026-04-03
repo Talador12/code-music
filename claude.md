@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v28.0.0 — 249 songs, 1261 tests, inversions + voicing rotation + pedal point
+## Status: v29.0.0 — 250 songs, 1269 tests, retrograde rhythm + stretch + 250th song milestone
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 249 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 250 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

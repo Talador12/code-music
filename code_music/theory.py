@@ -922,6 +922,52 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def retrograde_rhythm(notes: list[Note]) -> list[Note]:
+    """Reverse durations while keeping pitches in original order.
+
+    A rhythmic retrograde — the pitch sequence stays the same but the
+    rhythm plays backwards. Creates subtle variation without changing the melody.
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        New list with reversed durations.
+    """
+    durations = [n.duration for n in reversed(notes)]
+    result: list[Note] = []
+    for i, n in enumerate(notes):
+        if n.pitch is None:
+            result.append(Note.rest(durations[i]))
+        else:
+            result.append(Note(str(n.pitch), n.octave, durations[i], velocity=n.velocity))
+    return result
+
+
+def stretch_melody(notes: list[Note], factor: float = 2.0) -> list[Note]:
+    """Multiply all note durations by a factor.
+
+    factor > 1 = slower (augmentation), factor < 1 = faster (diminution).
+    More flexible than generate_variation augmentation/diminution since
+    it accepts any float factor.
+
+    Args:
+        notes:  List of Notes.
+        factor: Duration multiplier.
+
+    Returns:
+        New list with scaled durations.
+    """
+    result: list[Note] = []
+    for n in notes:
+        new_dur = max(0.0625, n.duration * factor)
+        if n.pitch is None:
+            result.append(Note.rest(new_dur))
+        else:
+            result.append(Note(str(n.pitch), n.octave, new_dur, velocity=n.velocity))
+    return result
+
+
 def invert_chord(notes: list[Note], inversion: int = 1) -> list[Note]:
     """Apply a chord inversion by rotating the bottom note(s) up an octave.
 
