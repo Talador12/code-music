@@ -922,6 +922,86 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def canon(melody: list[Note], delay_beats: float = 4.0, voices: int = 2) -> list[list[Note]]:
+    """Create a canon (round) — the same melody offset in time.
+
+    Returns multiple voice lists. Voice 0 starts immediately,
+    voice 1 starts after delay_beats of rests, etc.
+
+    Args:
+        melody:      The melody to canonize.
+        delay_beats: Beats of delay between each voice entry.
+        voices:      Number of voices (2-4).
+
+    Returns:
+        List of note lists, one per voice.
+    """
+    result: list[list[Note]] = []
+    for v in range(min(voices, 4)):
+        voice: list[Note] = []
+        rest_dur = delay_beats * v
+        if rest_dur > 0:
+            voice.append(Note.rest(rest_dur))
+        voice.extend(melody)
+        result.append(voice)
+    return result
+
+
+def hocket(melody: list[Note], voices: int = 2) -> list[list[Note]]:
+    """Split a melody across multiple voices (hocket technique).
+
+    Each voice gets alternating notes — the others rest. Creates
+    an interlocking texture where voices complete each other.
+
+    Args:
+        melody: The melody to split.
+        voices: Number of voices to distribute across.
+
+    Returns:
+        List of note lists, one per voice.
+    """
+    result: list[list[Note]] = [[] for _ in range(voices)]
+    for i, note in enumerate(melody):
+        for v in range(voices):
+            if i % voices == v:
+                result[v].append(note)
+            else:
+                result[v].append(Note.rest(note.duration))
+    return result
+
+
+def sequence_by_interval(
+    melody: list[Note],
+    interval: int = 2,
+    repetitions: int = 3,
+) -> list[Note]:
+    """Repeat a melody transposed up by an interval each time.
+
+    Classical sequential technique — the same phrase at ascending
+    or descending pitch levels.
+
+    Args:
+        melody:      Original phrase.
+        interval:    Semitones to transpose each repetition.
+        repetitions: Total repetitions (including original).
+
+    Returns:
+        Concatenated transposed phrases.
+    """
+    result: list[Note] = []
+    for rep in range(repetitions):
+        shift = interval * rep
+        for note in melody:
+            if note.pitch is None:
+                result.append(Note.rest(note.duration))
+            else:
+                semi = (_semi(str(note.pitch)) + shift) % 12
+                oct = note.octave + ((_semi(str(note.pitch)) + shift) // 12)
+                oct = max(2, min(7, oct))
+                result.append(Note(_NOTE_NAMES[semi], oct, note.duration, velocity=note.velocity))
+    return result
+
+
 def call_and_response(
     call: list[Note],
     key: str = "C",
