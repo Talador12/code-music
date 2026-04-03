@@ -799,6 +799,129 @@ def detect_tempo(audio, sr: int = 44100) -> float:
 # ---------------------------------------------------------------------------
 
 
+def melody_contour(notes: list[Note]) -> dict:
+    """Classify the melodic contour (shape) of a note sequence.
+
+    Returns step/skip/leap statistics and overall direction.
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        Dict with direction, steps, skips, leaps, contour_string.
+    """
+    pitched = [(n.pitch, n.octave) for n in notes if n.pitch is not None]
+    if len(pitched) < 2:
+        return {"direction": "static", "steps": 0, "skips": 0, "leaps": 0, "contour_string": ""}
+
+    intervals: list[int] = []
+    for i in range(len(pitched) - 1):
+        a = _semi(str(pitched[i][0])) + pitched[i][1] * 12
+        b = _semi(str(pitched[i + 1][0])) + pitched[i + 1][1] * 12
+        intervals.append(b - a)
+
+    steps = sum(1 for i in intervals if abs(i) <= 2)
+    skips = sum(1 for i in intervals if 3 <= abs(i) <= 4)
+    leaps = sum(1 for i in intervals if abs(i) >= 5)
+
+    net = sum(intervals)
+    if net > 2:
+        direction = "ascending"
+    elif net < -2:
+        direction = "descending"
+    else:
+        direction = "static"
+
+    contour = "".join("+" if i > 0 else "-" if i < 0 else "=" for i in intervals)
+
+    return {
+        "direction": direction,
+        "steps": steps,
+        "skips": skips,
+        "leaps": leaps,
+        "contour_string": contour,
+    }
+
+
+def harmonic_rhythm(song, beats_per_bar: int = 4) -> dict:
+    """Measure how frequently chords change in a song.
+
+    Args:
+        song:          Song to analyze.
+        beats_per_bar: Beats per bar.
+
+    Returns:
+        Dict with total_chords, total_bars, changes_per_bar, chord_durations.
+    """
+    from .engine import Chord as _Chord
+
+    chords: list[tuple[float, float]] = []  # (position, duration)
+    for track in song.tracks:
+        pos = 0.0
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, _Chord):
+                chords.append((pos, beat.event.duration))
+            if beat.event:
+                pos += beat.event.duration
+
+    total_beats = 0.0
+    for track in song.tracks:
+        track_dur = sum(b.event.duration if b.event else 0 for b in track.beats)
+        total_beats = max(total_beats, track_dur)
+
+    total_bars = max(1, int(total_beats / beats_per_bar))
+    durations = [d for _, d in chords]
+
+    return {
+        "total_chords": len(chords),
+        "total_bars": total_bars,
+        "changes_per_bar": round(len(chords) / max(total_bars, 1), 2),
+        "chord_durations": durations,
+        "avg_chord_duration": round(sum(durations) / max(len(durations), 1), 2),
+    }
+
+
+def consonance_score(notes: list[Note]) -> float:
+    """Measure harmonic consonance of simultaneous/sequential notes.
+
+    Rates intervals: unison/octave=1.0, fifth=0.9, fourth=0.8,
+    third/sixth=0.7, second/seventh=0.3, tritone=0.1.
+
+    Args:
+        notes: List of Notes (analyzed pairwise).
+
+    Returns:
+        Average consonance score (0.0-1.0).
+    """
+    _CONSONANCE = {
+        0: 1.0,
+        1: 0.3,
+        2: 0.3,
+        3: 0.7,
+        4: 0.7,
+        5: 0.8,
+        6: 0.1,
+        7: 0.9,
+        8: 0.7,
+        9: 0.7,
+        10: 0.3,
+        11: 0.3,
+    }
+
+    pitched = [n for n in notes if n.pitch is not None]
+    if len(pitched) < 2:
+        return 1.0
+
+    scores: list[float] = []
+    for i in range(len(pitched) - 1):
+        a = _semi(str(pitched[i].pitch))
+        b = _semi(str(pitched[i + 1].pitch))
+        interval = abs(b - a) % 12
+        scores.append(_CONSONANCE.get(interval, 0.5))
+
+    return round(sum(scores) / len(scores), 3)
+
+
 def note_range(notes: list[Note]) -> dict:
     """Find the pitch range of a melody.
 
