@@ -922,6 +922,82 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def call_and_response(
+    call: list[Note],
+    key: str = "C",
+    mode: str = "major",
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a 'response' phrase that answers a 'call' phrase.
+
+    The response uses the same rhythm but different pitches from the
+    same scale, ending on a chord tone for resolution.
+
+    Args:
+        call: The call phrase (list of Notes).
+        key:  Key root.
+        mode: Scale mode.
+        seed: Random seed.
+
+    Returns:
+        Response phrase (same length/rhythm as call).
+    """
+    import random
+
+    rng = random.Random(seed)
+    scale_intervals = _SCALE_INTERVALS.get(mode, _SCALE_INTERVALS["major"])
+    root_semi = _semi(key)
+    scale_notes = [_NOTE_NAMES[(root_semi + i) % 12] for i in scale_intervals]
+
+    result: list[Note] = []
+    for i, n in enumerate(call):
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        elif i == len(call) - 1:
+            # End on root for resolution
+            result.append(Note(key, n.octave, n.duration, velocity=n.velocity))
+        else:
+            pitch = rng.choice(scale_notes)
+            result.append(Note(pitch, n.octave, n.duration, velocity=n.velocity))
+    return result
+
+
+def ostinato(
+    pattern: list[Note],
+    repeats: int = 4,
+    variation: float = 0.0,
+    seed: int | None = None,
+) -> list[Note]:
+    """Repeat a short pattern with optional subtle variation.
+
+    Args:
+        pattern:   Short note pattern to repeat.
+        repeats:   Number of repetitions.
+        variation: Probability (0-1) of each note being slightly altered.
+        seed:      Random seed.
+
+    Returns:
+        Repeated pattern with optional variations.
+    """
+    import random
+
+    rng = random.Random(seed)
+    result: list[Note] = []
+    for _ in range(repeats):
+        for n in pattern:
+            if n.pitch is None or variation == 0 or rng.random() > variation:
+                result.append(n)
+            else:
+                # Slight variation: shift pitch by ±1-2 semitones
+                semi = _semi(str(n.pitch))
+                shift = rng.choice([-2, -1, 1, 2])
+                new_semi = (semi + shift) % 12
+                result.append(
+                    Note(_NOTE_NAMES[new_semi], n.octave, n.duration, velocity=n.velocity)
+                )
+    return result
+
+
 def swing_notes(notes: list[Note], amount: float = 0.6) -> list[Note]:
     """Apply swing feel by alternating long/short note pairs.
 
