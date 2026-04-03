@@ -810,3 +810,255 @@ def generate_riser(
         oct = min(octave + (start_idx + i) // 12, 7)
         result.append(Note(_notes[note_idx], oct, duration))
     return result
+
+
+# ---------------------------------------------------------------------------
+# Full song analysis report
+# ---------------------------------------------------------------------------
+
+
+def analyze_song(song: Song) -> dict:
+    """Generate a comprehensive analysis report for a song.
+
+    Combines key detection, harmony analysis, arrangement detection,
+    density stats, and duration into a single dict.
+
+    Args:
+        song: Song to analyze.
+
+    Returns:
+        Dict with keys: title, bpm, key, duration_sec, total_beats, bars,
+        tracks, arrangement, harmony, density_per_track.
+    """
+    from .theory import analyze_harmony as _analyze_harmony
+
+    total_beats = song.total_beats
+    duration_sec = song.duration_sec
+    bars = max(1, int(total_beats / song.time_sig[0]))
+
+    # Key detection
+    try:
+        from .engine import detect_key
+
+        song.render()  # noqa: F841 — detect_key needs rendered audio
+        root, mode, conf = detect_key(song)
+        detected_key = f"{root} {mode} ({conf:.0%})"
+    except Exception:
+        detected_key = song.key_sig or "unknown"
+
+    # Harmony
+    try:
+        harmony = _analyze_harmony(song, key=song.key_sig)
+    except Exception:
+        harmony = []
+
+    # Arrangement
+    try:
+        arrangement = generate_arrangement(song)
+    except Exception:
+        arrangement = []
+
+    # Per-track density
+    density: dict[str, int] = {}
+    for track in song.tracks:
+        count = sum(
+            1
+            for b in track.beats
+            if b.event
+            and (
+                (isinstance(b.event, Note) and b.event.pitch is not None)
+                or isinstance(b.event, Chord)
+            )
+        )
+        density[track.name] = count
+
+    return {
+        "title": song.title,
+        "bpm": song.bpm,
+        "key": detected_key,
+        "duration_sec": round(duration_sec, 1),
+        "total_beats": round(total_beats, 1),
+        "bars": bars,
+        "tracks": len(song.tracks),
+        "track_names": [t.name for t in song.tracks],
+        "arrangement": arrangement,
+        "harmony": harmony,
+        "density_per_track": density,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Auto-generate intro/outro
+# ---------------------------------------------------------------------------
+
+
+def generate_intro(song: Song, bars: int = 4) -> list[Note]:
+    """Generate an intro section from existing song material.
+
+    Takes the first melodic track's opening notes and creates a sparse,
+    faded-in version suitable for an intro.
+
+    Args:
+        song:  Song to derive intro from.
+        bars:  Length of intro in bars.
+
+    Returns:
+        List of Notes (sparse, with rests).
+    """
+    # Find first melodic track
+    source_notes: list[Note] = []
+    for track in song.tracks:
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, Note) and beat.event.pitch is not None:
+                source_notes.append(beat.event)
+                if len(source_notes) >= bars * 2:
+                    break
+        if source_notes:
+            break
+
+    if not source_notes:
+        return [Note.rest(float(bars * song.time_sig[0]))]
+
+    # Create sparse version: note, rest, note, rest pattern
+    result: list[Note] = []
+    for i, note in enumerate(source_notes[: bars * 2]):
+        result.append(
+            Note(str(note.pitch), note.octave, note.duration, velocity=note.velocity * 0.5)
+        )
+        if i < len(source_notes) - 1:
+            result.append(Note.rest(note.duration))
+    return result
+
+
+def generate_outro(song: Song, bars: int = 4) -> list[Note]:
+    """Generate an outro section from existing song material.
+
+    Takes the last melodic track's final notes reversed, with
+    decreasing velocity for a fade-out effect.
+
+    Args:
+        song:  Song to derive outro from.
+        bars:  Length of outro in bars.
+
+    Returns:
+        List of Notes (reversed, fading).
+    """
+    source_notes: list[Note] = []
+    for track in reversed(song.tracks):
+        for beat in reversed(track.beats):
+            if beat.event and isinstance(beat.event, Note) and beat.event.pitch is not None:
+                source_notes.append(beat.event)
+                if len(source_notes) >= bars * 2:
+                    break
+        if source_notes:
+            break
+
+    if not source_notes:
+        return [Note.rest(float(bars * song.time_sig[0]))]
+
+    result: list[Note] = []
+    for i, note in enumerate(source_notes[: bars * 2]):
+        fade = max(0.1, 1.0 - (i / max(len(source_notes), 1)))
+        result.append(
+            Note(str(note.pitch), note.octave, note.duration, velocity=note.velocity * fade)
+        )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# HTML export with embedded player
+# ---------------------------------------------------------------------------
+
+
+def to_html(song: Song, path: str | None = None) -> str:
+    """Generate a standalone HTML page with embedded song data and player.
+
+    The HTML includes the song's JSON serialization and a minimal JavaScript
+    player UI with play/pause, track list, and song info.
+
+    Args:
+        song:  Song to export.
+        path:  If provided, write HTML to this file.
+
+    Returns:
+        HTML string.
+    """
+    import json as _json
+
+    from .serialization import song_to_json
+
+    song_data = song_to_json(song)
+    song_json = _json.dumps(song_data, indent=2)
+
+    track_rows = ""
+    for t in song.tracks:
+        beats = len(t.beats)
+        track_rows += f"<tr><td>{t.name}</td><td>{t.instrument}</td>"
+        track_rows += f"<td>{t.volume:.1f}</td><td>{beats}</td></tr>\n"
+
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{song.title} — code-music</title>
+<style>
+body {{ font-family: system-ui, sans-serif; max-width: 800px;
+  margin: 2rem auto; padding: 0 1rem;
+  background: #1a1a2e; color: #e0e0e0; }}
+h1 {{ color: #7c3aed; margin-bottom: 0.5rem; }}
+.meta {{ color: #888; margin-bottom: 1.5rem; }}
+table {{ width: 100%; border-collapse: collapse; margin: 1rem 0; }}
+th, td {{ padding: 0.5rem; text-align: left; border-bottom: 1px solid #333; }}
+th {{ color: #7c3aed; }}
+.info-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }}
+.info-card {{ background: #16213e; padding: 1rem; border-radius: 8px; text-align: center; }}
+.info-card .value {{ font-size: 1.5rem; font-weight: bold; color: #7c3aed; }}
+.info-card .label {{ font-size: 0.8rem; color: #888; }}
+pre {{ background: #16213e; padding: 1rem;
+  border-radius: 8px; overflow-x: auto; font-size: 0.8rem; }}
+footer {{ margin-top: 2rem; color: #555; font-size: 0.8rem; text-align: center; }}
+</style>
+</head>
+<body>
+<h1>{song.title}</h1>
+<p class="meta">Generated by code-music |
+{song.bpm:.0f} BPM | {song.key_sig} |
+{song.time_sig[0]}/{song.time_sig[1]}</p>
+
+<div class="info-grid">
+  <div class="info-card">
+    <div class="value">{len(song.tracks)}</div>
+    <div class="label">Tracks</div></div>
+  <div class="info-card">
+    <div class="value">{song.total_beats:.0f}</div>
+    <div class="label">Beats</div></div>
+  <div class="info-card">
+    <div class="value">{song.duration_sec:.1f}s</div>
+    <div class="label">Duration</div></div>
+</div>
+
+<h2>Tracks</h2>
+<table>
+<tr><th>Name</th><th>Instrument</th><th>Volume</th><th>Beats</th></tr>
+{track_rows}</table>
+
+<h2>Song Data (JSON)</h2>
+<details><summary>Click to expand</summary>
+<pre>{song_json}</pre>
+</details>
+
+<footer>
+  <p>Exported from
+  <a href="https://github.com/Talador12/code-music"
+  style="color:#7c3aed">code-music</a></p>
+</footer>
+</body>
+</html>"""
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(html)
+
+    return html

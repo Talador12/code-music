@@ -11,13 +11,17 @@ from code_music.composition import (
     Intro,
     Outro,
     Verse,
+    analyze_song,
     continue_melody,
     generate_arrangement,
     generate_fill,
+    generate_intro,
+    generate_outro,
     generate_riser,
     song_map,
     song_summary,
     to_abc,
+    to_html,
     to_lead_sheet,
     to_tab,
 )
@@ -410,3 +414,117 @@ class TestGenerateRiser:
     def test_custom_start(self):
         riser = generate_riser(bars=1, start_note="G")
         assert riser[0].pitch == "G"
+
+
+class TestAnalyzeSong:
+    def test_basic(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR, key_sig="C")
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
+        result = analyze_song(song)
+        assert result["title"] == "Test"
+        assert result["bpm"] == 120
+        assert result["tracks"] == 1
+        assert "lead" in result["track_names"]
+
+    def test_includes_harmony(self):
+        song = Song(title="T", bpm=120, sample_rate=SR, key_sig="C")
+        song.add_track(Track(name="pad", instrument="pad")).add(Chord("C", "maj7", 3, duration=4.0))
+        result = analyze_song(song)
+        assert isinstance(result["harmony"], list)
+
+    def test_includes_density(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        for _ in range(8):
+            tr.add(Note("C", 5, 1.0))
+        result = analyze_song(song)
+        assert result["density_per_track"]["lead"] == 8
+
+    def test_returns_dict(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        assert isinstance(analyze_song(song), dict)
+
+
+class TestGenerateIntro:
+    def test_basic(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note("C", 5, 1.0), Note("E", 5, 1.0)]
+        )
+        intro = generate_intro(song, bars=2)
+        assert len(intro) > 0
+        assert all(isinstance(n, Note) for n in intro)
+
+    def test_sparse_pattern(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note(n, 5, 1.0) for n in ["C", "D", "E", "F"]]
+        )
+        intro = generate_intro(song, bars=2)
+        rests = sum(1 for n in intro if n.pitch is None)
+        assert rests > 0  # should have rests for sparse intro
+
+    def test_empty_song(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        intro = generate_intro(song, bars=2)
+        assert len(intro) > 0
+
+    def test_reduced_velocity(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 1.0, velocity=0.8))
+        intro = generate_intro(song, bars=1)
+        pitched = [n for n in intro if n.pitch is not None]
+        if pitched:
+            assert pitched[0].velocity < 0.8
+
+
+class TestGenerateOutro:
+    def test_basic(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note("C", 5, 1.0), Note("E", 5, 1.0)]
+        )
+        outro = generate_outro(song, bars=2)
+        assert len(outro) > 0
+
+    def test_fading_velocity(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).extend(
+            [Note(n, 5, 1.0, velocity=0.8) for n in ["C", "D", "E", "F"]]
+        )
+        outro = generate_outro(song, bars=2)
+        velocities = [n.velocity for n in outro if n.pitch is not None]
+        if len(velocities) > 1:
+            assert velocities[-1] < velocities[0]  # fading
+
+    def test_empty_song(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        outro = generate_outro(song, bars=2)
+        assert len(outro) > 0
+
+
+class TestToHtml:
+    def test_basic(self):
+        song = Song(title="HTML Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
+        html = to_html(song)
+        assert "<!DOCTYPE html>" in html
+        assert "HTML Test" in html
+
+    def test_includes_tracks(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="kick", instrument="drums_kick"))
+        song.add_track(Track(name="pad", instrument="pad"))
+        html = to_html(song)
+        assert "kick" in html
+        assert "pad" in html
+
+    def test_includes_json(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 1.0))
+        html = to_html(song)
+        assert '"title"' in html
+
+    def test_returns_string(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        assert isinstance(to_html(song), str)

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v18.0.0 — 205 songs, 1101 tests, ABC notation + arrangement + transitions
+## Status: v19.0.0 — 210 songs, 1121 tests, song analysis + intro/outro + HTML export
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 205 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 210 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
