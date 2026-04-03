@@ -310,6 +310,119 @@ def generate_drums(
     return result
 
 
+def generate_chord_melody(
+    chords: list[tuple[str, str]],
+    contour: str = "arch",
+    octave: int = 5,
+    duration: float = 0.5,
+    notes_per_chord: int = 4,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a melody that follows a chord progression's harmonic rhythm.
+
+    Each chord gets `notes_per_chord` notes chosen from its chord tones,
+    shaped by the contour pattern.
+
+    Args:
+        chords:          List of (root, shape) tuples.
+        contour:         Melodic shape: 'arch' (up then down), 'descending',
+                         'ascending', 'wave', 'random'.
+        octave:          Base octave.
+        duration:        Duration per note.
+        notes_per_chord: How many notes to generate per chord.
+        seed:            Random seed.
+
+    Returns:
+        List of Notes.
+    """
+    import random
+
+    rng = random.Random(seed)
+    result: list[Note] = []
+    total_notes = len(chords) * notes_per_chord
+
+    for chord_idx, (root, shape) in enumerate(chords):
+        root_semi = _semi(root)
+        chord_semis = _CHORD_SEMI.get(shape, [0, 4, 7])
+        chord_notes = [_NOTE_NAMES[(root_semi + s) % 12] for s in chord_semis]
+
+        for note_idx in range(notes_per_chord):
+            # Position in overall melody (0.0 to 1.0)
+            pos = (chord_idx * notes_per_chord + note_idx) / max(total_notes - 1, 1)
+
+            if contour == "arch":
+                # Parabolic arch: low → high → low
+                height = 1.0 - 4.0 * (pos - 0.5) ** 2
+            elif contour == "ascending":
+                height = pos
+            elif contour == "descending":
+                height = 1.0 - pos
+            elif contour == "wave":
+                import math
+
+                height = 0.5 + 0.5 * math.sin(pos * 2 * math.pi)
+            elif contour == "random":
+                height = rng.random()
+            else:
+                height = 0.5
+
+            # Map height to chord tone selection + octave offset
+            tone_idx = int(height * (len(chord_notes) - 1))
+            tone_idx = max(0, min(tone_idx, len(chord_notes) - 1))
+            oct_offset = int(height * 2) - 1  # -1, 0, or 1
+            note_oct = max(3, min(7, octave + oct_offset))
+
+            result.append(Note(chord_notes[tone_idx], note_oct, duration))
+
+    return result
+
+
+def generate_counterpoint(
+    melody: list[Note],
+    species: int = 1,
+    interval: str = "third",
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a counterpoint line against a given melody.
+
+    First species counterpoint: one note against one note, using
+    consonant intervals (thirds, sixths, fifths, octaves).
+
+    Args:
+        melody:   The cantus firmus (original melody).
+        species:  Counterpoint species (only 1 supported currently).
+        interval: Preferred interval: 'third', 'sixth', 'fifth'.
+        seed:     Random seed.
+
+    Returns:
+        List of Notes forming the counterpoint line.
+    """
+    import random
+
+    rng = random.Random(seed)
+
+    interval_semis = {"third": [3, 4], "sixth": [8, 9], "fifth": [7]}
+    preferred = interval_semis.get(interval, [3, 4])
+
+    result: list[Note] = []
+    for note in melody:
+        if note.pitch is None:
+            result.append(Note.rest(note.duration))
+            continue
+
+        note_semi = _semi(str(note.pitch))
+        # Choose a consonant interval (above)
+        offset = rng.choice(preferred)
+        cp_semi = (note_semi + offset) % 12
+        cp_pitch = _NOTE_NAMES[cp_semi]
+        # Place counterpoint an octave above
+        cp_oct = min(7, note.octave + 1)
+
+        result.append(Note(cp_pitch, cp_oct, note.duration, velocity=note.velocity * 0.8))
+
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Song diffing
 # ---------------------------------------------------------------------------

@@ -10,6 +10,8 @@ from code_music.theory import (
     available_tensions,
     chord_scale,
     generate_bass_line,
+    generate_chord_melody,
+    generate_counterpoint,
     generate_drums,
     song_diff,
     song_patch,
@@ -140,6 +142,80 @@ class TestGenerateDrums:
             instr = {"kick": "drums_kick", "snare": "drums_snare", "hat": "drums_hat"}[name]
             tr = song.add_track(Track(name=name, instrument=instr, volume=0.5))
             tr.extend(notes)
+        audio = song.render()
+        assert audio.shape[0] > 0
+
+
+class TestGenerateChordMelody:
+    def test_basic(self):
+        chords = [("C", "maj"), ("G", "dom7")]
+        notes = generate_chord_melody(chords, seed=42)
+        assert len(notes) == 8  # 4 per chord default
+        assert all(isinstance(n, Note) for n in notes)
+
+    def test_arch_contour(self):
+        notes = generate_chord_melody([("C", "maj7"), ("F", "maj7")], contour="arch", seed=42)
+        assert len(notes) > 0
+
+    def test_descending_contour(self):
+        notes = generate_chord_melody([("A", "min7")], contour="descending", seed=42)
+        assert len(notes) == 4
+
+    def test_wave_contour(self):
+        notes = generate_chord_melody([("C", "maj"), ("G", "dom7")], contour="wave", seed=42)
+        assert len(notes) == 8
+
+    def test_random_contour(self):
+        notes = generate_chord_melody([("C", "maj")], contour="random", seed=42)
+        assert len(notes) == 4
+
+    def test_reproducible(self):
+        a = generate_chord_melody([("C", "maj")], seed=42)
+        b = generate_chord_melody([("C", "maj")], seed=42)
+        assert [n.pitch for n in a] == [n.pitch for n in b]
+
+    def test_in_song(self):
+        melody = generate_chord_melody([("C", "min7"), ("G", "dom7")], seed=42)
+        song = Song(title="Melody Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="lead", instrument="piano", volume=0.5))
+        tr.extend(melody)
+        audio = song.render()
+        assert audio.shape[0] > 0
+
+
+class TestGenerateCounterpoint:
+    def test_basic(self):
+        melody = [Note("C", 4, 1.0), Note("D", 4, 1.0), Note("E", 4, 1.0)]
+        cp = generate_counterpoint(melody, seed=42)
+        assert len(cp) == 3
+        assert all(isinstance(n, Note) for n in cp)
+
+    def test_rests_preserved(self):
+        melody = [Note("C", 4, 1.0), Note.rest(1.0), Note("E", 4, 1.0)]
+        cp = generate_counterpoint(melody, seed=42)
+        assert cp[1].pitch is None
+
+    def test_third_interval(self):
+        melody = [Note("C", 4, 1.0)]
+        cp = generate_counterpoint(melody, interval="third", seed=42)
+        assert cp[0].pitch is not None
+
+    def test_sixth_interval(self):
+        melody = [Note("C", 4, 1.0)]
+        cp = generate_counterpoint(melody, interval="sixth", seed=42)
+        assert cp[0].pitch is not None
+
+    def test_velocity_reduced(self):
+        melody = [Note("C", 4, 1.0, velocity=1.0)]
+        cp = generate_counterpoint(melody, seed=42)
+        assert cp[0].velocity < 1.0
+
+    def test_in_song(self):
+        melody = [Note(n, 4, 1.0) for n in ["C", "D", "E", "F", "G", "A", "B", "C"]]
+        cp = generate_counterpoint(melody, seed=42)
+        song = Song(title="CP Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="melody", instrument="piano", volume=0.5)).extend(melody)
+        song.add_track(Track(name="cp", instrument="piano", volume=0.4)).extend(cp)
         audio = song.render()
         assert audio.shape[0] > 0
 

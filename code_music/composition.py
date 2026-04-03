@@ -239,7 +239,7 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
         lines.append("(empty song)")
         return "\n".join(lines)
 
-    # Extract chords as (beat_position, chord_string)
+    # Extract chords
     chord_events: list[tuple[float, str]] = []
     if chord_track:
         pos = 0.0
@@ -261,32 +261,96 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
                     melody_events.append((pos, str(beat.event.pitch)))
                 pos += beat.event.duration
 
-    # Calculate total duration
-    total_beats = 0.0
-    for track in song.tracks:
-        track_dur = sum(b.event.duration if b.event else 0 for b in track.beats)
-        total_beats = max(total_beats, track_dur)
-
+    total_beats = max(sum(b.event.duration if b.event else 0 for b in t.beats) for t in song.tracks)
     total_bars = max(1, int(total_beats / beats_per_bar))
     bar_width = 16
 
     for bar_start in range(0, total_bars, 4):
         chord_line = "|"
         melody_line = "|"
-        bars_this_line = min(4, total_bars - bar_start)
-        for b in range(bars_this_line):
+        for b in range(min(4, total_bars - bar_start)):
             bar_beat = (bar_start + b) * beats_per_bar
             bar_end = bar_beat + beats_per_bar
-            bar_chords = [c for pos, c in chord_events if bar_beat <= pos < bar_end]
-            chord_str = " ".join(bar_chords) if bar_chords else ""
-            chord_line += f" {chord_str:<{bar_width - 1}}|"
-            bar_notes = [n for pos, n in melody_events if bar_beat <= pos < bar_end]
-            note_str = " ".join(bar_notes[:beats_per_bar]) if bar_notes else ""
-            melody_line += f" {note_str:<{bar_width - 1}}|"
+            bar_chords = [c for p, c in chord_events if bar_beat <= p < bar_end]
+            chord_line += f" {' '.join(bar_chords) if bar_chords else '':<{bar_width - 1}}|"
+            bar_notes = [n for p, n in melody_events if bar_beat <= p < bar_end]
+            melody_line += (
+                f" {' '.join(bar_notes[:beats_per_bar]) if bar_notes else '':<{bar_width - 1}}|"
+            )
         lines.append(chord_line)
         lines.append(melody_line)
         lines.append("")
 
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Song summary
+# ---------------------------------------------------------------------------
+
+
+def song_summary(song: Song) -> str:
+    """Generate a pretty-printed ASCII summary of a song.
+
+    Includes title, BPM, duration, key signature, track list with
+    instrument/volume/pan, and total beat count.
+
+    Args:
+        song: Song to summarize.
+
+    Returns:
+        Multi-line ASCII string.
+
+    Example output::
+
+        ╔══════════════════════════════════════╗
+        ║  My Song                             ║
+        ╠══════════════════════════════════════╣
+        ║  BPM: 120    Key: C    Time: 4/4    ║
+        ║  Duration: 32.0 beats (16.0 sec)    ║
+        ║  Tracks: 3                           ║
+        ╠══════════════════════════════════════╣
+        ║  kick   drums_kick   vol=0.8  pan=0 ║
+        ║  pad    pad          vol=0.4  pan=-0 ║
+        ║  lead   piano        vol=0.5  pan=0  ║
+        ╚══════════════════════════════════════╝
+    """
+    width = 42
+    lines = []
+    lines.append("╔" + "═" * width + "╗")
+    lines.append(f"║  {song.title:<{width - 2}}║")
+    lines.append("╠" + "═" * width + "╣")
+
+    # Metadata line
+    ts = f"{song.time_sig[0]}/{song.time_sig[1]}"
+    meta = f"  BPM: {song.bpm:.0f}    Key: {song.key_sig}    Time: {ts}"
+    lines.append(f"║{meta:<{width}}║")
+
+    # Duration
+    total_beats = song.total_beats
+    dur_sec = song.duration_sec
+    dur_line = f"  Duration: {total_beats:.1f} beats ({dur_sec:.1f} sec)"
+    lines.append(f"║{dur_line:<{width}}║")
+
+    # Track count
+    track_line = f"  Tracks: {len(song.tracks)}"
+    if song._custom_instruments:
+        track_line += f"  Custom instruments: {len(song._custom_instruments)}"
+    lines.append(f"║{track_line:<{width}}║")
+
+    lines.append("╠" + "═" * width + "╣")
+
+    # Track details
+    for track in song.tracks:
+        beats = len(track.beats)
+        name = track.name[:8]
+        inst = track.instrument[:12]
+        tr_line = f"  {name:<8} {inst:<12} v={track.volume:.1f} p={track.pan:+.1f} [{beats}]"
+        if len(tr_line) > width:
+            tr_line = tr_line[:width]
+        lines.append(f"║{tr_line:<{width}}║")
+
+    lines.append("╚" + "═" * width + "╝")
     return "\n".join(lines)
 
 

@@ -13,6 +13,7 @@ from code_music.composition import (
     Verse,
     continue_melody,
     song_map,
+    song_summary,
     to_lead_sheet,
     to_tab,
 )
@@ -224,6 +225,34 @@ class TestSongMap:
         song = Song(title="Test", bpm=120, sample_rate=SR)
         song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
         assert isinstance(song_map(song), str)
+
+
+class TestSongSummary:
+    def test_basic(self):
+        song = Song(title="Test Song", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano", volume=0.5))
+        result = song_summary(song)
+        assert "Test Song" in result
+        assert "120" in result
+
+    def test_includes_tracks(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="kick", instrument="drums_kick", volume=0.8))
+        song.add_track(Track(name="pad", instrument="pad", volume=0.4))
+        result = song_summary(song)
+        assert "kick" in result
+        assert "pad" in result
+        assert "Tracks: 2" in result
+
+    def test_returns_string(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        assert isinstance(song_summary(song), str)
+
+    def test_box_drawing(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        result = song_summary(song)
+        assert "╔" in result
+        assert "╚" in result
 
 
 class TestAnalyzeHarmony:

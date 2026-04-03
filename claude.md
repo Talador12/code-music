@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v15.0.0 — 190 songs, 1054 tests, tab + harmony analysis + song maps
+## Status: v16.0.0 — 195 songs, 1076 tests, chord melody + counterpoint + song summary
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 190 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 195 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
