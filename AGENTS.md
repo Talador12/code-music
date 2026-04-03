@@ -439,7 +439,7 @@ Eight releases shipped in a single conversation:
 | v22.0 | Humanize, transpose, tempo detect | 1176 | 225 | — |
 | v23.0 | Scale info, chord extensions, merge | 1192 | 230 | — |
 
-Completed roadmap items across v6-v22:
+Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
 - v10: LUFS mastering, true peak limiting, dithering, stereo analysis
 - v11: Automation curves, mod matrix, song overlay/append/extract
@@ -469,5 +469,7 @@ to_lead_sheet, to_tab, song_map, song_summary, to_abc, generate_arrangement,
 generate_fill, generate_riser, analyze_song, generate_intro, generate_outro,
 to_html, to_svg_waveform, tempo_map, render_preview, quantize_track.
 
-Next up: v19-roadmap (microtonal tuning), v23 (audio import/sampling),
-v25 (versioning/history). Analysis/composition/theory toolkit essentially complete.
+theory.py now also has: scale_info, chord_extensions, merge_tracks.
+
+Next up: v19-roadmap (microtonal tuning), v23-roadmap (audio import/sampling),
+v25 (versioning/history). Analysis/composition/theory toolkit complete — 37+ public functions.
