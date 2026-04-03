@@ -32,6 +32,7 @@ code_music/         Python package
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
   sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
   pattern.py        Pattern — mini-notation, transforms, polymeter
+  composition.py    Markov melody, named sections, ASCII lead sheet
   serialization.py  Song JSON round-trip (song_to_json/song_from_json)
   theory.py        Chord-scale theory, bass/drum generators, song diff/patch
   automation.py     Automation curves, ModMatrix, song_overlay/append/extract
@@ -274,6 +275,28 @@ t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
 ```
 
+## Composition intelligence
+
+Melody continuation, named sections, and ASCII lead sheets in `code_music/composition.py`:
+
+```python
+from code_music.composition import continue_melody, Verse, Chorus, to_lead_sheet
+
+# Markov chain melody continuation
+seed = [Note("C", 5, 0.5), Note("E", 5, 0.5), Note("G", 5, 0.5)]
+melody = continue_melody(seed, bars=4, key="C", mode="major", seed_rng=42)
+
+# Named sections
+v = Verse(bars=8)
+v.add_track("lead", melody)
+
+# ASCII lead sheet
+print(to_lead_sheet(song))  # chord symbols + melody notes
+```
+
+Sections: `Verse`, `Chorus`, `Bridge`, `Intro`, `Outro`
+Keys: major, minor, dorian, pentatonic, pentatonic_minor, blues
+
 ## JSON serialization
 
 Full round-trip Song ↔ JSON in `code_music/serialization.py`:
@@ -389,6 +412,8 @@ Eight releases shipped in a single conversation:
 | v11.0 | Automation, ModMatrix, song composition | 942 | 170 | automation.py |
 | v12.0 | Theory intelligence, song diffing | 983 | 175 | theory.py |
 | v13.0 | JSON serialization, collaboration | 1005 | 180 | serialization.py |
+| v14.0 | Markov melody, sections, lead sheets | 1034 | 185 | composition.py |
 
-Next up from roadmap: v13 (live performance/clips), v15 (spatial audio), v17 (visual scores).
-Foundational items already done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v12 Phase 1+3 (merge+diff).
+Next up from roadmap: v15 (spatial audio), v17 (visual scores), v19 (microtonal).
+Foundational items done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v18 Phase 1 (melody),
+v20 Phase 1 (sections), v26 Phase 1 (lead sheets), v12 Phase 1+3 (merge+diff).

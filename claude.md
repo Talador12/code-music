@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v13.0.0 — 180 songs, 1005 tests, JSON serialization + collaboration
+## Status: v14.0.0 — 185 songs, 1034 tests, melody continuation + lead sheets + sections
 
 ## What's built
 
@@ -63,6 +63,12 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### Composition Intelligence
+- composition.py: continue_melody() — Markov chain melody continuation (order 1-2)
+- Named sections: Verse, Chorus, Bridge, Intro, Outro (Section subclasses)
+- to_lead_sheet() — ASCII chord symbols + melody notation
+- Supports major, minor, dorian, pentatonic, blues keys
+
 ### JSON Serialization
 - serialization.py: song_to_json/song_from_json — full round-trip Song ↔ JSON
 - Supports notes, chords, rests, custom SoundDesigner instruments, metadata
@@ -104,7 +110,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 180 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 185 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

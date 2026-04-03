@@ -8,6 +8,7 @@ except PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
 from .automation import Automation, ModMatrix, song_append, song_extract, song_overlay
+from .composition import Bridge, Chorus, Intro, Outro, Verse, continue_melody, to_lead_sheet
 from .effects import (
     EffectsChain,
     autotune,
@@ -228,6 +229,14 @@ __all__ = [
     "song_diff",
     "song_patch",
     "Change",
+    # composition
+    "continue_melody",
+    "to_lead_sheet",
+    "Verse",
+    "Chorus",
+    "Bridge",
+    "Intro",
+    "Outro",
     # serialization
     "song_to_json",
     "song_from_json",
