@@ -475,6 +475,8 @@ theory.py now also has: scale_info, chord_extensions, merge_tracks.
 
 theory.py now also has: interval_name, parallel_motion, suggest_next_chord.
 
-40+ public functions across theory.py + composition.py. Toolkit essentially complete.
+theory.py now also has: note_range, rhythmic_density, detect_repeated_sections.
+
+45+ public functions across theory.py + composition.py. Toolkit complete.
 Next up: v19-roadmap (microtonal tuning), v23-roadmap (audio import/sampling),
-v25 (versioning/history).
+v25-roadmap (versioning/history). Infrastructure items remain.
