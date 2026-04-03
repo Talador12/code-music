@@ -922,6 +922,86 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def swing_notes(notes: list[Note], amount: float = 0.6) -> list[Note]:
+    """Apply swing feel by alternating long/short note pairs.
+
+    Pairs of notes get asymmetric durations: first note gets `amount`
+    of the pair's total duration, second gets the rest.
+
+    Args:
+        notes:  List of Notes.
+        amount: Swing ratio (0.5=straight, 0.67=triplet swing, 0.75=heavy).
+
+    Returns:
+        New list with swung durations.
+    """
+    result: list[Note] = []
+    for i in range(0, len(notes) - 1, 2):
+        pair_dur = notes[i].duration + notes[i + 1].duration
+        long_dur = pair_dur * amount
+        short_dur = pair_dur - long_dur
+        n1, n2 = notes[i], notes[i + 1]
+        if n1.pitch is None:
+            result.append(Note.rest(long_dur))
+        else:
+            result.append(Note(str(n1.pitch), n1.octave, long_dur, velocity=n1.velocity))
+        if n2.pitch is None:
+            result.append(Note.rest(short_dur))
+        else:
+            result.append(Note(str(n2.pitch), n2.octave, short_dur, velocity=n2.velocity))
+    if len(notes) % 2 == 1:
+        result.append(notes[-1])
+    return result
+
+
+def accent_pattern(notes: list[Note], pattern: list[bool]) -> list[Note]:
+    """Apply an accent pattern to notes — accented notes get louder.
+
+    Args:
+        notes:   List of Notes.
+        pattern: Boolean list (cycled). True = accent (+30% velocity).
+
+    Returns:
+        New list with velocity accents.
+    """
+    if not pattern:
+        return list(notes)
+    result: list[Note] = []
+    for i, n in enumerate(notes):
+        accented = pattern[i % len(pattern)]
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        else:
+            vel = min(1.0, n.velocity * (1.3 if accented else 0.7))
+            result.append(Note(str(n.pitch), n.octave, n.duration, velocity=vel))
+    return result
+
+
+def dynamics_curve(notes: list[Note], start_vel: float = 0.3, end_vel: float = 0.9) -> list[Note]:
+    """Apply a linear dynamics curve (crescendo or decrescendo).
+
+    Args:
+        notes:     List of Notes.
+        start_vel: Starting velocity.
+        end_vel:   Ending velocity.
+
+    Returns:
+        New list with linearly interpolated velocities.
+    """
+    if not notes:
+        return []
+    result: list[Note] = []
+    for i, n in enumerate(notes):
+        t = i / max(len(notes) - 1, 1)
+        vel = start_vel + (end_vel - start_vel) * t
+        vel = max(0.05, min(1.0, vel))
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        else:
+            result.append(Note(str(n.pitch), n.octave, n.duration, velocity=vel))
+    return result
+
+
 def arpeggiate_chord(
     root: str,
     shape: str,

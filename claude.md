@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v30.0.0 — 251 songs, 1281 tests, arpeggiate + staccato + legato
+## Status: v31.0.0 — 253 songs, 1292 tests, swing + accents + dynamics curves
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 251 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 253 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

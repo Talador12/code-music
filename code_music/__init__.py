@@ -153,6 +153,7 @@ from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
 from .theory import (
     Change,
+    accent_pattern,
     analyze_harmony,
     arpeggiate_chord,
     available_tensions,
@@ -161,6 +162,7 @@ from .theory import (
     consonance_score,
     count_pitch_classes,
     detect_repeated_sections,
+    dynamics_curve,
     harmonic_rhythm,
     humanize_velocity,
     interval_name,
@@ -181,6 +183,7 @@ from .theory import (
     song_patch,
     stretch_melody,
     suggest_next_chord,
+    swing_notes,
     transpose_progression,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
@@ -301,6 +304,9 @@ __all__ = [
     "arpeggiate_chord",
     "staccato",
     "legato_connect",
+    "swing_notes",
+    "accent_pattern",
+    "dynamics_curve",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

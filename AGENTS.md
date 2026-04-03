@@ -445,6 +445,7 @@ Eight releases shipped in a single conversation:
 | v28.0 | Inversions, voicing rotation, pedal point | 1261 | 249 | — |
 | v29.0 | Retrograde rhythm, stretch, 250th song | 1269 | 250 | — |
 | v30.0 | Arpeggiate, staccato, legato | 1281 | 251 | — |
+| v31.0 | Swing, accents, dynamics curves | 1292 | 253 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
