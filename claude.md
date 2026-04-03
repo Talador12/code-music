@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v12.0.0 — 175 songs, 983 tests, theory intelligence + song diffing
+## Status: v13.0.0 — 180 songs, 1005 tests, JSON serialization + collaboration
 
 ## What's built
 
@@ -63,6 +63,12 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### JSON Serialization
+- serialization.py: song_to_json/song_from_json — full round-trip Song ↔ JSON
+- Supports notes, chords, rests, custom SoundDesigner instruments, metadata
+- Output to dict, string, or file. Input from dict, string, or file path.
+- Enables collaboration (JSON exchange), web export, version control
+
 ### Music Theory Intelligence
 - chord_scale(): compatible scales for chord improvisation (14 scales × all chord types)
 - available_tensions(): 9th/11th/13th analysis for any chord
@@ -98,7 +104,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 175 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 180 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

@@ -124,6 +124,7 @@ from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
 from .pattern import Pattern
 from .playback import play
+from .serialization import song_from_json, song_to_json
 from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
 from .theory import (
@@ -227,6 +228,9 @@ __all__ = [
     "song_diff",
     "song_patch",
     "Change",
+    # serialization
+    "song_to_json",
+    "song_from_json",
     # automation
     "Automation",
     "ModMatrix",

@@ -32,6 +32,7 @@ code_music/         Python package
   effects.py        reverb, delay, chorus, distortion, filters, compress, pan
   sound_design.py   SoundDesigner — oscillators, FM, wavetable, granular, physical modeling
   pattern.py        Pattern — mini-notation, transforms, polymeter
+  serialization.py  Song JSON round-trip (song_to_json/song_from_json)
   theory.py        Chord-scale theory, bass/drum generators, song diff/patch
   automation.py     Automation curves, ModMatrix, song_overlay/append/extract
   mastering.py      LUFS metering, true peak limiting, dithering, stereo analysis
@@ -272,6 +273,24 @@ t.distance(t2) # perceptual distance
 t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
 ```
+
+## JSON serialization
+
+Full round-trip Song ↔ JSON in `code_music/serialization.py`:
+
+```python
+from code_music.serialization import song_to_json, song_from_json
+
+data = song_to_json(song)                     # → dict
+json_str = song_to_json(song, as_string=True) # → JSON string
+song_to_json(song, path="song.json")          # → write to file
+
+restored = song_from_json(data)               # from dict
+restored = song_from_json("song.json")        # from file
+restored = song_from_json(json_str)           # from string
+```
+
+Includes tracks, notes, chords, rests, custom SoundDesigner instruments, metadata.
 
 ## Music theory intelligence
 
