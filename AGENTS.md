@@ -434,6 +434,16 @@ Eight releases shipped in a single conversation:
 | v17.0 | 200-song milestone, showcase songs | 1081 | 200 | — |
 | v18.0 | ABC notation, arrangement, transitions | 1101 | 205 | — |
 
-Next up from roadmap: v15 (spatial audio), v17 (visual scores), v19 (microtonal).
-Foundational items done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v18 Phase 1 (melody),
-v20 Phase 1 (sections), v26 Phase 1 (lead sheets), v12 Phase 1+3 (merge+diff).
+Completed roadmap items across v6-v18:
+- v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
+- v10: LUFS mastering, true peak limiting, dithering, stereo analysis
+- v11: Automation curves, mod matrix, song overlay/append/extract
+- v12: Theory (chord-scale, bass/drums generators), song diff/patch
+- v13: JSON serialization round-trip
+- v14: Melody continuation (Markov), named sections, lead sheets, chord melody,
+  counterpoint, analyze_harmony, generate_chord_melody
+- v15-v18: Tab, song maps, song summary, ABC notation, arrangement detection,
+  generate_fill, generate_riser
+
+Next up from roadmap: v19 (microtonal), v20 (transitions/structure deeper),
+v22 (performance), v23 (audio import). Many partial completions across v13-v26.
