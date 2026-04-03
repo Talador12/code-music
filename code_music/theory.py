@@ -922,6 +922,91 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def arpeggiate_chord(
+    root: str,
+    shape: str,
+    octave: int = 4,
+    duration: float = 0.25,
+    direction: str = "up",
+    repeats: int = 1,
+) -> list[Note]:
+    """Convert a chord into an arpeggiated note sequence.
+
+    Args:
+        root:      Chord root.
+        shape:     Chord quality.
+        octave:    Base octave.
+        duration:  Duration per note.
+        direction: 'up', 'down', or 'updown'.
+        repeats:   How many times to repeat the pattern.
+
+    Returns:
+        List of Notes.
+    """
+    if shape not in _CHORD_SEMI:
+        raise ValueError(f"Unknown chord shape {shape!r}")
+    root_semi = _semi(root)
+    semis = _CHORD_SEMI[shape]
+    notes = [
+        Note(_NOTE_NAMES[(root_semi + s) % 12], octave + (root_semi + s) // 12, duration)
+        for s in semis
+    ]
+
+    if direction == "down":
+        notes = list(reversed(notes))
+    elif direction == "updown":
+        notes = (
+            notes + list(reversed(notes[1:-1])) if len(notes) > 2 else notes + list(reversed(notes))
+        )
+
+    return notes * repeats
+
+
+def staccato(notes: list[Note], ratio: float = 0.5) -> list[Note]:
+    """Shorten notes and add rests for a staccato articulation.
+
+    Args:
+        notes: List of Notes.
+        ratio: Fraction of duration to sound (0.0-1.0). Rest fills remainder.
+
+    Returns:
+        New list with shortened notes + rests.
+    """
+    result: list[Note] = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        else:
+            sounding = max(0.0625, n.duration * ratio)
+            silence = n.duration - sounding
+            result.append(Note(str(n.pitch), n.octave, sounding, velocity=n.velocity))
+            if silence > 0.001:
+                result.append(Note.rest(silence))
+    return result
+
+
+def legato_connect(notes: list[Note], overlap: float = 0.1) -> list[Note]:
+    """Extend note durations for a legato feel (overlapping notes).
+
+    Each note's duration is extended by `overlap` beats, creating
+    a connected, singing quality.
+
+    Args:
+        notes:   List of Notes.
+        overlap: Extra duration in beats to add.
+
+    Returns:
+        New list with extended durations.
+    """
+    result: list[Note] = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        else:
+            result.append(Note(str(n.pitch), n.octave, n.duration + overlap, velocity=n.velocity))
+    return result
+
+
 def retrograde_rhythm(notes: list[Note]) -> list[Note]:
     """Reverse durations while keeping pitches in original order.
 
