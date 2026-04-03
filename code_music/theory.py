@@ -795,6 +795,135 @@ def detect_tempo(audio, sr: int = 44100) -> float:
 
 
 # ---------------------------------------------------------------------------
+# Melody analysis utilities
+# ---------------------------------------------------------------------------
+
+
+def note_range(notes: list[Note]) -> dict:
+    """Find the pitch range of a melody.
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        Dict with lowest, highest, span_semitones, span_octaves.
+    """
+    pitched = [(n.pitch, n.octave) for n in notes if n.pitch is not None]
+    if not pitched:
+        return {"lowest": None, "highest": None, "span_semitones": 0, "span_octaves": 0}
+
+    midi_vals = [_semi(str(p)) + o * 12 for p, o in pitched]
+    lo_midi = min(midi_vals)
+    hi_midi = max(midi_vals)
+    lo_idx = midi_vals.index(lo_midi)
+    hi_idx = midi_vals.index(hi_midi)
+
+    return {
+        "lowest": f"{pitched[lo_idx][0]}{pitched[lo_idx][1]}",
+        "highest": f"{pitched[hi_idx][0]}{pitched[hi_idx][1]}",
+        "span_semitones": hi_midi - lo_midi,
+        "span_octaves": round((hi_midi - lo_midi) / 12, 1),
+    }
+
+
+def rhythmic_density(notes: list[Note]) -> dict:
+    """Calculate rhythmic density metrics for a note list.
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        Dict with total_notes, total_rests, total_beats, notes_per_beat,
+        shortest_note, longest_note.
+    """
+    pitched = [n for n in notes if n.pitch is not None]
+    rests = [n for n in notes if n.pitch is None]
+    total_beats = sum(n.duration for n in notes)
+    durations = [n.duration for n in pitched] if pitched else [0]
+
+    return {
+        "total_notes": len(pitched),
+        "total_rests": len(rests),
+        "total_beats": round(total_beats, 2),
+        "notes_per_beat": round(len(pitched) / max(total_beats, 0.01), 2),
+        "shortest_note": min(durations),
+        "longest_note": max(durations),
+    }
+
+
+def detect_repeated_sections(
+    song,
+    beats_per_bar: int = 4,
+    min_bars: int = 2,
+) -> list[dict]:
+    """Detect repeated bar patterns in a song.
+
+    Compares bars by note content hash to find sections that repeat.
+
+    Args:
+        song:          Song to analyze.
+        beats_per_bar: Beats per bar.
+        min_bars:      Minimum bars for a section to count.
+
+    Returns:
+        List of dicts: {track, pattern_hash, bars, repeat_count}.
+    """
+    from .engine import Chord as _Chord
+
+    results: list[dict] = []
+
+    for track in song.tracks:
+        # Build bar content strings
+        bar_contents: dict[int, str] = {}
+        pos = 0.0
+        for beat in track.beats:
+            if beat.event:
+                bar_idx = int(pos / beats_per_bar)
+                event_str = ""
+                if isinstance(beat.event, Note) and beat.event.pitch is not None:
+                    event_str = f"{beat.event.pitch}{beat.event.octave}"
+                elif isinstance(beat.event, _Chord):
+                    event_str = f"{beat.event.root}{beat.event.shape}"
+                bar_contents.setdefault(bar_idx, "")
+                bar_contents[bar_idx] += event_str
+                pos += beat.event.duration
+
+        if not bar_contents:
+            continue
+
+        # Find repeated patterns (sequences of bars)
+        for length in range(min_bars, len(bar_contents) // 2 + 1):
+            patterns: dict[str, list[int]] = {}
+            for start in range(0, len(bar_contents) - length + 1):
+                pattern = "|".join(bar_contents.get(start + i, "") for i in range(length))
+                if pattern and pattern != "|" * (length - 1):
+                    patterns.setdefault(pattern, []).append(start)
+
+            for pattern_hash, starts in patterns.items():
+                if len(starts) > 1:
+                    results.append(
+                        {
+                            "track": track.name,
+                            "pattern_hash": hash(pattern_hash) % 10000,
+                            "bars": length,
+                            "repeat_count": len(starts),
+                            "at_bars": starts,
+                        }
+                    )
+
+    # Deduplicate — keep longest patterns
+    seen: set[tuple[str, int]] = set()
+    unique: list[dict] = []
+    for r in sorted(results, key=lambda x: -x["bars"]):
+        key = (r["track"], r["at_bars"][0])
+        if key not in seen:
+            unique.append(r)
+            seen.add(key)
+
+    return unique[:20]  # limit output
+
+
+# ---------------------------------------------------------------------------
 # Interval naming and parallel harmony
 # ---------------------------------------------------------------------------
 
