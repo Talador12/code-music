@@ -438,7 +438,7 @@ Eight releases shipped in a single conversation:
 | v21.0 | Preview render, voicings, quantize | 1161 | 220 | — |
 | v22.0 | Humanize, transpose, tempo detect | 1176 | 225 | — |
 
-Completed roadmap items across v6-v20:
+Completed roadmap items across v6-v22:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
 - v10: LUFS mastering, true peak limiting, dithering, stereo analysis
 - v11: Automation curves, mod matrix, song overlay/append/extract
@@ -458,6 +458,15 @@ All theory.py features: chord_scale, available_tensions, generate_bass_line,
 generate_drums, generate_chord_melody, generate_counterpoint, generate_variation,
 analyze_harmony, song_diff, song_patch.
 
-Next up: v19-roadmap (microtonal tuning), v22 (performance/caching),
-v23 (audio import/sampling), v25 (versioning/history).
-Most analysis/composition/theory tools now complete.
+All theory.py features: chord_scale, available_tensions, generate_bass_line,
+generate_drums, generate_chord_melody, generate_counterpoint, generate_variation,
+generate_chord_voicing, analyze_harmony, humanize_velocity, transpose_progression,
+detect_tempo, song_diff, song_patch.
+
+All composition.py features: continue_melody, Verse/Chorus/Bridge/Intro/Outro,
+to_lead_sheet, to_tab, song_map, song_summary, to_abc, generate_arrangement,
+generate_fill, generate_riser, analyze_song, generate_intro, generate_outro,
+to_html, to_svg_waveform, tempo_map, render_preview, quantize_track.
+
+Next up: v19-roadmap (microtonal tuning), v23 (audio import/sampling),
+v25 (versioning/history). Analysis/composition/theory toolkit essentially complete.
