@@ -435,7 +435,7 @@ Eight releases shipped in a single conversation:
 | v18.0 | ABC notation, arrangement, transitions | 1101 | 205 | — |
 | v19.0 | analyze_song, intro/outro gen, HTML export | 1121 | 210 | — |
 
-Completed roadmap items across v6-v18:
+Completed roadmap items across v6-v19:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
 - v10: LUFS mastering, true peak limiting, dithering, stereo analysis
 - v11: Automation curves, mod matrix, song overlay/append/extract
@@ -443,8 +443,12 @@ Completed roadmap items across v6-v18:
 - v13: JSON serialization round-trip
 - v14: Melody continuation (Markov), named sections, lead sheets, chord melody,
   counterpoint, analyze_harmony, generate_chord_melody
-- v15-v18: Tab, song maps, song summary, ABC notation, arrangement detection,
-  generate_fill, generate_riser
+- v15-v19: Tab, song maps, song summary, ABC notation, arrangement detection,
+  generate_fill, generate_riser, analyze_song, generate_intro/outro, to_html
 
-Next up from roadmap: v19 (microtonal), v20 (transitions/structure deeper),
-v22 (performance), v23 (audio import). Many partial completions across v13-v26.
+All composition.py features now: continue_melody, Verse/Chorus/Bridge/Intro/Outro,
+to_lead_sheet, to_tab, song_map, song_summary, to_abc, generate_arrangement,
+generate_fill, generate_riser, analyze_song, generate_intro, generate_outro, to_html.
+
+Next up: v19 (microtonal tuning), v22 (performance), v23 (audio import/sampling),
+v25 (versioning/history). Most analysis/composition tools now complete.
