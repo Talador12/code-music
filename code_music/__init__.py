@@ -168,6 +168,7 @@ from .theory import (
     count_pitch_classes,
     detect_repeated_sections,
     diminished_run,
+    dorian_lick,
     dynamics_curve,
     harmonic_rhythm,
     hocket,
@@ -186,6 +187,7 @@ from .theory import (
     ostinato,
     parallel_motion,
     pedal_point,
+    phrygian_run,
     retrograde_rhythm,
     rhythmic_density,
     rotate_voicing,
@@ -197,6 +199,7 @@ from .theory import (
     suggest_next_chord,
     swing_notes,
     transpose_progression,
+    tritone_sub,
     whole_tone_run,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
@@ -334,6 +337,9 @@ __all__ = [
     "lydian_run",
     "mixolydian_lick",
     "modal_interchange",
+    "dorian_lick",
+    "phrygian_run",
+    "tritone_sub",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

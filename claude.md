@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v36.0.0 — 263 songs, 1340 tests, lydian + mixolydian + modal interchange
+## Status: v37.0.0 — 265 songs, 1349 tests, dorian + phrygian + tritone sub
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 263 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 265 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

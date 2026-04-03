@@ -922,6 +922,66 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def dorian_lick(
+    root: str,
+    octave: int = 5,
+    duration: float = 0.25,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a dorian mode lick (natural 6 over minor gives jazz/funk quality)."""
+    import random
+
+    rng = random.Random(seed)
+    root_semi = _semi(root)
+    dorian = [0, 2, 3, 5, 7, 9, 10]
+    dorian_notes = [_NOTE_NAMES[(root_semi + i) % 12] for i in dorian]
+    lick_len = rng.randint(6, 10)
+    result: list[Note] = [Note(rng.choice(dorian_notes), octave, duration) for _ in range(lick_len)]
+    result.append(Note(root, octave, duration * 2))
+    return result
+
+
+def phrygian_run(
+    root: str,
+    octave: int = 5,
+    length: int = 8,
+    duration: float = 0.25,
+) -> list[Note]:
+    """Generate a phrygian scale run (b2 gives Spanish/flamenco quality)."""
+    root_semi = _semi(root)
+    phrygian = [0, 1, 3, 5, 7, 8, 10]
+    result: list[Note] = []
+    for i in range(length):
+        idx = i % len(phrygian)
+        oct_off = i // len(phrygian)
+        semi = (root_semi + phrygian[idx]) % 12
+        result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
+    return result
+
+
+def tritone_sub(chords: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Apply tritone substitution to dominant 7th chords.
+
+    Replaces V7 chords with bII7 (same tritone, different root).
+    Classic jazz reharmonization technique.
+
+    Args:
+        chords: List of (root, shape) tuples.
+
+    Returns:
+        New list with dominant chords tritone-substituted.
+    """
+    result: list[tuple[str, str]] = []
+    for root, shape in chords:
+        if shape in ("dom7", "dom9"):
+            root_semi = _semi(root)
+            tri_semi = (root_semi + 6) % 12  # tritone = 6 semitones
+            result.append((_NOTE_NAMES[tri_semi], shape))
+        else:
+            result.append((root, shape))
+    return result
+
+
 def lydian_run(
     root: str,
     octave: int = 5,

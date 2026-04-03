@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "code-music"
-version = "36.0.0"
+version = "37.0.0"
 description = "Code-generated music: write blocks of code, export Spotify-ready audio"
 readme = "README.md"
 license = "MIT"
