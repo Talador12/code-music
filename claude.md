@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v20.0.0 — 215 songs, 1143 tests, SVG waveforms + variations + tempo maps
+## Status: v21.0.0 — 220 songs, 1161 tests, preview render + voicings + quantize
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 215 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 220 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

@@ -671,6 +671,69 @@ def generate_variation(
         )
 
 
+# ---------------------------------------------------------------------------
+# Chord voicing generators
+# ---------------------------------------------------------------------------
+
+
+def generate_chord_voicing(
+    root: str,
+    shape: str,
+    octave: int = 3,
+    voicing: str = "close",
+    duration: float = 4.0,
+) -> list[Note]:
+    """Generate a specific chord voicing as individual notes.
+
+    Args:
+        root:     Chord root note.
+        shape:    Chord quality (maj, min7, dom7, etc).
+        octave:   Base octave.
+        voicing:  Voicing type:
+            - 'close': all notes within one octave (default)
+            - 'spread': notes spread across 2+ octaves
+            - 'drop2': second-highest note dropped an octave
+            - 'rootless': omit root (jazz voicing)
+        duration: Note duration.
+
+    Returns:
+        List of Notes forming the voicing.
+    """
+    if shape not in _CHORD_SEMI:
+        raise ValueError(f"Unknown chord shape {shape!r}")
+
+    root_semi = _semi(root)
+    semis = _CHORD_SEMI[shape]
+
+    if voicing == "close":
+        return [
+            Note(_NOTE_NAMES[(root_semi + s) % 12], octave + (root_semi + s) // 12, duration)
+            for s in semis
+        ]
+    elif voicing == "spread":
+        result: list[Note] = []
+        for i, s in enumerate(semis):
+            oct = octave + i  # each note one octave higher
+            result.append(Note(_NOTE_NAMES[(root_semi + s) % 12], min(oct, 7), duration))
+        return result
+    elif voicing == "drop2":
+        close = [(_NOTE_NAMES[(root_semi + s) % 12], octave + (root_semi + s) // 12) for s in semis]
+        if len(close) >= 3:
+            # Drop second-highest note by one octave
+            second_idx = len(close) - 2
+            p, o = close[second_idx]
+            close[second_idx] = (p, max(2, o - 1))
+        return [Note(p, o, duration) for p, o in close]
+    elif voicing == "rootless":
+        # Skip the root (first note)
+        return [
+            Note(_NOTE_NAMES[(root_semi + s) % 12], octave + (root_semi + s) // 12, duration)
+            for s in semis[1:]
+        ]
+    else:
+        raise ValueError(f"Unknown voicing {voicing!r}. Choose: close, spread, drop2, rootless")
+
+
 class Change:
     """A single structural change between two songs."""
 

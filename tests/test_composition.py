@@ -18,6 +18,8 @@ from code_music.composition import (
     generate_intro,
     generate_outro,
     generate_riser,
+    quantize_track,
+    render_preview,
     song_map,
     song_summary,
     tempo_map,
@@ -27,7 +29,7 @@ from code_music.composition import (
     to_svg_waveform,
     to_tab,
 )
-from code_music.theory import analyze_harmony, generate_variation
+from code_music.theory import analyze_harmony, generate_chord_voicing, generate_variation
 
 SR = 22050
 
@@ -626,3 +628,83 @@ class TestGenerateVariation:
 
         with pytest.raises(ValueError):
             generate_variation([Note("C", 5, 1.0)], "yodel")
+
+
+class TestRenderPreview:
+    def test_returns_mono(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        preview = render_preview(song)
+        assert preview.ndim == 1
+
+    def test_shorter_than_full(self):
+        song = Song(title="T", bpm=120, sample_rate=44100)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        preview = render_preview(song)
+        full = song.render()
+        assert len(preview) < len(full) if full.ndim == 1 else full.shape[0]
+
+    def test_restores_sample_rate(self):
+        song = Song(title="T", bpm=120, sample_rate=44100)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        render_preview(song)
+        assert song.sample_rate == 44100
+
+
+class TestQuantizeTrack:
+    def test_snap_to_grid(self):
+        notes = [Note("C", 5, 0.37), Note("E", 5, 0.63)]
+        q = quantize_track(notes, grid=0.5)
+        assert q[0].duration == 0.5
+        assert q[1].duration == 0.5
+
+    def test_preserves_pitch(self):
+        notes = [Note("C", 5, 0.3)]
+        q = quantize_track(notes, grid=0.25)
+        assert q[0].pitch == "C"
+
+    def test_rests(self):
+        notes = [Note.rest(0.37)]
+        q = quantize_track(notes, grid=0.5)
+        assert q[0].pitch is None
+        assert q[0].duration == 0.5
+
+    def test_quarter_grid(self):
+        notes = [Note("C", 5, 0.8)]
+        q = quantize_track(notes, grid=1.0)
+        assert q[0].duration == 1.0
+
+
+class TestGenerateChordVoicing:
+    def test_close(self):
+        v = generate_chord_voicing("C", "maj", voicing="close")
+        assert len(v) == 3
+        assert all(isinstance(n, Note) for n in v)
+
+    def test_spread(self):
+        v = generate_chord_voicing("C", "maj", voicing="spread")
+        assert len(v) == 3
+        octaves = [n.octave for n in v]
+        assert octaves[-1] > octaves[0]
+
+    def test_drop2(self):
+        v = generate_chord_voicing("C", "dom7", voicing="drop2")
+        assert len(v) == 4
+
+    def test_rootless(self):
+        v = generate_chord_voicing("C", "dom7", voicing="rootless")
+        assert len(v) == 3  # root omitted from 4-note chord
+        pitches = [n.pitch for n in v]
+        assert "C" not in pitches
+
+    def test_unknown_voicing_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            generate_chord_voicing("C", "maj", voicing="jazz_cluster")
+
+    def test_unknown_shape_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            generate_chord_voicing("C", "imaginary")

@@ -239,7 +239,6 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
         lines.append("(empty song)")
         return "\n".join(lines)
 
-    # Extract chords
     chord_events: list[tuple[float, str]] = []
     if chord_track:
         pos = 0.0
@@ -251,7 +250,6 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
             elif beat.event:
                 pos += beat.event.duration
 
-    # Extract melody notes
     melody_events: list[tuple[float, str]] = []
     if melody_track:
         pos = 0.0
@@ -264,24 +262,82 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
     total_beats = max(sum(b.event.duration if b.event else 0 for b in t.beats) for t in song.tracks)
     total_bars = max(1, int(total_beats / beats_per_bar))
     bar_width = 16
-
     for bar_start in range(0, total_bars, 4):
-        chord_line = "|"
-        melody_line = "|"
+        cl = "|"
+        ml = "|"
         for b in range(min(4, total_bars - bar_start)):
-            bar_beat = (bar_start + b) * beats_per_bar
-            bar_end = bar_beat + beats_per_bar
-            bar_chords = [c for p, c in chord_events if bar_beat <= p < bar_end]
-            chord_line += f" {' '.join(bar_chords) if bar_chords else '':<{bar_width - 1}}|"
-            bar_notes = [n for p, n in melody_events if bar_beat <= p < bar_end]
-            melody_line += (
-                f" {' '.join(bar_notes[:beats_per_bar]) if bar_notes else '':<{bar_width - 1}}|"
-            )
-        lines.append(chord_line)
-        lines.append(melody_line)
+            bb = (bar_start + b) * beats_per_bar
+            be = bb + beats_per_bar
+            bc = [c for p, c in chord_events if bb <= p < be]
+            cl += f" {' '.join(bc) if bc else '':<{bar_width - 1}}|"
+            bn = [n for p, n in melody_events if bb <= p < be]
+            ml += f" {' '.join(bn[:beats_per_bar]) if bn else '':<{bar_width - 1}}|"
+        lines.append(cl)
+        lines.append(ml)
         lines.append("")
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Fast preview render
+# ---------------------------------------------------------------------------
+
+
+def render_preview(song: Song):
+    """Render a fast low-quality preview of a song.
+
+    Creates a temporary copy at 11025Hz mono for quick iteration.
+    ~4x faster than full 44100Hz stereo render.
+
+    Args:
+        song: Song to preview.
+
+    Returns:
+        Mono float64 numpy array at 11025Hz.
+    """
+    import numpy as np
+
+    original_sr = song.sample_rate
+    song.sample_rate = 11025
+    try:
+        audio = song.render()
+    finally:
+        song.sample_rate = original_sr
+
+    if audio.ndim > 1:
+        return np.mean(audio, axis=1)
+    return audio
+
+
+# ---------------------------------------------------------------------------
+# Quantize track
+# ---------------------------------------------------------------------------
+
+
+def quantize_track(
+    notes: list[Note],
+    grid: float = 0.5,
+) -> list[Note]:
+    """Snap note durations to the nearest grid value.
+
+    Useful for cleaning up humanized or recorded input.
+
+    Args:
+        notes: List of Notes to quantize.
+        grid:  Grid size in beats (0.25 = 16th, 0.5 = 8th, 1.0 = quarter).
+
+    Returns:
+        New list of Notes with quantized durations.
+    """
+    result: list[Note] = []
+    for note in notes:
+        snapped = max(grid, round(note.duration / grid) * grid)
+        if note.pitch is None:
+            result.append(Note.rest(snapped))
+        else:
+            result.append(Note(str(note.pitch), note.octave, snapped, velocity=note.velocity))
+    return result
 
 
 # ---------------------------------------------------------------------------
