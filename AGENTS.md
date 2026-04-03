@@ -363,6 +363,32 @@ mastered = master_audio(audio, sr)         # full chain in one call
 
 - Songs using SoundDesigner must register instruments before adding tracks.
 - The `SoundDesigner.render()` method returns mono float64 — the Synth converts to stereo.
-- All 5 built-in SoundDesigner presets live in `code_music.sound_design.PRESETS`.
+- 17 SoundDesigner presets in `code_music.sound_design.PRESETS`: supersaw, sub_808,
+  metallic_hit, vocal_pad, plucked_string, fm_electric_piano, fm_bell, fm_brass,
+  fm_bass, wt_organ, wt_bright_lead, wt_morph_pad, grain_cloud, grain_shimmer,
+  pm_guitar, pm_flute, pm_gong.
 - Smoke tests auto-discover songs and examples — no manual test registration needed.
 - When adding new songs: verify scale names against `SCALES` dict keys in engine.py.
+- The Chord class does NOT accept `inversion` as a constructor kwarg — set it after creation.
+- Theory module scale names (aeolian, mixolydian) differ from engine SCALES keys
+  (minor, dorian). Map with: `{"aeolian": "minor", "phrygian": "minor", "lydian": "major"}`.
+- song_from_json: long JSON strings (>500 chars or starting with `{`) are parsed as JSON,
+  not treated as file paths.
+
+## Session history (v6.0 → v13.0)
+
+Eight releases shipped in a single conversation:
+
+| Version | Feature | Tests | Songs | Module |
+|---------|---------|-------|-------|--------|
+| v6.0 | SoundDesigner (osc, noise, filter, ADSR) | 769 | 145 | sound_design.py |
+| v7.0 | FM synthesis, wavetable, euclidean | 808 | 150 | — |
+| v8.0 | Granular, physical modeling, Pattern | 857 | 155 | pattern.py |
+| v9.0 | Spectral processing, timbre analysis | 880 | 160 | — |
+| v10.0 | LUFS mastering, true peak, dithering | 907 | 165 | mastering.py |
+| v11.0 | Automation, ModMatrix, song composition | 942 | 170 | automation.py |
+| v12.0 | Theory intelligence, song diffing | 983 | 175 | theory.py |
+| v13.0 | JSON serialization, collaboration | 1005 | 180 | serialization.py |
+
+Next up from roadmap: v13 (live performance/clips), v15 (spatial audio), v17 (visual scores).
+Foundational items already done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v12 Phase 1+3 (merge+diff).
