@@ -12,8 +12,11 @@ from code_music.composition import (
     Outro,
     Verse,
     continue_melody,
+    song_map,
     to_lead_sheet,
+    to_tab,
 )
+from code_music.theory import analyze_harmony
 
 SR = 22050
 
@@ -157,3 +160,118 @@ class TestLeadSheet:
         song = Song(title="Test", bpm=120, sample_rate=SR)
         song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
         assert isinstance(to_lead_sheet(song), str)
+
+
+class TestToTab:
+    def test_basic_guitar(self):
+        song = Song(title="Tab Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        tr.add(Note("E", 4, 1.0))
+        tr.add(Note("A", 4, 1.0))
+        result = to_tab(song, tuning="guitar")
+        assert "TAB" in result
+        assert "Guitar" in result
+
+    def test_bass_tuning(self):
+        song = Song(title="Tab Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="bass", instrument="bass"))
+        tr.add(Note("E", 2, 1.0))
+        result = to_tab(song, tuning="bass")
+        assert "Bass" in result
+
+    def test_empty_song(self):
+        song = Song(title="Empty", bpm=120, sample_rate=SR)
+        result = to_tab(song)
+        assert "no melodic track" in result
+
+    def test_specific_track(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="kick", instrument="drums_kick")).add(Note("C", 2, 1.0))
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("E", 4, 1.0))
+        result = to_tab(song, track_name="lead")
+        assert "TAB" in result
+
+    def test_returns_string(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 1.0))
+        assert isinstance(to_tab(song), str)
+
+
+class TestSongMap:
+    def test_basic(self):
+        song = Song(title="Map Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="lead", instrument="piano"))
+        for _ in range(8):
+            tr.add(Note("C", 5, 1.0))
+        result = song_map(song)
+        assert "Song Map" in result
+        assert "lead" in result
+
+    def test_multiple_tracks(self):
+        song = Song(title="Multi", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="kick", instrument="drums_kick")).add(Note("C", 2, 4.0))
+        song.add_track(Track(name="pad", instrument="pad")).add(Chord("C", "min7", 3, duration=4.0))
+        result = song_map(song)
+        assert "kick" in result
+        assert "pad" in result
+
+    def test_empty_song(self):
+        song = Song(title="Empty", bpm=120, sample_rate=SR)
+        result = song_map(song)
+        assert "Song Map" in result
+
+    def test_returns_string(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 4.0))
+        assert isinstance(song_map(song), str)
+
+
+class TestAnalyzeHarmony:
+    def test_basic_progression(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="pad", instrument="pad"))
+        tr.add(Chord("C", "maj7", 3, duration=4.0))
+        tr.add(Chord("G", "dom7", 3, duration=4.0))
+        result = analyze_harmony(song, key="C")
+        assert len(result) == 2
+        assert result[0]["roman"] == "I"
+        assert result[1]["roman"] == "V"
+
+    def test_minor_chords(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="pad", instrument="pad"))
+        tr.add(Chord("D", "min7", 3, duration=4.0))
+        result = analyze_harmony(song, key="C")
+        assert result[0]["roman"] == "ii"  # lowercase for minor
+
+    def test_function_labels(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="pad", instrument="pad"))
+        tr.add(Chord("C", "maj7", 3, duration=4.0))
+        tr.add(Chord("F", "maj7", 3, duration=4.0))
+        tr.add(Chord("G", "dom7", 3, duration=4.0))
+        result = analyze_harmony(song, key="C")
+        assert result[0]["function"] == "tonic"
+        assert result[1]["function"] == "subdominant"
+        assert result[2]["function"] == "dominant"
+
+    def test_uses_key_sig(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR, key_sig="G")
+        tr = song.add_track(Track(name="pad", instrument="pad"))
+        tr.add(Chord("G", "maj7", 3, duration=4.0))
+        result = analyze_harmony(song)
+        assert result[0]["roman"] == "I"
+
+    def test_returns_list(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        tr = song.add_track(Track(name="pad", instrument="pad"))
+        tr.add(Chord("C", "min7", 3, duration=4.0))
+        result = analyze_harmony(song, key="C")
+        assert isinstance(result, list)
+        assert "beat" in result[0]
+        assert "roman" in result[0]
+
+    def test_empty_song(self):
+        song = Song(title="Test", bpm=120, sample_rate=SR)
+        result = analyze_harmony(song, key="C")
+        assert result == []

@@ -268,30 +268,241 @@ def to_lead_sheet(song: Song, beats_per_bar: int = 4) -> str:
         total_beats = max(total_beats, track_dur)
 
     total_bars = max(1, int(total_beats / beats_per_bar))
-    bar_width = 16  # characters per bar
+    bar_width = 16
 
-    # Render bars
-    for bar_start in range(0, total_bars, 4):  # 4 bars per line
+    for bar_start in range(0, total_bars, 4):
         chord_line = "|"
         melody_line = "|"
         bars_this_line = min(4, total_bars - bar_start)
+        for b in range(bars_this_line):
+            bar_beat = (bar_start + b) * beats_per_bar
+            bar_end = bar_beat + beats_per_bar
+            bar_chords = [c for pos, c in chord_events if bar_beat <= pos < bar_end]
+            chord_str = " ".join(bar_chords) if bar_chords else ""
+            chord_line += f" {chord_str:<{bar_width - 1}}|"
+            bar_notes = [n for pos, n in melody_events if bar_beat <= pos < bar_end]
+            note_str = " ".join(bar_notes[:beats_per_bar]) if bar_notes else ""
+            melody_line += f" {note_str:<{bar_width - 1}}|"
+        lines.append(chord_line)
+        lines.append(melody_line)
+        lines.append("")
 
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# ASCII guitar/bass tablature
+# ---------------------------------------------------------------------------
+
+# Standard guitar tuning (low to high): E2 A2 D3 G3 B3 E4
+_GUITAR_TUNING = [("E", 2), ("A", 2), ("D", 3), ("G", 3), ("B", 3), ("E", 4)]
+# Standard bass tuning: E1 A1 D2 G2
+_BASS_TUNING = [("E", 1), ("A", 1), ("D", 2), ("G", 2)]
+
+_SEMI_MAP = {
+    "C": 0,
+    "C#": 1,
+    "Db": 1,
+    "D": 2,
+    "D#": 3,
+    "Eb": 3,
+    "E": 4,
+    "F": 5,
+    "F#": 6,
+    "Gb": 6,
+    "G": 7,
+    "G#": 8,
+    "Ab": 8,
+    "A": 9,
+    "A#": 10,
+    "Bb": 10,
+    "B": 11,
+}
+
+
+def _note_to_midi(pitch: str, octave: int) -> int:
+    return _SEMI_MAP.get(pitch, 0) + (octave + 1) * 12
+
+
+def _find_fret(pitch: str, octave: int, string_pitch: str, string_octave: int) -> int | None:
+    """Find the fret number for a note on a given string, or None if out of range."""
+    note_midi = _note_to_midi(pitch, octave)
+    string_midi = _note_to_midi(string_pitch, string_octave)
+    fret = note_midi - string_midi
+    if 0 <= fret <= 24:
+        return fret
+    return None
+
+
+def to_tab(
+    song: Song,
+    tuning: str = "guitar",
+    track_name: str | None = None,
+    beats_per_bar: int = 4,
+) -> str:
+    """Render a song track as ASCII tablature.
+
+    Args:
+        song:          Song to render.
+        tuning:        'guitar' (6-string) or 'bass' (4-string).
+        track_name:    Name of the track to tab. If None, uses first melodic track.
+        beats_per_bar: Beats per bar.
+
+    Returns:
+        Multi-line ASCII tablature string.
+
+    Example output::
+
+        TAB: My Song (Guitar, 120 BPM)
+        e|---0---3---5---7---|
+        B|-------------------|
+        G|-------------------|
+        D|-------------------|
+        A|-------------------|
+        E|-------------------|
+    """
+    strings = _GUITAR_TUNING if tuning == "guitar" else _BASS_TUNING
+    string_names = [f"{p}" for p, _ in reversed(strings)]
+
+    # Find the target track
+    target = None
+    if track_name:
+        for t in song.tracks:
+            if t.name == track_name:
+                target = t
+                break
+    if target is None:
+        for t in song.tracks:
+            for b in t.beats:
+                if b.event and isinstance(b.event, Note) and b.event.pitch is not None:
+                    target = t
+                    break
+            if target:
+                break
+
+    lines = []
+    tuning_label = tuning.capitalize()
+    lines.append(f"TAB: {song.title} ({tuning_label}, {song.bpm:.0f} BPM)")
+    lines.append("")
+
+    if target is None:
+        lines.append("(no melodic track found)")
+        return "\n".join(lines)
+
+    # Collect notes with positions
+    events: list[tuple[float, str, int]] = []
+    pos = 0.0
+    for beat in target.beats:
+        if beat.event and isinstance(beat.event, Note) and beat.event.pitch is not None:
+            events.append((pos, str(beat.event.pitch), beat.event.octave))
+        if beat.event:
+            pos += beat.event.duration
+
+    total_beats = pos
+    total_bars = max(1, int(total_beats / beats_per_bar))
+
+    # Render bars (4 bars per line)
+    for bar_start in range(0, total_bars, 4):
+        bars_this_line = min(4, total_bars - bar_start)
+        # Initialize string lines
+        tab_lines = {name: "" for name in string_names}
         for b in range(bars_this_line):
             bar_beat = (bar_start + b) * beats_per_bar
             bar_end = bar_beat + beats_per_bar
 
-            # Chords in this bar
-            bar_chords = [c for pos, c in chord_events if bar_beat <= pos < bar_end]
-            chord_str = " ".join(bar_chords) if bar_chords else ""
-            chord_line += f" {chord_str:<{bar_width - 1}}|"
+            # Find notes in this bar
+            bar_events = [
+                (p - bar_beat, pitch, oct) for p, pitch, oct in events if bar_beat <= p < bar_end
+            ]
 
-            # Melody in this bar
-            bar_notes = [n for pos, n in melody_events if bar_beat <= pos < bar_end]
-            note_str = " ".join(bar_notes[:beats_per_bar]) if bar_notes else ""
-            melody_line += f" {note_str:<{bar_width - 1}}|"
+            for name_idx, name in enumerate(string_names):
+                string_p, string_o = list(reversed(strings))[name_idx]
+                bar_str = ""
+                for beat_pos in range(beats_per_bar):
+                    # Check if there's a note at this beat position
+                    fret_str = "---"
+                    for ev_pos, ev_pitch, ev_oct in bar_events:
+                        if abs(ev_pos - beat_pos) < 0.1:
+                            fret = _find_fret(ev_pitch, ev_oct, string_p, string_o)
+                            if fret is not None:
+                                fret_str = f"-{fret}-" if fret < 10 else f"{fret}-"
+                                break
+                    bar_str += fret_str + "-"
+                tab_lines[name] += "|" + bar_str
 
-        lines.append(chord_line)
-        lines.append(melody_line)
+        for name in string_names:
+            tab_lines[name] += "|"
+            lines.append(f"{name}|{tab_lines[name]}")
         lines.append("")
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# ASCII structure map
+# ---------------------------------------------------------------------------
+
+
+def song_map(song: Song, beats_per_bar: int = 4) -> str:
+    """Render an ASCII map of a song's structure.
+
+    Shows each track as a row, each bar as a column, with density indicators
+    for how many notes/chords are in each bar.
+
+    Args:
+        song:          Song to visualize.
+        beats_per_bar: Beats per bar.
+
+    Returns:
+        Multi-line ASCII string.
+
+    Example output::
+
+        Song Map: My Song (120 BPM, 8 bars)
+        ──────────────────────────────────────
+        Track     | 1    | 2    | 3    | 4    |
+        ──────────┼──────┼──────┼──────┼──────┤
+        kick      | ████ | ████ | ████ | ████ |
+        pad       | ▓▓▓▓ |      | ▓▓▓▓ |      |
+        lead      | ░░░░ | ░░░░ | ░░░░ | ░░░░ |
+    """
+    # Calculate total bars
+    total_beats = 0.0
+    for track in song.tracks:
+        track_dur = sum(b.event.duration if b.event else 0 for b in track.beats)
+        total_beats = max(total_beats, track_dur)
+
+    total_bars = max(1, int(total_beats / beats_per_bar))
+
+    lines = []
+    lines.append(f"Song Map: {song.title} ({song.bpm:.0f} BPM, {total_bars} bars)")
+    lines.append("─" * (12 + total_bars * 7))
+
+    # Header
+    header = f"{'Track':<10} |"
+    for b in range(min(total_bars, 16)):  # max 16 bars per line
+        header += f" {b + 1:<4}|"
+    lines.append(header)
+    lines.append("─" * len(header))
+
+    # Density chars
+    DENSITY = {0: "     ", 1: " ░   ", 2: " ▒   ", 3: " ▓   ", 4: " ████"}
+
+    for track in song.tracks:
+        row = f"{track.name[:10]:<10} |"
+        pos = 0.0
+        bar_counts: dict[int, int] = {}
+        for beat in track.beats:
+            if beat.event:
+                bar_idx = int(pos / beats_per_bar)
+                if beat.event.pitch is not None if isinstance(beat.event, Note) else True:
+                    bar_counts[bar_idx] = bar_counts.get(bar_idx, 0) + 1
+                pos += beat.event.duration
+
+        for b in range(min(total_bars, 16)):
+            count = bar_counts.get(b, 0)
+            density = min(count, 4)
+            row += DENSITY[density] + "|"
+        lines.append(row)
 
     return "\n".join(lines)

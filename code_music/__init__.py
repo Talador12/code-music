@@ -8,7 +8,17 @@ except PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
 from .automation import Automation, ModMatrix, song_append, song_extract, song_overlay
-from .composition import Bridge, Chorus, Intro, Outro, Verse, continue_melody, to_lead_sheet
+from .composition import (
+    Bridge,
+    Chorus,
+    Intro,
+    Outro,
+    Verse,
+    continue_melody,
+    song_map,
+    to_lead_sheet,
+    to_tab,
+)
 from .effects import (
     EffectsChain,
     autotune,
@@ -130,6 +140,7 @@ from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
 from .theory import (
     Change,
+    analyze_harmony,
     available_tensions,
     chord_scale,
     generate_bass_line,
@@ -224,6 +235,7 @@ __all__ = [
     # theory
     "chord_scale",
     "available_tensions",
+    "analyze_harmony",
     "generate_bass_line",
     "generate_drums",
     "song_diff",
@@ -232,6 +244,8 @@ __all__ = [
     # composition
     "continue_melody",
     "to_lead_sheet",
+    "to_tab",
+    "song_map",
     "Verse",
     "Chorus",
     "Bridge",

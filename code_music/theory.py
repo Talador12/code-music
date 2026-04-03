@@ -313,6 +313,126 @@ def generate_drums(
 # ---------------------------------------------------------------------------
 # Song diffing
 # ---------------------------------------------------------------------------
+# Harmonic analysis
+# ---------------------------------------------------------------------------
+
+_ROMAN = {
+    0: "I",
+    1: "bII",
+    2: "II",
+    3: "bIII",
+    4: "III",
+    5: "IV",
+    6: "#IV",
+    7: "V",
+    8: "bVI",
+    9: "VI",
+    10: "bVII",
+    11: "VII",
+}
+
+_QUALITY_MAP = {
+    "maj": "",
+    "min": "m",
+    "dim": "dim",
+    "aug": "+",
+    "dom7": "7",
+    "maj7": "M7",
+    "min7": "m7",
+    "dim7": "dim7",
+    "min7b5": "m7b5",
+    "sus2": "sus2",
+    "sus4": "sus4",
+    "min9": "m9",
+    "maj9": "M9",
+    "dom9": "9",
+}
+
+_FUNCTION_MAP = {
+    0: "tonic",
+    2: "supertonic",
+    4: "mediant",
+    5: "subdominant",
+    7: "dominant",
+    9: "submediant",
+    11: "leading",
+}
+
+
+def analyze_harmony(song, key: str | None = None) -> list[dict]:
+    """Analyze a song's chord progression with Roman numeral analysis.
+
+    Finds all chords in the song, assigns Roman numerals relative to
+    the detected (or specified) key, and labels harmonic function
+    (tonic, subdominant, dominant).
+
+    Args:
+        song: Song object.
+        key:  Key root (e.g. 'C'). If None, uses song.key_sig or detect_key().
+
+    Returns:
+        List of dicts with: beat, root, shape, roman, quality, function.
+
+    Example::
+
+        analysis = analyze_harmony(song)
+        for a in analysis:
+            print(f"Beat {a['beat']}: {a['roman']}{a['quality']} ({a['function']})")
+        # Beat 0: IIm7 (supertonic)
+        # Beat 4: V7 (dominant)
+        # Beat 8: IM7 (tonic)
+    """
+    from .engine import Chord
+
+    # Determine key
+    if key is None:
+        key = getattr(song, "key_sig", "C")
+        if key and len(key) > 1 and key[-1] == "m":
+            key = key[:-1]  # strip minor indicator for root
+    key_semi = _semi(key) if key else 0
+
+    # Extract chords
+    chords: list[tuple[float, str, str]] = []
+    for track in song.tracks:
+        pos = 0.0
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, Chord):
+                chords.append(
+                    (
+                        pos,
+                        beat.event.root,
+                        beat.event.shape if isinstance(beat.event.shape, str) else "maj",
+                    )
+                )
+            if beat.event:
+                pos += beat.event.duration
+
+    # Analyze each chord
+    result = []
+    for beat_pos, root, shape in sorted(chords):
+        root_semi = _semi(root)
+        interval = (root_semi - key_semi) % 12
+        roman = _ROMAN.get(interval, "?")
+        quality = _QUALITY_MAP.get(shape, shape)
+
+        # Lowercase roman for minor chords
+        if shape in ("min", "min7", "min7b5", "dim", "dim7", "min9"):
+            roman = roman.lower()
+
+        func = _FUNCTION_MAP.get(interval, "chromatic")
+
+        result.append(
+            {
+                "beat": beat_pos,
+                "root": root,
+                "shape": shape,
+                "roman": roman,
+                "quality": quality,
+                "function": func,
+            }
+        )
+
+    return result
 
 
 class Change:

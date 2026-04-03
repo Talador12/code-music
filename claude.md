@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v14.0.0 — 185 songs, 1034 tests, melody continuation + lead sheets + sections
+## Status: v15.0.0 — 190 songs, 1054 tests, tab + harmony analysis + song maps
 
 ## What's built
 
@@ -63,6 +63,11 @@
 - Timbre.morph(): interpolate between timbres
 - Timbre.to_dict(): JSON-serializable
 
+### Analysis & Visualization
+- to_tab(): ASCII guitar/bass tablature with fret numbers
+- analyze_harmony(): Roman numeral analysis + harmonic function (tonic/subdominant/dominant)
+- song_map(): ASCII density map showing per-track activity per bar
+
 ### Composition Intelligence
 - composition.py: continue_melody() — Markov chain melody continuation (order 1-2)
 - Named sections: Verse, Chorus, Bridge, Intro, Outro (Section subclasses)
@@ -110,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 185 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 190 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap

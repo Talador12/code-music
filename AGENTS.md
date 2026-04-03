@@ -275,6 +275,22 @@ t.morph(t2, 0.5) # interpolate between timbres
 t.to_dict()    # JSON-serializable
 ```
 
+## Analysis & visualization
+
+ASCII output tools in `composition.py` and `theory.py`:
+
+```python
+from code_music.composition import to_tab, song_map, to_lead_sheet
+from code_music.theory import analyze_harmony
+
+print(to_tab(song, tuning="guitar"))       # ASCII guitar tablature
+print(to_tab(song, tuning="bass"))         # ASCII bass tablature
+print(song_map(song))                       # density map (tracks × bars)
+print(to_lead_sheet(song))                  # chord symbols + melody
+for a in analyze_harmony(song, key="C"):    # Roman numeral analysis
+    print(f"{a['roman']}{a['quality']} ({a['function']})")
+```
+
 ## Composition intelligence
 
 Melody continuation, named sections, and ASCII lead sheets in `code_music/composition.py`:
@@ -413,6 +429,7 @@ Eight releases shipped in a single conversation:
 | v12.0 | Theory intelligence, song diffing | 983 | 175 | theory.py |
 | v13.0 | JSON serialization, collaboration | 1005 | 180 | serialization.py |
 | v14.0 | Markov melody, sections, lead sheets | 1034 | 185 | composition.py |
+| v15.0 | Tab, harmony analysis, song maps | 1054 | 190 | — |
 
 Next up from roadmap: v15 (spatial audio), v17 (visual scores), v19 (microtonal).
 Foundational items done: v24 Phase 1 (JSON), v14 Phase 1-2 (theory), v18 Phase 1 (melody),
