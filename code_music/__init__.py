@@ -156,7 +156,9 @@ from .theory import (
     accent_pattern,
     analyze_harmony,
     arpeggiate_chord,
+    arpeggio_pattern,
     available_tensions,
+    blues_lick,
     call_and_response,
     canon,
     chord_extensions,
@@ -192,6 +194,7 @@ from .theory import (
     suggest_next_chord,
     swing_notes,
     transpose_progression,
+    whole_tone_run,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -322,6 +325,9 @@ __all__ = [
     "chromatic_run",
     "trill",
     "diminished_run",
+    "whole_tone_run",
+    "blues_lick",
+    "arpeggio_pattern",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

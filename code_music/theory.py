@@ -922,6 +922,100 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def whole_tone_run(
+    root: str,
+    octave: int = 4,
+    length: int = 6,
+    duration: float = 0.25,
+) -> list[Note]:
+    """Generate a whole tone scale run (all whole steps).
+
+    Creates a dreamlike, ambiguous quality — no leading tone.
+
+    Args:
+        root:     Starting note.
+        octave:   Starting octave.
+        length:   Number of notes.
+        duration: Duration per note.
+    """
+    root_semi = _semi(root)
+    wt_intervals = [0, 2, 4, 6, 8, 10]
+    result: list[Note] = []
+    for i in range(length):
+        idx = i % len(wt_intervals)
+        oct_off = i // len(wt_intervals)
+        semi = (root_semi + wt_intervals[idx]) % 12
+        result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
+    return result
+
+
+def blues_lick(
+    root: str,
+    octave: int = 4,
+    duration: float = 0.25,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a short blues lick from the blues scale.
+
+    Classic turnaround phrase — 6-8 notes from the blues scale
+    with characteristic bends (chromatic approach notes).
+
+    Args:
+        root:     Root note of the blues key.
+        octave:   Octave.
+        duration: Duration per note.
+        seed:     Random seed.
+    """
+    import random
+
+    rng = random.Random(seed)
+    root_semi = _semi(root)
+    blues = [0, 3, 5, 6, 7, 10]  # blues scale intervals
+    blues_notes = [_NOTE_NAMES[(root_semi + i) % 12] for i in blues]
+
+    # Classic lick shape: root area → blue note → resolve
+    lick_len = rng.randint(6, 8)
+    result: list[Note] = []
+    for i in range(lick_len):
+        note = rng.choice(blues_notes)
+        result.append(Note(note, octave, duration))
+    # End on root
+    result.append(Note(root, octave, duration * 2))
+    return result
+
+
+def arpeggio_pattern(
+    root: str,
+    shape: str,
+    octave: int = 4,
+    pattern: str = "1353",
+    duration: float = 0.25,
+) -> list[Note]:
+    """Generate an arpeggio from a numbered pattern string.
+
+    Pattern digits map to chord tone indices: 1=root, 3=third, 5=fifth, etc.
+
+    Args:
+        root:     Chord root.
+        shape:    Chord quality.
+        octave:   Base octave.
+        pattern:  String of digits (1-indexed chord tones). e.g. "1353", "1535".
+        duration: Duration per note.
+    """
+    if shape not in _CHORD_SEMI:
+        raise ValueError(f"Unknown chord shape {shape!r}")
+    root_semi = _semi(root)
+    semis = _CHORD_SEMI[shape]
+    chord_notes = [_NOTE_NAMES[(root_semi + s) % 12] for s in semis]
+
+    result: list[Note] = []
+    for ch in pattern:
+        idx = int(ch) - 1
+        if 0 <= idx < len(chord_notes):
+            result.append(Note(chord_notes[idx], octave, duration))
+    return result
+
+
 def chromatic_run(
     start: str,
     start_octave: int,

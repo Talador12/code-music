@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v34.0.0 — 259 songs, 1323 tests, chromatic + trill + diminished
+## Status: v35.0.0 — 261 songs, 1332 tests, whole tone + blues lick + arpeggio pattern
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 259 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 261 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
