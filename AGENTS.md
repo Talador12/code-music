@@ -448,6 +448,7 @@ Eight releases shipped in a single conversation:
 | v31.0 | Swing, accents, dynamics curves | 1292 | 253 | — |
 | v32.0 | Call-and-response, ostinato | 1302 | 255 | — |
 | v33.0 | Canon, hocket, sequence | 1313 | 257 | — |
+| v34.0 | Chromatic run, trill, diminished | 1323 | 259 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre

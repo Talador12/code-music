@@ -922,6 +922,102 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def chromatic_run(
+    start: str,
+    start_octave: int,
+    length: int = 12,
+    direction: str = "up",
+    duration: float = 0.125,
+) -> list[Note]:
+    """Generate a chromatic scale run.
+
+    Args:
+        start:         Starting note.
+        start_octave:  Starting octave.
+        length:        Number of notes.
+        direction:     'up' or 'down'.
+        duration:      Duration per note.
+
+    Returns:
+        List of chromatic Notes.
+    """
+    semi = _semi(start)
+    step = 1 if direction == "up" else -1
+    result: list[Note] = []
+    for i in range(length):
+        s = (semi + i * step) % 12
+        oct = start_octave + (semi + i * step) // 12
+        oct = max(2, min(7, oct))
+        result.append(Note(_NOTE_NAMES[s], oct, duration))
+    return result
+
+
+def trill(
+    note: str,
+    octave: int,
+    upper: bool = True,
+    duration: float = 2.0,
+    speed: float = 0.125,
+) -> list[Note]:
+    """Generate a trill between two adjacent notes.
+
+    Args:
+        note:     Main note.
+        octave:   Octave.
+        upper:    If True, trill with note above; else below.
+        duration: Total trill duration.
+        speed:    Duration of each alternation.
+
+    Returns:
+        List of alternating Notes.
+    """
+    semi = _semi(note)
+    alt_semi = (semi + (1 if upper else -1)) % 12
+    alt_oct = octave + (
+        1 if upper and semi + 1 >= 12 else (-1 if not upper and semi - 1 < 0 else 0)
+    )
+    alt_oct = max(2, min(7, alt_oct))
+    alt_note = _NOTE_NAMES[alt_semi]
+
+    count = max(2, int(duration / speed))
+    result: list[Note] = []
+    for i in range(count):
+        if i % 2 == 0:
+            result.append(Note(note, octave, speed))
+        else:
+            result.append(Note(alt_note, alt_oct, speed))
+    return result
+
+
+def diminished_run(
+    root: str,
+    octave: int = 4,
+    length: int = 8,
+    duration: float = 0.25,
+) -> list[Note]:
+    """Generate a diminished scale run (half-whole pattern).
+
+    Args:
+        root:     Starting note.
+        octave:   Starting octave.
+        length:   Number of notes.
+        duration: Duration per note.
+
+    Returns:
+        List of Notes on the diminished scale.
+    """
+    root_semi = _semi(root)
+    dim_intervals = [0, 1, 3, 4, 6, 7, 9, 10]  # half-whole
+    result: list[Note] = []
+    for i in range(length):
+        idx = i % len(dim_intervals)
+        octave_offset = i // len(dim_intervals)
+        semi = (root_semi + dim_intervals[idx]) % 12
+        oct = min(7, octave + octave_offset)
+        result.append(Note(_NOTE_NAMES[semi], oct, duration))
+    return result
+
+
 def canon(melody: list[Note], delay_beats: float = 4.0, voices: int = 2) -> list[list[Note]]:
     """Create a canon (round) — the same melody offset in time.
 
