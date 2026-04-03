@@ -922,6 +922,70 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def invert_chord(notes: list[Note], inversion: int = 1) -> list[Note]:
+    """Apply a chord inversion by rotating the bottom note(s) up an octave.
+
+    Args:
+        notes:     List of Notes forming a chord.
+        inversion: 1=first inversion, 2=second, etc.
+
+    Returns:
+        New list with bottom note(s) moved up an octave.
+    """
+    result = list(notes)
+    for _ in range(min(inversion, len(result) - 1)):
+        bottom = result.pop(0)
+        if bottom.pitch is not None:
+            result.append(
+                Note(
+                    str(bottom.pitch),
+                    min(bottom.octave + 1, 7),
+                    bottom.duration,
+                    velocity=bottom.velocity,
+                )
+            )
+        else:
+            result.append(bottom)
+    return result
+
+
+def rotate_voicing(notes: list[Note], steps: int = 1) -> list[Note]:
+    """Rotate a voicing by moving notes cyclically (no octave change).
+
+    Args:
+        notes: List of Notes.
+        steps: Number of positions to rotate (positive=right).
+
+    Returns:
+        Rotated list.
+    """
+    if not notes:
+        return []
+    s = steps % len(notes)
+    return notes[s:] + notes[:s]
+
+
+def pedal_point(note: str, octave: int, melody: list[Note]) -> list[Note]:
+    """Add a pedal point (sustained bass note) alternating with melody notes.
+
+    Creates a bass line that alternates between the pedal note and each
+    melody note. Classic technique for building tension.
+
+    Args:
+        note:   Pedal note pitch.
+        octave: Pedal note octave.
+        melody: Melody notes to alternate with.
+
+    Returns:
+        List with pedal-melody-pedal-melody pattern.
+    """
+    result: list[Note] = []
+    for m in melody:
+        result.append(Note(note, octave, m.duration, velocity=m.velocity * 0.7))
+        result.append(m)
+    return result
+
+
 def normalize_notes(notes: list[Note], target_octave: int = 4) -> list[Note]:
     """Normalize all pitched notes to a single octave.
 
