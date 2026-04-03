@@ -20,12 +20,14 @@ from code_music.composition import (
     generate_riser,
     song_map,
     song_summary,
+    tempo_map,
     to_abc,
     to_html,
     to_lead_sheet,
+    to_svg_waveform,
     to_tab,
 )
-from code_music.theory import analyze_harmony
+from code_music.theory import analyze_harmony, generate_variation
 
 SR = 22050
 
@@ -528,3 +530,99 @@ class TestToHtml:
     def test_returns_string(self):
         song = Song(title="T", bpm=120, sample_rate=SR)
         assert isinstance(to_html(song), str)
+
+
+class TestToSvgWaveform:
+    def test_basic(self):
+        song = Song(title="SVG Test", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        svg = to_svg_waveform(song)
+        assert "<svg" in svg
+        assert "SVG Test" in svg
+
+    def test_includes_polygon(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        svg = to_svg_waveform(song)
+        assert "<polygon" in svg
+
+    def test_custom_dimensions(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        song.add_track(Track(name="lead", instrument="piano")).add(Note("C", 5, 2.0))
+        svg = to_svg_waveform(song, width=400, height=100)
+        assert 'width="400"' in svg
+
+    def test_returns_string(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        assert isinstance(to_svg_waveform(song), str)
+
+
+class TestTempoMap:
+    def test_constant_tempo(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        result = tempo_map(song)
+        assert "120 BPM" in result
+        assert "constant" in result
+
+    def test_returns_string(self):
+        song = Song(title="T", bpm=120, sample_rate=SR)
+        assert isinstance(tempo_map(song), str)
+
+    def test_includes_title(self):
+        song = Song(title="Tempo Test", bpm=90, sample_rate=SR)
+        result = tempo_map(song)
+        assert "Tempo Test" in result
+
+
+class TestGenerateVariation:
+    def test_retrograde(self):
+        melody = [Note("C", 5, 1.0), Note("E", 5, 1.0), Note("G", 5, 1.0)]
+        var = generate_variation(melody, "retrograde")
+        assert len(var) == 3
+        assert var[0].pitch == "G"
+        assert var[2].pitch == "C"
+
+    def test_inversion(self):
+        melody = [Note("C", 5, 1.0), Note("E", 5, 1.0)]
+        var = generate_variation(melody, "inversion")
+        assert len(var) == 2
+        assert var[0].pitch == "C"  # anchor stays
+
+    def test_augmentation(self):
+        melody = [Note("C", 5, 1.0)]
+        var = generate_variation(melody, "augmentation")
+        assert var[0].duration == 2.0
+
+    def test_diminution(self):
+        melody = [Note("C", 5, 1.0)]
+        var = generate_variation(melody, "diminution")
+        assert var[0].duration == 0.5
+
+    def test_sequence(self):
+        melody = [Note("C", 5, 1.0)]
+        var = generate_variation(melody, "sequence")
+        assert var[0].pitch == "D"  # up a whole step
+
+    def test_ornamental(self):
+        melody = [Note("C", 5, 1.0), Note("E", 5, 1.0)]
+        var = generate_variation(melody, "ornamental", seed=42)
+        assert len(var) > len(melody)  # passing tones added
+
+    def test_retrograde_inversion(self):
+        melody = [Note("C", 5, 1.0), Note("E", 5, 1.0), Note("G", 5, 1.0)]
+        var = generate_variation(melody, "retrograde_inversion")
+        assert len(var) == 3
+
+    def test_rests_preserved(self):
+        melody = [Note("C", 5, 1.0), Note.rest(1.0), Note("E", 5, 1.0)]
+        var = generate_variation(melody, "retrograde")
+        assert var[1].pitch is None
+
+    def test_empty_melody(self):
+        assert generate_variation([], "retrograde") == []
+
+    def test_unknown_raises(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            generate_variation([Note("C", 5, 1.0)], "yodel")

@@ -1062,3 +1062,129 @@ footer {{ margin-top: 2rem; color: #555; font-size: 0.8rem; text-align: center; 
         _Path(path).write_text(html)
 
     return html
+
+
+# ---------------------------------------------------------------------------
+# SVG waveform visualization
+# ---------------------------------------------------------------------------
+
+
+def to_svg_waveform(
+    song: Song,
+    width: int = 800,
+    height: int = 200,
+    color: str = "#7c3aed",
+    bg: str = "#1a1a2e",
+    path: str | None = None,
+) -> str:
+    """Render a song's audio waveform as an SVG image.
+
+    Renders the song, downsamples the waveform to `width` points,
+    and draws it as a filled path.
+
+    Args:
+        song:   Song to visualize.
+        width:  SVG width in pixels.
+        height: SVG height in pixels.
+        color:  Waveform fill color.
+        bg:     Background color.
+        path:   If provided, write SVG to this file.
+
+    Returns:
+        SVG string.
+    """
+    import numpy as np
+
+    audio = song.render()
+    if audio.ndim > 1:
+        mono = np.mean(audio, axis=1)
+    else:
+        mono = audio
+
+    n = len(mono)
+    if n == 0:
+        points_top = f"0,{height // 2}"
+        points_bot = f"0,{height // 2}"
+    else:
+        # Downsample to width points
+        chunk = max(1, n // width)
+        samples = width if chunk > 0 else n
+        peaks = np.zeros(samples)
+        for i in range(samples):
+            start = i * chunk
+            end = min(start + chunk, n)
+            if start < n:
+                peaks[i] = np.max(np.abs(mono[start:end]))
+
+        # Normalize
+        peak_max = np.max(peaks)
+        if peak_max > 0:
+            peaks /= peak_max
+
+        # Build SVG path points
+        mid = height // 2
+        top_points = []
+        bot_points = []
+        for i in range(samples):
+            x = i * width / samples
+            amp = peaks[i] * (height // 2 - 4)
+            top_points.append(f"{x:.1f},{mid - amp:.1f}")
+            bot_points.append(f"{x:.1f},{mid + amp:.1f}")
+        points_top = " ".join(top_points)
+        points_bot = " ".join(reversed(bot_points))
+
+    vb = f"0 0 {width} {height}"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg"
+  viewBox="{vb}" width="{width}" height="{height}">
+<rect width="{width}" height="{height}" fill="{bg}"/>
+<polygon points="{points_top} {points_bot}" fill="{color}" opacity="0.8"/>
+<line x1="0" y1="{height // 2}" x2="{width}" y2="{height // 2}"
+  stroke="{color}" stroke-width="0.5" opacity="0.3"/>
+<text x="8" y="16" fill="{color}" font-size="12"
+  font-family="system-ui">{song.title}</text>
+</svg>"""
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
+# ---------------------------------------------------------------------------
+# Tempo map visualization
+# ---------------------------------------------------------------------------
+
+
+def tempo_map(song: Song) -> str:
+    """Render an ASCII tempo map showing BPM over time.
+
+    If the song has a bpm_map (tempo changes), shows the BPM at each
+    point. Otherwise shows a flat line at the song's BPM.
+
+    Args:
+        song: Song to visualize.
+
+    Returns:
+        Multi-line ASCII string.
+    """
+    lines = []
+    lines.append(f"Tempo Map: {song.title}")
+    lines.append("─" * 50)
+
+    bpm_map = getattr(song, "bpm_map", [])
+    if not bpm_map:
+        # Flat tempo
+        bar = "█" * 20
+        lines.append(f"  {song.bpm:.0f} BPM  {bar}  (constant)")
+        return "\n".join(lines)
+
+    # Show each tempo change point
+    max_bpm = max(bpm for _, bpm in bpm_map)
+    for beat, bpm in bpm_map:
+        bar_len = int(20 * bpm / max_bpm)
+        bar = "█" * bar_len
+        lines.append(f"  Beat {beat:>6.1f}: {bpm:>6.1f} BPM  {bar}")
+
+    return "\n".join(lines)

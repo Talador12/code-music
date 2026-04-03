@@ -23,9 +23,11 @@ from .composition import (
     generate_riser,
     song_map,
     song_summary,
+    tempo_map,
     to_abc,
     to_html,
     to_lead_sheet,
+    to_svg_waveform,
     to_tab,
 )
 from .effects import (
@@ -156,6 +158,7 @@ from .theory import (
     generate_chord_melody,
     generate_counterpoint,
     generate_drums,
+    generate_variation,
     song_diff,
     song_patch,
 )
@@ -249,6 +252,9 @@ __all__ = [
     "analyze_harmony",
     "generate_chord_melody",
     "generate_counterpoint",
+    "generate_variation",
+    "to_svg_waveform",
+    "tempo_map",
     "generate_bass_line",
     "generate_drums",
     "song_diff",

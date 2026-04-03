@@ -548,6 +548,129 @@ def analyze_harmony(song, key: str | None = None) -> list[dict]:
     return result
 
 
+# ---------------------------------------------------------------------------
+# Melodic variation generators
+# ---------------------------------------------------------------------------
+
+
+def generate_variation(
+    melody: list[Note],
+    technique: str = "inversion",
+    key: str = "C",
+    seed: int | None = None,
+) -> list[Note]:
+    """Create a melodic variation using classical techniques.
+
+    Args:
+        melody:    Original melody (list of Notes).
+        technique: Variation type:
+            - 'inversion': mirror intervals (up→down, down→up)
+            - 'retrograde': reverse the melody
+            - 'retrograde_inversion': reverse + invert
+            - 'augmentation': double note durations
+            - 'diminution': halve note durations
+            - 'sequence': transpose up by a step each repeat
+            - 'ornamental': add passing tones between notes
+        key:       Key root for scale-aware techniques.
+        seed:      Random seed for ornamental technique.
+
+    Returns:
+        List of Notes forming the variation.
+    """
+    import random as _random
+
+    if not melody:
+        return []
+
+    if technique == "retrograde":
+        return [
+            Note(str(n.pitch), n.octave, n.duration, velocity=n.velocity)
+            if n.pitch is not None
+            else Note.rest(n.duration)
+            for n in reversed(melody)
+        ]
+
+    elif technique == "inversion":
+        # Mirror intervals around the first note
+        result: list[Note] = []
+        first_pitched = next((n for n in melody if n.pitch is not None), None)
+        if first_pitched is None:
+            return list(melody)
+        anchor_semi = _semi(str(first_pitched.pitch)) + first_pitched.octave * 12
+        for note in melody:
+            if note.pitch is None:
+                result.append(Note.rest(note.duration))
+            else:
+                note_semi = _semi(str(note.pitch)) + note.octave * 12
+                interval = note_semi - anchor_semi
+                inv_semi = anchor_semi - interval
+                inv_pc = inv_semi % 12
+                inv_oct = max(2, min(7, inv_semi // 12))
+                result.append(
+                    Note(_NOTE_NAMES[inv_pc], inv_oct, note.duration, velocity=note.velocity)
+                )
+        return result
+
+    elif technique == "retrograde_inversion":
+        inverted = generate_variation(melody, "inversion", key)
+        return list(reversed(inverted))
+
+    elif technique == "augmentation":
+        return [
+            Note(str(n.pitch), n.octave, n.duration * 2, velocity=n.velocity)
+            if n.pitch is not None
+            else Note.rest(n.duration * 2)
+            for n in melody
+        ]
+
+    elif technique == "diminution":
+        return [
+            Note(str(n.pitch), n.octave, max(0.125, n.duration / 2), velocity=n.velocity)
+            if n.pitch is not None
+            else Note.rest(max(0.125, n.duration / 2))
+            for n in melody
+        ]
+
+    elif technique == "sequence":
+        # Transpose up by 2 semitones (a whole step)
+        result = []
+        for note in melody:
+            if note.pitch is None:
+                result.append(Note.rest(note.duration))
+            else:
+                semi = (_semi(str(note.pitch)) + 2) % 12
+                result.append(
+                    Note(_NOTE_NAMES[semi], note.octave, note.duration, velocity=note.velocity)
+                )
+        return result
+
+    elif technique == "ornamental":
+        # Add passing tones between notes
+        rng = _random.Random(seed)
+        result = []
+        for i, note in enumerate(melody):
+            if note.pitch is None:
+                result.append(Note.rest(note.duration))
+                continue
+            half_dur = note.duration / 2
+            result.append(Note(str(note.pitch), note.octave, half_dur, velocity=note.velocity))
+            # Add a passing tone
+            semi = _semi(str(note.pitch))
+            step = rng.choice([-1, 1, 2, -2])
+            pass_semi = (semi + step) % 12
+            result.append(
+                Note(_NOTE_NAMES[pass_semi], note.octave, half_dur, velocity=note.velocity * 0.7)
+            )
+        return result
+
+    else:
+        raise ValueError(
+            f"Unknown technique {technique!r}. Choose: "
+            "inversion, retrograde, retrograde_inversion, "
+            "augmentation, diminution, sequence, ornamental"
+        )
+
+
 class Change:
     """A single structural change between two songs."""
 

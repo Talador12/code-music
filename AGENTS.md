@@ -434,6 +434,7 @@ Eight releases shipped in a single conversation:
 | v17.0 | 200-song milestone, showcase songs | 1081 | 200 | — |
 | v18.0 | ABC notation, arrangement, transitions | 1101 | 205 | — |
 | v19.0 | analyze_song, intro/outro gen, HTML export | 1121 | 210 | — |
+| v20.0 | SVG waveform, variations, tempo maps | 1143 | 215 | — |
 
 Completed roadmap items across v6-v19:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
