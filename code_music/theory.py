@@ -794,6 +794,139 @@ def detect_tempo(audio, sr: int = 44100) -> float:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Interval naming and parallel harmony
+# ---------------------------------------------------------------------------
+
+_INTERVAL_NAMES = {
+    0: "unison",
+    1: "minor 2nd",
+    2: "major 2nd",
+    3: "minor 3rd",
+    4: "major 3rd",
+    5: "perfect 4th",
+    6: "tritone",
+    7: "perfect 5th",
+    8: "minor 6th",
+    9: "major 6th",
+    10: "minor 7th",
+    11: "major 7th",
+    12: "octave",
+}
+
+
+def interval_name(note_a: str, note_b: str) -> str:
+    """Name the interval between two notes.
+
+    Args:
+        note_a: First note (e.g. 'C').
+        note_b: Second note (e.g. 'E').
+
+    Returns:
+        Interval name (e.g. 'major 3rd').
+    """
+    semi_a = _semi(note_a)
+    semi_b = _semi(note_b)
+    dist = (semi_b - semi_a) % 12
+    return _INTERVAL_NAMES.get(dist, f"{dist} semitones")
+
+
+def parallel_motion(
+    melody: list[Note],
+    interval: int = 7,
+    above: bool = True,
+) -> list[Note]:
+    """Harmonize a melody by adding a parallel interval.
+
+    Args:
+        melody:   Original melody.
+        interval: Interval in semitones (default 7 = perfect 5th).
+        above:    If True, harmony is above; if False, below.
+
+    Returns:
+        List of Notes at the parallel interval.
+    """
+    result: list[Note] = []
+    for note in melody:
+        if note.pitch is None:
+            result.append(Note.rest(note.duration))
+        else:
+            semi = _semi(str(note.pitch))
+            offset = interval if above else -interval
+            new_semi = (semi + offset) % 12
+            new_oct = note.octave + (1 if above and semi + offset >= 12 else 0)
+            new_oct = max(
+                2, min(7, new_oct if above else note.octave - (1 if semi + offset < 0 else 0))
+            )
+            result.append(
+                Note(_NOTE_NAMES[new_semi], new_oct, note.duration, velocity=note.velocity * 0.85)
+            )
+    return result
+
+
+# Common chord progressions for suggestion engine
+_COMMON_NEXT = {
+    "I": ["IV", "V", "vi", "ii"],
+    "ii": ["V", "vii", "IV"],
+    "iii": ["vi", "IV", "ii"],
+    "IV": ["V", "I", "ii", "vii"],
+    "V": ["I", "vi", "IV"],
+    "vi": ["IV", "ii", "V", "I"],
+    "vii": ["I", "iii"],
+}
+
+_DEGREE_TO_SEMI = {"I": 0, "ii": 2, "iii": 4, "IV": 5, "V": 7, "vi": 9, "vii": 11}
+_DEGREE_SHAPES = {
+    "I": "maj",
+    "ii": "min",
+    "iii": "min",
+    "IV": "maj",
+    "V": "maj",
+    "vi": "min",
+    "vii": "dim",
+}
+
+
+def suggest_next_chord(
+    current_root: str,
+    current_shape: str,
+    key: str = "C",
+) -> list[tuple[str, str]]:
+    """Suggest the next chord in a progression based on common voice leading.
+
+    Args:
+        current_root:  Current chord root.
+        current_shape: Current chord quality.
+        key:           Key of the progression.
+
+    Returns:
+        List of (root, shape) suggestions, most common first.
+    """
+    key_semi = _semi(key)
+    current_semi = _semi(current_root)
+    degree_semi = (current_semi - key_semi) % 12
+
+    # Find current degree
+    current_degree = None
+    for deg, semi in _DEGREE_TO_SEMI.items():
+        if semi == degree_semi:
+            current_degree = deg
+            break
+
+    if current_degree is None:
+        # Chromatic chord — suggest tonic resolution
+        return [(key, "maj")]
+
+    suggestions = _COMMON_NEXT.get(current_degree, ["I"])
+    result: list[tuple[str, str]] = []
+    for deg in suggestions:
+        semi = _DEGREE_TO_SEMI[deg]
+        root = _NOTE_NAMES[(key_semi + semi) % 12]
+        shape = _DEGREE_SHAPES[deg]
+        result.append((root, shape))
+    return result
+
+
 def scale_info(scale_name: str, root: str = "C") -> dict:
     """Describe a scale with intervals, note names, and compatible chords.
 

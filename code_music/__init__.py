@@ -165,10 +165,13 @@ from .theory import (
     generate_drums,
     generate_variation,
     humanize_velocity,
+    interval_name,
     merge_tracks,
+    parallel_motion,
     scale_info,
     song_diff,
     song_patch,
+    suggest_next_chord,
     transpose_progression,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
@@ -269,6 +272,9 @@ __all__ = [
     "scale_info",
     "chord_extensions",
     "merge_tracks",
+    "interval_name",
+    "parallel_motion",
+    "suggest_next_chord",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

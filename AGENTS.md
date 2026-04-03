@@ -438,6 +438,7 @@ Eight releases shipped in a single conversation:
 | v21.0 | Preview render, voicings, quantize | 1161 | 220 | — |
 | v22.0 | Humanize, transpose, tempo detect | 1176 | 225 | — |
 | v23.0 | Scale info, chord extensions, merge | 1192 | 230 | — |
+| v24.0 | Intervals, parallel harmony, suggest | 1212 | 236 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
