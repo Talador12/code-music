@@ -922,6 +922,59 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def secondary_dominant(target_root: str, target_shape: str = "maj") -> tuple[str, str]:
+    """Return the secondary dominant (V/x) that resolves to the target chord.
+
+    The secondary dominant is a dom7 chord whose root is a perfect 5th
+    above the target. V/ii, V/V, V/vi — classic tonicization technique.
+
+    Args:
+        target_root:  Root of the chord to tonicize.
+        target_shape: Shape of target chord (unused in calculation, for context).
+
+    Returns:
+        (root, "dom7") tuple of the secondary dominant.
+    """
+    target_semi = _semi(target_root)
+    dom_semi = (target_semi + 7) % 12  # perfect 5th above
+    return (_NOTE_NAMES[dom_semi], "dom7")
+
+
+def deceptive_cadence(key: str = "C") -> list[tuple[str, str]]:
+    """Generate a deceptive cadence: V → vi instead of V → I.
+
+    The listener expects resolution to tonic but gets the relative minor.
+    Classic surprise ending used since the Baroque era.
+
+    Args:
+        key: Key root.
+
+    Returns:
+        Two-chord progression [(V, dom7), (vi, min)].
+    """
+    key_semi = _semi(key)
+    v_semi = (key_semi + 7) % 12
+    vi_semi = (key_semi + 9) % 12
+    return [(_NOTE_NAMES[v_semi], "dom7"), (_NOTE_NAMES[vi_semi], "min")]
+
+
+def plagal_cadence(key: str = "C") -> list[tuple[str, str]]:
+    """Generate a plagal cadence: IV → I (the 'Amen' cadence).
+
+    Warm, conclusive resolution without dominant tension.
+    Used in hymns, gospel, and as a tag ending.
+
+    Args:
+        key: Key root.
+
+    Returns:
+        Two-chord progression [(IV, maj), (I, maj)].
+    """
+    key_semi = _semi(key)
+    iv_semi = (key_semi + 5) % 12
+    return [(_NOTE_NAMES[iv_semi], "maj"), (key, "maj")]
+
+
 def dorian_lick(
     root: str,
     octave: int = 5,

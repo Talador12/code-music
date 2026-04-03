@@ -452,6 +452,7 @@ Eight releases shipped in a single conversation:
 | v35.0 | Whole tone, blues lick, arpeggio pattern | 1332 | 261 | — |
 | v36.0 | Lydian, mixolydian, modal interchange | 1340 | 263 | — |
 | v37.0 | Dorian, phrygian, tritone sub | 1349 | 265 | — |
+| v38.0 | Secondary dominant, cadences | 1357 | 266 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
