@@ -922,6 +922,67 @@ def consonance_score(notes: list[Note]) -> float:
     return round(sum(scores) / len(scores), 3)
 
 
+def normalize_notes(notes: list[Note], target_octave: int = 4) -> list[Note]:
+    """Normalize all pitched notes to a single octave.
+
+    Useful for pitch class analysis — removes octave variation.
+
+    Args:
+        notes:         List of Notes.
+        target_octave: Octave to normalize to.
+
+    Returns:
+        New list with all pitches at target_octave.
+    """
+    result: list[Note] = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+        else:
+            result.append(Note(str(n.pitch), target_octave, n.duration, velocity=n.velocity))
+    return result
+
+
+def count_pitch_classes(notes: list[Note]) -> dict[str, int]:
+    """Count occurrences of each pitch class (ignoring octave).
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        Dict mapping pitch name to count, sorted by frequency.
+    """
+    counts: dict[str, int] = {}
+    for n in notes:
+        if n.pitch is not None:
+            pitch = str(n.pitch)
+            counts[pitch] = counts.get(pitch, 0) + 1
+    return dict(sorted(counts.items(), key=lambda x: -x[1]))
+
+
+def melodic_interval_histogram(notes: list[Note]) -> dict[str, int]:
+    """Build a histogram of melodic interval sizes.
+
+    Args:
+        notes: List of Notes.
+
+    Returns:
+        Dict mapping interval name to count.
+    """
+    pitched = [n for n in notes if n.pitch is not None]
+    if len(pitched) < 2:
+        return {}
+
+    histogram: dict[str, int] = {}
+    for i in range(len(pitched) - 1):
+        a = _semi(str(pitched[i].pitch)) + pitched[i].octave * 12
+        b = _semi(str(pitched[i + 1].pitch)) + pitched[i + 1].octave * 12
+        dist = abs(b - a) % 12
+        name = _INTERVAL_NAMES.get(dist, f"{dist}st")
+        histogram[name] = histogram.get(name, 0) + 1
+    return dict(sorted(histogram.items(), key=lambda x: -x[1]))
+
+
 def note_range(notes: list[Note]) -> dict:
     """Find the pitch range of a melody.
 

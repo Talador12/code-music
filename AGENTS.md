@@ -441,6 +441,7 @@ Eight releases shipped in a single conversation:
 | v24.0 | Intervals, parallel harmony, suggest | 1212 | 236 | — |
 | v25.0 | Note range, rhythm density, repeats | 1226 | 241 | — |
 | v26.0 | Melody contour, harmonic rhythm, consonance | 1240 | 245 | — |
+| v27.0 | Normalize, pitch classes, interval histogram | 1251 | 247 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
