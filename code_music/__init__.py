@@ -156,14 +156,17 @@ from .theory import (
     analyze_harmony,
     available_tensions,
     chord_scale,
+    detect_tempo,
     generate_bass_line,
     generate_chord_melody,
     generate_chord_voicing,
     generate_counterpoint,
     generate_drums,
     generate_variation,
+    humanize_velocity,
     song_diff,
     song_patch,
+    transpose_progression,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -257,6 +260,9 @@ __all__ = [
     "generate_counterpoint",
     "generate_variation",
     "generate_chord_voicing",
+    "humanize_velocity",
+    "transpose_progression",
+    "detect_tempo",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

@@ -672,6 +672,124 @@ def generate_variation(
 
 
 # ---------------------------------------------------------------------------
+# Velocity humanization
+# ---------------------------------------------------------------------------
+
+
+def humanize_velocity(
+    notes: list[Note],
+    amount: float = 0.15,
+    seed: int | None = None,
+) -> list[Note]:
+    """Add random velocity variation to notes for a more human feel.
+
+    Args:
+        notes:  List of Notes.
+        amount: Maximum velocity deviation (0.0-0.5).
+        seed:   Random seed for reproducibility.
+
+    Returns:
+        New list of Notes with randomized velocities.
+    """
+    import random
+
+    rng = random.Random(seed)
+    result: list[Note] = []
+    for note in notes:
+        if note.pitch is None:
+            result.append(Note.rest(note.duration))
+        else:
+            delta = rng.uniform(-amount, amount)
+            new_vel = max(0.05, min(1.0, note.velocity + delta))
+            result.append(Note(str(note.pitch), note.octave, note.duration, velocity=new_vel))
+    return result
+
+
+def transpose_progression(
+    chords: list[tuple[str, str]],
+    semitones: int = 0,
+) -> list[tuple[str, str]]:
+    """Transpose a chord progression by a number of semitones.
+
+    Args:
+        chords:    List of (root, shape) tuples.
+        semitones: Number of semitones to transpose (positive=up, negative=down).
+
+    Returns:
+        New list of (root, shape) tuples with transposed roots.
+    """
+    result: list[tuple[str, str]] = []
+    for root, shape in chords:
+        root_semi = _semi(root)
+        new_semi = (root_semi + semitones) % 12
+        result.append((_NOTE_NAMES[new_semi], shape))
+    return result
+
+
+def detect_tempo(audio, sr: int = 44100) -> float:
+    """Estimate BPM from rendered audio using onset detection.
+
+    Simple energy-based onset detection with autocorrelation.
+
+    Args:
+        audio: Float64 audio array (mono or stereo).
+        sr:    Sample rate.
+
+    Returns:
+        Estimated BPM (60-200 range).
+    """
+    import numpy as np
+
+    if audio.ndim > 1:
+        mono = np.mean(audio, axis=1)
+    else:
+        mono = audio
+
+    # Compute energy envelope
+    hop = sr // 100  # 10ms hops
+    n_frames = len(mono) // hop
+    if n_frames < 10:
+        return 120.0  # not enough data
+
+    energy = np.zeros(n_frames)
+    for i in range(n_frames):
+        start = i * hop
+        end = min(start + hop, len(mono))
+        energy[i] = np.sum(mono[start:end] ** 2)
+
+    # Onset detection (first difference of energy)
+    onset = np.diff(energy)
+    onset = np.maximum(onset, 0)
+
+    # Autocorrelation to find periodicity
+    if len(onset) < 20:
+        return 120.0
+
+    corr = np.correlate(onset, onset, mode="full")
+    corr = corr[len(corr) // 2 :]
+
+    # Find first significant peak after minimum lag
+    min_bpm, max_bpm = 60, 200
+    min_lag = int(60.0 / max_bpm * 100)  # 100 = frames per second
+    max_lag = int(60.0 / min_bpm * 100)
+    max_lag = min(max_lag, len(corr) - 1)
+
+    if min_lag >= max_lag:
+        return 120.0
+
+    search = corr[min_lag:max_lag]
+    if len(search) == 0:
+        return 120.0
+
+    peak_idx = np.argmax(search) + min_lag
+    if peak_idx == 0:
+        return 120.0
+
+    bpm = 60.0 / (peak_idx / 100.0)
+    return round(float(bpm), 1)
+
+
+# ---------------------------------------------------------------------------
 # Chord voicing generators
 # ---------------------------------------------------------------------------
 

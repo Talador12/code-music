@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v21.0.0 — 220 songs, 1161 tests, preview render + voicings + quantize
+## Status: v22.0.0 — 225 songs, 1176 tests, humanize + transpose + tempo detect
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 220 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 225 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
