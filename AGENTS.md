@@ -472,5 +472,8 @@ to_html, to_svg_waveform, tempo_map, render_preview, quantize_track.
 
 theory.py now also has: scale_info, chord_extensions, merge_tracks.
 
+theory.py now also has: interval_name, parallel_motion, suggest_next_chord.
+
+40+ public functions across theory.py + composition.py. Toolkit essentially complete.
 Next up: v19-roadmap (microtonal tuning), v23-roadmap (audio import/sampling),
-v25 (versioning/history). Analysis/composition/theory toolkit complete — 37+ public functions.
+v25 (versioning/history).
