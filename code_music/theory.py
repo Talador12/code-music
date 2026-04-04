@@ -9933,6 +9933,121 @@ def pitch_center(notes: list[Note]) -> tuple[str, int] | None:
     return (_NOTE_NAMES[avg_int % 12], avg_int // 12)
 
 
+# ---------------------------------------------------------------------------
+# Pitch histogram (v119.0)
+# ---------------------------------------------------------------------------
+
+
+def pitch_histogram(notes: list[Note]) -> dict[str, int]:
+    """Count occurrences of each pitch name in a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Dict mapping pitch name → count, sorted by frequency descending.
+    """
+    counts: dict[str, int] = {}
+    for n in notes:
+        if n.pitch is not None:
+            p = str(n.pitch)
+            counts[p] = counts.get(p, 0) + 1
+    return dict(sorted(counts.items(), key=lambda x: -x[1]))
+
+
+def pitch_class_histogram(notes: list[Note]) -> list[int]:
+    """Count occurrences of each pitch class (0-11) in a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        12-element list of counts (index 0 = C, 1 = C#, ..., 11 = B).
+    """
+    hist = [0] * 12
+    for n in notes:
+        if n.pitch is not None:
+            hist[_semi(str(n.pitch))] += 1
+    return hist
+
+
+# ---------------------------------------------------------------------------
+# Note velocity stats (v120.0)
+# ---------------------------------------------------------------------------
+
+
+def velocity_stats(notes: list[Note]) -> dict:
+    """Compute velocity statistics for a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Dict: {min, max, avg, range, count}.
+    """
+    vels = [n.velocity for n in notes if n.pitch is not None and hasattr(n, "velocity")]
+    if not vels:
+        return {"min": 0, "max": 0, "avg": 0.0, "range": 0, "count": 0}
+    return {
+        "min": min(vels),
+        "max": max(vels),
+        "avg": round(sum(vels) / len(vels), 1),
+        "range": max(vels) - min(vels),
+        "count": len(vels),
+    }
+
+
+def velocity_curve(notes: list[Note]) -> list[int]:
+    """Extract the velocity values as a list for plotting.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        List of velocities (0 for rests).
+    """
+    return [n.velocity if n.pitch is not None else 0 for n in notes]
+
+
+# ---------------------------------------------------------------------------
+# Duration stats (v121.0)
+# ---------------------------------------------------------------------------
+
+
+def duration_stats(notes: list[Note]) -> dict:
+    """Compute duration statistics for a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Dict: {min, max, avg, total, count, unique_durations}.
+    """
+    durs = [n.duration for n in notes]
+    if not durs:
+        return {"min": 0.0, "max": 0.0, "avg": 0.0, "total": 0.0, "count": 0, "unique_durations": 0}
+    return {
+        "min": round(min(durs), 4),
+        "max": round(max(durs), 4),
+        "avg": round(sum(durs) / len(durs), 4),
+        "total": round(sum(durs), 4),
+        "count": len(durs),
+        "unique_durations": len(set(round(d, 4) for d in durs)),
+    }
+
+
+def total_duration(notes: list[Note]) -> float:
+    """Sum of all note durations.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Total duration in beats.
+    """
+    return round(sum(n.duration for n in notes), 4)
+
+
 class Change:
     """A single structural change between two songs."""
 
