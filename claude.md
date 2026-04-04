@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v115.0.0 — 323 songs, 2227 tests — inversions + note utils + progression similarity
+## Status: v118.0.0 — 323 songs, 2250 tests — scale degrees + chord tones + melodic range
 
 ## What's built
 
@@ -1309,7 +1309,32 @@ Compare and search progressions by harmonic fingerprint.
 - [x] `find_similar_progressions(target, corpus, top_n)` — rank a corpus by similarity to a target, returns (index, score) pairs
 - [x] 7 tests for identical, different, empty, range, exact match finding, top_n, sorted output
 
-## v116.0+ Roadmap — Future Directions
+## v116.0 Roadmap — Scale Degree Naming
+
+Name scale degrees relative to any key.
+
+- [x] `scale_degree(pitch, key)` — interval in semitones from key root (0-11)
+- [x] `scale_degree_name(pitch, key)` — human-readable: "5", "b3 (minor 3rd)", "#4/b5 (tritone)"
+- [x] 7 tests
+
+## v117.0 Roadmap — Chord Tone Filter
+
+Identify and filter chord tones in a melody.
+
+- [x] `chord_tones(root, shape)` — list pitch names in the chord
+- [x] `is_chord_tone(pitch, root, shape)` — boolean: is this pitch in the chord?
+- [x] `filter_chord_tones(notes, root, shape)` — keep chord tones, replace non-chord-tones with rests
+- [x] 8 tests
+
+## v118.0 Roadmap — Melodic Range Stats
+
+Analyze the pitch range and center of a melody.
+
+- [x] `melodic_range(notes)` — {lowest, highest, range_semitones, range_octaves, avg_pitch}
+- [x] `pitch_center(notes)` — (pitch_name, octave) of the average pitch
+- [x] 8 tests
+
+## v119.0+ Roadmap — Future Directions
 
 Ideas for continued development:
 

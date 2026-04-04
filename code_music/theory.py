@@ -9770,6 +9770,169 @@ def find_similar_progressions(
     return scores[:top_n]
 
 
+# ---------------------------------------------------------------------------
+# Scale degree naming (v116.0)
+# ---------------------------------------------------------------------------
+
+_DEGREE_NAMES = {
+    0: "1 (tonic)",
+    1: "b2",
+    2: "2",
+    3: "b3 (minor 3rd)",
+    4: "3 (major 3rd)",
+    5: "4",
+    6: "#4/b5 (tritone)",
+    7: "5",
+    8: "b6",
+    9: "6",
+    10: "b7",
+    11: "7 (major 7th)",
+}
+
+
+def scale_degree(pitch: str, key: str = "C") -> int:
+    """Return the scale degree of a pitch relative to a key (0-11 semitones).
+
+    Args:
+        pitch: Note name.
+        key:   Key root.
+
+    Returns:
+        Interval in semitones from the key root.
+    """
+    return (_semi(pitch) - _semi(key)) % 12
+
+
+def scale_degree_name(pitch: str, key: str = "C") -> str:
+    """Return a human-readable scale degree name.
+
+    Args:
+        pitch: Note name.
+        key:   Key root.
+
+    Returns:
+        Degree name string (e.g. "5", "b3 (minor 3rd)").
+    """
+    return _DEGREE_NAMES.get(scale_degree(pitch, key), "?")
+
+
+# ---------------------------------------------------------------------------
+# Chord tone filter (v117.0)
+# ---------------------------------------------------------------------------
+
+
+def chord_tones(root: str, shape: str) -> list[str]:
+    """Return the pitch names of a chord's tones.
+
+    Args:
+        root:  Chord root.
+        shape: Chord quality.
+
+    Returns:
+        List of pitch names in the chord.
+    """
+    k = _semi(root)
+    return [_NOTE_NAMES[(k + s) % 12] for s in _CHORD_SEMI.get(shape, [0, 4, 7])]
+
+
+def is_chord_tone(pitch: str, root: str, shape: str) -> bool:
+    """Check if a pitch is a chord tone.
+
+    Args:
+        pitch: Note to check.
+        root:  Chord root.
+        shape: Chord quality.
+
+    Returns:
+        True if pitch is in the chord.
+    """
+    return pitch in chord_tones(root, shape) or _NOTE_NAMES[_semi(pitch)] in chord_tones(
+        root, shape
+    )
+
+
+def filter_chord_tones(
+    notes: list[Note],
+    root: str,
+    shape: str,
+) -> list[Note]:
+    """Filter a melody to only chord tones, replacing non-chord-tones with rests.
+
+    Args:
+        notes: Input melody.
+        root:  Chord root.
+        shape: Chord quality.
+
+    Returns:
+        Filtered note list (non-chord-tones become rests).
+    """
+    result: list[Note] = []
+    for n in notes:
+        if n.pitch is not None and is_chord_tone(str(n.pitch), root, shape):
+            result.append(n)
+        else:
+            result.append(Note.rest(n.duration) if n.pitch is not None else n)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Melodic range stats (v118.0)
+# ---------------------------------------------------------------------------
+
+
+def melodic_range(notes: list[Note]) -> dict:
+    """Compute the melodic range statistics of a note list.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        Dict: {lowest, highest, range_semitones, range_octaves, avg_pitch}.
+    """
+    sounding = [n for n in notes if n.pitch is not None]
+    if not sounding:
+        return {
+            "lowest": None,
+            "highest": None,
+            "range_semitones": 0,
+            "range_octaves": 0.0,
+            "avg_pitch": 0.0,
+        }
+
+    absolutes = [_semi(str(n.pitch)) + n.octave * 12 for n in sounding]
+    low = min(absolutes)
+    high = max(absolutes)
+    avg = sum(absolutes) / len(absolutes)
+
+    low_p, low_o = _NOTE_NAMES[low % 12], low // 12
+    high_p, high_o = _NOTE_NAMES[high % 12], high // 12
+
+    return {
+        "lowest": f"{low_p}{low_o}",
+        "highest": f"{high_p}{high_o}",
+        "range_semitones": high - low,
+        "range_octaves": round((high - low) / 12, 2),
+        "avg_pitch": round(avg, 1),
+    }
+
+
+def pitch_center(notes: list[Note]) -> tuple[str, int] | None:
+    """Find the pitch center (average pitch) of a melody.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        (pitch_name, octave) of the center, or None if no sounding notes.
+    """
+    sounding = [n for n in notes if n.pitch is not None]
+    if not sounding:
+        return None
+    avg = sum(_semi(str(n.pitch)) + n.octave * 12 for n in sounding) / len(sounding)
+    avg_int = round(avg)
+    return (_NOTE_NAMES[avg_int % 12], avg_int // 12)
+
+
 class Change:
     """A single structural change between two songs."""
 

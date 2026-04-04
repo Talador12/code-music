@@ -530,6 +530,9 @@ Eight releases shipped in a single conversation:
 | v113.0 | Chord inversion analyzer | 2210 | 323 | — |
 | v114.0 | Note name utilities (MIDI, freq) | 2220 | 323 | — |
 | v115.0 | Progression similarity + corpus search | 2227 | 323 | — |
+| v116.0 | Scale degree naming | 2234 | 323 | — |
+| v117.0 | Chord tone filter | 2242 | 323 | — |
+| v118.0 | Melodic range stats + pitch center | 2250 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -646,5 +649,7 @@ rhythm_string, rhythm_match, complexity_curve, complexity_contrast.
 theory.py v113-v115 additions: detect_inversion, inversion_label,
 note_to_midi, midi_to_note, note_to_freq, progression_similarity,
 find_similar_progressions.
-335+ public functions. 2227 tests. v115 shipped.
-Infrastructure items remain.
+theory.py v116-v118 additions: scale_degree, scale_degree_name,
+chord_tones, is_chord_tone, filter_chord_tones, melodic_range, pitch_center.
+345+ public functions. 2250 tests. v118 shipped.
+80 versions (v39-v118) in one conversation arc. Infrastructure items remain.
