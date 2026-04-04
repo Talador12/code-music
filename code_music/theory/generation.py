@@ -17,7 +17,7 @@ from ._core import (
     _semi,
     euclid,
 )
-from .analysis import corpus_stats, key_distribution
+from .analysis import classify_genre, corpus_stats, key_distribution
 from .melody import (
     crescendo,
     decrescendo,
@@ -2764,3 +2764,136 @@ def auto_arrange(
                     track.add(Note.rest(4.0))
 
     return song
+
+
+# ---------------------------------------------------------------------------
+# Style transfer (v132.0)
+# ---------------------------------------------------------------------------
+
+# Genre → preferred scale/shape mappings for reharmonization
+_RESTYLE_HARMONY: dict[str, dict] = {
+    "jazz": {"shapes": {"maj": "maj7", "min": "min7", "dom7": "dom9"}, "scale": "dorian"},
+    "pop": {"shapes": {"maj7": "maj", "min7": "min", "dom9": "dom7"}, "scale": "major"},
+    "rock": {"shapes": {"maj7": "maj", "min7": "min"}, "scale": "pentatonic_minor"},
+    "blues": {"shapes": {"maj": "dom7", "min": "dom7", "maj7": "dom7"}, "scale": "blues"},
+    "classical": {"shapes": {"dom7": "maj", "min7": "min", "dom9": "dom7"}, "scale": "major"},
+    "electronic": {"shapes": {"maj7": "min", "dom7": "min"}, "scale": "aeolian"},
+    "ambient": {"shapes": {"maj": "sus2", "min": "sus4", "dom7": "maj7"}, "scale": "lydian"},
+    "r&b": {"shapes": {"maj": "maj9", "min": "min9", "dom7": "dom9"}, "scale": "dorian"},
+    "latin": {"shapes": {"maj7": "dom7", "min7": "min"}, "scale": "mixolydian"},
+    "metal": {"shapes": {"maj": "min", "dom7": "min"}, "scale": "phrygian"},
+}
+
+
+def restyle(
+    song: "Song",
+    target_genre: str,
+    key: str | None = None,
+    bpm: int | None = None,
+    seed: int | None = None,
+) -> "Song":
+    """Transform a song's style to a different genre.
+
+    Extracts the chord progression from the original song, reharmonizes
+    it for the target genre (e.g. triads -> sevenths for jazz), then
+    builds a fresh arrangement using auto_arrange with genre-appropriate
+    instruments, bass style, drum patterns, and swing.
+
+    This is the musical equivalent of "play that pop song as jazz" or
+    "give me the rock version of this classical piece."
+
+    Args:
+        song:         Source Song object.
+        target_genre: Target genre: 'jazz', 'pop', 'rock', 'blues',
+                      'classical', 'electronic', 'ambient', etc.
+        key:          Override key (if None, keeps original).
+        bpm:          Override tempo (if None, uses genre default).
+        seed:         Random seed for reproducibility.
+
+    Returns:
+        A new Song arranged in the target genre's style.
+
+    Example::
+
+        >>> pop_song = generate_full_song("pop", key="C", bpm=120, seed=1)
+        >>> jazz_version = restyle(pop_song, "jazz")
+        >>> jazz_version.title
+        'Jazz Restyle'
+    """
+    from ..engine import Chord
+
+    # Extract chord progression from the original song
+    original_prog: list[tuple[str, str]] = []
+    for track in song.tracks:
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, Chord):
+                original_prog.append((beat.event.root, beat.event.shape))
+        if original_prog:
+            break  # use first track with chords
+
+    if not original_prog:
+        # No chords found — return a fresh song in the target genre
+        return generate_full_song(
+            genre=target_genre,
+            key=key or "C",
+            bpm=bpm or 120,
+            seed=seed,
+        )
+
+    # Reharmonize: transform chord shapes for the target genre
+    restyle_map = _RESTYLE_HARMONY.get(target_genre, {}).get("shapes", {})
+    restyled_prog: list[tuple[str, str]] = []
+    for root, shape in original_prog:
+        new_shape = restyle_map.get(shape, shape)
+        restyled_prog.append((root, new_shape))
+
+    # Transpose if key override requested
+    if key is not None and restyled_prog:
+        current_root_semi = _semi(restyled_prog[0][0])
+        target_semi = _semi(key)
+        shift = (target_semi - current_root_semi) % 12
+        if shift != 0:
+            restyled_prog = transpose_progression(restyled_prog, shift)
+
+    # Map genre to auto_arrange style
+    genre_to_style = {
+        "jazz": "jazz_combo",
+        "rock": "rock_band",
+        "classical": "orchestral",
+        "electronic": "electronic",
+        "pop": "rock_band",
+        "blues": "jazz_combo",
+        "ambient": "electronic",
+        "r&b": "jazz_combo",
+        "latin": "jazz_combo",
+        "metal": "rock_band",
+    }
+    style = genre_to_style.get(target_genre, "rock_band")
+
+    # Use genre-appropriate BPM if not specified
+    if bpm is None:
+        genre_bpms = {
+            "jazz": 140,
+            "pop": 120,
+            "rock": 130,
+            "blues": 110,
+            "classical": 100,
+            "electronic": 128,
+            "ambient": 70,
+            "r&b": 90,
+            "latin": 120,
+            "metal": 160,
+        }
+        bpm = genre_bpms.get(target_genre, 120)
+
+    effective_key = key or (original_prog[0][0] if original_prog else "C")
+
+    result = auto_arrange(
+        progression=restyled_prog,
+        key=effective_key,
+        bpm=bpm,
+        style=style,
+        seed=seed,
+    )
+    result.title = f"{target_genre.title()} Restyle"
+    return result

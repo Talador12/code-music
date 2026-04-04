@@ -704,36 +704,66 @@ melody. Orchestral adds sparse brass accents based on density planning.
 
 390+ public functions. 2374 tests. 323 songs. v131 shipped.
 
+## v132.0 — Countermelody + Style Transfer + Motif Development
+
+**generate_countermelody(melody, progression, key, scale, style, seed):**
+Intelligent countermelody generation with 3 styles: independent (contrary
+motion, chord-tone anchored), descant (above melody, sparser), bass_counter
+(below melody, root-oriented). Unlike species_counterpoint, this targets
+musicality over rule-strictness — chord tones on strong beats, scale tones
+on weak beats, voice separation by register.
+
+**restyle(song, target_genre, key, bpm, seed):**
+Style transfer between genres. Extracts chord progression from source song,
+reharmonizes for target genre (e.g. triads → 7ths for jazz, everything → dom7
+for blues, triads → sus chords for ambient), then produces fresh arrangement
+via auto_arrange with genre-appropriate instruments, swing, and tempo.
+10 genre restyle profiles. "Play that pop song as jazz" in one call.
+
+**develop_motif(motif, techniques, key, repetitions, seed):**
+Classical motivic development automated. Takes a 2-8 note motif and builds
+an extended passage using 10 techniques: repeat, sequence, inversion,
+retrograde, retrograde_inversion, augmentation, diminution, fragmentation,
+extension, ornamentation. Default development arc builds naturally:
+repeat → sequence → inversion → fragmentation → augmentation → repeat.
+Beethoven's Fifth, but as a function call.
+
+393+ public functions. 2416 tests. 323 songs. v132 shipped.
+
 ## Next session roadmap
 
 ### Tier 1: Ship immediately (single session each)
-- **MusicXML Export v2** — `to_musicxml(song)` that opens in MuseScore/Finale.
+- **MusicXML Export** — `to_musicxml(song)` that opens in MuseScore/Finale.
   Clear scope, one module, big ecosystem reach.
 - **Song Builder DSL v2** — real mini-language with BPM, time sig, instruments,
   effects, multi-track. "Write a song in 20 lines of DSL."
-- **Intelligent Countermelody** — given melody + progression, generate a
-  countermelody respecting voice independence and chord tones.
-
-### Tier 2: Creative extensions
-- **Style Transfer** — `restyle(song, target_genre)` — reharmonize, change
-  instruments, adjust rhythm to morph a pop song into jazz or vice versa.
-  Uses classify_genre + auto_arrange + reharmonize.
-- **Motif-Based Composition** — `develop_motif(motif, techniques, length)` —
-  take a short motif and build a full piece using augmentation, diminution,
-  inversion, sequence, fragmentation. Classical composition process automated.
 - **Chord Voicing AI** — `voice_progression(prog, style)` — given a progression,
   produce pianistic voicings that minimize hand movement. Styles: classical,
-  jazz rootless, quartal, drop2. More intelligent than current voicing functions.
+  jazz rootless, quartal, drop2.
 
-### Tier 3: Analysis & discovery
-- **Corpus Genre Map** — run classify_genre on all 323 songs, build a genre
-  distribution report, find misclassified songs, validate classifier accuracy.
-- **Harmonic Language Model** — train on the 323-song corpus to build a
-  markov chain of chord transitions per genre. `suggest_progression(genre, length)`
+### Tier 2: Composition intelligence
+- **Variation Suite Generator** — `generate_theme_and_variations(theme, n, genre)` —
+  take a melody, produce N variations using develop_motif + restyle + reharmonize.
+  Output: a multi-movement Song with theme, var1 (inverted), var2 (jazz restyle),
+  var3 (double time), var4 (minor mode), var5 (augmented+ornamented).
+- **Cadential Phrase Generator** — `generate_phrase(key, cadence_type, length)` —
+  build a phrase that resolves to a specific cadence (perfect, half, deceptive,
+  plagal). Uses tension_curve targeting. The building block for structured form.
+- **Fugue Generator** — `generate_fugue(subject, voices, key)` — automated fugue
+  construction: subject entry, real/tonal answer, countersubject, episodes,
+  stretto. Uses species_counterpoint + develop_motif + voice_lead_satb. The
+  ultimate test of theory integration.
+
+### Tier 3: Analysis & intelligence
+- **Harmonic Language Model** — train on the 323-song corpus to build markov
+  chains of chord transitions per genre. `suggest_progression(genre, length)`
   that sounds idiomatic rather than template-based.
 - **Tension Narrative** — `tension_story(song)` — describe a song's tension
-  arc in natural language: "opens with calm I-IV motion, builds through
-  secondary dominants, climaxes at bar 24 with augmented sixth, resolves."
+  arc in natural language. "Opens with calm I-IV, builds through secondary
+  dominants, climaxes at bar 24 with augmented sixth, resolves."
+- **Composition Critique** — `critique(song)` — automated music theory review.
+  Check parallel fifths, voice range violations, unresolved dominants, missing
+  cadences, texture balance. Returns a graded report with suggestions.
 
 ### Tier 4: Platform & ecosystem
 - **Web Playground (Pyodide)** — theory module in the browser. Type code,
@@ -741,12 +771,9 @@ melody. Orchestral adds sparse brass accents based on density planning.
 - **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing,
   multi-track. Bridge between code-music and every DAW.
 - **Live Coding Mode** — `code-music repl` — interactive REPL that plays
-  notes/chords as you type them. Hot-reload song scripts on save.
+  notes/chords as you type them.
 
 ### Tier 5: Quality
-- **Test Organization** — group 146 test files by domain (harmony/, rhythm/,
-  analysis/, etc). Add parametrized tests across all 44 scales × 12 keys.
-- **LSP Error Cleanup** — fix pre-existing Pyright type errors in engine.py,
-  effects.py, synth.py, composition.py, export.py. Numpy type stubs.
-- **Performance Profiling** — profile song rendering pipeline, identify
-  bottlenecks. Synth is likely the hotspot. Consider numpy vectorization.
+- **Test Organization** — group 149 test files by domain.
+- **LSP Error Cleanup** — fix pre-existing Pyright type errors.
+- **Performance Profiling** — profile synth rendering, vectorize with numpy.

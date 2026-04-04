@@ -12,7 +12,6 @@ from ._core import (
 )
 
 
-
 def generate_chord_melody(
     chords: list[tuple[str, str]],
     contour: str = "arch",
@@ -80,7 +79,6 @@ def generate_chord_melody(
     return result
 
 
-
 def generate_counterpoint(
     melody: list[Note],
     species: int = 1,
@@ -125,7 +123,6 @@ def generate_counterpoint(
         result.append(Note(cp_pitch, cp_oct, note.duration, velocity=note.velocity * 0.8))
 
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +248,6 @@ def generate_variation(
         )
 
 
-
 # ---------------------------------------------------------------------------
 # Velocity humanization
 # ---------------------------------------------------------------------------
@@ -284,7 +280,6 @@ def humanize_velocity(
             new_vel = max(0.05, min(1.0, note.velocity + delta))
             result.append(Note(str(note.pitch), note.octave, note.duration, velocity=new_vel))
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -341,7 +336,6 @@ def melody_contour(notes: list[Note]) -> dict:
     }
 
 
-
 def dorian_lick(
     root: str,
     octave: int = 5,
@@ -361,7 +355,6 @@ def dorian_lick(
     return result
 
 
-
 def phrygian_run(
     root: str,
     octave: int = 5,
@@ -378,7 +371,6 @@ def phrygian_run(
         semi = (root_semi + phrygian[idx]) % 12
         result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
     return result
-
 
 
 def lydian_run(
@@ -404,7 +396,6 @@ def lydian_run(
         semi = (root_semi + lydian[idx]) % 12
         result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
     return result
-
 
 
 def mixolydian_lick(
@@ -435,7 +426,6 @@ def mixolydian_lick(
     return result
 
 
-
 def whole_tone_run(
     root: str,
     octave: int = 4,
@@ -461,7 +451,6 @@ def whole_tone_run(
         semi = (root_semi + wt_intervals[idx]) % 12
         result.append(Note(_NOTE_NAMES[semi], min(7, octave + oct_off), duration))
     return result
-
 
 
 def blues_lick(
@@ -499,7 +488,6 @@ def blues_lick(
     return result
 
 
-
 def arpeggio_pattern(
     root: str,
     shape: str,
@@ -532,7 +520,6 @@ def arpeggio_pattern(
     return result
 
 
-
 def chromatic_run(
     start: str,
     start_octave: int,
@@ -561,7 +548,6 @@ def chromatic_run(
         oct = max(2, min(7, oct))
         result.append(Note(_NOTE_NAMES[s], oct, duration))
     return result
-
 
 
 def trill(
@@ -601,7 +587,6 @@ def trill(
     return result
 
 
-
 def diminished_run(
     root: str,
     octave: int = 4,
@@ -631,7 +616,6 @@ def diminished_run(
     return result
 
 
-
 def canon(melody: list[Note], delay_beats: float = 4.0, voices: int = 2) -> list[list[Note]]:
     """Create a canon (round) — the same melody offset in time.
 
@@ -657,7 +641,6 @@ def canon(melody: list[Note], delay_beats: float = 4.0, voices: int = 2) -> list
     return result
 
 
-
 def hocket(melody: list[Note], voices: int = 2) -> list[list[Note]]:
     """Split a melody across multiple voices (hocket technique).
 
@@ -679,7 +662,6 @@ def hocket(melody: list[Note], voices: int = 2) -> list[list[Note]]:
             else:
                 result[v].append(Note.rest(note.duration))
     return result
-
 
 
 def sequence_by_interval(
@@ -712,7 +694,6 @@ def sequence_by_interval(
                 oct = max(2, min(7, oct))
                 result.append(Note(_NOTE_NAMES[semi], oct, note.duration, velocity=note.velocity))
     return result
-
 
 
 def call_and_response(
@@ -755,7 +736,6 @@ def call_and_response(
     return result
 
 
-
 def ostinato(
     pattern: list[Note],
     repeats: int = 4,
@@ -792,7 +772,6 @@ def ostinato(
     return result
 
 
-
 def dynamics_curve(notes: list[Note], start_vel: float = 0.3, end_vel: float = 0.9) -> list[Note]:
     """Apply a linear dynamics curve (crescendo or decrescendo).
 
@@ -816,7 +795,6 @@ def dynamics_curve(notes: list[Note], start_vel: float = 0.3, end_vel: float = 0
         else:
             result.append(Note(str(n.pitch), n.octave, n.duration, velocity=vel))
     return result
-
 
 
 def arpeggiate_chord(
@@ -859,7 +837,6 @@ def arpeggiate_chord(
     return notes * repeats
 
 
-
 def staccato(notes: list[Note], ratio: float = 0.5) -> list[Note]:
     """Shorten notes and add rests for a staccato articulation.
 
@@ -883,7 +860,6 @@ def staccato(notes: list[Note], ratio: float = 0.5) -> list[Note]:
     return result
 
 
-
 def legato_connect(notes: list[Note], overlap: float = 0.1) -> list[Note]:
     """Extend note durations for a legato feel (overlapping notes).
 
@@ -904,7 +880,6 @@ def legato_connect(notes: list[Note], overlap: float = 0.1) -> list[Note]:
         else:
             result.append(Note(str(n.pitch), n.octave, n.duration + overlap, velocity=n.velocity))
     return result
-
 
 
 def stretch_melody(notes: list[Note], factor: float = 2.0) -> list[Note]:
@@ -931,7 +906,6 @@ def stretch_melody(notes: list[Note], factor: float = 2.0) -> list[Note]:
     return result
 
 
-
 def pedal_point(note: str, octave: int, melody: list[Note]) -> list[Note]:
     """Add a pedal point (sustained bass note) alternating with melody notes.
 
@@ -953,7 +927,6 @@ def pedal_point(note: str, octave: int, melody: list[Note]) -> list[Note]:
     return result
 
 
-
 def normalize_notes(notes: list[Note], target_octave: int = 4) -> list[Note]:
     """Normalize all pitched notes to a single octave.
 
@@ -973,7 +946,6 @@ def normalize_notes(notes: list[Note], target_octave: int = 4) -> list[Note]:
         else:
             result.append(Note(str(n.pitch), target_octave, n.duration, velocity=n.velocity))
     return result
-
 
 
 def species_counterpoint(
@@ -1057,7 +1029,6 @@ def species_counterpoint(
             result.append(Note(_NOTE_NAMES[s2], o2, half_dur))
 
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -1151,7 +1122,6 @@ def generate_scale_melody(
     return result
 
 
-
 # ---------------------------------------------------------------------------
 # Motif development & variation (v54.0)
 # ---------------------------------------------------------------------------
@@ -1178,7 +1148,6 @@ def augment(motif: list[Note], factor: float = 2.0) -> list[Note]:
     ]
 
 
-
 def diminish(motif: list[Note], factor: float = 2.0) -> list[Note]:
     """Halve (or divide) note durations — rhythmic diminution.
 
@@ -1200,7 +1169,6 @@ def diminish(motif: list[Note], factor: float = 2.0) -> list[Note]:
     ]
 
 
-
 def fragment(motif: list[Note], length: int) -> list[Note]:
     """Extract the first N notes of a motif — fragmentation.
 
@@ -1216,7 +1184,6 @@ def fragment(motif: list[Note], length: int) -> list[Note]:
         First `length` notes of the motif.
     """
     return list(motif[:length])
-
 
 
 def motif_similarity(a: list[Note], b: list[Note]) -> float:
@@ -1274,7 +1241,6 @@ def motif_similarity(a: list[Note], b: list[Note]) -> float:
     return round((contour_match + dur_match) / 2.0, 3)
 
 
-
 # ---------------------------------------------------------------------------
 # Lyric rhythm matching (v58.0)
 # ---------------------------------------------------------------------------
@@ -1309,7 +1275,6 @@ def count_syllables(word: str) -> int:
         count -= 1
     # Words like "the" need at least 1
     return max(count, 1)
-
 
 
 def stress_pattern(text: str) -> list[bool]:
@@ -1367,7 +1332,6 @@ def stress_pattern(text: str) -> list[bool]:
             for i in range(n):
                 pattern.append(i % 2 == 0)  # stress on even positions (1st, 3rd, ...)
     return pattern
-
 
 
 def text_to_melody(
@@ -1446,7 +1410,6 @@ def text_to_melody(
     return notes
 
 
-
 # ---------------------------------------------------------------------------
 # Chord tone targeting (v63.0)
 # ---------------------------------------------------------------------------
@@ -1499,7 +1462,6 @@ def target_chord_tones(
     return result
 
 
-
 def approach_pattern(
     target: str,
     octave: int = 5,
@@ -1540,7 +1502,6 @@ def approach_pattern(
         Note(_NOTE_NAMES[below], octave, duration),
         Note(target, octave, duration * 2),
     ]
-
 
 
 # ---------------------------------------------------------------------------
@@ -1648,7 +1609,6 @@ def harmonize_melody(
     return voices
 
 
-
 def list_patterns(
     genre: str | None = None,
     max_difficulty: int | None = None,
@@ -1670,7 +1630,6 @@ def list_patterns(
             continue
         result.append(name)
     return sorted(result)
-
 
 
 def get_pattern(
@@ -1698,7 +1657,6 @@ def get_pattern(
     k = _semi(key)
     intervals = _PATTERN_DB[name]["notes"]
     return [Note(_NOTE_NAMES[(k + iv) % 12], octave + (k + iv) // 12, duration) for iv in intervals]
-
 
 
 def chain_patterns(
@@ -1738,7 +1696,6 @@ def chain_patterns(
     return result
 
 
-
 # ---------------------------------------------------------------------------
 # Dynamic range processing (v79.0)
 # ---------------------------------------------------------------------------
@@ -1773,7 +1730,6 @@ def crescendo(
     return result
 
 
-
 def decrescendo(
     notes: list[Note],
     start_vel: int = 100,
@@ -1790,7 +1746,6 @@ def decrescendo(
         New note list with decreasing velocities.
     """
     return crescendo(notes, start_vel, end_vel)
-
 
 
 def sforzando(notes: list[Note], position: int = 0, accent_vel: int = 127) -> list[Note]:
@@ -1811,7 +1766,6 @@ def sforzando(notes: list[Note], position: int = 0, accent_vel: int = 127) -> li
     return result
 
 
-
 def dynamics_map(notes: list[Note]) -> list[int]:
     """Extract the velocity curve from a note list.
 
@@ -1822,7 +1776,6 @@ def dynamics_map(notes: list[Note]) -> list[int]:
         List of velocity values, one per note (0 for rests).
     """
     return [n.velocity if n.pitch is not None else 0 for n in notes]
-
 
 
 # ---------------------------------------------------------------------------
@@ -1849,7 +1802,6 @@ def hammer_on(note_a: Note, note_b: Note) -> list[Note]:
     ]
 
 
-
 def pull_off(note_a: Note, note_b: Note) -> list[Note]:
     """Simulate a guitar pull-off — reverse of hammer-on.
 
@@ -1861,7 +1813,6 @@ def pull_off(note_a: Note, note_b: Note) -> list[Note]:
         Two notes with decreasing velocity.
     """
     return hammer_on(note_a, note_b)  # same velocity profile
-
 
 
 def slide(
@@ -1907,7 +1858,6 @@ def slide(
     return result
 
 
-
 def palm_mute(notes: list[Note], decay_factor: float = 0.3) -> list[Note]:
     """Simulate palm muting — reduced sustain and percussive attack.
 
@@ -1931,7 +1881,6 @@ def palm_mute(notes: list[Note], decay_factor: float = 0.3) -> list[Note]:
             result.append(Note(n.pitch, n.octave, short_dur, velocity=n.velocity))
             result.append(Note.rest(rest_dur))
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -1981,7 +1930,6 @@ def fit_to_range(
     return result
 
 
-
 def auto_octave(
     notes: list[Note],
     target_octave: int = 4,
@@ -2008,7 +1956,6 @@ def auto_octave(
         else Note.rest(n.duration)
         for n in notes
     ]
-
 
 
 # ---------------------------------------------------------------------------
@@ -2044,7 +1991,6 @@ def contour_string(notes: list[Note]) -> str:
     return "".join(result)
 
 
-
 def contour_match(melody_a: list[Note], melody_b: list[Note]) -> float:
     """Compare two melodies by contour similarity (0.0-1.0).
 
@@ -2065,7 +2011,6 @@ def contour_match(melody_a: list[Note], melody_b: list[Note]) -> float:
     max_len = max(len(ca), len(cb))
     matches = sum(1 for a, b in zip(ca, cb) if a == b)
     return round(matches / max_len, 3)
-
 
 
 # ---------------------------------------------------------------------------
@@ -2123,7 +2068,6 @@ def smooth_melody(
     return result
 
 
-
 def fill_leaps(
     notes: list[Note],
     threshold: int = 5,
@@ -2169,7 +2113,6 @@ def fill_leaps(
 
     result.append(notes[-1])
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -2257,3 +2200,312 @@ def melody_summary(notes: list[Note]) -> dict:
         "pitch_center": center,
     }
 
+
+# ---------------------------------------------------------------------------
+# Intelligent countermelody generator (v132.0)
+# ---------------------------------------------------------------------------
+
+
+def generate_countermelody(
+    melody: list[Note],
+    progression: list[tuple[str, str]],
+    key: str = "C",
+    scale_name: str = "major",
+    style: str = "independent",
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a countermelody that complements an existing melody.
+
+    Unlike species_counterpoint (which is rule-strict), this targets
+    musicality: chord tones on strong beats, contrary motion preference,
+    independent contour, and voice separation. The result sounds like a
+    second singer or instrument — related but distinct.
+
+    Styles:
+        'independent': contrary motion, own contour, chord-tone anchored.
+            Best for a second vocal or horn line.
+        'descant': sits above the melody, lighter rhythm (half the notes).
+            Best for a high flute or violin counterline.
+        'bass_counter': below the melody, root-oriented but with passing
+            motion. Best for a cello or bass voice.
+
+    Args:
+        melody:      Main melody (list of Notes).
+        progression: Chord progression as (root, shape) tuples.
+                     Each chord is assumed to cover melody notes evenly.
+        key:         Key root.
+        scale_name:  Scale name for diatonic passing tones.
+        style:       'independent', 'descant', or 'bass_counter'.
+        seed:        Random seed for reproducibility.
+
+    Returns:
+        List of Notes forming the countermelody.
+
+    Example::
+
+        >>> mel = [Note("C", 5, 1.0), Note("E", 5, 1.0), Note("G", 5, 1.0), Note("C", 6, 1.0)]
+        >>> cm = generate_countermelody(mel, [("C", "maj")], key="C", seed=42)
+        >>> len(cm) == len(mel)
+        True
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+
+    if not melody:
+        return []
+
+    # Build scale pitch classes
+    aliases = {"minor": "aeolian", "natural_minor": "aeolian"}
+    sname = aliases.get(scale_name, scale_name)
+    intervals = _SCALE_INTERVALS.get(sname, _SCALE_INTERVALS["major"])
+    key_semi = _semi(key)
+    scale_pcs = [(key_semi + iv) % 12 for iv in intervals]
+
+    # Map each melody note to its chord (evenly distributed)
+    notes_per_chord = max(1, len(melody) // max(len(progression), 1))
+
+    def _chord_at(idx: int) -> tuple[str, str]:
+        ci = min(idx // notes_per_chord, len(progression) - 1)
+        return progression[ci]
+
+    # Build chord tone pool per chord
+    def _chord_pcs(root: str, shape: str) -> list[int]:
+        r = _semi(root)
+        return [(r + s) % 12 for s in _CHORD_SEMI.get(shape, [0, 4, 7])]
+
+    # Helper: find nearest scale tone to a target absolute pitch
+    def _nearest_scale(target_abs: int, pool_pcs: list[int], target_oct: int) -> tuple[str, int]:
+        best = None
+        best_dist = 999
+        for pc in pool_pcs:
+            for o in (target_oct - 1, target_oct, target_oct + 1):
+                a = pc + o * 12
+                d = abs(a - target_abs)
+                if d < best_dist:
+                    best_dist = d
+                    best = (pc, o)
+        if best is None:
+            return (_NOTE_NAMES[target_abs % 12], target_abs // 12)
+        return (_NOTE_NAMES[best[0]], best[1])
+
+    result: list[Note] = []
+    prev_abs: int | None = None
+
+    for i, note in enumerate(melody):
+        if note.pitch is None:
+            result.append(Note.rest(note.duration))
+            continue
+
+        mel_semi = _semi(str(note.pitch))
+        mel_abs = mel_semi + note.octave * 12
+        root, shape = _chord_at(i)
+        chord_pcs = _chord_pcs(root, shape)
+        is_strong = i % 2 == 0
+
+        if style == "independent":
+            # Contrary motion: if melody went up, go down
+            if prev_abs is not None:
+                mel_dir = mel_abs - prev_abs
+                if mel_dir > 0:
+                    target_abs = (prev_abs or mel_abs) - rng.choice([2, 3, 4, 5])
+                elif mel_dir < 0:
+                    target_abs = (prev_abs or mel_abs) + rng.choice([2, 3, 4, 5])
+                else:
+                    target_abs = mel_abs + rng.choice([-3, -2, 2, 3])
+            else:
+                # Start a 3rd or 6th away
+                offset = rng.choice([-9, -8, -4, -3, 3, 4, 8, 9])
+                target_abs = mel_abs + offset
+
+            # Strong beats: snap to chord tone; weak beats: scale tone
+            if is_strong:
+                p, o = _nearest_scale(target_abs, chord_pcs, target_abs // 12)
+            else:
+                p, o = _nearest_scale(target_abs, scale_pcs, target_abs // 12)
+            o = max(3, min(6, o))
+            result.append(Note(p, o, note.duration, velocity=note.velocity * 0.85))
+            prev_abs = _semi(p) + o * 12
+
+        elif style == "descant":
+            # Above melody, sparser (rest on weak beats)
+            if is_strong:
+                target_abs = mel_abs + rng.choice([3, 4, 5, 7])
+                p, o = _nearest_scale(target_abs, chord_pcs, target_abs // 12)
+                o = max(4, min(7, o))
+                result.append(Note(p, o, note.duration * 2, velocity=note.velocity * 0.7))
+                prev_abs = _semi(p) + o * 12
+            else:
+                result.append(Note.rest(note.duration))
+
+        elif style == "bass_counter":
+            # Below melody, root-heavy with passing motion
+            if is_strong:
+                # Land on root or fifth
+                root_semi = _semi(root)
+                choices = [root_semi, (root_semi + 7) % 12]
+                pc = rng.choice(choices)
+                o = max(2, min(4, note.octave - 2))
+                result.append(Note(_NOTE_NAMES[pc], o, note.duration, velocity=note.velocity * 0.9))
+                prev_abs = pc + o * 12
+            else:
+                # Passing scale tone
+                if prev_abs is not None:
+                    step = rng.choice([-2, -1, 1, 2])
+                    target_abs = prev_abs + step
+                    p, o = _nearest_scale(target_abs, scale_pcs, target_abs // 12)
+                    o = max(2, min(4, o))
+                    result.append(Note(p, o, note.duration, velocity=note.velocity * 0.75))
+                    prev_abs = _semi(p) + o * 12
+                else:
+                    root_semi = _semi(root)
+                    o = max(2, min(4, note.octave - 2))
+                    result.append(Note(_NOTE_NAMES[root_semi], o, note.duration, velocity=0.8))
+                    prev_abs = root_semi + o * 12
+        else:
+            raise ValueError(f"Unknown style {style!r}. Choose: independent, descant, bass_counter")
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Motif-based composition (v132.0)
+# ---------------------------------------------------------------------------
+
+
+def develop_motif(
+    motif: list[Note],
+    techniques: list[str] | None = None,
+    key: str = "C",
+    repetitions: int = 4,
+    seed: int | None = None,
+) -> list[Note]:
+    """Build a full melodic passage from a short motif using classical development.
+
+    Takes a 2-8 note motif and applies a sequence of transformation
+    techniques to create an extended musical passage. This is how
+    Beethoven built symphonies from four notes.
+
+    Techniques (applied in sequence, cycling through the list):
+        'repeat':              exact repetition
+        'sequence':            transpose up by a whole step
+        'inversion':           mirror intervals
+        'retrograde':          reverse the motif
+        'retrograde_inversion': reverse + invert
+        'augmentation':        double durations
+        'diminution':          halve durations
+        'fragmentation':       use only the first half
+        'extension':           add a step to the end
+        'ornamentation':       add passing tones
+
+    If techniques is None, uses a default development arc:
+    repeat → sequence → inversion → fragmentation → augmentation → repeat.
+
+    Args:
+        motif:       Short melodic figure (2-8 notes recommended).
+        techniques:  List of technique names to apply in order.
+        key:         Key root (used by some techniques).
+        repetitions: How many technique applications to make.
+        seed:        Random seed for ornamental/extension techniques.
+
+    Returns:
+        Concatenated melodic passage built from the developed motif.
+
+    Example::
+
+        >>> motif = [Note("C", 5, 0.5), Note("D", 5, 0.5), Note("E", 5, 0.5), Note("C", 5, 0.5)]
+        >>> passage = develop_motif(motif, techniques=["repeat", "sequence", "inversion"], repetitions=3)
+        >>> len(passage) == len(motif) * 3  # each technique produces motif-length output
+        True
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+
+    if not motif:
+        return []
+
+    default_arc = [
+        "repeat",
+        "sequence",
+        "inversion",
+        "fragmentation",
+        "augmentation",
+        "repeat",
+    ]
+    techs = techniques if techniques is not None else default_arc
+
+    result: list[Note] = list(motif)  # start with the original statement
+    current = list(motif)
+
+    for i in range(repetitions):
+        tech = techs[i % len(techs)]
+
+        if tech == "repeat":
+            result.extend(current)
+
+        elif tech == "sequence":
+            current = generate_variation(current, "sequence", key)
+            result.extend(current)
+
+        elif tech == "inversion":
+            current = generate_variation(current, "inversion", key)
+            result.extend(current)
+
+        elif tech == "retrograde":
+            current = generate_variation(current, "retrograde", key)
+            result.extend(current)
+
+        elif tech == "retrograde_inversion":
+            current = generate_variation(current, "retrograde_inversion", key)
+            result.extend(current)
+
+        elif tech == "augmentation":
+            aug = augment(current, factor=2.0)
+            result.extend(aug)
+            # Don't update current — augmentation changes duration, not pitch
+
+        elif tech == "diminution":
+            dim = diminish(current, factor=2.0)
+            result.extend(dim)
+
+        elif tech == "fragmentation":
+            frag_len = max(1, len(current) // 2)
+            frag = fragment(current, frag_len)
+            # Repeat the fragment twice to fill time
+            result.extend(frag)
+            result.extend(frag)
+
+        elif tech == "extension":
+            # Add one note: step up from the last pitched note
+            extended = list(current)
+            last_pitched = next((n for n in reversed(current) if n.pitch is not None), None)
+            if last_pitched:
+                last_semi = _semi(str(last_pitched.pitch))
+                step = rng.choice([1, 2])
+                new_semi = (last_semi + step) % 12
+                new_oct = last_pitched.octave + (1 if last_semi + step >= 12 else 0)
+                new_oct = max(2, min(7, new_oct))
+                extended.append(
+                    Note(
+                        _NOTE_NAMES[new_semi],
+                        new_oct,
+                        last_pitched.duration,
+                        velocity=last_pitched.velocity,
+                    )
+                )
+            current = extended
+            result.extend(current)
+
+        elif tech == "ornamentation":
+            current = generate_variation(current, "ornamental", key, seed=rng.randint(0, 2**31))
+            result.extend(current)
+
+        else:
+            raise ValueError(
+                f"Unknown technique {tech!r}. Choose: repeat, sequence, inversion, "
+                "retrograde, retrograde_inversion, augmentation, diminution, "
+                "fragmentation, extension, ornamentation"
+            )
+
+    return result

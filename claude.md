@@ -2019,3 +2019,26 @@ printable as PDF.
 - [x] 9 tests (all styles, bars_per_chord, empty/single chord, reproducibility)
 
 **Stats:** 390+ public functions. 2374 tests. 323 songs. 44 scales.
+
+## v132.0 — Countermelody + Style Transfer + Motif Development
+
+### generate_countermelody — intelligent countermelody generation
+- [x] `generate_countermelody(melody, progression, key, scale, style, seed)` → Note list
+- [x] 3 styles: independent (contrary motion), descant (above, sparser), bass_counter (below, root-heavy)
+- [x] Chord tones on strong beats, scale tones on weak beats, register separation
+- [x] 13 tests (all styles, multi-chord, rests, minor key, velocity, seed, edge cases)
+
+### restyle — genre style transfer
+- [x] `restyle(song, target_genre, key, bpm, seed)` → restyled Song
+- [x] 10 genre reharmonization profiles (triads→7ths for jazz, everything→dom7 for blues, etc.)
+- [x] Extracts chords from source, reharmonizes, runs auto_arrange with genre instruments/swing
+- [x] Key override with transposition, BPM override or genre-default
+- [x] 13 tests (all genres, key/bpm override, jazz↔pop round-trip, reharmonization validation)
+
+### develop_motif — motif-based composition
+- [x] `develop_motif(motif, techniques, key, repetitions, seed)` → extended passage
+- [x] 10 techniques: repeat, sequence, inversion, retrograde, retrograde_inversion, augmentation, diminution, fragmentation, extension, ornamentation
+- [x] Default development arc: repeat → sequence → inversion → fragmentation → augmentation → repeat
+- [x] 16 tests (all techniques, default arc, seed, empty, single note, chaining)
+
+**Stats:** 393+ public functions. 2416 tests. 323 songs. 44 scales.
