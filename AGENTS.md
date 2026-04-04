@@ -657,5 +657,9 @@ theory.py v116-v118 additions: scale_degree, scale_degree_name,
 chord_tones, is_chord_tone, filter_chord_tones, melodic_range, pitch_center.
 theory.py v125-v127 additions: parse_chord_symbol, parse_chord_symbols,
 smooth_melody, fill_leaps, chords_per_bar, quantize_harmonic_rhythm.
-375+ public functions. 2321 tests. v127 shipped.
-89 versions (v39-v127) across multiple sessions. Infrastructure items remain.
+theory.py v128-v130 additions: octave_distribution, register_spread,
+reverse_progression, rotate_progression, melody_summary.
+385+ public functions. 2338 tests. v130 shipped.
+92 versions (v39-v130) across multiple sessions.
+Next session: ambitious items in claude.md (genre classifier, full song
+generator, MusicXML export, theory.py refactor).

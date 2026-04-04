@@ -1,6 +1,30 @@
 # code-music — project state
 
-## Status: v127.0.0 — 323 songs, 2321 tests — chord symbol parser + melody smoothing + harmonic rhythm
+## Status: v130.0.0 — 323 songs, 2338 tests, 385+ theory functions, 44 scales
+
+## Current state (for new conversations)
+
+theory.py is ~10,500 lines with 385+ public functions. The module covers:
+chromatic harmony, advanced rhythm (tuplets through irrational meters),
+voice leading (SATB, constraints), modulation, Roman numerals, counterpoint
+(species 1/2, validation, grading), generative melody (contour-shaped,
+Markov, Mozart dice game), 44 scales (14 standard + 30 exotic), jazz
+voicings (Evans rootless, Tyner quartal, stride, 30+ voicing DB), form
+templates (5 forms + SongTemplate class), harmonic analysis (functional,
+cadences, tension curves, complexity, ambiguity, full markdown reports),
+genre-specific bass (jazz/funk/Latin), comping (5 styles), harmonization
+(thirds/sixths/chorale), dynamics, tempo curves (rit/accel/rubato),
+duration algebra, instrument techniques (hammer/pull/slide/palm mute),
+ear training + quizzes, remix (key change, double/half time), 6 groove
+templates, chord substitution + reharmonization (3 styles), orchestration
+(19 instruments), microtuning (just intonation, quarter tones), texture
+density control, lyrics-to-melody, enharmonic spelling, DSL parser,
+voice independence scoring, 20-pattern melodic DB, practice tools (click
+tracks, backing tracks, tempo trainer), corpus stats, Markov transitions,
+serial composition (tone rows, transforms, interval vectors), ambient
+generation (drone, evolving pad), pitch set operations, song fingerprinting
++ similarity, chord morphing, melody smoothing, and comprehensive stats
+(pitch/velocity/duration/rest/leap/repetition/octave/summary).
 
 ## What's built
 
@@ -1358,20 +1382,109 @@ Control chord density — expand or contract progressions.
 - [x] `quantize_harmonic_rhythm(progression, target)` — contract (sample) or expand (repeat) to target density
 - [x] 8 tests
 
-## v128.0+ Roadmap — Future Directions
+## v128-v130 Roadmap (just shipped)
 
-Ideas for continued development:
+- [x] `octave_distribution`, `register_spread` — notes per octave, distinct octave count
+- [x] `reverse_progression`, `rotate_progression` — retrograde + rotation of chord progressions
+- [x] `melody_summary` — one-call comprehensive diagnostic (11 metrics: counts, duration, range, pitch center, rest/leap/repetition ratios)
 
-- [ ] **Web playground**: browser-based REPL using Pyodide, play songs in the browser
-- [ ] **MusicXML export**: standard notation interchange for Sibelius/Finale/MuseScore
-- [ ] **Plugin architecture**: user-defined theory functions loadable at runtime
-- [ ] **Regression benchmarks**: track test suite performance across versions
-- [ ] **Interactive tutorial**: step-by-step Jupyter notebooks teaching music theory via code-music
-- [ ] **Wasm build**: compile theory.py to WebAssembly for zero-install browser use
-- [ ] **Genre classifier**: given a progression, predict the genre (jazz/pop/classical/blues)
-- [ ] **Voice range optimizer**: auto-transpose melodies to fit singer/instrument range
-- [ ] **Chord symbol formatter**: render (root, shape) as standard chord symbols (Cmaj7, Dm7b5, etc)
-- [ ] **Practice log**: track which exercises/patterns have been practiced and when
+## Next session: ambitious items for fresh context
+
+These are the big swings — each is a substantial project that benefits
+from a clean context window. Pick 1-3 per session.
+
+### Tier 1: Infrastructure (high impact, foundation work)
+
+**Song Builder DSL v2 — Full Language**
+The current `song_from_dsl` is basic (chords + melody lines). Build a
+real mini-language with BPM, time signature, instrument assignment,
+effects, and multi-track support. Goal: write an entire song in 20
+lines of DSL that compiles to a full Song object with effects.
+
+**MusicXML Export**
+Standard notation interchange. `to_musicxml(song)` → valid MusicXML
+that opens in MuseScore/Finale/Sibelius. This makes code-music output
+readable by every musician on earth. Requires: part/measure/note
+mapping, clef selection, key/time signature, dynamics.
+
+**Genre Classifier**
+`classify_genre(progression)` → predicted genre with confidence.
+Train on the 323-song corpus + the 10 genre templates. Features:
+root distribution, shape distribution, complexity score, tension
+curve shape, chord transition patterns. Simple decision tree or
+weighted scoring — no ML dependencies needed.
+
+### Tier 2: Composition Intelligence (creative features)
+
+**Full Song Generator**
+`generate_song(genre, key, bpm, sections, seed)` → complete Song
+object with multiple tracks, drums, bass, chords, melody, form,
+dynamics, and effects. Combines: generate_progression, backing_track,
+generate_scale_melody, harmonize_melody, comp_pattern, density_plan,
+SongTemplate, crescendo/decrescendo. The one-function "make me a song."
+
+**Intelligent Countermelody Generator**
+Given a melody and progression, generate a countermelody that:
+respects voice independence (contrary motion preferred), stays in
+key, targets chord tones on strong beats, and has its own contour
+shape. Combines: species_counterpoint rules, chord_tone targeting,
+contour shaping, voice independence scoring.
+
+**Arrangement Engine**
+`auto_arrange(song, style)` — take a lead sheet (chords + melody)
+and produce a full arrangement: assign instruments, add bass line,
+generate drum pattern, create comping, plan density curve, insert
+fills at section boundaries, add intro/outro. Style presets:
+jazz combo, rock band, orchestral, electronic, singer-songwriter.
+
+### Tier 3: Analysis & Education (knowledge tools)
+
+**Comprehensive Song Analyzer**
+`full_analysis(song)` → multi-page markdown report covering:
+form detection, key centers, modulations, cadences, tension curve,
+harmonic complexity curve, rhythmic density profile, melodic range,
+phrase structure, voice independence (if multi-track), instrument
+usage, style classification. The theory textbook analysis, automated.
+
+**Interactive Theory Course**
+A structured sequence of exercises that teaches music theory through
+code-music. Each lesson: explanation, example, exercise, auto-grading.
+Topics: intervals → scales → chords → progressions → voice leading →
+counterpoint → form → analysis. Uses: ear_training, quiz_intervals,
+quiz_chords, scale_exercise, memory_game, grade_counterpoint.
+
+### Tier 4: External Integration (ecosystem)
+
+**Web Playground (Pyodide)**
+Bundle theory.py for the browser. Users type code-music Python in a
+web editor, hear audio output instantly. No install. Uses Pyodide
+for Python-in-browser, Web Audio API for playback. Could be a
+GitHub Pages site.
+
+**MIDI Round-Trip Enhancement**
+The existing MIDI export works. Enhance: import MIDI → Song with
+velocity, timing, multi-track. Enable: record in a DAW, import
+into code-music, analyze, transform, export back. The bridge
+between code-music and every other music tool.
+
+### Tier 5: Quality & Maintenance
+
+**theory.py Refactor**
+theory.py is 10,500 lines. Consider splitting into submodules:
+`theory/harmony.py`, `theory/rhythm.py`, `theory/melody.py`,
+`theory/analysis.py`, `theory/generation.py`, `theory/serial.py`.
+Re-export from `theory/__init__.py` for backward compat. This makes
+the codebase navigable and each module independently testable.
+
+**Test Organization**
+80+ test files in `tests/`. Group by domain: `tests/harmony/`,
+`tests/rhythm/`, `tests/analysis/`, etc. Add parametrized tests
+for functions that work across all 44 scales and all 12 keys.
+
+**Pre-existing LSP Errors**
+engine.py, effects.py, synth.py, composition.py, export.py all have
+Pyright type errors (numpy type stubs). Not runtime bugs, but messy.
+Fix with targeted type annotations or `# type: ignore` comments.
 
 ## v9.0 Roadmap — Gallery & Showcase
 

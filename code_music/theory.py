@@ -10426,6 +10426,170 @@ def quantize_harmonic_rhythm(
         return [progression[i] for i in range(0, len(progression), step)][:target_chords_per_bar]
 
 
+# ---------------------------------------------------------------------------
+# Octave distribution (v128.0)
+# ---------------------------------------------------------------------------
+
+
+def octave_distribution(notes: list[Note]) -> dict[int, int]:
+    """Count notes per octave.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Dict mapping octave number → count, sorted by octave.
+    """
+    counts: dict[int, int] = {}
+    for n in notes:
+        if n.pitch is not None:
+            counts[n.octave] = counts.get(n.octave, 0) + 1
+    return dict(sorted(counts.items()))
+
+
+def register_spread(notes: list[Note]) -> int:
+    """Count how many distinct octaves a melody spans.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Number of distinct octaves used.
+    """
+    return len(octave_distribution(notes))
+
+
+# ---------------------------------------------------------------------------
+# Chord progression reversal & rotation (v129.0)
+# ---------------------------------------------------------------------------
+
+
+def reverse_progression(
+    progression: list[tuple[str, str]],
+) -> list[tuple[str, str]]:
+    """Reverse a chord progression.
+
+    The retrograde of harmony — play the chords backwards. Useful for
+    creating B sections that mirror A sections.
+
+    Args:
+        progression: Input progression.
+
+    Returns:
+        Reversed progression.
+    """
+    return list(reversed(progression))
+
+
+def rotate_progression(
+    progression: list[tuple[str, str]],
+    steps: int = 1,
+) -> list[tuple[str, str]]:
+    """Rotate a chord progression by N steps.
+
+    Moves the first N chords to the end. Starting on a different
+    chord of the same loop creates a different harmonic feeling
+    without writing new material.
+
+    Args:
+        progression: Input progression.
+        steps:       Number of positions to rotate.
+
+    Returns:
+        Rotated progression.
+    """
+    if not progression:
+        return []
+    n = steps % len(progression)
+    return progression[n:] + progression[:n]
+
+
+# ---------------------------------------------------------------------------
+# Note list statistics summary (v130.0)
+# ---------------------------------------------------------------------------
+
+
+def melody_summary(notes: list[Note]) -> dict:
+    """Generate a comprehensive statistical summary of a melody.
+
+    Combines multiple analysis functions into one call — the one-stop
+    diagnostic for any note list.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        Dict with: note_count, sounding_count, rest_count, total_duration,
+        unique_pitches, range, avg_pitch, rest_ratio, leap_step_ratio,
+        repetition_ratio, pitch_center.
+    """
+    sounding = [n for n in notes if n.pitch is not None]
+    rests = [n for n in notes if n.pitch is None]
+    total_dur = sum(n.duration for n in notes)
+
+    # Range
+    if sounding:
+        absolutes = [_semi(str(n.pitch)) + n.octave * 12 for n in sounding]
+        low = min(absolutes)
+        high = max(absolutes)
+        avg = sum(absolutes) / len(absolutes)
+        range_semi = high - low
+    else:
+        low = high = 0
+        avg = 0.0
+        range_semi = 0
+
+    # Unique pitches
+    unique = len({(str(n.pitch), n.octave) for n in sounding})
+
+    # Rest ratio
+    rest_dur = sum(n.duration for n in rests)
+    r_ratio = round(rest_dur / max(total_dur, 0.001), 4)
+
+    # Leap/step
+    leaps = 0
+    steps = 0
+    repeats = 0
+    total_pairs = 0
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        a = _semi(str(notes[i - 1].pitch)) + notes[i - 1].octave * 12
+        b = _semi(str(notes[i].pitch)) + notes[i].octave * 12
+        diff = abs(b - a)
+        total_pairs += 1
+        if diff == 0:
+            repeats += 1
+        elif diff >= 3:
+            leaps += 1
+        else:
+            steps += 1
+
+    ls_ratio = round(leaps / max(steps, 1), 3)
+    rep_ratio = round(repeats / max(total_pairs, 1), 4)
+
+    # Pitch center
+    if sounding:
+        center_abs = round(avg)
+        center = (_NOTE_NAMES[center_abs % 12], center_abs // 12)
+    else:
+        center = None
+
+    return {
+        "note_count": len(notes),
+        "sounding_count": len(sounding),
+        "rest_count": len(rests),
+        "total_duration": round(total_dur, 4),
+        "unique_pitches": unique,
+        "range_semitones": range_semi,
+        "avg_pitch": round(avg, 1),
+        "rest_ratio": r_ratio,
+        "leap_step_ratio": ls_ratio,
+        "repetition_ratio": rep_ratio,
+        "pitch_center": center,
+    }
+
+
 class Change:
     """A single structural change between two songs."""
 
