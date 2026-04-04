@@ -34,7 +34,15 @@ code_music/         Python package
   pattern.py        Pattern — mini-notation, transforms, polymeter
   composition.py    Markov melody, named sections, ASCII lead sheet
   serialization.py  Song JSON round-trip (song_to_json/song_from_json)
-  theory.py        Chord-scale theory, bass/drum generators, song diff/patch
+  theory/           Music theory intelligence — 390+ functions across 7 submodules
+    __init__.py     Re-exports everything for backward compat
+    _core.py        Shared constants, scales, chords, note utilities
+    harmony.py      Chord-scale theory, voicings, voice leading, modulation
+    rhythm.py       Rhythmic patterns, displacement, meters, groove, quantization
+    melody.py       Melody generation, contour, patterns, smoothing, dynamics
+    analysis.py     Analysis, statistics, fingerprinting, genre classification
+    generation.py   Bass/drum generators, full song generator, arrangement engine
+    serial.py       Tone rows, pitch class sets, post-tonal operations
   automation.py     Automation curves, ModMatrix, song_overlay/append/extract
   mastering.py      LUFS metering, true peak limiting, dithering, stereo analysis
   export.py         export_wav / export_flac / export_mp3 / export_ogg
@@ -661,5 +669,84 @@ theory.py v128-v130 additions: octave_distribution, register_spread,
 reverse_progression, rotate_progression, melody_summary.
 385+ public functions. 2338 tests. v130 shipped.
 92 versions (v39-v130) across multiple sessions.
-Next session: ambitious items in claude.md (genre classifier, full song
-generator, MusicXML export, theory.py refactor).
+
+## v131.0 — Theory Refactor + Genre Classifier + Full Song Generator + Arrangement Engine
+
+**theory.py refactor (biggest structural change in project history):**
+Split the monolithic 10,706-line `theory.py` into 7 submodules under
+`code_music/theory/`. All 287 public names re-exported from `__init__.py`
+for 100% backward compatibility — zero consumer changes needed.
+
+Module sizes: _core (768), harmony (2395), rhythm (1011), melody (2259),
+analysis (2130+), generation (2384+), serial (168). Total: ~11,700 lines
+(slight increase from headers/imports). Direct submodule imports now work:
+`from code_music.theory.harmony import chord_scale`.
+
+**classify_genre(progression, bpm, swing):**
+Rule-based genre classification with 10 genre profiles (blues, jazz, pop,
+rock, classical, r&b, latin, ambient, electronic, metal). Weighted scoring
+across 6 features: quality distribution, root motion, progression length,
+tension profile, BPM range, swing amount. Returns genre, confidence, all
+scores, and extracted features. No ML deps.
+
+**generate_full_song(genre, key, bpm, sections, seed):**
+One-call complete song generation. Produces a multi-track Song with drums,
+bass, chords, and melody. Supports 7 genres (jazz/pop/rock/blues/classical/
+electronic/ambient). Uses song_form for structure, generate_progression for
+chords, generate_bass_line + generate_drums + generate_scale_melody for
+tracks, dynamics_curve per section type, humanize_velocity for feel.
+
+**auto_arrange(progression, key, bpm, style, seed):**
+Takes a lead sheet (chord progression) and produces a full arrangement.
+4 style presets: jazz_combo, rock_band, orchestral, electronic. Each assigns
+instruments, bass line style, drum genre, comping, density curves, and lead
+melody. Orchestral adds sparse brass accents based on density planning.
+
+390+ public functions. 2374 tests. 323 songs. v131 shipped.
+
+## Next session roadmap
+
+### Tier 1: Ship immediately (single session each)
+- **MusicXML Export v2** — `to_musicxml(song)` that opens in MuseScore/Finale.
+  Clear scope, one module, big ecosystem reach.
+- **Song Builder DSL v2** — real mini-language with BPM, time sig, instruments,
+  effects, multi-track. "Write a song in 20 lines of DSL."
+- **Intelligent Countermelody** — given melody + progression, generate a
+  countermelody respecting voice independence and chord tones.
+
+### Tier 2: Creative extensions
+- **Style Transfer** — `restyle(song, target_genre)` — reharmonize, change
+  instruments, adjust rhythm to morph a pop song into jazz or vice versa.
+  Uses classify_genre + auto_arrange + reharmonize.
+- **Motif-Based Composition** — `develop_motif(motif, techniques, length)` —
+  take a short motif and build a full piece using augmentation, diminution,
+  inversion, sequence, fragmentation. Classical composition process automated.
+- **Chord Voicing AI** — `voice_progression(prog, style)` — given a progression,
+  produce pianistic voicings that minimize hand movement. Styles: classical,
+  jazz rootless, quartal, drop2. More intelligent than current voicing functions.
+
+### Tier 3: Analysis & discovery
+- **Corpus Genre Map** — run classify_genre on all 323 songs, build a genre
+  distribution report, find misclassified songs, validate classifier accuracy.
+- **Harmonic Language Model** — train on the 323-song corpus to build a
+  markov chain of chord transitions per genre. `suggest_progression(genre, length)`
+  that sounds idiomatic rather than template-based.
+- **Tension Narrative** — `tension_story(song)` — describe a song's tension
+  arc in natural language: "opens with calm I-IV motion, builds through
+  secondary dominants, climaxes at bar 24 with augmented sixth, resolves."
+
+### Tier 4: Platform & ecosystem
+- **Web Playground (Pyodide)** — theory module in the browser. Type code,
+  hear audio. No install. GitHub Pages.
+- **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing,
+  multi-track. Bridge between code-music and every DAW.
+- **Live Coding Mode** — `code-music repl` — interactive REPL that plays
+  notes/chords as you type them. Hot-reload song scripts on save.
+
+### Tier 5: Quality
+- **Test Organization** — group 146 test files by domain (harmony/, rhythm/,
+  analysis/, etc). Add parametrized tests across all 44 scales × 12 keys.
+- **LSP Error Cleanup** — fix pre-existing Pyright type errors in engine.py,
+  effects.py, synth.py, composition.py, export.py. Numpy type stubs.
+- **Performance Profiling** — profile song rendering pipeline, identify
+  bottlenecks. Synth is likely the hotspot. Consider numpy vectorization.

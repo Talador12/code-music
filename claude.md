@@ -1987,3 +1987,35 @@ printable as PDF.
 - [ ] `examples/24_notation.py` — generate tab + SVG + PDF
 - [ ] 5 songs with notation exports (225 total)
 - [ ] Tag v26.0.0 release
+
+## v131.0 — Theory Refactor + Genre Classifier + Song Generator + Arrangement Engine
+
+### theory.py → theory/ package (structural refactor)
+- [x] Split 10,706-line `theory.py` into 7 submodules: `_core`, `harmony`, `rhythm`, `melody`, `analysis`, `generation`, `serial`
+- [x] `theory/__init__.py` re-exports all 287 public names for backward compat
+- [x] All 2338 existing tests pass with zero consumer changes
+- [x] Direct submodule imports now work: `from code_music.theory.harmony import chord_scale`
+
+### classify_genre — rule-based genre classifier
+- [x] `classify_genre(progression, bpm, swing)` → predicted genre with confidence
+- [x] 10 genre profiles: blues, jazz, pop, rock, classical, r&b, latin, ambient, electronic, metal
+- [x] 6 features: quality distribution, root motion, progression length, tension profile, BPM, swing
+- [x] Returns: genre, confidence (0-1), all genre scores, extracted feature dict
+- [x] 16 tests (pop, blues, jazz, ambient, classical, edge cases, BPM/swing influence)
+
+### generate_full_song — one-call complete song generation
+- [x] `generate_full_song(genre, key, bpm, sections, seed)` → multi-track Song
+- [x] 7 genres: jazz, pop, rock, blues, classical, electronic, ambient
+- [x] Generates: chord track, bass line, drum pattern, scale melody per section
+- [x] Genre-appropriate: walking bass for jazz, no drums for ambient, 12-bar for blues
+- [x] Section-aware dynamics: chorus louder, intro/outro softer
+- [x] 11 tests (all genres, custom sections, seed reproducibility, content validation)
+
+### auto_arrange — arrangement engine
+- [x] `auto_arrange(progression, key, bpm, style, bars_per_chord, seed)` → arranged Song
+- [x] 4 style presets: jazz_combo, rock_band, orchestral, electronic
+- [x] Assigns instruments, bass lines, drum patterns, comping, lead melody
+- [x] Density-aware orchestration: brass accents follow density curve
+- [x] 9 tests (all styles, bars_per_chord, empty/single chord, reproducibility)
+
+**Stats:** 390+ public functions. 2374 tests. 323 songs. 44 scales.
