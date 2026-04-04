@@ -521,6 +521,9 @@ Eight releases shipped in a single conversation:
 | v104.0 | Pitch set ops: union, intersection, complement, transpose | 2132 | 323 | — |
 | v105.0 | Density analysis: density_profile, density_contrast | 2140 | 323 | — |
 | v106.0 | Harmonic ambiguity: ambiguity_score, key_certainty | 2148 | 323 | — |
+| v107.0 | Chord symbol formatter: format_chord, format_progression | 2160 | 323 | — |
+| v108.0 | Voice range: fit_to_range, auto_octave | 2169 | 323 | — |
+| v109.0 | Interval sequence: interval_sequence, common_intervals | 2177 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -628,5 +631,8 @@ note_probability, next_note_distribution, morph_chord, chord_interpolation.
 theory.py v104-v106 additions: pc_set, pc_union, pc_intersection, pc_complement,
 transpose_set, density_profile, density_contrast, ambiguity_score, key_certainty.
 305+ public functions across theory.py + composition.py. 323 songs, 44 scales.
-2148 tests. v106 shipped. Pitch set theory, density analysis, and key ambiguity.
+theory.py v107-v109 additions: format_chord, format_progression,
+fit_to_range, auto_octave, interval_sequence, common_intervals.
+315+ public functions across theory.py + composition.py. 323 songs, 44 scales.
+2177 tests. v109 shipped. Chord symbols, voice range, and interval analysis.
 Infrastructure items remain.

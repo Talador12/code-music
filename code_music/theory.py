@@ -9271,6 +9271,177 @@ def key_certainty(
     return {"key": estimated, "confidence": confidence, "ambiguity": amb}
 
 
+# ---------------------------------------------------------------------------
+# Chord symbol formatter (v107.0)
+# ---------------------------------------------------------------------------
+
+_SHAPE_SYMBOLS = {
+    "maj": "",
+    "min": "m",
+    "dim": "dim",
+    "aug": "+",
+    "dom7": "7",
+    "maj7": "maj7",
+    "min7": "m7",
+    "dim7": "dim7",
+    "aug7": "+7",
+    "sus4": "sus4",
+    "sus2": "sus2",
+    "dom9": "9",
+    "min9": "m9",
+    "maj9": "maj9",
+    "min11": "m11",
+    "dom13": "13",
+}
+
+
+def format_chord(root: str, shape: str) -> str:
+    """Format a (root, shape) tuple as a standard chord symbol.
+
+    Args:
+        root:  Chord root.
+        shape: Chord quality.
+
+    Returns:
+        Standard chord symbol string (e.g. 'Cmaj7', 'Dm7', 'G7', 'F#dim').
+    """
+    suffix = _SHAPE_SYMBOLS.get(shape, shape)
+    return f"{root}{suffix}"
+
+
+def format_progression(
+    progression: list[tuple[str, str]],
+    separator: str = " | ",
+) -> str:
+    """Format a full progression as a readable chord chart line.
+
+    Args:
+        progression: List of (root, shape) tuples.
+        separator:   String between chords.
+
+    Returns:
+        Formatted string (e.g. 'Cmaj7 | Dm7 | G7 | Cmaj7').
+    """
+    return separator.join(format_chord(r, s) for r, s in progression)
+
+
+# ---------------------------------------------------------------------------
+# Voice range optimizer (v108.0)
+# ---------------------------------------------------------------------------
+
+
+def fit_to_range(
+    notes: list[Note],
+    low: int = 48,
+    high: int = 72,
+) -> list[Note]:
+    """Transpose notes to fit within a pitch range by octave shifting.
+
+    Each note is individually octave-shifted to the closest octave
+    placement that falls within [low, high]. Rests pass through.
+
+    Args:
+        notes: Input notes.
+        low:   Lowest allowed absolute pitch (C3 = 48).
+        high:  Highest allowed absolute pitch (C5 = 72).
+
+    Returns:
+        Notes with octaves adjusted to fit range.
+    """
+    result: list[Note] = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(Note.rest(n.duration))
+            continue
+        pc = _semi(str(n.pitch))
+        current_abs = pc + n.octave * 12
+        if low <= current_abs <= high:
+            result.append(n)
+            continue
+        # Find closest octave within range
+        best_oct = n.octave
+        best_dist = abs(current_abs - (low + high) // 2)
+        for o in range(0, 10):
+            candidate = pc + o * 12
+            if low <= candidate <= high:
+                dist = abs(candidate - (low + high) // 2)
+                if dist < best_dist:
+                    best_dist = dist
+                    best_oct = o
+        result.append(Note(n.pitch, best_oct, n.duration, velocity=n.velocity))
+    return result
+
+
+def auto_octave(
+    notes: list[Note],
+    target_octave: int = 4,
+) -> list[Note]:
+    """Shift all notes to center around a target octave.
+
+    Calculates the average octave and shifts the entire melody.
+
+    Args:
+        notes:         Input notes.
+        target_octave: Desired center octave.
+
+    Returns:
+        Octave-shifted notes.
+    """
+    sounding = [n for n in notes if n.pitch is not None]
+    if not sounding:
+        return list(notes)
+    avg_oct = sum(n.octave for n in sounding) / len(sounding)
+    shift = round(target_octave - avg_oct)
+    return [
+        Note(n.pitch, n.octave + shift, n.duration, velocity=n.velocity)
+        if n.pitch is not None
+        else Note.rest(n.duration)
+        for n in notes
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Interval sequence analysis (v109.0)
+# ---------------------------------------------------------------------------
+
+
+def interval_sequence(notes: list[Note]) -> list[int]:
+    """Extract the sequence of melodic intervals (in semitones) from a note list.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        List of signed integers: positive = ascending, negative = descending.
+    """
+    result: list[int] = []
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        a = _semi(str(notes[i - 1].pitch)) + notes[i - 1].octave * 12
+        b = _semi(str(notes[i].pitch)) + notes[i].octave * 12
+        result.append(b - a)
+    return result
+
+
+def common_intervals(notes: list[Note], top_n: int = 5) -> list[tuple[int, int]]:
+    """Find the most frequently used melodic intervals.
+
+    Args:
+        notes: Input melody.
+        top_n: Number of top intervals to return.
+
+    Returns:
+        List of (interval_semitones, count) sorted by frequency.
+    """
+    seq = interval_sequence(notes)
+    counts: dict[int, int] = {}
+    for iv in seq:
+        counts[iv] = counts.get(iv, 0) + 1
+    sorted_intervals = sorted(counts.items(), key=lambda x: -x[1])
+    return sorted_intervals[:top_n]
+
+
 class Change:
     """A single structural change between two songs."""
 

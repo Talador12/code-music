@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v106.0.0 — 323 songs, 2148 tests — pitch sets + density + ambiguity
+## Status: v109.0.0 — 323 songs, 2177 tests — chord formatting + voice range + interval analysis
 
 ## What's built
 
@@ -1235,7 +1235,32 @@ How clearly is a progression in one key? Measure the gap.
 - [x] `key_certainty(progression)` — {key, confidence (1-ambiguity), ambiguity}
 - [x] 8 tests for diatonic/chromatic comparison, range, empty, confidence+ambiguity sum
 
-## v107.0+ Roadmap — Future Directions
+## v107.0 Roadmap — Chord Symbol Formatter
+
+Standard chord symbol rendering — Cmaj7, Dm7b5, G7, etc.
+
+- [x] `format_chord(root, shape)` — render (root, shape) as standard chord symbol
+- [x] `format_progression(progression, separator)` — render full progression as chart line
+- [x] `_SHAPE_SYMBOLS` — 15 shape-to-symbol mappings (maj→"", min→"m", dom7→"7", etc)
+- [x] 12 tests for all shapes, sharp roots, progression formatting
+
+## v108.0 Roadmap — Voice Range Optimizer
+
+Auto-transpose to fit singer/instrument ranges.
+
+- [x] `fit_to_range(notes, low, high)` — octave-shift each note to fit [low, high] range
+- [x] `auto_octave(notes, target_octave)` — shift entire melody to center on target octave
+- [x] 9 tests for in-range, too-high, too-low, rest passthrough, pitch preservation
+
+## v109.0 Roadmap — Interval Sequence Analysis
+
+Extract and analyze melodic interval patterns.
+
+- [x] `interval_sequence(notes)` — signed semitone intervals between consecutive notes
+- [x] `common_intervals(notes, top_n)` — most frequent intervals, sorted by count
+- [x] 8 tests for ascending, descending, rests, octave jumps, frequency ranking
+
+## v110.0+ Roadmap — Future Directions
 
 Ideas for continued development:
 
