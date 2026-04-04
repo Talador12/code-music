@@ -524,6 +524,9 @@ Eight releases shipped in a single conversation:
 | v107.0 | Chord symbol formatter: format_chord, format_progression | 2160 | 323 | — |
 | v108.0 | Voice range: fit_to_range, auto_octave | 2169 | 323 | — |
 | v109.0 | Interval sequence: interval_sequence, common_intervals | 2177 | 323 | — |
+| v110.0 | Contour matching: contour_string, contour_match | 2186 | 323 | — |
+| v111.0 | Rhythm matching: rhythm_string, rhythm_match | 2194 | 323 | — |
+| v112.0 | Complexity curve + contrast | 2201 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -634,5 +637,8 @@ transpose_set, density_profile, density_contrast, ambiguity_score, key_certainty
 theory.py v107-v109 additions: format_chord, format_progression,
 fit_to_range, auto_octave, interval_sequence, common_intervals.
 315+ public functions across theory.py + composition.py. 323 songs, 44 scales.
-2177 tests. v109 shipped. Chord symbols, voice range, and interval analysis.
+theory.py v110-v112 additions: contour_string, contour_match,
+rhythm_string, rhythm_match, complexity_curve, complexity_contrast.
+325+ public functions across theory.py + composition.py. 323 songs.
+2201 tests. v112 shipped. Pattern matching and complexity analysis.
 Infrastructure items remain.

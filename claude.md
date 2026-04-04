@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v109.0.0 — 323 songs, 2177 tests — chord formatting + voice range + interval analysis
+## Status: v112.0.0 — 323 songs, 2201 tests — contour matching + rhythm matching + complexity curves
 
 ## What's built
 
@@ -1260,7 +1260,31 @@ Extract and analyze melodic interval patterns.
 - [x] `common_intervals(notes, top_n)` — most frequent intervals, sorted by count
 - [x] 8 tests for ascending, descending, rests, octave jumps, frequency ranking
 
-## v110.0+ Roadmap — Future Directions
+## v110.0 Roadmap — Melodic Contour Matching
+
+Compare melodies by shape, not pitch — transposition-invariant similarity.
+
+- [x] `contour_string(notes)` — encode melody as U/D/R string (up/down/repeat)
+- [x] `contour_match(melody_a, melody_b)` — contour similarity score (0.0-1.0)
+- [x] 9 tests for ascending, descending, mixed, transposed, opposite, empty
+
+## v111.0 Roadmap — Rhythm Pattern Matching
+
+Compare melodies by when notes happen, not what they are.
+
+- [x] `rhythm_string(notes, grid)` — encode rhythm as X/. string (note/rest per grid slot)
+- [x] `rhythm_match(melody_a, melody_b, grid)` — rhythmic similarity score (0.0-1.0)
+- [x] 8 tests for all-notes, rests, longer durations, pitch-independent, empty
+
+## v112.0 Roadmap — Progression Complexity Curve
+
+Track harmonic complexity over time with sliding windows.
+
+- [x] `complexity_curve(progression, key, window)` — sliding-window complexity score per chord position
+- [x] `complexity_contrast(progression, key)` — second-half/first-half complexity ratio
+- [x] 7 tests for length, range, chromatic vs diatonic, single chord, steady
+
+## v113.0+ Roadmap — Future Directions
 
 Ideas for continued development:
 

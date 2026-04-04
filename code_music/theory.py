@@ -9442,6 +9442,172 @@ def common_intervals(notes: list[Note], top_n: int = 5) -> list[tuple[int, int]]
     return sorted_intervals[:top_n]
 
 
+# ---------------------------------------------------------------------------
+# Melodic contour matching (v110.0)
+# ---------------------------------------------------------------------------
+
+
+def contour_string(notes: list[Note]) -> str:
+    """Encode a melody's contour as a string: U=up, D=down, R=repeat.
+
+    The contour is the shape of the melody stripped of exact pitches.
+    Two melodies with the same contour string move in the same
+    directions — they're melodically related even if in different keys.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        String of U/D/R characters.
+    """
+    result: list[str] = []
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        a = _semi(str(notes[i - 1].pitch)) + notes[i - 1].octave * 12
+        b = _semi(str(notes[i].pitch)) + notes[i].octave * 12
+        if b > a:
+            result.append("U")
+        elif b < a:
+            result.append("D")
+        else:
+            result.append("R")
+    return "".join(result)
+
+
+def contour_match(melody_a: list[Note], melody_b: list[Note]) -> float:
+    """Compare two melodies by contour similarity (0.0-1.0).
+
+    Two melodies that move in the same directions at the same positions
+    score 1.0, regardless of actual pitches or key.
+
+    Args:
+        melody_a: First melody.
+        melody_b: Second melody.
+
+    Returns:
+        Similarity score 0.0-1.0.
+    """
+    ca = contour_string(melody_a)
+    cb = contour_string(melody_b)
+    if not ca or not cb:
+        return 0.0
+    max_len = max(len(ca), len(cb))
+    matches = sum(1 for a, b in zip(ca, cb) if a == b)
+    return round(matches / max_len, 3)
+
+
+# ---------------------------------------------------------------------------
+# Rhythm pattern matching (v111.0)
+# ---------------------------------------------------------------------------
+
+
+def rhythm_string(notes: list[Note], grid: float = 0.25) -> str:
+    """Encode a rhythm as a string: X=note, .=rest, each char = one grid slot.
+
+    The rhythmic skeleton of a melody — strip away pitch and dynamics,
+    keep only "when does something happen?"
+
+    Args:
+        notes: Input notes.
+        grid:  Grid resolution in beats per slot.
+
+    Returns:
+        String of X and . characters.
+    """
+    result: list[str] = []
+    for n in notes:
+        slots = max(1, round(n.duration / grid))
+        if n.pitch is not None:
+            result.append("X")
+            result.extend("." * (slots - 1))
+        else:
+            result.extend("." * slots)
+    return "".join(result)
+
+
+def rhythm_match(melody_a: list[Note], melody_b: list[Note], grid: float = 0.25) -> float:
+    """Compare two melodies by rhythmic similarity (0.0-1.0).
+
+    Compares the X/. patterns. Two melodies that hit notes at the
+    same positions score 1.0, regardless of pitch.
+
+    Args:
+        melody_a: First melody.
+        melody_b: Second melody.
+        grid:     Grid resolution.
+
+    Returns:
+        Similarity score 0.0-1.0.
+    """
+    ra = rhythm_string(melody_a, grid)
+    rb = rhythm_string(melody_b, grid)
+    if not ra or not rb:
+        return 0.0
+    max_len = max(len(ra), len(rb))
+    matches = sum(1 for a, b in zip(ra, rb) if a == b)
+    return round(matches / max_len, 3)
+
+
+# ---------------------------------------------------------------------------
+# Progression complexity curve (v112.0)
+# ---------------------------------------------------------------------------
+
+
+def complexity_curve(
+    progression: list[tuple[str, str]],
+    key: str = "C",
+    window: int = 4,
+) -> list[int]:
+    """Compute a sliding-window complexity score across a progression.
+
+    Each position gets the complexity_score of the surrounding `window`
+    chords. Shows where the harmony gets dense or simple over time.
+
+    Args:
+        progression: Chord progression.
+        key:         Key context.
+        window:      Number of chords per window.
+
+    Returns:
+        List of complexity scores, one per chord position.
+    """
+    if not progression:
+        return []
+    result: list[int] = []
+    for i in range(len(progression)):
+        start = max(0, i - window // 2)
+        end = min(len(progression), start + window)
+        chunk = progression[start:end]
+        result.append(complexity_score(chunk, key))
+    return result
+
+
+def complexity_contrast(
+    progression: list[tuple[str, str]],
+    key: str = "C",
+) -> float:
+    """Ratio of second-half complexity to first-half complexity.
+
+    > 1.0 = gets more complex over time (builds).
+    < 1.0 = gets simpler (resolves).
+    ~1.0 = steady complexity.
+
+    Args:
+        progression: Chord progression.
+        key:         Key context.
+
+    Returns:
+        Complexity contrast ratio.
+    """
+    if len(progression) < 2:
+        return 1.0
+    mid = len(progression) // 2
+    first = complexity_score(progression[:mid], key)
+    second = complexity_score(progression[mid:], key)
+    return round(second / max(first, 1), 3)
+
+
 class Change:
     """A single structural change between two songs."""
 

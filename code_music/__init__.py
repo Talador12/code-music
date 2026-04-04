@@ -195,9 +195,13 @@ from .theory import (
     common_intervals,
     comp_pattern,
     compare_progressions,
+    complexity_contrast,
+    complexity_curve,
     complexity_score,
     consonance_score,
     continue_in_style,
+    contour_match,
+    contour_string,
     contrary_motion_ratio,
     corpus_stats,
     count_pitch_classes,
@@ -321,6 +325,8 @@ from .theory import (
     respell_note,
     retrograde_rhythm,
     rhythm_changes,
+    rhythm_match,
+    rhythm_string,
     rhythmic_density,
     rootless_a,
     rootless_b,
@@ -768,6 +774,15 @@ __all__ = [
     # v109.0 — interval sequence
     "interval_sequence",
     "common_intervals",
+    # v110.0 — contour matching
+    "contour_string",
+    "contour_match",
+    # v111.0 — rhythm matching
+    "rhythm_string",
+    "rhythm_match",
+    # v112.0 — complexity curve
+    "complexity_curve",
+    "complexity_contrast",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",
