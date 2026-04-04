@@ -453,6 +453,74 @@ Eight releases shipped in a single conversation:
 | v36.0 | Lydian, mixolydian, modal interchange | 1340 | 263 | — |
 | v37.0 | Dorian, phrygian, tritone sub | 1349 | 265 | — |
 | v38.0 | Secondary dominant, cadences | 1357 | 266 | — |
+| v39.0 | Neapolitan, augmented sixth, picardy third | 1375 | 269 | — |
+| v40.0 | Quintuplet, septuplet, polyrhythm, metric mod | 1392 | 272 | — |
+| v41.0 | 12-bar blues, rhythm changes, Coltrane, Andalusian | 1422 | 272 | — |
+| v42.0 | SATB voice leading, parallel 5th check | 1432 | 273 | — |
+| v43.0 | Pivot chords, modulation path, direct/pivot mod | 1451 | 275 | — |
+| v44.0 | Roman numeral parser, progression_from_roman | 1481 | 277 | — |
+| v45.0 | Displacement, phase shift, hemiola, aksak | 1499 | 280 | — |
+| v46.0 | Species counterpoint, classify_interval | 1518 | 281 | — |
+| v47.0 | Scale melody generator, rhythm patterns | 1542 | 283 | — |
+| v48.0 | Rootless A/B, quartal, stride voicings | 1557 | 285 | — |
+| v49.0 | Song form templates (pop/aaba/blues/edm/rondo) | 1566 | 286 | — |
+| v50.0 | Functional analysis, cadence detection, key est. | 1587 | 287 | — |
+| v51.0 | Ear training intervals/chords, scale exercises | 1605 | 289 | — |
+| v52.0 | Tension curves, tension_at | 1614 | 290 | — |
+| v53.0 | Instrument ranges, octave doubling, string quartet | 1633 | 292 | — |
+| v54.0 | Augment, diminish, fragment, motif_similarity | 1652 | 293 | — |
+| v55.0 | (MIDI already existed — skipped) | — | — | — |
+| v56.0 | Scale atlas: 30 exotic scales, search, brightness, modes | 1671 | 296 | — |
+| v57.0 | (Real-time performance — skipped, requires sounddevice) | — | — | — |
+| v58.0 | Lyric rhythm: count_syllables, stress_pattern, text_to_melody | 1690 | 297 | — |
+| v59.0 | Groove templates: 6 grooves, apply_groove, extract_groove | 1703 | 298 | — |
+| v60.0 | Chord substitution: suggest_substitutions, reharmonize | 1712 | 299 | — |
+| v61.0 | Song fingerprint, cosine similarity | 1722 | 299 | — |
+| v62.0 | Counterpoint validator, grade_counterpoint | 1733 | 299 | — |
+| v63.0 | Chord tone targeting, approach patterns | 1741 | 301 | — |
+| v64.0 | Tone row, row transforms, interval vector | 1756 | 302 | — |
+| v65.0 | Section similarity, detect_sections, label_form | 1766 | 303 | — |
+| v66.0 | Drone, evolving_pad (ambient generator) | 1776 | 304 | — |
+| v67.0 | Nested tuplets, irrational meter, polymetric overlay | 1791 | 305 | — |
+| v68.0 | Reduce to chords, harmonic skeleton, complexity score | 1800 | 306 | — |
+| v69.0 | Mozart dice game, classical minuet generator | 1811 | 307 | — |
+| v70.0 | Just intonation, cents deviation, quarter tones | 1826 | 308 | — |
+| v71.0 | Texture density, thin/thicken texture | 1835 | 308 | — |
+| v72.0 | Optimal voicing, smooth voicings (constraint solver) | 1844 | 309 | — |
+| v73.0 | Quantize rhythm, swing quantize, humanize timing | 1855 | 309 | — |
+| v74.0 | Jazz/funk/Latin bass line generators | 1866 | 311 | — |
+| v75.0 | Melody harmonization (thirds/sixths/chorale) | 1875 | 312 | — |
+| v76.0 | Click track, backing track, tempo trainer | 1889 | 313 | — |
+| v77.0 | Corpus stats, key/tempo distribution | 1898 | 314 | — |
+| v78.0 | 20-pattern DB, search, chain with connectors | 1910 | 315 | — |
+| v79.0 | Sforzando, dynamics_map, crescendo/decresc (theory) | 1919 | 316 | — |
+| v80.0 | Progression generator (4 genres), extend_progression | 1929 | 317 | — |
+| v81.0 | Ritardando, accelerando, rubato (tempo curves) | 1939 | 318 | — |
+| v82.0 | Comp patterns (bossa/swing/funk/rock/ballad) | 1949 | 319 | — |
+| v83.0 | Duration algebra (dotted, tied, split_note) | 1960 | 320 | — |
+| v84.0 | Instrument techniques (hammer/pull/slide/mute) | 1972 | 321 | — |
+| v85.0 | Song comparison (compare_progressions) | 1980 | 321 | — |
+| v86.0 | Enharmonic (equivalent, key_sig, respell) | 1991 | 321 | — |
+| v87.0 | DSL parser (chord/melody lines, song_from_dsl) | 2005 | 322 | — |
+| v88.0 | Remix: change_key, double_time, half_time | 2014 | 322 | — |
+| v89.0 | Voice independence: motion ratios, independence score | 2022 | 322 | — |
+| v90.0 | Theory quiz: intervals, chords, grading | 2031 | 322 | — |
+| v91.0 | Density planner (build/strip/wave/full patterns) | 2039 | 322 | — |
+| v92.0 | Chord transition matrix, generate_from_matrix | 2048 | 322 | — |
+| v93.0 | Markdown analysis report (form/cadences/tension) | 2054 | 322 | — |
+| v94.0 | Scale explorer: suggest_scale, available/avoid notes | 2063 | 322 | — |
+| v95.0 | Voicing DB: 30+ voicings, lookup, random | 2071 | 322 | — |
+| v96.0 | Memory game: growing sequences, verify playback | 2079 | 322 | — |
+| v97.0 | Harmonic field map, chord relationships | 2088 | 322 | — |
+| v98.0 | Phrase boundary detection, phrase_lengths | 2094 | 322 | — |
+| v99.0 | SongTemplate class (fill/render/randomize) | 2101 | 322 | — |
+| **v100.0** | **CENTENNIAL: mega-song (25+ fns), integration test (37 assertions)** | **2103** | **323** | — |
+| v101.0 | Corpus learning: train_style, continue_in_style | 2109 | 323 | — |
+| v102.0 | Note probability: note_probability, next_note_dist | 2116 | 323 | — |
+| v103.0 | Chord morphing: morph_chord, chord_interpolation | 2121 | 323 | — |
+| v104.0 | Pitch set ops: union, intersection, complement, transpose | 2132 | 323 | — |
+| v105.0 | Density analysis: density_profile, density_contrast | 2140 | 323 | — |
+| v106.0 | Harmonic ambiguity: ambiguity_score, key_certainty | 2148 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -490,8 +558,8 @@ theory.py now also has: interval_name, parallel_motion, suggest_next_chord.
 
 theory.py now also has: note_range, rhythmic_density, detect_repeated_sections.
 
-81+ public functions across theory.py + composition.py. Toolkit complete.
-All 7 church modes have dedicated generators.
+84+ public functions across theory.py + composition.py. Toolkit complete.
+All 7 church modes + cadences + reharmonization techniques covered.
 theory.py recent additions: melody_contour, harmonic_rhythm, consonance_score,
 normalize_notes, count_pitch_classes, melodic_interval_histogram, invert_chord,
 rotate_voicing, pedal_point, retrograde_rhythm, stretch_melody, arpeggiate_chord,
@@ -500,5 +568,65 @@ dynamics_curve, call_and_response, ostinato, canon, hocket, sequence_by_interval
 chromatic_run, trill (theory version), diminished_run,
 whole_tone_run, blues_lick, arpeggio_pattern, lydian_run, mixolydian_lick,
 modal_interchange, dorian_lick, phrygian_run, tritone_sub.
-Next up: v19-roadmap (microtonal tuning), v23-roadmap (audio import/sampling),
-v25-roadmap (versioning/history). Infrastructure items remain.
+theory.py v39-v41 additions: neapolitan_chord, augmented_sixth (italian/french/german),
+picardy_third, quintuplet, septuplet, generate_polyrhythm, metric_modulation,
+twelve_bar_blues, rhythm_changes, coltrane_changes, andalusian_cadence.
+theory.py v42-v44 additions: voice_lead_satb, check_parallel_fifths,
+find_pivot_chords, modulation_path, direct_modulation, pivot_modulation,
+parse_roman, progression_from_roman.
+theory.py v45-v47 additions: displace, phase_shift, hemiola, additive_rhythm,
+aksak, classify_interval, species_counterpoint, generate_scale_melody,
+generate_rhythm_pattern.
+theory.py v48-v50 additions: rootless_a, rootless_b, quartal_voicing,
+stride_voicing, song_form, section_bars, functional_analysis, detect_cadences,
+detect_key (progression-based).
+theory.py v51-v53 additions: ear_training_intervals, ear_training_chords,
+scale_exercise, tension_curve, tension_at, instrument_range, in_range,
+double_at_octave, string_quartet.
+theory.py v54+v56 additions: augment, diminish, fragment, motif_similarity,
+list_scales, scale_search, scale_brightness, scale_modes, + 30 exotic scales
+merged into _SCALE_INTERVALS (hungarian_minor, hirajoshi, double_harmonic, etc).
+145+ public functions across theory.py + composition.py. 44 scales in the atlas.
+theory.py v58-v60 additions: count_syllables, stress_pattern, text_to_melody,
+groove_template (6 named grooves), apply_groove, extract_groove,
+suggest_substitutions, reharmonize.
+theory.py v61-v63 additions: song_fingerprint, song_similarity,
+validate_counterpoint, grade_counterpoint, target_chord_tones, approach_pattern.
+theory.py v64-v66 additions: tone_row, row_transforms, interval_vector,
+section_similarity_matrix, detect_sections, label_form, drone, evolving_pad.
+theory.py v67-v69 additions: nested_tuplet, irrational_meter, polymetric_overlay,
+reduce_to_chords, harmonic_skeleton, complexity_score, dice_game, classical_minuet.
+theory.py v70-v72 additions: just_ratio, cents_from_et, detune_to_just,
+quarter_tone, texture_density, thin_texture, thicken_texture,
+optimal_voicing, smooth_voicings.
+theory.py v73-v75 additions: quantize_rhythm, swing_quantize, humanize_timing,
+bass_line_jazz, bass_line_funk, bass_line_latin, harmonize_melody.
+theory.py v76-v78 additions: click_track, backing_track, tempo_trainer,
+corpus_stats, key_distribution, tempo_distribution, list_patterns,
+get_pattern, chain_patterns + 20-pattern melodic DB.
+theory.py v79-v81 additions: sforzando, dynamics_map, generate_progression,
+extend_progression, ritardando, accelerando, rubato.
+theory.py v82-v84 additions: comp_pattern (5 styles), dotted, double_dotted,
+tied, split_note, hammer_on, pull_off, slide, palm_mute.
+theory.py v85-v87 additions: compare_progressions, enharmonic_equivalent,
+key_signature_accidentals, respell_note, parse_chord_line, parse_melody_line,
+song_from_dsl.
+theory.py v88-v90 additions: change_key, double_time, half_time,
+similar_motion_ratio, contrary_motion_ratio, voice_independence_score,
+quiz_intervals, quiz_chords, grade_quiz.
+theory.py v91-v93 additions: density_plan, orchestration_curve,
+build_transition_matrix, most_likely_next, generate_from_matrix,
+analysis_report.
+theory.py v94-v96 additions: suggest_scale, available_notes, avoid_notes,
+lookup_voicing, random_voicing, memory_game, verify_playback + _VOICING_DB
+(30+ voicings across 9 chord shapes).
+theory.py v97-v99 additions: harmonic_field, chord_relationships,
+detect_phrases, phrase_lengths, SongTemplate class (fill/render/randomize).
+285+ public functions across theory.py + composition.py. 322 songs, 44 scales.
+theory.py v101-v103 additions: train_style_from_corpus, continue_in_style,
+note_probability, next_note_distribution, morph_chord, chord_interpolation.
+theory.py v104-v106 additions: pc_set, pc_union, pc_intersection, pc_complement,
+transpose_set, density_profile, density_contrast, ambiguity_score, key_certainty.
+305+ public functions across theory.py + composition.py. 323 songs, 44 scales.
+2148 tests. v106 shipped. Pitch set theory, density analysis, and key ambiguity.
+Infrastructure items remain.

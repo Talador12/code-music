@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v38.0.0 — 266 songs, 1357 tests, cadences + secondary dominants
+## Status: v106.0.0 — 323 songs, 2148 tests — pitch sets + density + ambiguity
 
 ## What's built
 
@@ -115,7 +115,7 @@
 ### Export
 - WAV, FLAC, MP3, OGG, MIDI, LilyPond, ABC, MusicXML
 
-### Songs: 266 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
+### Songs: 323 | Albums: 23 | Scale demos: 31 | Samples: 100+ | Styles: 7
 
 ### Scripts
 - play_scales, play_vibe, arp_render, bpm_tap
@@ -549,6 +549,706 @@ Haskell + SuperCollider. We bring pattern transforms to Python.
 - [x] Stochastic patterns: `p.choose(seed)`, `p.degrade(0.5, seed)`
 - [x] Pattern → Track conversion: `p.to_notes(duration, default_octave, velocity)`
 - [x] Mini-notation parser: `"[C3 E3] G3"` brackets, `~` rests, `*N` repeat, `?` random
+
+## v39.0 Roadmap — Chromatic Harmony
+
+Classical chromatic techniques — the colors between the colors.
+
+- [x] `neapolitan_chord(key)` — bII major in first inversion, classic pre-dominant
+- [x] `augmented_sixth(key, variety)` — Italian (3-note), French (4-note, whole-tone), German (4-note, dom7 enharmonic)
+- [x] `picardy_third(key)` — major tonic in minor key context (Baroque surprise ending)
+- [x] 3 songs: neapolitan_sunset, italian_sixth_waltz, picardy_dawn
+- [x] 18 tests across all varieties and keys
+
+## v40.0 Roadmap — Advanced Rhythm
+
+Beyond triplets — irregular subdivisions, polyrhythms, and metric modulation.
+
+- [x] `quintuplet(notes, total_duration)` — 5 in the space of 4
+- [x] `septuplet(notes, total_duration)` — 7 in the space of 4/8
+- [x] `generate_polyrhythm(root, rhythm_a, rhythm_b, bars)` — two interlocking patterns (3:4, 5:4, etc)
+- [x] `metric_modulation(bpm, old_subdivision, new_subdivision)` — calculate new BPM after subdivision reinterpretation
+- [x] 3 songs: polyrhythm_lab, metric_shift, five_against_four
+- [x] 17 tests for all rhythm functions
+
+## v41.0 Roadmap — Chord Progression Templates
+
+The canonical progressions every musician should know, generated in any key.
+
+- [x] `twelve_bar_blues(key)` — I-I-I-I-IV-IV-I-I-V-IV-I-V, all dom7
+- [x] `rhythm_changes(key)` — Gershwin's 'I Got Rhythm' A section (I-vi-ii-V turnaround)
+- [x] `coltrane_changes(key)` — Giant Steps substitution (3 tonal centers, major thirds apart)
+- [x] `andalusian_cadence(key)` — i-bVII-bVI-V (flamenco/Phrygian descending bass)
+- [x] 4 songs: twelve_bar_shuffle, giant_steps_study, rhythm_changes_blowout, andalusian_night
+- [x] 20 tests for all progression templates
+
+## v42.0 Roadmap — Voice Leading Engine
+
+Proper four-part voice leading with SATB rules — the foundation of
+classical composition that every theory textbook teaches but no Python
+library implements.
+
+- [x] `voice_lead_satb(progression, key)` — four-part harmonization with smooth voice leading
+- [x] Voice range constraints: S(C4-G5), A(F3-D5), T(C3-A4), B(E2-E4)
+- [x] Smooth voice leading: minimize total semitone movement between chords
+- [x] Handle common tones (retain shared notes in the same voice)
+- [x] `check_parallel_fifths(voicing_a, voicing_b)` — detect forbidden parallel P5/P8
+- [x] No voice crossing (sorted output ensures soprano > alto > tenor > bass)
+- [x] 1 song: satb_chorale
+- [x] 10 tests for voice leading and parallel detection
+
+## v43.0 Roadmap — Key Modulation & Pivot Chords
+
+Smooth key changes — the art of moving between tonal centers without
+the listener noticing (until the emotional payoff hits).
+
+- [x] `find_pivot_chords(key_a, key_b)` — chords that exist diatonically in both keys
+- [x] `modulation_path(key_a, key_b)` — shortest path via circle of fifths with V-I cadences
+- [x] `direct_modulation(key_a, key_b)` — abrupt key change (truck driver modulation)
+- [x] `pivot_modulation(key_a, key_b)` — smooth transition via first common chord
+- [x] 2 songs: modulation_journey, pivot_chord_study
+- [x] 19 tests for pivot detection, path finding, direct/pivot modulation
+
+## v44.0 Roadmap — Roman Numeral Parsing
+
+Read and write the universal language of harmony analysis.
+
+- [x] `parse_roman(numeral, key)` — 'viio7/V' → (root, shape) in context
+- [x] Support applied chords: V/V, V7/ii, vii/vi, etc
+- [x] Support alterations: bVI, #IV, bII (Neapolitan)
+- [x] Support quality suffixes: maj7, min7, dom7, o, o7, +, sus2, sus4, 9
+- [x] `progression_from_roman(numerals, key)` — ['I', 'IV', 'V7', 'I'] → chord list
+- [x] 2 songs: roman_numeral_pop, jazz_numerals
+- [x] 25 tests for parsing, applied chords, accidentals, progressions
+
+## v45.0 Roadmap — Rhythmic Displacement & Metric Illusions
+
+Shift patterns against the beat to create rhythmic tension.
+
+- [x] `displace(notes, offset_beats)` — shift a pattern forward by inserting a leading rest
+- [x] `phase_shift(pattern_a, pattern_b, offset)` — Steve Reich-style phasing
+- [x] `hemiola(note, octave, bars)` — 3-against-2 grouping across barlines
+- [x] `additive_rhythm(groups, note, octave)` — e.g. [2,3,2,2,3] with accented downbeats
+- [x] `aksak(pattern_name)` — named Balkan rhythms: 5/8, 7/8, 9/8, 11/8, 15/8
+- [x] 3 songs: balkan_stomp, reich_phase, hemiola_waltz
+- [x] 18 tests for displacement, phasing, hemiola, additive, aksak
+
+## v46.0 Roadmap — Counterpoint Species
+
+Species counterpoint — the 500-year-old composition method that trained
+Bach, Mozart, and Beethoven.
+
+- [x] `classify_interval(semitones)` — perfect / imperfect / dissonant classification
+- [x] `species_counterpoint(cantus_firmus, species=1)` — note-against-note (species 1)
+- [x] Species 2: two notes against one (strong beat consonant, weak beat passing)
+- [x] Deterministic output via seed parameter
+- [x] Above/below CF with octave clamping
+- [x] 1 song: species_study
+- [x] 19 tests for interval classification, species 1/2, rests, determinism
+
+## v47.0 Roadmap — Generative Melody
+
+Scale-aware melody generation with contour shaping and rhythm patterns.
+
+- [x] `generate_scale_melody(key, scale, length, contour, seed)` — biased random walk constrained to scale degrees
+- [x] Four contour shapes: arch (peak at middle), descending, wave (sinusoidal), flat
+- [x] `generate_rhythm_pattern(hits, slots, seed)` — random rhythm with rests, avoids clustering
+- [x] 2 songs: contour_arch, wave_melody
+- [x] 18 tests for melody generation, rhythm patterns, contours, determinism
+
+## v48.0 Roadmap — Chord Voicing Library
+
+Genre-specific voicings that real pianists actually use.
+
+- [x] `rootless_a(root, shape)` — Bill Evans A voicing (3rd on bottom, omit root)
+- [x] `rootless_b(root, shape)` — Bill Evans B voicing (7th on bottom, omit root)
+- [x] `quartal_voicing(root, layers)` — McCoy Tyner stacked perfect 4ths
+- [x] `stride_voicing(root, shape)` — stride piano (low root + mid-register chord)
+- [x] 2 songs: evans_voicings, quartal_towers
+- [x] 15 tests for all voicing types
+
+## v49.0 Roadmap — Form Templates & Song Blueprints
+
+Pre-built song structures as section-name lists.
+
+- [x] `song_form(name)` — returns section list: pop, aaba, blues, edm, rondo
+- [x] `section_bars(name, bars_per_section)` — (section, bars) tuples for auto-arrangement
+- [x] 1 song: pop_form_demo
+- [x] 9 tests for all form templates
+
+## v50.0 Roadmap — Harmonic Analysis
+
+Automated harmonic analysis — the kind of report a theory professor puts
+on the blackboard, but in Python.
+
+- [x] `functional_analysis(progression, key)` — Roman numeral + T/S/D function per chord
+- [x] `detect_cadences(progression, key)` — authentic, half, plagal, deceptive
+- [x] `detect_key(progression)` — key estimation from root frequency with tiebreaker
+- [x] 1 song: cadence_detective
+- [x] 21 tests for functional analysis, cadence detection, key estimation
+
+## v51.0 Roadmap — Ear Training Tools
+
+Music education: generate exercises for intervals, chords, and scales.
+
+- [x] `ear_training_intervals(count, max_semitones, seed)` — melodic interval quizzes with correct answers
+- [x] `ear_training_chords(count, types, seed)` — chord quality identification exercises
+- [x] `scale_exercise(key, mode, direction)` — ascending, descending, or both
+- [x] 2 songs: interval_drills, scale_practice
+- [x] 18 tests for exercise generation, structure, determinism
+
+## v52.0 Roadmap — Tension & Resolution Curves
+
+Quantify emotional intensity over time.
+
+- [x] `tension_curve(progression, key)` — 0.0–1.0 per chord (harmonic distance + complexity + dominant function)
+- [x] `tension_at(progression, index, key)` — point query for tension at a chord index
+- [x] Tonic chords lowest tension, dominants high, chromatic chords highest
+- [x] 1 song: tension_arc
+- [x] 9 tests for curve shape, range, tonic/dominant ordering
+
+## v53.0 Roadmap — Orchestration & Instrument Doubling
+
+Range-aware instrument assignment and ensemble templates.
+
+- [x] `instrument_range(name)` — playable range for 19 instruments (violin→bass_voice)
+- [x] `in_range(note, instrument)` — check if a note is playable
+- [x] `double_at_octave(notes, direction)` — octave doubling up or down
+- [x] `string_quartet(melody, harmony, key)` — auto-arrange for violin I/II, viola, cello
+- [x] 2 songs: string_quartet_no1, octave_doubling
+- [x] 14 tests for range validation, doubling, quartet arrangement
+
+## v54.0 Roadmap — Motif Development & Variation
+
+Classical motif development techniques — the Beethoven toolkit.
+
+- [x] `augment(motif, factor)` — multiply note durations (rhythmic augmentation)
+- [x] `diminish(motif, factor)` — divide note durations (rhythmic diminution)
+- [x] `fragment(motif, length)` — extract the head motif
+- [x] `motif_similarity(a, b)` — contour + rhythm comparison, 0.0–1.0 score
+- [x] 1 song: motif_development
+- [x] 15 tests for augmentation, diminution, fragmentation, similarity
+
+## v55.0 Roadmap — MIDI Import/Export
+
+Already existed (export_midi, import_midi in code_music.midi). Skipped.
+
+## v56.0 Roadmap — Scale Atlas
+
+44 scales from around the world — catalogued, searchable, and playable.
+
+- [x] 30 exotic scales added: hungarian_minor, hungarian_major, hirajoshi, in_sen,
+      iwato, phrygian_dominant, double_harmonic, enigmatic, prometheus, augmented,
+      tritone, bebop_dominant/major/minor, neapolitan_major/minor, persian,
+      arabian, balinese, chinese, egyptian, kumoi, pelog, spanish_gypsy,
+      super_locrian, lydian_dominant, lydian_augmented, half_diminished, altered, acoustic
+- [x] `list_scales()` — all 44 scale names, sorted alphabetically
+- [x] `scale_search(pitches)` — reverse lookup: which scales contain these notes?
+- [x] `scale_brightness(name)` — 0.0 (dark, Locrian) to 1.0 (bright, Lydian)
+- [x] `scale_modes(name)` — generate all rotational modes of any scale
+- [x] Fixed scale_explorer.py: added fallback mappings for new scale names in chord_scale results
+- [x] 3 songs: hirajoshi_garden, hungarian_fire, double_harmonic_dusk
+- [x] 19 tests for listing, search, brightness, modes
+
+## v57.0 Roadmap — Real-Time Performance Engine
+
+Skipped — requires sounddevice runtime dependency.
+
+## v58.0 Roadmap — Lyric Rhythm Matching
+
+Map syllable stress to musical rhythm and pitch.
+
+- [x] `count_syllables(word)` — vowel-cluster heuristic with silent-e adjustment
+- [x] `stress_pattern(text)` — strong/weak per syllable (content vs function words, alternating stress)
+- [x] `text_to_melody(text, key, scale, seed)` — stressed syllables get higher pitch + longer duration,
+      questions rise at end, statements fall
+- [x] 1 song: lyrics_to_melody
+- [x] 14 tests for syllable counting, stress, melody generation, determinism
+
+## v59.0 Roadmap — Groove Templates & Swing Maps
+
+Pre-built timing feels that make music breathe.
+
+- [x] `groove_template(name)` — 6 named grooves: straight, mpc_swing, j_dilla, motown, shuffle, bossa
+- [x] `apply_groove(notes, template, strength)` — adjust durations to simulate timing feel
+- [x] `extract_groove(notes, grid_duration)` — capture timing deviations from a grid
+- [x] 1 song: dilla_groove
+- [x] 14 tests for all grooves, application, extraction, strength control
+
+## v60.0 Roadmap — Chord Substitution Engine
+
+Automated reharmonization — change the color without breaking the function.
+
+- [x] `suggest_substitutions(root, shape, key)` — tritone sub, related ii, modal interchange, relative
+- [x] `reharmonize(progression, key, style)` — jazz (tritone + related ii), modal (major↔minor swap), simple (relative swap)
+- [x] 1 song: reharmonized_pop
+- [x] 13 tests for substitution types, reharmonization styles, length preservation
+
+## v61.0 Roadmap — Song Fingerprinting & Similarity
+
+Compare songs by their harmonic and melodic DNA.
+
+- [x] `song_fingerprint(progression, notes)` — pitch histogram (12 bins), quality distribution,
+      average interval, rhythm density, chord count
+- [x] `song_similarity(fp_a, fp_b)` — cosine similarity on pitch histograms (0.0–1.0)
+- [x] 10 tests for fingerprint structure, similarity identity, relative ranking
+
+## v62.0 Roadmap — Counterpoint Rules Validator
+
+Strict grading engine for counterpoint exercises.
+
+- [x] `validate_counterpoint(cf, cp, species)` — returns list of violation strings:
+      parallel P5/P8, voice crossing, dissonant intervals, leaps > octave
+- [x] `grade_counterpoint(cf, cp, species)` — 0–100 score (100 = no violations, -10 per violation)
+- [x] 8 tests for rule detection, perfect score, floor at zero
+
+## v63.0 Roadmap — Chord Tone Targeting
+
+Jazz improvisation: land on chord tones at strong beats, fill with scale tones.
+
+- [x] `target_chord_tones(progression, key, notes_per_chord, seed)` — even beats = chord tones,
+      odd beats = scale passing tones
+- [x] `approach_pattern(target, direction, duration)` — chromatic (half-step), diatonic (whole-step),
+      or enclosure (above+below) approach to a target note
+- [x] 2 songs: chord_tone_solo, song_300 (300th song milestone!)
+- [x] 11 tests for targeting, approach patterns, determinism
+
+## v64.0 Roadmap — Multi-Tonic Systems
+
+Schoenberg's 12-tone method and Forte's set theory — in Python.
+
+- [x] `tone_row(pitches, seed)` — create a 12-tone row (all 12 PCs, no repeats)
+- [x] `row_transforms(row)` — prime, retrograde, inversion, retrograde-inversion
+- [x] `interval_vector(pitch_set)` — Forte-style 6-element IC vector
+- [x] 1 song: serial_composition
+- [x] 15 tests for row generation, transforms, interval vectors
+
+## v65.0 Roadmap — Song Structure Detection
+
+Automatically identify repeated sections and label form.
+
+- [x] `section_similarity_matrix(progression, bars_per_section)` — Jaccard similarity on pitch-class sets
+- [x] `detect_sections(progression, bars_per_section, threshold)` — group similar sections with same label
+- [x] `label_form(progression, bars_per_section)` — return form string ("AABA", "ABAB", etc)
+- [x] 1 song: form_detective
+- [x] 10 tests for matrix shape, AABA detection, ABAB detection
+
+## v66.0 Roadmap — Drone & Ambient Generator
+
+Brian Eno in a function — sustained tones and slowly morphing textures.
+
+- [x] `drone(key, octave, duration, overtones)` — root + harmonic overtone series with decaying velocity
+- [x] `evolving_pad(key, scale, duration, density, octave, seed)` — random scale-tone cloud with varying durations
+- [x] 1 song: ambient_drift
+- [x] 10 tests for drone structure, overtone decay, pad duration bounds
+
+## v67.0 Roadmap — Tuplet Nesting & Complex Meters
+
+Carter, Ferneyhough, and progressive metal territory.
+
+- [x] `nested_tuplet(outer, inner, notes, total_duration)` — e.g. quintuplets inside triplets (3*5=15 notes)
+- [x] `irrational_meter(numerator, denominator, bars)` — 7/12, 5/6, etc. with accented beat 1
+- [x] `polymetric_overlay(meters, note, octave, bars)` — layer multiple meters, each voice offset by octave
+- [x] 1 song: nested_rhythms
+- [x] 15 tests for nesting, duration math, irrational scaling, polymetric voices
+
+## v68.0 Roadmap — Harmonic Reduction
+
+The opposite of reharmonization — strip to the functional core.
+
+- [x] `reduce_to_chords(notes, beats_per_chord)` — collapse melody to best-matching triads
+- [x] `harmonic_skeleton(progression, key)` — reduce to I/IV/V by functional group
+- [x] `complexity_score(progression, key)` — 0–100 rating (root variety + quality variety + chromatic + length)
+- [x] 1 song: harmonic_x_ray
+- [x] 9 tests for chord reduction, skeleton mapping, complexity scoring
+
+## v69.0 Roadmap — Musical Dice Game (Musikalisches Wurfelspiel)
+
+Mozart's 1787 algorithm — the first generative music, 230 years before AI.
+
+- [x] `dice_game(seed, bars)` — 2d6 per bar, index into Mozart's 11x16 measure table
+- [x] `classical_minuet(key, octave, seed)` — 16-bar minuet in 3/4, 3 notes per bar from scale
+- [x] Mozart's original table embedded as `_MOZART_MINUET_TABLE`
+- [x] 1 song: mozart_dice
+- [x] 11 tests for bar count, determinism, key transposition, table range
+
+## v70.0 Roadmap — Microtuning & Just Intonation
+
+Pure intervals, cent deviations, and quarter-tones.
+
+- [x] `just_ratio(semitones)` — pure harmonic ratio (3/2 for P5, 5/4 for M3, etc)
+- [x] `cents_from_et(semitones)` — how many cents a just interval deviates from equal temperament
+- [x] `detune_to_just(notes, key)` — cent offsets per note for just intonation tuning
+- [x] `quarter_tone(note, direction)` — half-semitone pitch (50 cents up/down) for maqam/makam
+- [x] Complete `_JUST_RATIOS` table for all 13 intervals (unison through octave)
+- [x] 1 song: just_intonation
+- [x] 12 tests for ratios, cent deviation, detuning, quarter tones
+
+## v71.0 Roadmap — Texture Density Control
+
+Measure, thin, and thicken musical texture on demand.
+
+- [x] `texture_density(notes, window_beats)` — sliding-window notes-per-beat measurement
+- [x] `thin_texture(notes, target_density, seed)` — randomly convert sounding notes to rests (preserves first/last)
+- [x] `thicken_texture(notes, scale, key, target_density, seed)` — insert scale-tone passing notes
+- [x] 9 tests for density measurement, thinning, thickening
+
+## v72.0 Roadmap — Chord Voicing Constraints
+
+Constraint-satisfaction voicing solver with smooth voice leading.
+
+- [x] `optimal_voicing(root, shape, voices, max_span, prefer_close, octave)` — find best voicing under span/position constraints
+- [x] `smooth_voicings(progression, voices, max_span, octave)` — voice-led sequence minimizing movement between chords
+- [x] 1 song: constrained_voicings
+- [x] 8 tests for voice count, empty input, single chord, progression length
+
+## v73.0 Roadmap — Rhythm Quantization & Grid Snap
+
+Fix sloppy timing, add swing, or make robots sound human.
+
+- [x] `quantize_rhythm(notes, grid)` — snap durations to nearest grid multiple (0.25 = 16ths, 0.5 = 8ths)
+- [x] `swing_quantize(notes, grid, swing_amount)` — even beats on grid, odd beats late by swing ratio (0.66 = triplet)
+- [x] `humanize_timing(notes, amount, seed)` — add random deviations to make quantized music breathe
+- [x] 11 tests for snapping, swing alternation, humanize determinism
+
+## v74.0 Roadmap — Bass Line Intelligence
+
+Genre-specific bass generators that understand harmonic rhythm.
+
+- [x] `bass_line_jazz(progression, octave, seed)` — root on 1, chord tones on 2-3, chromatic approach to next root on 4
+- [x] `bass_line_funk(progression, octave, seed)` — root on the one, syncopated ghost notes, octave pops, rests (the space IS the funk)
+- [x] `bass_line_latin(progression, octave, seed)` — tumbao pattern with anticipation: rest-root-rest-fifth-rest-root-fifth-next_root
+- [x] 2 songs: jazz_walking, funk_pocket
+- [x] 11 tests for note counts, root placement, rests, anticipation
+
+## v75.0 Roadmap — Melody Harmonization
+
+Auto-generate harmony voices from a single melody line.
+
+- [x] `harmonize_melody(melody, key, style, scale_name)` — three styles:
+  - `thirds`: parallel diatonic thirds above (pop/rock)
+  - `sixths`: parallel diatonic thirds below = sixths above (country)
+  - `chorale`: thirds above + sixths below (3 voices total)
+- [x] 1 song: harmonized_thirds
+- [x] 8 tests for voice counts, pitch preservation, rest passthrough, key/scale variants
+
+## v76.0 Roadmap — Practice Room Tools
+
+Metronome, backing tracks, and tempo training — the practice room in code.
+
+- [x] `click_track(bpm, bars, beats_per_bar, subdivisions)` — accented beat 1, configurable subdivisions (2=8ths, 4=16ths)
+- [x] `backing_track(progression, key, style, seed)` — full rhythm section: bass + chords + kick + snare + hat. Styles: rock, jazz, funk, latin
+- [x] `tempo_trainer(start_bpm, end_bpm, bars_per_step, increment)` — progressive tempo plan with click tracks per section
+- [x] 2 songs: practice_session, rock_backing
+- [x] 14 tests for click count, accents, subdivisions, backing parts, tempo sections
+
+## v77.0 Roadmap — Song Statistics Dashboard
+
+Bird's-eye view of a corpus of progressions.
+
+- [x] `corpus_stats(progressions)` — total chords, unique roots/shapes, avg length, most common root/shape, full count dicts
+- [x] `key_distribution(progressions)` — estimated key per progression, frequency-sorted counts
+- [x] `tempo_distribution(bpms, bucket_size)` — BPM histogram with configurable bucket width
+- [x] 9 tests for stats accuracy, empty corpus, distribution bucketing
+
+## v78.0 Roadmap — Melodic Pattern Database
+
+20 built-in licks/riffs indexed by genre and difficulty.
+
+- [x] `_PATTERN_DB` — 20 named patterns across 6 genres: jazz (5), blues (4), rock (3), latin (2), classical (4), funk (2). Each with interval list, genre tag, difficulty 1-4
+- [x] `list_patterns(genre, max_difficulty)` — filtered, sorted pattern name list
+- [x] `get_pattern(name, key, octave, duration)` — retrieve and transpose to any key
+- [x] `chain_patterns(names, key, octave, duration)` — link patterns with midpoint passing-tone connectors
+- [x] 1 song: pattern_chain
+- [x] 12 tests for listing, filtering, transposition, chaining, unknown pattern error
+
+## v79.0 Roadmap — Dynamic Range Processing
+
+Musical dynamics as first-class velocity transforms.
+
+- [x] `sforzando(notes, position, accent_vel)` — sudden accent at a specific note position
+- [x] `dynamics_map(notes)` — extract velocity curve (0 for rests)
+- [x] theory.py `crescendo`/`decrescendo` — linear velocity interpolation (engine versions also exist)
+- [x] 1 song: dynamic_arc
+- [x] 7 tests for accent, out-of-bounds, rest skip, velocity extraction
+
+## v80.0 Roadmap — Chord Progression Generator
+
+One-function song starter with genre templates.
+
+- [x] `generate_progression(key, length, genre, seed)` — 4 genres: pop (3 templates), jazz (3), classical (3), blues (12-bar)
+- [x] `extend_progression(existing, bars, key, seed)` — add diatonic chords biased toward common functions (I, IV, V, vi, ii)
+- [x] `_GENRE_TEMPLATES` with 10 template progressions across 4 genres
+- [x] 1 song: generated_jazz
+- [x] 10 tests for genre output, blues 12-bar, determinism, key transposition, extension
+
+## v81.0 Roadmap — Tempo Curve Rendering
+
+BPM as a continuous function — expressive timing through duration manipulation.
+
+- [x] `ritardando(notes, start_bpm, end_bpm)` — gradual slowdown by stretching durations proportional to BPM ratio
+- [x] `accelerando(notes, start_bpm, end_bpm)` — gradual speedup (same function, reversed args)
+- [x] `rubato(notes, amount, seed)` — sinusoidal push-pull with random perturbation (±amount%, Chopin-style)
+- [x] 1 song: rubato_nocturne
+- [x] 12 tests for duration increase/decrease, first-note preservation, determinism, rest passthrough
+
+## v82.0 Roadmap — Comping Pattern Library
+
+Five comping styles for rhythm section accompaniment.
+
+- [x] `comp_pattern(progression, style, octave, seed)` — 5 styles:
+  - `rock`: power chord 8th notes on every beat
+  - `swing`: Freddie Green quarter-note chunks (2 & 4 accented)
+  - `funk`: muted 16th-note chops with random gaps
+  - `bossa`: syncopated shell voicings (anticipate beat 3)
+  - `ballad`: arpeggiated chords, one note per chord tone
+- [x] 1 song: bossa_comp
+- [x] 7 tests for all styles, multi-chord progressions, determinism
+
+## v83.0 Roadmap — Note Duration Algebra
+
+Durations as composable math — dot, tie, split.
+
+- [x] `dotted(note)` — 1.5x duration (dotted quarter = 1.5 beats)
+- [x] `double_dotted(note)` — 1.75x duration (rare but elegant)
+- [x] `tied(note_a, note_b)` — merge two same-pitch notes into one (ValueError on mismatch)
+- [x] `split_note(note, divisions)` — divide into N equal parts
+- [x] 1 song: palm_mute_riff (uses dotted + split_note)
+- [x] 13 tests for dotting, tying, splitting, rest handling, pitch mismatch
+
+## v84.0 Roadmap — Instrument Technique Simulation
+
+Simulate what real players do beyond "play the notes."
+
+- [x] `hammer_on(note_a, note_b)` — second note at 60% velocity (no pick attack)
+- [x] `pull_off(note_a, note_b)` — same profile as hammer-on (reverse direction)
+- [x] `slide(note_a, note_b, steps)` — chromatic glissando with decaying velocity
+- [x] `palm_mute(notes, decay_factor)` — shorten to 30% duration, fill with rests (metal chunk)
+- [x] 1 song: guitar_techniques
+- [x] 13 tests for velocity reduction, intermediates, duration preservation, rest handling
+
+## v85.0 Roadmap — Song Comparison Report
+
+Structured diff between two chord progressions.
+
+- [x] `compare_progressions(prog_a, prog_b, key)` — shared chords, unique to each,
+      key estimates, same_key flag, complexity scores + delta, root overlap ratio
+- [x] 6 tests for identical, different, partial overlap, complexity, root overlap, empty
+
+## v86.0 Roadmap — Chord Spelling & Enharmonic Intelligence
+
+Context-aware note spelling — Db vs C# depends on the key.
+
+- [x] `enharmonic_equivalent(note)` — C# ↔ Db, F# ↔ Gb, etc. (19-entry map)
+- [x] `key_signature_accidentals(key)` — return sharps/flats for all 12 major keys
+- [x] `respell_note(note, key)` — pick the spelling that fits: C# in A major, Db in Ab major
+- [x] `_KEY_SIGNATURES` dict: all 12 major keys with correct accidental lists
+- [x] 11 tests for equivalents, key signatures, context-aware respelling
+
+## v87.0 Roadmap — Song Builder DSL
+
+Write songs in a mini-notation language — less Python boilerplate, more music.
+
+- [x] `parse_chord_line(text)` — `| Cmaj7 | Am7 | Dm7 | G7 |` → chord tuples
+- [x] `parse_melody_line(text)` — `C5 D5 E5 - F5` → Notes (- = rest, optional octave)
+- [x] `song_from_dsl(text, bpm)` — full DSL parser: `[section]` markers, `chords:` and `melody:` lines
+- [x] Supports: sharps/flats in roots, all standard chord suffixes, default octave
+- [x] 1 song: dsl_pop_song
+- [x] 16 tests for chord parsing, melody parsing, sections, sharp/flat, empty input
+
+## v88.0 Roadmap — Remix Engine
+
+Transform note lists: transpose, double/half time.
+
+- [x] `change_key(notes, from_key, to_key)` — transpose by semitone delta, preserves intervals
+- [x] `double_time(notes)` — halve all durations (plays 2x faster)
+- [x] `half_time(notes)` — double all durations (plays 2x slower, the breakdown)
+- [x] 9 tests for transposition, identity, rest passthrough, duration math
+
+## v89.0 Roadmap — Harmonic Voice Independence
+
+Measure how independently multiple voices move — the Bach score.
+
+- [x] `similar_motion_ratio(voice_a, voice_b)` — fraction of movements in parallel (0.0–1.0)
+- [x] `contrary_motion_ratio(voice_a, voice_b)` — fraction in opposite directions (Bach maximized this)
+- [x] `voice_independence_score(voices)` — 0–100 rating across all voice pairs (130% × avg contrary, capped at 100)
+- [x] 8 tests for parallel detection, contrary detection, single voice, score range
+
+## v90.0 Roadmap — Music Theory Quiz Generator
+
+Generate and grade theory quizzes.
+
+- [x] `quiz_intervals(count, seed)` — note pairs with interval name answers (P1–M7)
+- [x] `quiz_chords(count, seed)` — chord spellings with root+quality answers (5 types)
+- [x] `grade_quiz(answers, correct)` — score, total, percentage, wrong_indices
+- [x] 9 tests for count, structure, determinism, grading (perfect/partial/empty)
+
+## v91.0 Roadmap — Arrangement Density Planner
+
+Plan which instruments play in which sections.
+
+- [x] `density_plan(sections, instruments, pattern)` — 4 patterns: build (sparse→full), strip (full→sparse), wave (sinusoidal), full (everyone always)
+- [x] `orchestration_curve(plan)` — extract instrument count per section as int list
+- [x] 6 tests for all patterns, min-1-instrument guarantee, curve extraction
+
+## v92.0 Roadmap — Chord Progression Probability Matrix
+
+Markov model of chord transitions — learned from a corpus, generates by random walk.
+
+- [x] `build_transition_matrix(progressions)` — count transitions, normalize to probabilities
+- [x] `most_likely_next(current, matrix)` — single most probable next chord
+- [x] `generate_from_matrix(matrix, length, start, seed)` — stochastic walk with weighted random choice
+- [x] 9 tests for matrix structure, probability sums, determinism, dead-end recovery
+
+## v93.0 Roadmap — Musical Form Analysis Report
+
+One-function markdown analysis — the theory professor's blackboard, automated.
+
+- [x] `analysis_report(progression, key, bpm, title)` — full markdown report:
+      form label, key, tempo, length, complexity score, cadence list, functional
+      distribution (T/S/D/chromatic counts), tension curve (avg + peak + values)
+- [x] 8 tests for string output, title/key/form/complexity/tension/cadence presence
+
+## v94.0 Roadmap — Interactive Scale Explorer
+
+Real-time scale suggestion from notes played so far.
+
+- [x] `suggest_scale(notes_so_far, key)` — rank all 44 scales by overlap/outside penalty, 0.0–1.0
+- [x] `available_notes(key, scale_name)` — all pitches in the scale, in order
+- [x] `avoid_notes(key, scale_name)` — all 12-tone pitches NOT in the scale (complement)
+- [x] 9 tests for ranking, major triad finds major, sorted output, complement completeness
+
+## v95.0 Roadmap — Chord Voicing Database
+
+30+ pre-built voicings across 9 chord shapes — instant lookup.
+
+- [x] `_VOICING_DB` — 30+ voicings: maj(4), min(4), dom7(4), maj7(4), min7(4), dim(2), aug(2), sus4(2), sus2(2)
+- [x] `lookup_voicing(root, shape, position, octave, duration)` — retrieve by index (wraps around)
+- [x] `random_voicing(root, shape, octave, duration, seed)` — pick randomly for variety
+- [x] 8 tests for positions, dom7, duration, wrap, determinism, variety
+
+## v96.0 Roadmap — Musical Memory Game
+
+Simon-says with scale tones — growing sequences, playback verification.
+
+- [x] `memory_game(length, key, scale_name, octave, duration, seed)` — returns N rounds, each growing by 1 note
+- [x] `verify_playback(original, attempt)` — correct count, total, accuracy%, wrong positions (handles short attempts)
+- [x] 8 tests for round count, growing length, determinism, scale membership, perfect/wrong/partial/short playback
+
+## v97.0 Roadmap — Harmonic Field Map
+
+All diatonic chords + functions + resolution paths for any key.
+
+- [x] `harmonic_field(key, mode)` — 7 chords with degree, Roman numeral, root, shape, function (T/S/D)
+- [x] `chord_relationships(key)` — resolution map: V→[I,vi], ii→[V,viio], etc
+- [x] Supports major and minor modes
+- [x] 9 tests for field size, tonic/dominant, minor mode, resolution targets
+
+## v98.0 Roadmap — Phrase Boundary Detection
+
+Find where musical phrases breathe.
+
+- [x] `detect_phrases(notes, min_gap)` — split by rest gaps ≥ min_gap, returns {start, end, length}
+- [x] `phrase_lengths(notes, min_gap)` — just the length integers
+- [x] 6 tests for single/multiple phrases, empty, positions, lengths
+
+## v99.0 Roadmap — Song Template Engine
+
+Slot-based composition: define structure, fill sections, render.
+
+- [x] `SongTemplate(form_name)` — initialize from song_form ("pop", "aaba", "blues", etc)
+- [x] `template.fill(section, chords, melody)` — fill a named section slot (chainable)
+- [x] `template.render()` — flatten to {chords, melody, form} lists
+- [x] `template.randomize(key, seed)` — auto-fill empty slots with generate_progression + generate_scale_melody
+- [x] 7 tests for forms, fill/render, melody, empty, randomize, chaining, determinism
+
+## v100.0 Roadmap — Centennial Release
+
+THE CENTENNIAL. v39 → v100 in one development arc.
+
+- [x] Milestone song: `centennial.py` using 25+ theory functions in 7 sections:
+      jazz reharmonization, generated melody with harmony, Andalusian + Neapolitan + Picardy,
+      motif development (augment/diminish/dotted/split/approach), chord tone targeting over blues,
+      grooved additive rhythm, drone ending. Analysis report generated inline.
+- [x] Integration mega-test: `test_centennial.py` — 37 assertions across 37 numbered subsystems:
+      generation, analysis, tension, cadences, reharmonization, complexity, bass lines,
+      comping, melody, harmony, dynamics, motif development, targeting, groove, rhythm,
+      drone, chromatic harmony, Roman numerals, DSL parsing, tone rows, interval vectors,
+      scale atlas, scale suggestion, pattern database, voicing lookup, memory game,
+      harmonic field, phrase detection, section detection, song templates, transition matrix,
+      corpus stats, quizzes, ear training, key transposition, interval classification, reports
+- [x] All 323 songs import without error (smoke test passes)
+- [x] 2103 tests total, all passing, lint clean
+
+## v101.0 Roadmap — Corpus Learning
+
+Train a musical style from the 323-song corpus — then generate in that style.
+
+- [x] `train_style_from_corpus(progressions)` — extract: transition matrix, root/shape frequency,
+      avg length, key distribution, corpus size. Everything needed for style-specific generation.
+- [x] `continue_in_style(style, start, length, seed)` — generate via the learned transition matrix
+- [x] 4 tests for style dict structure, generation, determinism
+
+## v102.0 Roadmap — Note Probability
+
+Pitch-class statistics and melodic Markov chains at the note level.
+
+- [x] `note_probability(notes)` — probability distribution of pitch classes (frequency-sorted)
+- [x] `next_note_distribution(notes, current)` — first-order Markov: what follows this pitch?
+- [x] 7 tests for distribution, empty, rests, sum-to-1, unknown note
+
+## v103.0 Roadmap — Chord Quality Morphing
+
+Smooth transitions between chords by gradually moving pitch classes.
+
+- [x] `morph_chord(from_chord, to_chord, steps, octave, duration)` — linear interpolation
+      in pitch-class space (shortest path per voice), returns intermediate voicings
+- [x] `chord_interpolation(progression, steps_between, octave, duration)` — insert morphing
+      intermediates between every chord pair in a progression
+- [x] 7 tests for step count, source/target preservation, single chord, interpolation
+
+## v104.0 Roadmap — Pitch Set Operations
+
+Set theory on pitch classes — union, intersection, complement, transposition.
+
+- [x] `pc_set(pitches)` — convert note names to integer pitch-class set
+- [x] `pc_union(set_a, set_b)` — union of two pitch collections
+- [x] `pc_intersection(set_a, set_b)` — common pitches
+- [x] `pc_complement(pitches)` — all 12 chromatic pitches NOT in the set
+- [x] `transpose_set(pitches, semitones)` — shift all pitch classes
+- [x] 11 tests for union, intersection, complement, transpose, duplicates, wrapping
+
+## v105.0 Roadmap — Rhythmic Density Analysis
+
+Measure note density over time and compare halves.
+
+- [x] `density_profile(notes, resolution)` — binned note count per beat
+- [x] `density_contrast(notes, split_at)` — second-half/first-half density ratio (>1 = builds, <1 = winds down)
+- [x] 8 tests for profile shape, rests, contrast direction, empty input
+
+## v106.0 Roadmap — Harmonic Ambiguity Score
+
+How clearly is a progression in one key? Measure the gap.
+
+- [x] `ambiguity_score(progression)` — 0.0 (clear key) to 1.0 (no key fits well). Uses root-frequency
+      scoring with tonic bonus, then gap between best and second-best key candidate
+- [x] `key_certainty(progression)` — {key, confidence (1-ambiguity), ambiguity}
+- [x] 8 tests for diatonic/chromatic comparison, range, empty, confidence+ambiguity sum
+
+## v107.0+ Roadmap — Future Directions
+
+Ideas for continued development:
+
+- [ ] **Web playground**: browser-based REPL using Pyodide, play songs in the browser
+- [ ] **MusicXML export**: standard notation interchange for Sibelius/Finale/MuseScore
+- [ ] **Plugin architecture**: user-defined theory functions loadable at runtime
+- [ ] **Regression benchmarks**: track test suite performance across versions
+- [ ] **Interactive tutorial**: step-by-step Jupyter notebooks teaching music theory via code-music
+- [ ] **Wasm build**: compile theory.py to WebAssembly for zero-install browser use
+- [ ] **Genre classifier**: given a progression, predict the genre (jazz/pop/classical/blues)
+- [ ] **Voice range optimizer**: auto-transpose melodies to fit singer/instrument range
+- [ ] **Chord symbol formatter**: render (root, shape) as standard chord symbols (Cmaj7, Dm7b5, etc)
+- [ ] **Practice log**: track which exercises/patterns have been practiced and when
 
 ## v9.0 Roadmap — Gallery & Showcase
 

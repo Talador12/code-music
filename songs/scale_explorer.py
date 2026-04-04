@@ -17,6 +17,12 @@ _SCALE_MAP = {
     "lydian": "major",
     "phrygian": "minor",
     "locrian": "minor",
+    "acoustic": "mixolydian",
+    "lydian_dominant": "mixolydian",
+    "lydian_augmented": "major",
+    "bebop_dominant": "mixolydian",
+    "bebop_major": "major",
+    "bebop_minor": "minor",
 }
 
 lead = song.add_track(Track(name="lead", instrument="piano", volume=0.5, pan=0.15))
