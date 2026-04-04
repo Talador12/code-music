@@ -10048,6 +10048,147 @@ def total_duration(notes: list[Note]) -> float:
     return round(sum(n.duration for n in notes), 4)
 
 
+# ---------------------------------------------------------------------------
+# Rest analysis (v122.0)
+# ---------------------------------------------------------------------------
+
+
+def rest_ratio(notes: list[Note]) -> float:
+    """Fraction of total duration that is rests (0.0-1.0).
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Ratio of rest duration to total duration.
+    """
+    if not notes:
+        return 0.0
+    rest_dur = sum(n.duration for n in notes if n.pitch is None)
+    total = sum(n.duration for n in notes)
+    return round(rest_dur / max(total, 0.001), 4)
+
+
+def longest_rest(notes: list[Note]) -> float:
+    """Find the longest rest duration in a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Duration of the longest rest (0.0 if no rests).
+    """
+    rests = [n.duration for n in notes if n.pitch is None]
+    return max(rests) if rests else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Leap/step analysis (v123.0)
+# ---------------------------------------------------------------------------
+
+
+def leap_count(notes: list[Note], threshold: int = 3) -> int:
+    """Count melodic leaps (intervals larger than threshold semitones).
+
+    Args:
+        notes:     Input melody.
+        threshold: Minimum semitones to count as a leap (default 3 = minor 3rd).
+
+    Returns:
+        Number of leaps.
+    """
+    count = 0
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        a = _semi(str(notes[i - 1].pitch)) + notes[i - 1].octave * 12
+        b = _semi(str(notes[i].pitch)) + notes[i].octave * 12
+        if abs(b - a) >= threshold:
+            count += 1
+    return count
+
+
+def step_count(notes: list[Note], threshold: int = 3) -> int:
+    """Count melodic steps (intervals smaller than threshold semitones).
+
+    Args:
+        notes:     Input melody.
+        threshold: Maximum semitones to count as a step (default 3).
+
+    Returns:
+        Number of steps.
+    """
+    count = 0
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        a = _semi(str(notes[i - 1].pitch)) + notes[i - 1].octave * 12
+        b = _semi(str(notes[i].pitch)) + notes[i].octave * 12
+        if 0 < abs(b - a) < threshold:
+            count += 1
+    return count
+
+
+def leap_step_ratio(notes: list[Note], threshold: int = 3) -> float:
+    """Ratio of leaps to steps. Higher = more angular, lower = more stepwise.
+
+    Args:
+        notes:     Input melody.
+        threshold: Leap/step boundary in semitones.
+
+    Returns:
+        Ratio (leaps / steps). Returns 0.0 if no steps.
+    """
+    leaps = leap_count(notes, threshold)
+    steps = step_count(notes, threshold)
+    return round(leaps / max(steps, 1), 3)
+
+
+# ---------------------------------------------------------------------------
+# Note repetition analysis (v124.0)
+# ---------------------------------------------------------------------------
+
+
+def repetition_ratio(notes: list[Note]) -> float:
+    """Fraction of consecutive note pairs that repeat the same pitch (0.0-1.0).
+
+    High repetition = static/drone-like. Low = constantly moving.
+
+    Args:
+        notes: Input melody.
+
+    Returns:
+        Ratio of repeated pitches to total consecutive pairs.
+    """
+    if len(notes) < 2:
+        return 0.0
+    repeats = 0
+    total = 0
+    for i in range(1, len(notes)):
+        if notes[i].pitch is None or notes[i - 1].pitch is None:
+            continue
+        total += 1
+        if notes[i].pitch == notes[i - 1].pitch and notes[i].octave == notes[i - 1].octave:
+            repeats += 1
+    return round(repeats / max(total, 1), 4)
+
+
+def unique_pitches(notes: list[Note]) -> int:
+    """Count the number of distinct pitches (name + octave) in a note list.
+
+    Args:
+        notes: Input notes.
+
+    Returns:
+        Number of unique pitch/octave combinations.
+    """
+    seen: set[tuple[str, int]] = set()
+    for n in notes:
+        if n.pitch is not None:
+            seen.add((str(n.pitch), n.octave))
+    return len(seen)
+
+
 class Change:
     """A single structural change between two songs."""
 
