@@ -9608,6 +9608,168 @@ def complexity_contrast(
     return round(second / max(first, 1), 3)
 
 
+# ---------------------------------------------------------------------------
+# Chord inversion analyzer (v113.0)
+# ---------------------------------------------------------------------------
+
+
+def detect_inversion(notes: list[Note], root: str, shape: str) -> int:
+    """Detect which inversion a chord voicing is in.
+
+    0 = root position (root is lowest), 1 = first inversion (3rd is lowest),
+    2 = second inversion (5th is lowest), 3 = third inversion (7th is lowest).
+
+    Args:
+        notes: The chord voicing as Notes (lowest to highest).
+        root:  Expected root of the chord.
+        shape: Chord quality.
+
+    Returns:
+        Inversion number (0-3).
+    """
+    if not notes:
+        return 0
+    sounding = [n for n in notes if n.pitch is not None]
+    if not sounding:
+        return 0
+
+    bass_pc = _semi(str(sounding[0].pitch))
+    root_pc = _semi(root)
+    semis = _CHORD_SEMI.get(shape, [0, 4, 7])
+    chord_pcs = [(root_pc + s) % 12 for s in semis]
+
+    for i, pc in enumerate(chord_pcs):
+        if pc == bass_pc:
+            return i
+    return 0
+
+
+def inversion_label(inversion: int) -> str:
+    """Return a human-readable label for a chord inversion.
+
+    Args:
+        inversion: Inversion number (0-3).
+
+    Returns:
+        Label string.
+    """
+    labels = {0: "root position", 1: "1st inversion", 2: "2nd inversion", 3: "3rd inversion"}
+    return labels.get(inversion, f"{inversion}th inversion")
+
+
+# ---------------------------------------------------------------------------
+# Note name utilities (v114.0)
+# ---------------------------------------------------------------------------
+
+
+def note_to_midi(pitch: str, octave: int) -> int:
+    """Convert a note name + octave to MIDI note number.
+
+    C4 = 60 (middle C). Standard MIDI convention.
+
+    Args:
+        pitch:  Note name.
+        octave: Octave number.
+
+    Returns:
+        MIDI note number (0-127).
+    """
+    return _semi(pitch) + (octave + 1) * 12
+
+
+def midi_to_note(midi: int) -> tuple[str, int]:
+    """Convert a MIDI note number to (pitch_name, octave).
+
+    Args:
+        midi: MIDI note number.
+
+    Returns:
+        (pitch_name, octave) tuple.
+    """
+    return (_NOTE_NAMES[midi % 12], midi // 12 - 1)
+
+
+def note_to_freq(pitch: str, octave: int, a4: float = 440.0) -> float:
+    """Convert a note name + octave to frequency in Hz.
+
+    Uses equal temperament with configurable A4 reference.
+
+    Args:
+        pitch:  Note name.
+        octave: Octave number.
+        a4:     Reference frequency for A4 (default 440 Hz).
+
+    Returns:
+        Frequency in Hz.
+    """
+    midi = note_to_midi(pitch, octave)
+    return round(a4 * (2 ** ((midi - 69) / 12)), 3)
+
+
+# ---------------------------------------------------------------------------
+# Progression similarity (v115.0)
+# ---------------------------------------------------------------------------
+
+
+def progression_similarity(
+    prog_a: list[tuple[str, str]],
+    prog_b: list[tuple[str, str]],
+) -> float:
+    """Compare two progressions by root PC overlap + shape overlap.
+
+    Combines Jaccard similarity on root pitch classes and chord quality
+    distribution similarity. Transposition-dependent (use detect_key
+    first if you want key-independent comparison).
+
+    Args:
+        prog_a: First progression.
+        prog_b: Second progression.
+
+    Returns:
+        Similarity score 0.0-1.0.
+    """
+    if not prog_a or not prog_b:
+        return 0.0
+
+    fp_a = song_fingerprint(prog_a)
+    fp_b = song_fingerprint(prog_b)
+    pitch_sim = song_similarity(fp_a, fp_b)
+
+    # Shape distribution similarity
+    shapes_a = set(s for _, s in prog_a)
+    shapes_b = set(s for _, s in prog_b)
+    union = shapes_a | shapes_b
+    if not union:
+        shape_sim = 1.0
+    else:
+        shape_sim = len(shapes_a & shapes_b) / len(union)
+
+    return round((pitch_sim + shape_sim) / 2, 3)
+
+
+def find_similar_progressions(
+    target: list[tuple[str, str]],
+    corpus: list[list[tuple[str, str]]],
+    top_n: int = 5,
+) -> list[tuple[int, float]]:
+    """Find the most similar progressions in a corpus.
+
+    Args:
+        target: The progression to compare against.
+        corpus: List of progressions to search.
+        top_n:  Number of results.
+
+    Returns:
+        List of (corpus_index, similarity_score) sorted by score descending.
+    """
+    scores = []
+    for i, prog in enumerate(corpus):
+        sim = progression_similarity(target, prog)
+        scores.append((i, sim))
+    scores.sort(key=lambda x: -x[1])
+    return scores[:top_n]
+
+
 class Change:
     """A single structural change between two songs."""
 

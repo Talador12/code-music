@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v112.0.0 — 323 songs, 2201 tests — contour matching + rhythm matching + complexity curves
+## Status: v115.0.0 — 323 songs, 2227 tests — inversions + note utils + progression similarity
 
 ## What's built
 
@@ -1284,7 +1284,32 @@ Track harmonic complexity over time with sliding windows.
 - [x] `complexity_contrast(progression, key)` — second-half/first-half complexity ratio
 - [x] 7 tests for length, range, chromatic vs diatonic, single chord, steady
 
-## v113.0+ Roadmap — Future Directions
+## v113.0 Roadmap — Chord Inversion Analyzer
+
+Detect which inversion a voicing is in.
+
+- [x] `detect_inversion(notes, root, shape)` — returns 0 (root), 1 (1st), 2 (2nd), 3 (3rd) by matching bass note to chord tones
+- [x] `inversion_label(inversion)` — human-readable: "root position", "1st inversion", etc
+- [x] 9 tests for all positions, dom7 3rd inversion, empty
+
+## v114.0 Roadmap — Note Name Utilities
+
+MIDI ↔ note name ↔ frequency conversions.
+
+- [x] `note_to_midi(pitch, octave)` — C4 = 60, A4 = 69
+- [x] `midi_to_note(midi)` — 60 → ("C", 4), round-trip verified
+- [x] `note_to_freq(pitch, octave, a4)` — equal temperament, configurable A4 (default 440 Hz)
+- [x] 10 tests for middle C, A4, C0, round-trip, frequency accuracy, custom tuning
+
+## v115.0 Roadmap — Progression Similarity
+
+Compare and search progressions by harmonic fingerprint.
+
+- [x] `progression_similarity(prog_a, prog_b)` — combined pitch-class + shape Jaccard similarity (0.0-1.0)
+- [x] `find_similar_progressions(target, corpus, top_n)` — rank a corpus by similarity to a target, returns (index, score) pairs
+- [x] 7 tests for identical, different, empty, range, exact match finding, top_n, sorted output
+
+## v116.0+ Roadmap — Future Directions
 
 Ideas for continued development:
 

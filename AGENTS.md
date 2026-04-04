@@ -527,6 +527,9 @@ Eight releases shipped in a single conversation:
 | v110.0 | Contour matching: contour_string, contour_match | 2186 | 323 | — |
 | v111.0 | Rhythm matching: rhythm_string, rhythm_match | 2194 | 323 | — |
 | v112.0 | Complexity curve + contrast | 2201 | 323 | — |
+| v113.0 | Chord inversion analyzer | 2210 | 323 | — |
+| v114.0 | Note name utilities (MIDI, freq) | 2220 | 323 | — |
+| v115.0 | Progression similarity + corpus search | 2227 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -640,5 +643,8 @@ fit_to_range, auto_octave, interval_sequence, common_intervals.
 theory.py v110-v112 additions: contour_string, contour_match,
 rhythm_string, rhythm_match, complexity_curve, complexity_contrast.
 325+ public functions across theory.py + composition.py. 323 songs.
-2201 tests. v112 shipped. Pattern matching and complexity analysis.
+theory.py v113-v115 additions: detect_inversion, inversion_label,
+note_to_midi, midi_to_note, note_to_freq, progression_similarity,
+find_similar_progressions.
+335+ public functions. 2227 tests. v115 shipped.
 Infrastructure items remain.
