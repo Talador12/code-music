@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v118.0.0 — 323 songs, 2250 tests — scale degrees + chord tones + melodic range
+## Status: v127.0.0 — 323 songs, 2321 tests — chord symbol parser + melody smoothing + harmonic rhythm
 
 ## What's built
 
@@ -1334,7 +1334,31 @@ Analyze the pitch range and center of a melody.
 - [x] `pitch_center(notes)` — (pitch_name, octave) of the average pitch
 - [x] 8 tests
 
-## v119.0+ Roadmap — Future Directions
+## v125.0 Roadmap — Chord Symbol Parser
+
+Parse real-world chord symbols like Cmaj7, Dm7b5, G7#9.
+
+- [x] `parse_chord_symbol(symbol)` — "Cmaj7" → ("C","maj7"), handles sharps/flats/all suffixes
+- [x] `parse_chord_symbols(text)` — space-separated batch: "Cmaj7 Dm7 G7" → list of tuples
+- [x] 15 tests
+
+## v126.0 Roadmap — Melody Smoothing
+
+Fill large leaps with passing tones for smoother melodies.
+
+- [x] `smooth_melody(notes, max_leap)` — inserts one chromatic midpoint for leaps > max_leap
+- [x] `fill_leaps(notes, threshold)` — replaces large leaps with full chromatic runs
+- [x] 8 tests
+
+## v127.0 Roadmap — Harmonic Rhythm Quantizer
+
+Control chord density — expand or contract progressions.
+
+- [x] `chords_per_bar(progression, total_bars)` — average chord changes per bar
+- [x] `quantize_harmonic_rhythm(progression, target)` — contract (sample) or expand (repeat) to target density
+- [x] 8 tests
+
+## v128.0+ Roadmap — Future Directions
 
 Ideas for continued development:
 

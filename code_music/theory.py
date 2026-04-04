@@ -10189,6 +10189,243 @@ def unique_pitches(notes: list[Note]) -> int:
     return len(seen)
 
 
+# ---------------------------------------------------------------------------
+# Chord symbol parser (v125.0)
+# ---------------------------------------------------------------------------
+
+
+def parse_chord_symbol(symbol: str) -> tuple[str, str]:
+    """Parse a standard chord symbol string into (root, shape).
+
+    Handles real-world chord symbols: Cmaj7, Dm7, G7, F#m, Bbdim7,
+    Asus4, E+, Am7b5, etc.
+
+    Args:
+        symbol: Chord symbol string.
+
+    Returns:
+        (root, shape) tuple.
+
+    Raises:
+        ValueError: If the symbol can't be parsed.
+    """
+    if not symbol:
+        raise ValueError("Empty chord symbol")
+
+    # Extract root (letter + optional # or b)
+    root = symbol[0].upper()
+    idx = 1
+    if idx < len(symbol) and symbol[idx] in "#b":
+        root += symbol[idx]
+        idx += 1
+
+    suffix = symbol[idx:]
+
+    # Map suffixes to internal shapes — ordered longest-first to avoid partial matches
+    _SYMBOL_MAP = [
+        ("maj9", "maj9"),
+        ("min9", "min9"),
+        ("m9", "min9"),
+        ("maj7", "maj7"),
+        ("min7", "min7"),
+        ("m7b5", "min7b5"),
+        ("m7", "min7"),
+        ("dim7", "dim7"),
+        ("aug7", "aug7"),
+        ("7#9", "dom7"),
+        ("7b9", "dom7"),
+        ("7", "dom7"),
+        ("dim", "dim"),
+        ("aug", "aug"),
+        ("+", "aug"),
+        ("sus4", "sus4"),
+        ("sus2", "sus2"),
+        ("m", "min"),
+        ("min", "min"),
+        ("9", "dom9"),
+        ("6", "maj6"),
+        ("", "maj"),
+    ]
+
+    for pattern, shape in _SYMBOL_MAP:
+        if suffix == pattern:
+            return (root, shape)
+
+    # Fallback: treat unknown suffix as the shape itself
+    return (root, suffix if suffix else "maj")
+
+
+def parse_chord_symbols(text: str) -> list[tuple[str, str]]:
+    """Parse a space-separated string of chord symbols.
+
+    Args:
+        text: e.g. "Cmaj7 Dm7 G7 Cmaj7"
+
+    Returns:
+        List of (root, shape) tuples.
+    """
+    return [parse_chord_symbol(s.strip()) for s in text.split() if s.strip()]
+
+
+# ---------------------------------------------------------------------------
+# Melody smoothing (v126.0)
+# ---------------------------------------------------------------------------
+
+
+def smooth_melody(
+    notes: list[Note],
+    max_leap: int = 4,
+    seed: int | None = None,
+) -> list[Note]:
+    """Smooth a melody by filling in large leaps with passing tones.
+
+    When two consecutive notes are more than max_leap semitones apart,
+    insert a chromatic passing tone halfway between them (splitting
+    the first note's duration in half).
+
+    Args:
+        notes:    Input melody.
+        max_leap: Maximum allowed interval in semitones before smoothing.
+        seed:     Random seed (unused currently, reserved for future variation).
+
+    Returns:
+        Smoothed melody with passing tones inserted.
+    """
+    if len(notes) < 2:
+        return list(notes)
+
+    result: list[Note] = []
+    for i in range(len(notes) - 1):
+        curr = notes[i]
+        nxt = notes[i + 1]
+
+        if curr.pitch is None or nxt.pitch is None:
+            result.append(curr)
+            continue
+
+        a = _semi(str(curr.pitch)) + curr.octave * 12
+        b = _semi(str(nxt.pitch)) + nxt.octave * 12
+        gap = abs(b - a)
+
+        if gap > max_leap:
+            # Insert passing tone at midpoint
+            mid = (a + b) // 2
+            half_dur = curr.duration / 2
+            result.append(Note(curr.pitch, curr.octave, half_dur, velocity=curr.velocity))
+            result.append(
+                Note(_NOTE_NAMES[mid % 12], mid // 12, half_dur, velocity=int(curr.velocity * 0.8))
+            )
+        else:
+            result.append(curr)
+
+    result.append(notes[-1])
+    return result
+
+
+def fill_leaps(
+    notes: list[Note],
+    threshold: int = 5,
+) -> list[Note]:
+    """Replace each large leap with a stepwise chromatic run.
+
+    Unlike smooth_melody (which adds one passing tone), fill_leaps
+    inserts all chromatic steps between the two notes, dividing
+    the original duration equally.
+
+    Args:
+        notes:     Input melody.
+        threshold: Minimum leap size to fill (semitones).
+
+    Returns:
+        Melody with leaps replaced by chromatic runs.
+    """
+    if len(notes) < 2:
+        return list(notes)
+
+    result: list[Note] = []
+    for i in range(len(notes) - 1):
+        curr = notes[i]
+        nxt = notes[i + 1]
+
+        if curr.pitch is None or nxt.pitch is None:
+            result.append(curr)
+            continue
+
+        a = _semi(str(curr.pitch)) + curr.octave * 12
+        b = _semi(str(nxt.pitch)) + nxt.octave * 12
+        gap = abs(b - a)
+
+        if gap >= threshold:
+            direction = 1 if b > a else -1
+            steps = gap
+            step_dur = curr.duration / steps
+            for s in range(steps):
+                p = a + direction * s
+                result.append(Note(_NOTE_NAMES[p % 12], p // 12, step_dur, velocity=curr.velocity))
+        else:
+            result.append(curr)
+
+    result.append(notes[-1])
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Harmonic rhythm quantizer (v127.0)
+# ---------------------------------------------------------------------------
+
+
+def chords_per_bar(
+    progression: list[tuple[str, str]],
+    total_bars: int,
+) -> float:
+    """Calculate the average number of chord changes per bar.
+
+    Args:
+        progression: Chord progression.
+        total_bars:  Number of bars the progression spans.
+
+    Returns:
+        Average chords per bar.
+    """
+    if total_bars <= 0:
+        return 0.0
+    return round(len(progression) / total_bars, 2)
+
+
+def quantize_harmonic_rhythm(
+    progression: list[tuple[str, str]],
+    target_chords_per_bar: int = 1,
+) -> list[tuple[str, str]]:
+    """Quantize a progression to a target harmonic rhythm.
+
+    If target is 1 chord per bar and the input has 2, keep every other chord.
+    If target is 2 and input has 1, duplicate each chord.
+
+    Args:
+        progression:          Input progression.
+        target_chords_per_bar: Desired density (1 = whole notes, 2 = half notes, 4 = quarters).
+
+    Returns:
+        Quantized progression.
+    """
+    if not progression or target_chords_per_bar <= 0:
+        return list(progression)
+
+    current_density = len(progression)
+
+    if target_chords_per_bar >= current_density:
+        # Expand: repeat each chord to fill
+        ratio = target_chords_per_bar // max(current_density, 1)
+        result: list[tuple[str, str]] = []
+        for chord in progression:
+            result.extend([chord] * max(ratio, 1))
+        return result[: target_chords_per_bar * (len(progression) // current_density or 1)]
+    else:
+        # Contract: sample evenly
+        step = max(1, current_density // target_chords_per_bar)
+        return [progression[i] for i in range(0, len(progression), step)][:target_chords_per_bar]
+
+
 class Change:
     """A single structural change between two songs."""
 

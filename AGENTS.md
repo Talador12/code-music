@@ -533,6 +533,10 @@ Eight releases shipped in a single conversation:
 | v116.0 | Scale degree naming | 2234 | 323 | — |
 | v117.0 | Chord tone filter | 2242 | 323 | — |
 | v118.0 | Melodic range stats + pitch center | 2250 | 323 | — |
+| v119-v124 | Pitch histogram, velocity/duration stats, rests, leaps, repetition | 2290 | 323 | — |
+| v125.0 | Chord symbol parser (parse_chord_symbol/symbols) | 2305 | 323 | — |
+| v126.0 | Melody smoothing (smooth_melody, fill_leaps) | 2313 | 323 | — |
+| v127.0 | Harmonic rhythm quantizer (chords_per_bar, quantize) | 2321 | 323 | — |
 
 Completed roadmap items across v6-v23:
 - v6-v9: Sound design (7 synthesis types), pattern language, spectral/timbre
@@ -651,5 +655,7 @@ note_to_midi, midi_to_note, note_to_freq, progression_similarity,
 find_similar_progressions.
 theory.py v116-v118 additions: scale_degree, scale_degree_name,
 chord_tones, is_chord_tone, filter_chord_tones, melodic_range, pitch_center.
-345+ public functions. 2250 tests. v118 shipped.
-80 versions (v39-v118) in one conversation arc. Infrastructure items remain.
+theory.py v125-v127 additions: parse_chord_symbol, parse_chord_symbols,
+smooth_melody, fill_leaps, chords_per_bar, quantize_harmonic_rhythm.
+375+ public functions. 2321 tests. v127 shipped.
+89 versions (v39-v127) across multiple sessions. Infrastructure items remain.
