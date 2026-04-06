@@ -3140,3 +3140,225 @@ def generate_theme_and_variations(
             current = variation
 
     return song
+
+
+# ---------------------------------------------------------------------------
+# Period / sentence builder (v135.0)
+# ---------------------------------------------------------------------------
+
+
+def generate_period(
+    key: str = "C",
+    antecedent_cadence: str = "half",
+    consequent_cadence: str = "perfect",
+    phrase_length: int = 4,
+    include_melody: bool = True,
+    seed: int | None = None,
+) -> dict:
+    """Build a classical period: antecedent phrase + consequent phrase.
+
+    A period is the fundamental unit of tonal form. The antecedent
+    asks a question (ending on a half cadence), and the consequent
+    answers it (ending on a perfect cadence). This is how Mozart
+    wrote — 8-bar chunks, two at a time.
+
+    Args:
+        key:                 Key root note.
+        antecedent_cadence:  Cadence for the first phrase (default 'half').
+        consequent_cadence:  Cadence for the second phrase (default 'perfect').
+        phrase_length:       Chords per phrase.
+        include_melody:      If True, generates melody for both phrases.
+        seed:                Random seed.
+
+    Returns:
+        Dict with keys:
+            antecedent:    generate_phrase result for the first phrase.
+            consequent:    generate_phrase result for the second phrase.
+            full_progression: Combined progression (both phrases).
+            tension_curve:    Combined tension curve.
+            melody:           Combined melody (if include_melody=True).
+
+    Example::
+
+        >>> period = generate_period("C", seed=42)
+        >>> len(period["full_progression"])
+        8
+        >>> period["antecedent"]["cadence_type"]
+        'half'
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+
+    ante = generate_phrase(
+        key=key,
+        cadence=antecedent_cadence,
+        length=phrase_length,
+        include_melody=include_melody,
+        seed=rng.randint(0, 2**31),
+    )
+    cons = generate_phrase(
+        key=key,
+        cadence=consequent_cadence,
+        length=phrase_length,
+        include_melody=include_melody,
+        seed=rng.randint(0, 2**31),
+    )
+
+    full_prog = ante["progression"] + cons["progression"]
+    full_curve = ante["tension_curve"] + cons["tension_curve"]
+
+    result: dict = {
+        "antecedent": ante,
+        "consequent": cons,
+        "full_progression": full_prog,
+        "tension_curve": full_curve,
+    }
+
+    if include_melody and "melody" in ante and "melody" in cons:
+        result["melody"] = ante["melody"] + cons["melody"]
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Guided composition — natural language → Song (v135.0)
+# ---------------------------------------------------------------------------
+
+# Keyword → parameter mappings for prompt parsing
+_PROMPT_KEYS: dict[str, str] = {
+    "Ab": "Ab",
+    "A": "A",
+    "Bb": "Bb",
+    "B": "B",
+    "C": "C",
+    "Db": "Db",
+    "D": "D",
+    "Eb": "Eb",
+    "E": "E",
+    "F": "F",
+    "F#": "F#",
+    "Gb": "Gb",
+    "G": "G",
+}
+
+_PROMPT_GENRES: dict[str, str] = {
+    "jazz": "jazz",
+    "swing": "jazz",
+    "bebop": "jazz",
+    "bop": "jazz",
+    "pop": "pop",
+    "indie": "pop",
+    "rock": "rock",
+    "punk": "rock",
+    "grunge": "rock",
+    "blues": "blues",
+    "delta": "blues",
+    "classical": "classical",
+    "baroque": "classical",
+    "romantic": "classical",
+    "electronic": "electronic",
+    "edm": "electronic",
+    "techno": "electronic",
+    "house": "electronic",
+    "trance": "electronic",
+    "ambient": "ambient",
+    "chill": "ambient",
+    "drone": "ambient",
+    "metal": "rock",
+    "heavy": "rock",
+    "r&b": "pop",
+    "soul": "pop",
+    "funk": "pop",
+    "latin": "pop",
+    "bossa": "jazz",
+    "samba": "pop",
+}
+
+
+def compose(
+    prompt: str,
+    seed: int | None = None,
+) -> "Song":
+    """Generate a Song from a natural language description.
+
+    Parses the prompt for genre, key, BPM, and section hints, then
+    delegates to generate_full_song with the extracted parameters.
+    The flagship UX function — "make me a jazz ballad in Bb" becomes
+    a single call.
+
+    Recognized keywords:
+        Genre:    jazz, pop, rock, blues, classical, electronic, ambient,
+                  swing, bebop, punk, edm, techno, ambient, chill, ...
+        Key:      C, D, Eb, F#, Bb, ... (case-sensitive note names)
+        BPM:      any number (40-300 range extracted)
+        Sections: intro, verse, chorus, bridge, outro, solo, drop
+
+    Args:
+        prompt: Natural language description of the desired song.
+        seed:   Random seed for reproducibility.
+
+    Returns:
+        A fully generated Song object.
+
+    Example::
+
+        >>> song = compose("jazz ballad in Bb at 90 bpm", seed=42)
+        >>> song.title
+        'Jazz in Bb'
+        >>> song.bpm
+        90
+        >>> compose("fast rock song in E", seed=1).bpm
+        160
+    """
+    import re
+
+    prompt_lower = prompt.lower()
+    words = prompt_lower.split()
+
+    # Extract genre
+    genre = "pop"  # default
+    for word in words:
+        clean = word.strip(".,!?;:'\"")
+        if clean in _PROMPT_GENRES:
+            genre = _PROMPT_GENRES[clean]
+            break
+
+    # Extract key (case-sensitive scan of original prompt)
+    key = "C"  # default
+    for token in prompt.split():
+        clean = token.strip(".,!?;:'\"")
+        if clean in _PROMPT_KEYS:
+            key = _PROMPT_KEYS[clean]
+
+    # Extract BPM
+    bpm: int | None = None
+    bpm_match = re.search(r"(\d{2,3})\s*bpm", prompt_lower)
+    if bpm_match:
+        candidate = int(bpm_match.group(1))
+        if 40 <= candidate <= 300:
+            bpm = candidate
+
+    # Tempo adjectives
+    if bpm is None:
+        if any(w in words for w in ["fast", "uptempo", "quick", "energetic"]):
+            bpm = 160
+        elif any(w in words for w in ["slow", "ballad", "gentle", "relaxed"]):
+            bpm = 72
+        elif any(w in words for w in ["medium", "moderate", "mid-tempo"]):
+            bpm = 110
+
+    # Extract sections
+    sections: list[str] | None = None
+    section_keywords = {"intro", "verse", "chorus", "bridge", "outro", "solo", "drop", "breakdown"}
+    found_sections = [w for w in words if w.strip(".,") in section_keywords]
+    if found_sections:
+        sections = [w.strip(".,") for w in found_sections]
+
+    return generate_full_song(
+        genre=genre,
+        key=key,
+        bpm=bpm or 120,
+        sections=sections,
+        seed=seed,
+    )

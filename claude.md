@@ -2089,3 +2089,26 @@ printable as PDF.
 - [x] 9 tests (no mod, simple mod, coverage, contiguity, pivot, short, empty, window)
 
 **Stats:** 399+ public functions. 2484 tests. 323 songs. 44 scales.
+
+## v135.0 — Period Builder + Guided Composition + Melodic Similarity
+
+### generate_period — classical period structure
+- [x] `generate_period(key, antecedent_cadence, consequent_cadence, phrase_length, seed)` → dict
+- [x] Chains generate_phrase: antecedent (half cadence) + consequent (perfect cadence)
+- [x] Returns: combined progression, tension curve, optional melody
+- [x] 10 tests (default, combined, custom cadences, key, dominant ending)
+
+### compose — natural language to Song
+- [x] `compose(prompt, seed)` → Song
+- [x] Parses genre (30+ keywords), key (12 notes), BPM (numeric + adjectives), sections
+- [x] Genre synonyms: swing/bebop→jazz, edm/techno→electronic, punk→rock, etc.
+- [x] Tempo adjectives: fast→160, slow/ballad→72, medium→110
+- [x] 10 tests (jazz/rock/ambient, BPM, sections, synonyms, empty prompt)
+
+### melody_similarity + find_similar_melodies — melodic search
+- [x] `melody_similarity(a, b, weights)` → 0.0-1.0 score
+- [x] 3 features: contour matching, interval matching, rhythm matching
+- [x] `find_similar_melodies(query, corpus, top_k, min_score)` → ranked results
+- [x] 16 tests (identity, transposition, contour, weights, corpus search, filtering)
+
+**Stats:** 405+ public functions. 2520 tests. 323 songs. 44 scales.

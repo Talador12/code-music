@@ -780,39 +780,67 @@ chord marked as the pivot. Completes the harmonic analysis story.
 
 399+ public functions. 2484 tests. 323 songs. v134 shipped.
 
+## v135.0 — Period Builder + Guided Composition + Melodic Similarity
+
+**generate_period(key, antecedent_cadence, consequent_cadence, phrase_length, seed):**
+Classical period structure: antecedent phrase (half cadence → question) +
+consequent phrase (perfect cadence → answer). Chains generate_phrase,
+combines progressions, tension curves, and melodies. The fundamental unit
+of tonal form — how Mozart built 8-bar chunks, two at a time.
+
+**compose(prompt, seed):**
+Natural language to Song. Parses prompt for genre (jazz/pop/rock/blues/
+classical/electronic/ambient + 20 synonyms), key (all 12 note names),
+BPM (explicit or from adjectives: fast→160, slow→72, ballad→72), and
+section keywords (intro/verse/chorus/bridge/outro/solo/drop). Delegates
+to generate_full_song. `compose("jazz ballad in Bb at 90 bpm")` → Song.
+
+**melody_similarity(a, b, weights) + find_similar_melodies(query, corpus):**
+Multi-feature melodic comparison: contour direction matching, interval
+size matching, rhythm pattern matching. Weighted combination yields
+0.0-1.0 score. Transposed rising major → rising major = 1.0. Rising
+vs falling = 0.47. find_similar_melodies does corpus search with top-k
+and min-score filtering. Sorted by descending similarity.
+
+405+ public functions. 2520 tests. 323 songs. v135 shipped.
+
 ## Next session roadmap
 
 ### Tier 1: Ship immediately
 - **MusicXML Export** — `to_musicxml(song)` that opens in MuseScore/Finale.
-- **Song Builder DSL v2** — real mini-language with BPM, instruments, effects.
-- **Period/Sentence Builder** — `generate_period()` chains generate_phrase
-  for antecedent (half cadence) + consequent (perfect cadence) structure.
+- **Song Builder DSL v2** — multi-track mini-language with BPM, instruments,
+  effects. "Write a song in 20 lines of DSL."
+- **Harmonic Language Model** — corpus-trained markov chains per genre.
+  `suggest_progression(genre, length)` — idiomatic, not template-based.
 
 ### Tier 2: Composition intelligence
 - **Fugue Generator** — `generate_fugue(subject, voices, key)` — subject
-  entry, tonal answer, countersubject, episodes, stretto. The ultimate
-  integration test of species_counterpoint + develop_motif + voice_lead_satb.
-- **Song-Level Critique** — extend critique() to accept a full Song object,
-  analyze each track independently, check inter-track voice independence,
-  instrument range violations, and overall arrangement balance.
-- **Guided Composition** — `compose(prompt)` — natural language to Song.
-  "Write a jazz ballad in Bb with a walking bass and brush drums."
-  Parses prompt for genre/key/bpm/instruments, calls generate_full_song.
+  entry, tonal answer, countersubject, episodes, stretto.
+- **Song-Level Critique** — extend critique() to full Song objects with
+  inter-track voice independence and arrangement balance analysis.
+- **Form Generator** — `generate_form(style, key, bpm)` — complete formal
+  structures (sonata, rondo, AABA, verse-chorus) by chaining generate_period
+  and generate_phrase into multi-section Songs.
 
 ### Tier 3: Analysis & intelligence
-- **Harmonic Language Model** — corpus-trained markov chains per genre.
 - **Style Fingerprint** — multi-dimensional feature vector for song comparison.
-- **Melodic Similarity Search** — `find_similar_melodies(melody, corpus)` —
-  contour matching + interval matching across the 323-song corpus.
+- **Chord Progression DNA** — encode progressions as compact feature vectors
+  (root motion histogram + quality distribution + tension curve stats).
+  Enable instant corpus-wide similarity search without per-chord comparison.
+- **Arrangement Analyzer** — `analyze_arrangement(song)` — track roles
+  (melody/bass/pad/rhythm), register usage, instrument density, voice
+  crossing, and instrument range compliance.
 
 ### Tier 4: Platform & ecosystem
 - **Web Playground (Pyodide)** — theory module in the browser.
-- **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing.
-- **Live Coding Mode** — `code-music repl` with audio playback.
-- **Plugin Architecture** — register custom generators via entry points.
+- **MIDI Round-Trip v2** — import MIDI → Song.
+- **Live Coding REPL** — `code-music repl` with audio playback.
+- **Song Rendering CLI v2** — `code-music compose "jazz in Bb"` — compose
+  from the command line without writing a script.
 
 ### Tier 5: Quality & performance
-- **Test Organization** — group 155+ test files by domain.
-- **Benchmark Suite** — generate_full_song < 50ms, render 30s < 2s.
-- **Docstring Audit** — ensure every public function has Args/Returns/Example.
-- **Type Annotation Completion** — fix all Pyright errors, add `py.typed` marker.
+- **Test Organization** — group 157+ test files by domain.
+- **Benchmark Suite** — generation + rendering performance baselines.
+- **Type Annotation Completion** — fix Pyright errors, add `py.typed`.
+- **API Reference Generator** — auto-generate docs from docstrings,
+  publish to GitHub Pages alongside the web playground.

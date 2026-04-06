@@ -2760,3 +2760,172 @@ def detect_modulations(
             regions[i]["pivot_chord"] = progression[boundary - 1]
 
     return regions
+
+
+# ---------------------------------------------------------------------------
+# Melodic similarity search (v135.0)
+# ---------------------------------------------------------------------------
+
+
+def _melody_intervals(notes: list[Note]) -> list[int]:
+    """Extract signed interval sequence from pitched notes."""
+    pitched = [n for n in notes if n.pitch is not None]
+    if len(pitched) < 2:
+        return []
+    intervals = []
+    for i in range(1, len(pitched)):
+        a = _semi(str(pitched[i - 1].pitch)) + pitched[i - 1].octave * 12
+        b = _semi(str(pitched[i].pitch)) + pitched[i].octave * 12
+        intervals.append(b - a)
+    return intervals
+
+
+def _contour_string(notes: list[Note]) -> str:
+    """Extract contour direction string (U/D/R) from pitched notes."""
+    pitched = [n for n in notes if n.pitch is not None]
+    if len(pitched) < 2:
+        return ""
+    dirs = []
+    for i in range(1, len(pitched)):
+        a = _semi(str(pitched[i - 1].pitch)) + pitched[i - 1].octave * 12
+        b = _semi(str(pitched[i].pitch)) + pitched[i].octave * 12
+        if b > a:
+            dirs.append("U")
+        elif b < a:
+            dirs.append("D")
+        else:
+            dirs.append("R")
+    return "".join(dirs)
+
+
+def melody_similarity(
+    melody_a: list[Note],
+    melody_b: list[Note],
+    weights: dict[str, float] | None = None,
+) -> float:
+    """Compute a similarity score between two melodies (0.0-1.0).
+
+    Combines three features:
+    - **Contour similarity**: do the melodies go up/down in the same places?
+    - **Interval similarity**: are the interval sizes similar?
+    - **Rhythm similarity**: do the durations match?
+
+    Args:
+        melody_a: First melody.
+        melody_b: Second melody.
+        weights:  Optional feature weights dict with keys
+                  'contour', 'interval', 'rhythm'. Default: equal.
+
+    Returns:
+        Similarity score 0.0 (completely different) to 1.0 (identical).
+
+    Example::
+
+        >>> from code_music.engine import Note
+        >>> a = [Note("C",5,1.0), Note("E",5,1.0), Note("G",5,1.0)]
+        >>> b = [Note("D",5,1.0), Note("F#",5,1.0), Note("A",5,1.0)]
+        >>> melody_similarity(a, b)  # same contour, same intervals
+        1.0
+    """
+    if not melody_a or not melody_b:
+        return 0.0
+
+    w = weights or {"contour": 1.0, "interval": 1.0, "rhythm": 1.0}
+    total_w = sum(w.values())
+    if total_w == 0:
+        return 0.0
+
+    # 1. Contour similarity (Levenshtein-lite: fraction of matching directions)
+    ca = _contour_string(melody_a)
+    cb = _contour_string(melody_b)
+    if ca and cb:
+        min_len = min(len(ca), len(cb))
+        matches = sum(1 for i in range(min_len) if ca[i] == cb[i])
+        contour_sim = matches / max(len(ca), len(cb))
+    elif not ca and not cb:
+        contour_sim = 1.0
+    else:
+        contour_sim = 0.0
+
+    # 2. Interval similarity (cosine-like on interval sequences)
+    ia = _melody_intervals(melody_a)
+    ib = _melody_intervals(melody_b)
+    if ia and ib:
+        min_len = min(len(ia), len(ib))
+        max_len = max(len(ia), len(ib))
+        diffs = sum(abs(ia[i] - ib[i]) for i in range(min_len))
+        # Normalize: 12 semitones = completely different per step
+        interval_sim = max(0.0, 1.0 - diffs / (max_len * 12))
+    elif not ia and not ib:
+        interval_sim = 1.0
+    else:
+        interval_sim = 0.0
+
+    # 3. Rhythm similarity (duration pattern match)
+    da = [n.duration for n in melody_a if n.pitch is not None]
+    db = [n.duration for n in melody_b if n.pitch is not None]
+    if da and db:
+        min_len = min(len(da), len(db))
+        max_len = max(len(da), len(db))
+        dur_diffs = sum(abs(da[i] - db[i]) for i in range(min_len))
+        # Normalize: 4.0 beats = max reasonable difference per note
+        rhythm_sim = max(0.0, 1.0 - dur_diffs / (max_len * 4.0))
+    elif not da and not db:
+        rhythm_sim = 1.0
+    else:
+        rhythm_sim = 0.0
+
+    # Weighted combination
+    score = (
+        w.get("contour", 1.0) * contour_sim
+        + w.get("interval", 1.0) * interval_sim
+        + w.get("rhythm", 1.0) * rhythm_sim
+    ) / total_w
+
+    return round(min(1.0, max(0.0, score)), 3)
+
+
+def find_similar_melodies(
+    query: list[Note],
+    corpus: list[tuple[str, list[Note]]],
+    top_k: int = 5,
+    min_score: float = 0.0,
+) -> list[dict]:
+    """Search a corpus of melodies for those most similar to a query.
+
+    Uses melody_similarity to score each corpus entry against the query,
+    then returns the top-k results sorted by descending similarity.
+
+    Args:
+        query:     The melody to search for.
+        corpus:    List of (name, melody) tuples to search.
+        top_k:     Maximum results to return.
+        min_score: Minimum similarity threshold (0.0-1.0).
+
+    Returns:
+        List of dicts sorted by similarity (descending):
+            name:       Corpus entry name.
+            score:      Similarity score (0.0-1.0).
+            melody:     The matched melody.
+
+    Example::
+
+        >>> from code_music.engine import Note
+        >>> query = [Note("C",5,1.0), Note("E",5,1.0), Note("G",5,1.0)]
+        >>> corpus = [("rising", [Note("D",5,1.0), Note("F#",5,1.0), Note("A",5,1.0)]),
+        ...           ("falling", [Note("G",5,1.0), Note("E",5,1.0), Note("C",5,1.0)])]
+        >>> results = find_similar_melodies(query, corpus, top_k=2)
+        >>> results[0]["name"]
+        'rising'
+    """
+    if not query or not corpus:
+        return []
+
+    scored: list[dict] = []
+    for name, melody in corpus:
+        sim = melody_similarity(query, melody)
+        if sim >= min_score:
+            scored.append({"name": name, "score": sim, "melody": melody})
+
+    scored.sort(key=lambda x: -x["score"])
+    return scored[:top_k]
