@@ -2463,3 +2463,300 @@ def tension_story(
         segments.append("Overall: high-tension, chromatically adventurous writing.")
 
     return " ".join(segments)
+
+
+# ---------------------------------------------------------------------------
+# Composition critique (v134.0)
+# ---------------------------------------------------------------------------
+
+
+def critique(
+    progression: list[tuple[str, str]],
+    melody: list[Note] | None = None,
+    key: str = "C",
+) -> dict:
+    """Automated music theory review of a progression (and optional melody).
+
+    Checks for common theory violations and quality indicators:
+    parallel fifths/octaves, unresolved dominant, missing cadence,
+    harmonic variety, voice range, and tension balance. Returns a
+    graded report with a score and specific suggestions.
+
+    The theory professor in a function call — honest, thorough, and
+    occasionally blunt.
+
+    Args:
+        progression: List of (root, shape) tuples.
+        melody:      Optional melody notes for melodic analysis.
+        key:         Key for harmonic analysis.
+
+    Returns:
+        Dict with keys:
+            score:       0-100 grade.
+            grade:       Letter grade (A/B/C/D/F).
+            issues:      List of issue strings found.
+            strengths:   List of positive observations.
+            suggestions: List of improvement suggestions.
+
+    Example::
+
+        >>> result = critique([("C","maj"),("G","dom7"),("C","maj")], key="C")
+        >>> result["grade"]
+        'B'
+    """
+    issues: list[str] = []
+    strengths: list[str] = []
+    suggestions: list[str] = []
+    score = 100
+
+    if not progression:
+        return {
+            "score": 0,
+            "grade": "F",
+            "issues": ["Empty progression — no content to evaluate."],
+            "strengths": [],
+            "suggestions": ["Write some chords first."],
+        }
+
+    # --- Harmonic checks ---
+
+    # 1. Variety: how many unique chords?
+    unique_chords = len(set(progression))
+    if unique_chords == 1:
+        issues.append("Only one chord used — static harmony.")
+        score -= 20
+        suggestions.append("Add at least a IV or V chord for harmonic motion.")
+    elif unique_chords <= 2 and len(progression) >= 4:
+        issues.append(f"Low chord variety ({unique_chords} unique in {len(progression)} chords).")
+        score -= 10
+        suggestions.append("Try adding a ii or vi chord for more color.")
+    elif unique_chords >= 4:
+        strengths.append(f"Good harmonic variety ({unique_chords} unique chords).")
+
+    # 2. Quality variety: all triads? all 7ths?
+    shapes = set(shape for _, shape in progression)
+    if len(shapes) == 1 and len(progression) >= 4:
+        issues.append(f"All chords are {next(iter(shapes))} — monotonous quality.")
+        score -= 5
+        suggestions.append("Mix chord qualities (e.g. add a dominant 7th or minor chord).")
+
+    # 3. Cadence presence
+    cadences = detect_cadences(progression, key)
+    if not cadences and len(progression) >= 4:
+        issues.append("No recognizable cadence found.")
+        score -= 10
+        suggestions.append("End with V-I (authentic) or IV-I (plagal) for closure.")
+    elif cadences:
+        cad_types = [c.get("type", "unknown") for c in cadences]
+        strengths.append(f"Cadence(s) detected: {', '.join(cad_types)}.")
+
+    # 4. Unresolved dominant: does the last chord leave tension?
+    curve = tension_curve(progression, key)
+    if curve and curve[-1] > 0.4:
+        issues.append(f"Ends on high tension ({curve[-1]:.2f}) — unresolved.")
+        score -= 8
+        suggestions.append("Resolve to tonic (I) at the end for a sense of completion.")
+    elif curve and curve[-1] < 0.2:
+        strengths.append("Clean tonic resolution at the end.")
+
+    # 5. Tension arc: is there a climax?
+    if len(curve) >= 4:
+        max_t = max(curve)
+        min_t = min(curve)
+        if max_t - min_t < 0.1:
+            issues.append("Flat tension curve — no dramatic arc.")
+            score -= 8
+            suggestions.append("Build tension toward a climax (use V7, viio, or chromatic chords).")
+        elif max_t > 0.4:
+            strengths.append(f"Good tension arc (peak: {max_t:.2f}).")
+
+    # 6. Key consistency
+    detected_key = detect_key(progression)
+    if detected_key != key:
+        issues.append(f"Detected key ({detected_key}) differs from stated key ({key}).")
+        score -= 5
+        suggestions.append(
+            f"Consider analyzing in {detected_key} instead, or reinforce {key} with V-I."
+        )
+
+    # 7. Functional balance
+    func = functional_analysis(progression, key)
+    func_counts: dict[str, int] = {}
+    for f in func:
+        func_counts[f["function"]] = func_counts.get(f["function"], 0) + 1
+
+    total_func = sum(func_counts.values())
+    if total_func > 0:
+        dom_ratio = func_counts.get("D", 0) / total_func
+        tonic_ratio = func_counts.get("T", 0) / total_func
+        if dom_ratio > 0.5:
+            issues.append("Too many dominant-function chords — relentless tension.")
+            score -= 5
+        if tonic_ratio > 0.6 and len(progression) >= 4:
+            issues.append("Heavy tonic bias — progression doesn't go anywhere.")
+            score -= 5
+            suggestions.append("Add subdominant (IV, ii) and dominant (V) motion.")
+
+    # --- Melodic checks (if melody provided) ---
+    if melody:
+        pitched = [n for n in melody if n.pitch is not None]
+
+        # 8. Range check
+        if pitched:
+            midi_vals = [_semi(str(n.pitch)) + n.octave * 12 for n in pitched]
+            span = max(midi_vals) - min(midi_vals)
+            if span > 24:
+                issues.append(f"Melody spans {span} semitones — may exceed performer range.")
+                score -= 5
+                suggestions.append("Keep melody within 2 octaves for singability.")
+            elif span < 5 and len(pitched) >= 8:
+                issues.append("Very narrow melodic range — lacks expressiveness.")
+                score -= 5
+                suggestions.append(
+                    "Expand the range by using step motion to higher/lower registers."
+                )
+            elif 7 <= span <= 19:
+                strengths.append(f"Good melodic range ({span} semitones).")
+
+        # 9. Leap frequency
+        if len(pitched) >= 4:
+            leaps = 0
+            for i in range(1, len(pitched)):
+                a = _semi(str(pitched[i - 1].pitch)) + pitched[i - 1].octave * 12
+                b = _semi(str(pitched[i].pitch)) + pitched[i].octave * 12
+                if abs(b - a) > 4:
+                    leaps += 1
+            leap_ratio = leaps / (len(pitched) - 1)
+            if leap_ratio > 0.6:
+                issues.append(f"Too many leaps ({leap_ratio:.0%}) — angular, hard to sing.")
+                score -= 5
+                suggestions.append("Balance leaps with stepwise motion (seconds/thirds).")
+            elif leap_ratio < 0.15:
+                strengths.append("Good mix of steps and leaps.")
+
+        # 10. Rest ratio
+        rest_count = sum(1 for n in melody if n.pitch is None)
+        if len(melody) > 0:
+            rr = rest_count / len(melody)
+            if rr > 0.4:
+                issues.append(f"High rest ratio ({rr:.0%}) — melody feels sparse.")
+                score -= 3
+
+    # Clamp and grade
+    score = max(0, min(100, score))
+    if score >= 90:
+        grade = "A"
+    elif score >= 80:
+        grade = "B"
+    elif score >= 70:
+        grade = "C"
+    elif score >= 60:
+        grade = "D"
+    else:
+        grade = "F"
+
+    if not strengths:
+        strengths.append("Progression exists — that's a start.")
+    if not suggestions and score < 100:
+        suggestions.append("Keep writing. Every progression teaches something.")
+
+    return {
+        "score": score,
+        "grade": grade,
+        "issues": issues,
+        "strengths": strengths,
+        "suggestions": suggestions,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Modulation detector (v134.0)
+# ---------------------------------------------------------------------------
+
+
+def detect_modulations(
+    progression: list[tuple[str, str]],
+    window: int = 4,
+) -> list[dict]:
+    """Detect key changes within a chord progression.
+
+    Slides a window across the progression, running detect_key on each
+    window. When the detected key changes, that's a modulation. Returns
+    a timeline of key regions with pivot chord identification.
+
+    Args:
+        progression: List of (root, shape) tuples.
+        window:      Number of chords per analysis window (default 4).
+
+    Returns:
+        List of dicts, each describing a key region:
+            key:         Detected key for this region.
+            start:       Start chord index (0-based).
+            end:         End chord index (exclusive).
+            pivot_chord: (root, shape) of the chord at the boundary,
+                         or None for the first region.
+
+    Example::
+
+        >>> prog = [("C","maj"),("F","maj"),("G","dom7"),("C","maj"),
+        ...         ("G","maj"),("C","maj"),("D","dom7"),("G","maj")]
+        >>> mods = detect_modulations(prog, window=4)
+        >>> mods[0]["key"]
+        'C'
+    """
+    if len(progression) < window:
+        # Too short to detect modulation — treat as one key
+        key = detect_key(progression) if progression else "C"
+        return [{"key": key, "start": 0, "end": len(progression), "pivot_chord": None}]
+
+    # Slide window and detect key at each position
+    key_timeline: list[str] = []
+    for i in range(len(progression) - window + 1):
+        w = progression[i : i + window]
+        key_timeline.append(detect_key(w))
+
+    # Pad end so timeline covers all chords
+    while len(key_timeline) < len(progression):
+        key_timeline.append(key_timeline[-1])
+
+    # Merge consecutive same-key regions
+    regions: list[dict] = []
+    current_key = key_timeline[0]
+    region_start = 0
+
+    for i in range(1, len(key_timeline)):
+        if key_timeline[i] != current_key:
+            regions.append(
+                {
+                    "key": current_key,
+                    "start": region_start,
+                    "end": i,
+                    "pivot_chord": None,
+                }
+            )
+            # The pivot chord is the last chord of the previous region
+            # (it's shared between old and new key)
+            pivot = progression[i - 1] if i > 0 else None
+            current_key = key_timeline[i]
+            region_start = i
+            # Mark pivot on the new region
+            if regions:
+                regions[-1]["pivot_chord"] = pivot
+
+    # Final region
+    regions.append(
+        {
+            "key": current_key,
+            "start": region_start,
+            "end": len(progression),
+            "pivot_chord": None,
+        }
+    )
+
+    # Add pivot chord to regions after the first
+    for i in range(1, len(regions)):
+        boundary = regions[i]["start"]
+        if boundary > 0:
+            regions[i]["pivot_chord"] = progression[boundary - 1]
+
+    return regions

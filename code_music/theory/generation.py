@@ -3010,3 +3010,133 @@ def generate_phrase(
         result["melody"] = melody
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Variation suite generator (v134.0)
+# ---------------------------------------------------------------------------
+
+# Variation techniques and how they map to function calls
+_VARIATION_RECIPES: list[dict] = [
+    {"name": "Theme", "technique": None, "description": "Original statement"},
+    {"name": "Inversion", "technique": "inversion", "description": "Mirror all intervals"},
+    {"name": "Augmentation", "technique": "augmentation", "description": "Double all durations"},
+    {"name": "Diminution", "technique": "diminution", "description": "Halve all durations"},
+    {"name": "Retrograde", "technique": "retrograde", "description": "Reverse the melody"},
+    {"name": "Ornamented", "technique": "ornamental", "description": "Add passing tones"},
+    {"name": "Sequence", "technique": "sequence", "description": "Transpose up a step"},
+    {"name": "Fragmented", "technique": "fragmentation", "description": "First half repeated"},
+]
+
+
+def generate_theme_and_variations(
+    theme: list["Note"] | None = None,
+    key: str = "C",
+    scale_name: str = "major",
+    n_variations: int = 5,
+    bpm: int = 120,
+    seed: int | None = None,
+) -> "Song":
+    """Generate a theme-and-variations suite as a multi-section Song.
+
+    Takes a melody (or generates one) and builds N variations using
+    classical development techniques: inversion, augmentation,
+    diminution, retrograde, ornamentation, sequence, fragmentation.
+    Each variation gets its own section in a Song with a chord
+    accompaniment.
+
+    This is the musical form Mozart, Beethoven, and Brahms all used
+    to show off — one theme, transformed every possible way.
+
+    Args:
+        theme:        Melody notes for the theme. If None, generates one.
+        key:          Key root note.
+        scale_name:   Scale for generated themes.
+        n_variations: Number of variations (1-7, capped at available recipes).
+        bpm:          Tempo.
+        seed:         Random seed for reproducibility.
+
+    Returns:
+        A Song with sections: Theme, Var. 1, Var. 2, ..., Var. N.
+        Each section has a melody track and a chord track.
+
+    Example::
+
+        >>> song = generate_theme_and_variations(key="C", n_variations=3, seed=42)
+        >>> len(song.tracks)
+        2
+        >>> song.title
+        'Theme and Variations in C'
+    """
+    import random as _rng
+    from ..engine import Chord, Song, Track
+
+    rng = _rng.Random(seed)
+    child_seed = lambda: rng.randint(0, 2**31)  # noqa: E731
+
+    # Generate theme if not provided
+    if theme is None:
+        theme = generate_scale_melody(
+            key=key,
+            scale_name=scale_name,
+            length=16,
+            octave=5,
+            duration=0.5,
+            contour="arch",
+            seed=child_seed(),
+        )
+
+    # Generate a simple I-IV-V-I backing progression per section
+    from .harmony import parse_roman
+
+    section_numerals = ["I", "IV", "V", "I"]
+    section_prog = [parse_roman(r, key) for r in section_numerals]
+
+    # Cap variations
+    max_vars = len(_VARIATION_RECIPES) - 1  # -1 for the theme entry
+    n_variations = min(n_variations, max_vars)
+
+    song = Song(title=f"Theme and Variations in {key}", bpm=bpm)
+    melody_track = song.add_track(
+        Track(name="melody", instrument="triangle", volume=0.55, pan=0.15)
+    )
+    chord_track = song.add_track(Track(name="chords", instrument="piano", volume=0.4, pan=-0.15))
+
+    # Theme
+    melody_track.extend(list(theme))
+    for root, shape in section_prog:
+        chord_track.add(Chord(root, shape, 3, duration=float(len(theme)) / len(section_prog)))
+
+    # Variations
+    current = list(theme)
+    for i in range(n_variations):
+        recipe = _VARIATION_RECIPES[i + 1]  # skip the "Theme" entry
+        technique = recipe["technique"]
+
+        if technique == "fragmentation":
+            from .melody import fragment as _fragment
+
+            half_len = max(1, len(current) // 2)
+            frag = _fragment(current, half_len)
+            variation = frag + frag  # repeat the fragment
+        elif technique is not None:
+            from .melody import generate_variation as _gen_var
+
+            variation = _gen_var(current, technique, key, seed=child_seed())
+        else:
+            variation = list(current)
+
+        # Add variation melody
+        melody_track.extend(variation)
+
+        # Add chords for this variation
+        var_dur = sum(n.duration for n in variation)
+        chord_dur = var_dur / max(len(section_prog), 1)
+        for root, shape in section_prog:
+            chord_track.add(Chord(root, shape, 3, duration=chord_dur))
+
+        # Some techniques evolve the current motif for the next variation
+        if technique in ("sequence", "inversion"):
+            current = variation
+
+    return song

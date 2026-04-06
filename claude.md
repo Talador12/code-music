@@ -2068,3 +2068,24 @@ printable as PDF.
 - [x] 13 tests (opening/ending/overall present, empty, high/low tension, cadence mention)
 
 **Stats:** 396+ public functions. 2455 tests. 323 songs. 44 scales.
+
+## v134.0 — Variation Suite + Composition Critique + Modulation Detector
+
+### generate_theme_and_variations — classical variation form
+- [x] `generate_theme_and_variations(theme, key, scale, n_variations, bpm, seed)` → Song
+- [x] 7 variation techniques: inversion, augmentation, diminution, retrograde, ornamentation, sequence, fragmentation
+- [x] Generates or accepts theme, builds I-IV-V-I backing per section
+- [x] 8 tests (default, custom theme, cap, zero vars, chord track, seed, key, scale)
+
+### critique — automated theory review
+- [x] `critique(progression, melody, key)` → dict with score/grade/issues/strengths/suggestions
+- [x] 10 checks: variety, quality variety, cadence, unresolved dominant, tension arc, key consistency, functional balance, melody range, leaps, rests
+- [x] Score 0-100, letter grade A/B/C/D/F
+- [x] 12 tests (good/bad/empty, melody checks, range, dominant, blues, bounds)
+
+### detect_modulations — key change detection
+- [x] `detect_modulations(progression, window)` → list of key region dicts
+- [x] Sliding-window detect_key, consecutive region merging, pivot chord ID
+- [x] 9 tests (no mod, simple mod, coverage, contiguity, pivot, short, empty, window)
+
+**Stats:** 399+ public functions. 2484 tests. 323 songs. 44 scales.

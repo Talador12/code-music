@@ -755,47 +755,64 @@ location, cadential resolution, ending state, and overall character.
 
 396+ public functions. 2455 tests. 323 songs. v133 shipped.
 
+## v134.0 — Variation Suite + Composition Critique + Modulation Detector
+
+**generate_theme_and_variations(theme, key, scale, n_variations, bpm, seed):**
+Classical theme-and-variations form as a multi-section Song. Generates or
+accepts a theme melody, then builds N variations using 7 techniques
+(inversion, augmentation, diminution, retrograde, ornamentation, sequence,
+fragmentation). Each variation gets its own melody section with I-IV-V-I
+chord backing. Mozart/Beethoven/Brahms form, automated.
+
+**critique(progression, melody, key):**
+Automated theory review with 10 checks: chord variety, quality variety,
+cadence presence, unresolved dominant, tension arc, key consistency,
+functional balance, melody range, leap frequency, rest ratio. Returns
+score (0-100), letter grade (A/B/C/D/F), issues, strengths, suggestions.
+Static I-I-I-I gets an F. Good I-IV-V-I gets an A. The theory professor
+in a function call.
+
+**detect_modulations(progression, window):**
+Sliding-window key detection that finds modulations within a progression.
+Returns a list of key regions with start/end indices and pivot chord
+identification. A C→G modulation produces two regions with the shared
+chord marked as the pivot. Completes the harmonic analysis story.
+
+399+ public functions. 2484 tests. 323 songs. v134 shipped.
+
 ## Next session roadmap
 
-### Tier 1: Ship immediately (single session each)
+### Tier 1: Ship immediately
 - **MusicXML Export** — `to_musicxml(song)` that opens in MuseScore/Finale.
-  Clear scope, one module, big ecosystem reach.
-- **Song Builder DSL v2** — real mini-language with BPM, time sig, instruments,
-  effects, multi-track. "Write a song in 20 lines of DSL."
-- **Variation Suite Generator** — `generate_theme_and_variations(theme, n, genre)` —
-  theme + N variations using develop_motif + restyle + reharmonize.
+- **Song Builder DSL v2** — real mini-language with BPM, instruments, effects.
+- **Period/Sentence Builder** — `generate_period()` chains generate_phrase
+  for antecedent (half cadence) + consequent (perfect cadence) structure.
 
 ### Tier 2: Composition intelligence
-- **Fugue Generator** — `generate_fugue(subject, voices, key)` — automated fugue
-  construction: subject entry, real/tonal answer, countersubject, episodes,
-  stretto. Uses species_counterpoint + develop_motif + voice_lead_satb.
-- **Period/Sentence Builder** — `generate_period(key, antecedent_cadence,
-  consequent_cadence)` — chains generate_phrase to build classical period
-  structure. Antecedent: half cadence. Consequent: perfect cadence.
-- **Composition Critique** — `critique(song)` — automated theory review.
-  Parallel fifths, range violations, unresolved dominants, texture balance.
+- **Fugue Generator** — `generate_fugue(subject, voices, key)` — subject
+  entry, tonal answer, countersubject, episodes, stretto. The ultimate
+  integration test of species_counterpoint + develop_motif + voice_lead_satb.
+- **Song-Level Critique** — extend critique() to accept a full Song object,
+  analyze each track independently, check inter-track voice independence,
+  instrument range violations, and overall arrangement balance.
+- **Guided Composition** — `compose(prompt)` — natural language to Song.
+  "Write a jazz ballad in Bb with a walking bass and brush drums."
+  Parses prompt for genre/key/bpm/instruments, calls generate_full_song.
 
 ### Tier 3: Analysis & intelligence
 - **Harmonic Language Model** — corpus-trained markov chains per genre.
-  `suggest_progression(genre, length)` — idiomatic, not template-based.
-- **Style Fingerprint** — `style_fingerprint(song)` — multi-dimensional
-  feature vector capturing genre, voicing style, rhythmic density, melodic
-  range, tension profile. Compare any two songs on a style distance metric.
-- **Modulation Detector** — `detect_modulations(progression)` — find key
-  changes within a progression, label pivot chords, return a key timeline.
+- **Style Fingerprint** — multi-dimensional feature vector for song comparison.
+- **Melodic Similarity Search** — `find_similar_melodies(melody, corpus)` —
+  contour matching + interval matching across the 323-song corpus.
 
 ### Tier 4: Platform & ecosystem
 - **Web Playground (Pyodide)** — theory module in the browser.
 - **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing.
 - **Live Coding Mode** — `code-music repl` with audio playback.
-- **Plugin Architecture** — register custom instruments, effects, and
-  generators via entry points. Third-party code-music extensions.
+- **Plugin Architecture** — register custom generators via entry points.
 
 ### Tier 5: Quality & performance
-- **Test Organization** — group 152 test files by domain.
-- **LSP Error Cleanup** — fix pre-existing Pyright type errors.
-- **Benchmark Suite** — profile song generation + rendering, establish
-  baselines, track regressions. Target: generate_full_song < 50ms,
-  render 30s song < 2s.
-- **Docstring Coverage** — ensure every public function has a docstring
-  with Args, Returns, and Example.
+- **Test Organization** — group 155+ test files by domain.
+- **Benchmark Suite** — generate_full_song < 50ms, render 30s < 2s.
+- **Docstring Audit** — ensure every public function has Args/Returns/Example.
+- **Type Annotation Completion** — fix all Pyright errors, add `py.typed` marker.
