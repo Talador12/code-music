@@ -730,6 +730,31 @@ Beethoven's Fifth, but as a function call.
 
 393+ public functions. 2416 tests. 323 songs. v132 shipped.
 
+## v133.0 — Chord Voicing AI + Cadential Phrase Generator + Tension Narrative
+
+**voice_progression(progression, style, octave, duration):**
+Style-specific chord voicing for progressions with 5 styles: classical
+(common-tone retention, smooth bass), jazz_rootless (alternating Evans A/B),
+quartal (McCoy Tyner stacked 4ths), drop2 (jazz guitar voicing with octave
+adjustment), shell (2-note root+guide Monk voicings). All styles minimize
+hand movement between chords. The "AI" is the movement-minimization logic.
+
+**generate_phrase(key, cadence, length, include_melody, seed):**
+Build a chord phrase targeting a specific cadence: perfect (V-I), half (→V),
+deceptive (V-vi), or plagal (IV-I). Uses roman-numeral templates expanded
+to requested length. Returns progression, cadence_type, tension_curve, and
+optional melody. The building block for structured composition — chain
+phrases to build periods, sentences, and complete forms.
+
+**tension_story(progression, key, bars_per_chord):**
+Natural-language description of a progression's harmonic tension arc. Reads
+tension_curve, functional_analysis, and detect_cadences to generate readable
+multi-sentence narrative. Describes opening stability, tension build, climax
+location, cadential resolution, ending state, and overall character.
+"Opens with stable tonic (C maj). Tension builds... Climax at bar 3..."
+
+396+ public functions. 2455 tests. 323 songs. v133 shipped.
+
 ## Next session roadmap
 
 ### Tier 1: Ship immediately (single session each)
@@ -737,43 +762,40 @@ Beethoven's Fifth, but as a function call.
   Clear scope, one module, big ecosystem reach.
 - **Song Builder DSL v2** — real mini-language with BPM, time sig, instruments,
   effects, multi-track. "Write a song in 20 lines of DSL."
-- **Chord Voicing AI** — `voice_progression(prog, style)` — given a progression,
-  produce pianistic voicings that minimize hand movement. Styles: classical,
-  jazz rootless, quartal, drop2.
+- **Variation Suite Generator** — `generate_theme_and_variations(theme, n, genre)` —
+  theme + N variations using develop_motif + restyle + reharmonize.
 
 ### Tier 2: Composition intelligence
-- **Variation Suite Generator** — `generate_theme_and_variations(theme, n, genre)` —
-  take a melody, produce N variations using develop_motif + restyle + reharmonize.
-  Output: a multi-movement Song with theme, var1 (inverted), var2 (jazz restyle),
-  var3 (double time), var4 (minor mode), var5 (augmented+ornamented).
-- **Cadential Phrase Generator** — `generate_phrase(key, cadence_type, length)` —
-  build a phrase that resolves to a specific cadence (perfect, half, deceptive,
-  plagal). Uses tension_curve targeting. The building block for structured form.
 - **Fugue Generator** — `generate_fugue(subject, voices, key)` — automated fugue
   construction: subject entry, real/tonal answer, countersubject, episodes,
-  stretto. Uses species_counterpoint + develop_motif + voice_lead_satb. The
-  ultimate test of theory integration.
+  stretto. Uses species_counterpoint + develop_motif + voice_lead_satb.
+- **Period/Sentence Builder** — `generate_period(key, antecedent_cadence,
+  consequent_cadence)` — chains generate_phrase to build classical period
+  structure. Antecedent: half cadence. Consequent: perfect cadence.
+- **Composition Critique** — `critique(song)` — automated theory review.
+  Parallel fifths, range violations, unresolved dominants, texture balance.
 
 ### Tier 3: Analysis & intelligence
-- **Harmonic Language Model** — train on the 323-song corpus to build markov
-  chains of chord transitions per genre. `suggest_progression(genre, length)`
-  that sounds idiomatic rather than template-based.
-- **Tension Narrative** — `tension_story(song)` — describe a song's tension
-  arc in natural language. "Opens with calm I-IV, builds through secondary
-  dominants, climaxes at bar 24 with augmented sixth, resolves."
-- **Composition Critique** — `critique(song)` — automated music theory review.
-  Check parallel fifths, voice range violations, unresolved dominants, missing
-  cadences, texture balance. Returns a graded report with suggestions.
+- **Harmonic Language Model** — corpus-trained markov chains per genre.
+  `suggest_progression(genre, length)` — idiomatic, not template-based.
+- **Style Fingerprint** — `style_fingerprint(song)` — multi-dimensional
+  feature vector capturing genre, voicing style, rhythmic density, melodic
+  range, tension profile. Compare any two songs on a style distance metric.
+- **Modulation Detector** — `detect_modulations(progression)` — find key
+  changes within a progression, label pivot chords, return a key timeline.
 
 ### Tier 4: Platform & ecosystem
-- **Web Playground (Pyodide)** — theory module in the browser. Type code,
-  hear audio. No install. GitHub Pages.
-- **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing,
-  multi-track. Bridge between code-music and every DAW.
-- **Live Coding Mode** — `code-music repl` — interactive REPL that plays
-  notes/chords as you type them.
+- **Web Playground (Pyodide)** — theory module in the browser.
+- **MIDI Round-Trip v2** — import MIDI → Song with velocity, timing.
+- **Live Coding Mode** — `code-music repl` with audio playback.
+- **Plugin Architecture** — register custom instruments, effects, and
+  generators via entry points. Third-party code-music extensions.
 
-### Tier 5: Quality
-- **Test Organization** — group 149 test files by domain.
+### Tier 5: Quality & performance
+- **Test Organization** — group 152 test files by domain.
 - **LSP Error Cleanup** — fix pre-existing Pyright type errors.
-- **Performance Profiling** — profile synth rendering, vectorize with numpy.
+- **Benchmark Suite** — profile song generation + rendering, establish
+  baselines, track regressions. Target: generate_full_song < 50ms,
+  render 30s song < 2s.
+- **Docstring Coverage** — ensure every public function has a docstring
+  with Args, Returns, and Example.

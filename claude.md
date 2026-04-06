@@ -2042,3 +2042,29 @@ printable as PDF.
 - [x] 16 tests (all techniques, default arc, seed, empty, single note, chaining)
 
 **Stats:** 393+ public functions. 2416 tests. 323 songs. 44 scales.
+
+## v133.0 — Chord Voicing AI + Cadential Phrase Generator + Tension Narrative
+
+### voice_progression — style-specific chord voicing
+- [x] `voice_progression(progression, style, octave, duration)` → list of voicing note-lists
+- [x] 5 styles: classical, jazz_rootless, quartal, drop2, shell
+- [x] Classical: common-tone retention, smooth bass, step-wise upper voices
+- [x] Jazz rootless: alternating A/B Evans voicings for smooth leading
+- [x] Shell: 2-note Monk voicings (root + guide tone)
+- [x] 13 tests (all styles, smooth movement check, empty/single, invalid style)
+
+### generate_phrase — cadential phrase generator
+- [x] `generate_phrase(key, cadence, length, include_melody, seed)` → dict
+- [x] 4 cadence types: perfect (V-I), half (→V), deceptive (V-vi), plagal (IV-I)
+- [x] Roman numeral templates expanded/contracted to requested length
+- [x] Returns: progression, cadence_type, tension_curve, optional melody
+- [x] 13 tests (all cadences, melody, key/length variants, seed reproducibility)
+
+### tension_story — natural language tension narrative
+- [x] `tension_story(progression, key, bars_per_chord)` → narrative string
+- [x] Reads tension_curve + functional_analysis + detect_cadences
+- [x] Describes: opening, tension build, climax, cadences, ending, overall character
+- [x] Functional label mapping (T→tonic, D→dominant, S→subdominant)
+- [x] 13 tests (opening/ending/overall present, empty, high/low tension, cadence mention)
+
+**Stats:** 396+ public functions. 2455 tests. 323 songs. 44 scales.

@@ -2897,3 +2897,116 @@ def restyle(
     )
     result.title = f"{target_genre.title()} Restyle"
     return result
+
+
+# ---------------------------------------------------------------------------
+# Cadential phrase generator (v133.0)
+# ---------------------------------------------------------------------------
+
+# Cadence templates: each is a list of roman numeral suffixes leading to the cadence.
+# The last 2 chords define the cadence type.
+_CADENCE_TEMPLATES: dict[str, list[list[str]]] = {
+    "perfect": [
+        ["I", "IV", "V", "I"],
+        ["I", "ii", "V7", "I"],
+        ["I", "vi", "ii", "V", "I"],
+    ],
+    "half": [
+        ["I", "IV", "I", "V"],
+        ["I", "vi", "IV", "V"],
+    ],
+    "deceptive": [
+        ["I", "IV", "V", "vi"],
+        ["I", "ii", "V7", "vi"],
+    ],
+    "plagal": [
+        ["I", "V", "IV", "I"],
+        ["I", "ii", "IV", "I"],
+    ],
+}
+
+
+def generate_phrase(
+    key: str = "C",
+    cadence: str = "perfect",
+    length: int = 4,
+    include_melody: bool = False,
+    seed: int | None = None,
+) -> dict:
+    """Generate a chord phrase that resolves to a specific cadence.
+
+    Builds a musically coherent phrase (not random chords) that targets
+    a specific ending: perfect (V-I), half (→V), deceptive (V-vi), or
+    plagal (IV-I). The building block for structured composition —
+    sentences, periods, and full forms are just chains of phrases.
+
+    Args:
+        key:            Key root note.
+        cadence:        Cadence type: 'perfect', 'half', 'deceptive', 'plagal'.
+        length:         Number of chords (minimum 2, expanded from templates).
+        include_melody: If True, generates a melody over the progression.
+        seed:           Random seed for reproducibility.
+
+    Returns:
+        Dict with keys:
+            progression: List of (root, shape) tuples.
+            cadence_type: The cadence that was targeted.
+            tension_curve: Tension values for each chord.
+            melody: List of Notes (only if include_melody=True).
+
+    Example::
+
+        >>> phrase = generate_phrase("C", cadence="perfect", length=4, seed=42)
+        >>> phrase["cadence_type"]
+        'perfect'
+        >>> len(phrase["progression"])
+        4
+    """
+    import random as _rng
+    from .harmony import parse_roman
+
+    rng = _rng.Random(seed)
+
+    templates = _CADENCE_TEMPLATES.get(cadence, _CADENCE_TEMPLATES["perfect"])
+    template = rng.choice(templates)
+
+    # Expand or contract template to desired length
+    if len(template) < length:
+        # Pad the beginning with tonic-area chords
+        fillers = ["I", "vi", "IV", "ii", "iii"]
+        while len(template) < length:
+            template.insert(1, rng.choice(fillers))
+    elif len(template) > length:
+        # Keep the last `length` chords (preserving the cadence)
+        template = template[-length:]
+
+    # Convert roman numerals to concrete chords
+    progression = [parse_roman(r, key) for r in template]
+
+    # Compute tension curve
+    from .analysis import tension_curve as _tc
+
+    curve = _tc(progression, key)
+
+    result: dict = {
+        "progression": progression,
+        "cadence_type": cadence,
+        "tension_curve": curve,
+    }
+
+    if include_melody:
+        from .melody import generate_scale_melody
+
+        child_seed = rng.randint(0, 2**31)
+        melody = generate_scale_melody(
+            key=key,
+            scale_name="major",
+            length=len(progression) * 4,
+            octave=5,
+            duration=1.0,
+            contour="arch",
+            seed=child_seed,
+        )
+        result["melody"] = melody
+
+    return result

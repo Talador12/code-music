@@ -2310,3 +2310,156 @@ def classify_genre(
         "scores": dict(sorted(scores.items(), key=lambda x: -x[1])),
         "features": features,
     }
+
+
+# ---------------------------------------------------------------------------
+# Tension narrative (v133.0)
+# ---------------------------------------------------------------------------
+
+
+def tension_story(
+    progression: list[tuple[str, str]],
+    key: str = "C",
+    bars_per_chord: int = 1,
+) -> str:
+    """Describe a song's tension arc in natural language.
+
+    Reads the tension curve, functional analysis, and cadence detection
+    to generate a plain-English narrative of how the harmonic story
+    unfolds. The kind of description a theory teacher would write
+    on a student's analysis worksheet.
+
+    Args:
+        progression: List of (root, shape) tuples.
+        key:         Key for analysis.
+        bars_per_chord: Bars per chord (for bar numbering).
+
+    Returns:
+        A multi-sentence narrative string.
+
+    Example::
+
+        >>> prog = [("C","maj"),("F","maj"),("G","dom7"),("C","maj")]
+        >>> print(tension_story(prog, "C"))
+        Opens with stable tonic (C maj). ...
+    """
+    if not progression:
+        return "Empty progression — no harmonic content to analyze."
+
+    if len(progression) == 1:
+        root, shape = progression[0]
+        return f"Single chord: {root} {shape}. Static harmony, no tension arc."
+
+    curve = tension_curve(progression, key)
+    func = functional_analysis(progression, key)
+    cadences = detect_cadences(progression, key)
+
+    # Phase detection: split curve into segments
+    segments: list[str] = []
+    n = len(curve)
+
+    # Opening
+    _func_labels = {"T": "tonic", "S": "subdominant", "D": "dominant", "chromatic": "chromatic"}
+    opening_t = curve[0]
+    opening_func = func[0] if func else {}
+    root0, shape0 = progression[0]
+    func_word = _func_labels.get(opening_func.get("function", ""), "tonic")
+    if opening_t < 0.2:
+        segments.append(f"Opens with stable {func_word} ({root0} {shape0}).")
+    elif opening_t < 0.4:
+        segments.append(f"Opens with mild tension on {root0} {shape0}.")
+    else:
+        segments.append(
+            f"Opens with high tension on {root0} {shape0} — an unusual, attention-grabbing start."
+        )
+
+    # Scan for tension arcs: rising, falling, climax
+    if n >= 4:
+        # Find the peak
+        peak_idx = curve.index(max(curve))
+        peak_bar = (peak_idx + 1) * bars_per_chord
+        peak_root, peak_shape = progression[peak_idx]
+
+        # Describe approach to peak
+        if peak_idx > 0:
+            pre_peak = curve[:peak_idx]
+            if all(
+                pre_peak[i] <= pre_peak[i + 1]
+                for i in range(len(pre_peak) - 1)
+                if len(pre_peak) > 1
+            ):
+                segments.append(f"Tension builds steadily through the first {peak_idx} chords.")
+            elif peak_idx > 2:
+                rises = sum(1 for i in range(1, peak_idx) if curve[i] > curve[i - 1])
+                if rises > peak_idx // 2:
+                    segments.append(f"Tension generally rises toward bar {peak_bar}.")
+
+        # Describe the climax
+        if max(curve) > 0.5:
+            segments.append(
+                f"Climax at bar {peak_bar} on {peak_root} {peak_shape} "
+                f"(tension: {curve[peak_idx]:.2f})."
+            )
+        elif max(curve) > 0.3:
+            segments.append(f"Moderate peak at bar {peak_bar} on {peak_root} {peak_shape}.")
+
+        # Post-peak
+        if peak_idx < n - 1:
+            post_peak = curve[peak_idx:]
+            if all(post_peak[i] >= post_peak[i + 1] for i in range(len(post_peak) - 1)):
+                segments.append("Tension releases smoothly after the climax.")
+            elif curve[-1] < curve[peak_idx]:
+                segments.append("Tension eases toward the end.")
+
+    # Describe cadences found
+    if cadences:
+        for cad in cadences[:2]:  # limit to 2 cadences in the narrative
+            ctype = cad.get("type", "cadence")
+            pos = cad.get("position", 0)
+            bar = (pos + 1) * bars_per_chord
+            if "perfect" in ctype.lower() or "authentic" in ctype.lower():
+                segments.append(
+                    f"Resolves with a {ctype} at bar {bar} — strong, satisfying closure."
+                )
+            elif "half" in ctype.lower():
+                segments.append(
+                    f"Half cadence at bar {bar} — pause on the dominant, expecting more."
+                )
+            elif "deceptive" in ctype.lower():
+                segments.append(
+                    f"Deceptive cadence at bar {bar} — the expected resolution is denied."
+                )
+            elif "plagal" in ctype.lower():
+                segments.append(f"Plagal cadence at bar {bar} — the warm 'amen' ending.")
+            else:
+                segments.append(f"{ctype.title()} at bar {bar}.")
+
+    # Ending
+    end_t = curve[-1]
+    end_root, end_shape = progression[-1]
+    if end_t < 0.15:
+        segments.append(f"Ends resolved on {end_root} {end_shape} — complete harmonic rest.")
+    elif end_t < 0.3:
+        segments.append(
+            f"Ends with mild tension on {end_root} {end_shape} — "
+            "slightly open, inviting continuation."
+        )
+    else:
+        segments.append(
+            f"Ends unresolved on {end_root} {end_shape} "
+            f"(tension: {end_t:.2f}) — "
+            "deliberately ambiguous or transitional."
+        )
+
+    # Overall shape
+    avg_t = sum(curve) / n
+    if avg_t < 0.2:
+        segments.append("Overall: a calm, restful progression.")
+    elif avg_t < 0.35:
+        segments.append("Overall: moderate harmonic motion with clear direction.")
+    elif avg_t < 0.5:
+        segments.append("Overall: substantial harmonic activity and tension.")
+    else:
+        segments.append("Overall: high-tension, chromatically adventurous writing.")
+
+    return " ".join(segments)

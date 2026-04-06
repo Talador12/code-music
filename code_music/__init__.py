@@ -253,6 +253,7 @@ from .theory import (
     generate_countermelody,
     generate_from_matrix,
     generate_full_song,
+    generate_phrase,
     generate_polyrhythm,
     generate_progression,
     generate_rhythm_pattern,
@@ -404,6 +405,7 @@ from .theory import (
     tempo_trainer,
     tension_at,
     tension_curve,
+    tension_story,
     text_to_melody,
     texture_density,
     thicken_texture,
@@ -423,6 +425,7 @@ from .theory import (
     verify_playback,
     voice_independence_score,
     voice_lead_satb,
+    voice_progression,
     whole_tone_run,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
@@ -885,6 +888,10 @@ __all__ = [
     "develop_motif",
     "restyle",
     "auto_arrange",
+    # v133.0 — chord voicing AI, phrase generator, tension narrative
+    "voice_progression",
+    "generate_phrase",
+    "tension_story",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

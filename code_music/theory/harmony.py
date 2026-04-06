@@ -29,7 +29,6 @@ from ._core import (
 )
 
 
-
 # ---------------------------------------------------------------------------
 # Chord-scale theory
 # ---------------------------------------------------------------------------
@@ -64,7 +63,6 @@ def chord_scale(root: str, shape: str) -> list[str]:
         if chord_pcs.issubset(scale_pcs):
             compatible.append(scale_name)
     return sorted(compatible)
-
 
 
 def available_tensions(root: str, shape: str) -> list[str]:
@@ -113,7 +111,6 @@ def available_tensions(root: str, shape: str) -> list[str]:
     return tensions
 
 
-
 def secondary_dominant(target_root: str, target_shape: str = "maj") -> tuple[str, str]:
     """Return the secondary dominant (V/x) that resolves to the target chord.
 
@@ -130,7 +127,6 @@ def secondary_dominant(target_root: str, target_shape: str = "maj") -> tuple[str
     target_semi = _semi(target_root)
     dom_semi = (target_semi + 7) % 12  # perfect 5th above
     return (_NOTE_NAMES[dom_semi], "dom7")
-
 
 
 def deceptive_cadence(key: str = "C") -> list[tuple[str, str]]:
@@ -151,7 +147,6 @@ def deceptive_cadence(key: str = "C") -> list[tuple[str, str]]:
     return [(_NOTE_NAMES[v_semi], "dom7"), (_NOTE_NAMES[vi_semi], "min")]
 
 
-
 def plagal_cadence(key: str = "C") -> list[tuple[str, str]]:
     """Generate a plagal cadence: IV → I (the 'Amen' cadence).
 
@@ -167,7 +162,6 @@ def plagal_cadence(key: str = "C") -> list[tuple[str, str]]:
     key_semi = _semi(key)
     iv_semi = (key_semi + 5) % 12
     return [(_NOTE_NAMES[iv_semi], "maj"), (key, "maj")]
-
 
 
 def tritone_sub(chords: list[tuple[str, str]]) -> list[tuple[str, str]]:
@@ -191,7 +185,6 @@ def tritone_sub(chords: list[tuple[str, str]]) -> list[tuple[str, str]]:
         else:
             result.append((root, shape))
     return result
-
 
 
 def modal_interchange(
@@ -238,7 +231,6 @@ def modal_interchange(
     return result
 
 
-
 def invert_chord(notes: list[Note], inversion: int = 1) -> list[Note]:
     """Apply a chord inversion by rotating the bottom note(s) up an octave.
 
@@ -266,7 +258,6 @@ def invert_chord(notes: list[Note], inversion: int = 1) -> list[Note]:
     return result
 
 
-
 def rotate_voicing(notes: list[Note], steps: int = 1) -> list[Note]:
     """Rotate a voicing by moving notes cyclically (no octave change).
 
@@ -283,7 +274,6 @@ def rotate_voicing(notes: list[Note], steps: int = 1) -> list[Note]:
     return notes[s:] + notes[:s]
 
 
-
 def interval_name(note_a: str, note_b: str) -> str:
     """Name the interval between two notes.
 
@@ -298,7 +288,6 @@ def interval_name(note_a: str, note_b: str) -> str:
     semi_b = _semi(note_b)
     dist = (semi_b - semi_a) % 12
     return _INTERVAL_NAMES.get(dist, f"{dist} semitones")
-
 
 
 def parallel_motion(
@@ -332,7 +321,6 @@ def parallel_motion(
                 Note(_NOTE_NAMES[new_semi], new_oct, note.duration, velocity=note.velocity * 0.85)
             )
     return result
-
 
 
 def suggest_next_chord(
@@ -375,7 +363,6 @@ def suggest_next_chord(
     return result
 
 
-
 def scale_info(scale_name: str, root: str = "C") -> dict:
     """Describe a scale with intervals, note names, and compatible chords.
 
@@ -415,7 +402,6 @@ def scale_info(scale_name: str, root: str = "C") -> dict:
     }
 
 
-
 def chord_extensions(
     root: str,
     shape: str,
@@ -450,7 +436,6 @@ def chord_extensions(
     return [
         Note(_NOTE_NAMES[(root_semi + s) % 12], 3 + s // 12, 4.0) for s in sorted(set(base_semis))
     ]
-
 
 
 # ---------------------------------------------------------------------------
@@ -516,7 +501,6 @@ def generate_chord_voicing(
         raise ValueError(f"Unknown voicing {voicing!r}. Choose: close, spread, drop2, rootless")
 
 
-
 # ---------------------------------------------------------------------------
 # Chromatic harmony — Neapolitan, augmented sixth, picardy third (v39.0)
 # ---------------------------------------------------------------------------
@@ -547,7 +531,6 @@ def neapolitan_chord(key: str = "C", octave: int = 3, duration: float = 4.0) -> 
         Note(_NOTE_NAMES[pitches[0]], octave + 1, duration),
         Note(_NOTE_NAMES[pitches[2]], octave + 1, duration),
     ]
-
 
 
 def augmented_sixth(
@@ -609,7 +592,6 @@ def augmented_sixth(
         raise ValueError(f"Unknown variety {variety!r}. Choose: italian, french, german")
 
 
-
 def picardy_third(key: str = "C", octave: int = 3, duration: float = 4.0) -> list[Note]:
     """Generate a Picardy third — major tonic chord in a minor key context.
 
@@ -630,7 +612,6 @@ def picardy_third(key: str = "C", octave: int = 3, duration: float = 4.0) -> lis
     # Major triad on the tonic (raises the minor 3rd to major 3rd)
     pitches = [key_semi, (key_semi + 4) % 12, (key_semi + 7) % 12]
     return [Note(_NOTE_NAMES[p], octave + p // 12, duration) for p in pitches]
-
 
 
 def voice_lead_satb(
@@ -694,7 +675,6 @@ def voice_lead_satb(
     return result
 
 
-
 def check_parallel_fifths(voicing_a: list[Note], voicing_b: list[Note]) -> bool:
     """Check if two SATB voicings contain parallel perfect 5ths or octaves.
 
@@ -737,7 +717,6 @@ def check_parallel_fifths(voicing_a: list[Note], voicing_b: list[Note]) -> bool:
     return False
 
 
-
 def find_pivot_chords(
     key_a: str,
     key_b: str,
@@ -762,7 +741,6 @@ def find_pivot_chords(
     chords_a = set(_diatonic_chords(key_a, mode_a))
     chords_b = set(_diatonic_chords(key_b, mode_b))
     return sorted(chords_a & chords_b)
-
 
 
 def modulation_path(
@@ -818,7 +796,6 @@ def modulation_path(
     return path
 
 
-
 def direct_modulation(
     key_a: str,
     key_b: str,
@@ -839,7 +816,6 @@ def direct_modulation(
     b_semi = _semi(key_b)
     v_of_b = _NOTE_NAMES[(b_semi + 7) % 12]
     return [(key_a, "maj"), (v_of_b, "dom7"), (key_b, "maj")]
-
 
 
 def pivot_modulation(
@@ -873,7 +849,6 @@ def pivot_modulation(
     else:
         # No common chords — fall back to direct modulation
         return direct_modulation(key_a, key_b)
-
 
 
 def parse_roman(numeral: str, key: str = "C") -> tuple[str, str]:
@@ -996,7 +971,6 @@ def parse_roman(numeral: str, key: str = "C") -> tuple[str, str]:
     return (root, shape)
 
 
-
 def progression_from_roman(
     numerals: list[str],
     key: str = "C",
@@ -1020,7 +994,6 @@ def progression_from_roman(
     return [parse_roman(n, key) for n in numerals]
 
 
-
 def classify_interval(semitones: int) -> str:
     """Classify an interval as perfect consonance, imperfect consonance, or dissonance.
 
@@ -1040,7 +1013,6 @@ def classify_interval(semitones: int) -> str:
         return "imperfect"
     else:
         return "dissonant"
-
 
 
 # ---------------------------------------------------------------------------
@@ -1084,7 +1056,6 @@ def rootless_a(
     return [Note(_NOTE_NAMES[(k + iv) % 12], octave + (k + iv) // 12, duration) for iv in intervals]
 
 
-
 def rootless_b(
     root: str,
     shape: str = "dom7",
@@ -1123,7 +1094,6 @@ def rootless_b(
     return [Note(_NOTE_NAMES[(k + iv) % 12], octave + (k + iv) // 12, duration) for iv in intervals]
 
 
-
 def quartal_voicing(
     root: str,
     octave: int = 3,
@@ -1156,7 +1126,6 @@ def quartal_voicing(
     ]
 
 
-
 def stride_voicing(
     root: str,
     shape: str = "maj",
@@ -1183,7 +1152,6 @@ def stride_voicing(
     bass = [Note(root, octave, duration)]
     chord_notes = [Note(_NOTE_NAMES[(k + s) % 12], octave + 1, duration) for s in semis]
     return bass + chord_notes
-
 
 
 # ---------------------------------------------------------------------------
@@ -1251,7 +1219,6 @@ def functional_analysis(
     return result
 
 
-
 def detect_cadences(
     progression: list[tuple[str, str]],
     key: str = "C",
@@ -1314,7 +1281,6 @@ def detect_cadences(
     return cadences
 
 
-
 def detect_key(
     progression: list[tuple[str, str]],
 ) -> str:
@@ -1351,7 +1317,6 @@ def detect_key(
     return _NOTE_NAMES[best_key]
 
 
-
 def list_scales() -> list[str]:
     """Return all available scale names, sorted alphabetically.
 
@@ -1359,7 +1324,6 @@ def list_scales() -> list[str]:
         Sorted list of scale name strings.
     """
     return sorted(_SCALE_INTERVALS.keys())
-
 
 
 def scale_search(pitches: list[str]) -> list[str]:
@@ -1382,7 +1346,6 @@ def scale_search(pitches: list[str]) -> list[str]:
         if target_pcs.issubset(scale_pcs):
             matches.append(name)
     return sorted(matches)
-
 
 
 def scale_brightness(name: str) -> float:
@@ -1413,7 +1376,6 @@ def scale_brightness(name: str) -> float:
     return round(min(avg / 8.5, 1.0), 3)
 
 
-
 def scale_modes(name: str) -> list[tuple[str, list[int]]]:
     """Generate all rotational modes of a scale.
 
@@ -1439,7 +1401,6 @@ def scale_modes(name: str) -> list[tuple[str, list[int]]]:
         rotated.sort()
         modes.append((f"{name}_mode_{i + 1}", rotated))
     return modes
-
 
 
 # ---------------------------------------------------------------------------
@@ -1504,7 +1465,6 @@ def suggest_substitutions(
     return subs
 
 
-
 def reharmonize(
     progression: list[tuple[str, str]],
     key: str = "C",
@@ -1567,7 +1527,6 @@ def reharmonize(
                 result.append((root, shape))
 
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -1659,7 +1618,6 @@ def optimal_voicing(
     return [Note(_NOTE_NAMES[p % 12], p // 12, duration) for p in best]
 
 
-
 def smooth_voicings(
     progression: list[tuple[str, str]],
     voices: int = 4,
@@ -1718,7 +1676,6 @@ def smooth_voicings(
     return result
 
 
-
 def enharmonic_equivalent(note: str) -> str:
     """Return the enharmonic equivalent of a note name.
 
@@ -1734,7 +1691,6 @@ def enharmonic_equivalent(note: str) -> str:
     return _ENHARMONIC_MAP.get(note, note)
 
 
-
 def key_signature_accidentals(key: str) -> list[str]:
     """Return the sharps or flats in a key signature.
 
@@ -1745,7 +1701,6 @@ def key_signature_accidentals(key: str) -> list[str]:
         List of accidentals (e.g. ['F#'] for G major, ['Bb', 'Eb'] for Bb major).
     """
     return list(_KEY_SIGNATURES.get(key, []))
-
 
 
 def respell_note(note: str, key: str) -> str:
@@ -1780,7 +1735,6 @@ def respell_note(note: str, key: str) -> str:
         return alt
 
     return note  # no change needed
-
 
 
 # ---------------------------------------------------------------------------
@@ -1824,7 +1778,6 @@ def suggest_scale(
     return results
 
 
-
 def available_notes(
     key: str = "C",
     scale_name: str = "major",
@@ -1846,7 +1799,6 @@ def available_notes(
     return [_NOTE_NAMES[(k + iv) % 12] for iv in _SCALE_INTERVALS[sname]]
 
 
-
 def avoid_notes(
     key: str = "C",
     scale_name: str = "major",
@@ -1862,7 +1814,6 @@ def avoid_notes(
     """
     good = set(available_notes(key, scale_name))
     return [_NOTE_NAMES[i] for i in range(12) if _NOTE_NAMES[i] not in good]
-
 
 
 def lookup_voicing(
@@ -1892,7 +1843,6 @@ def lookup_voicing(
     ]
 
 
-
 def random_voicing(
     root: str,
     shape: str,
@@ -1918,7 +1868,6 @@ def random_voicing(
     voicings = _VOICING_DB.get(shape, [[0, 4, 7]])
     idx = rng.randint(0, len(voicings) - 1)
     return lookup_voicing(root, shape, idx, octave, duration)
-
 
 
 # ---------------------------------------------------------------------------
@@ -1969,7 +1918,6 @@ def harmonic_field(
     return field
 
 
-
 def chord_relationships(key: str = "C") -> dict[str, list[str]]:
     """Map which chords resolve to which in a key.
 
@@ -1991,7 +1939,6 @@ def chord_relationships(key: str = "C") -> dict[str, list[str]]:
         "vi": ["ii", "IV"],
         "viio": ["I"],
     }
-
 
 
 # ---------------------------------------------------------------------------
@@ -2050,7 +1997,6 @@ def morph_chord(
     return result
 
 
-
 def chord_interpolation(
     progression: list[tuple[str, str]],
     steps_between: int = 2,
@@ -2097,7 +2043,6 @@ def chord_interpolation(
     return result
 
 
-
 def format_chord(root: str, shape: str) -> str:
     """Format a (root, shape) tuple as a standard chord symbol.
 
@@ -2110,7 +2055,6 @@ def format_chord(root: str, shape: str) -> str:
     """
     suffix = _SHAPE_SYMBOLS.get(shape, shape)
     return f"{root}{suffix}"
-
 
 
 def format_progression(
@@ -2127,7 +2071,6 @@ def format_progression(
         Formatted string (e.g. 'Cmaj7 | Dm7 | G7 | Cmaj7').
     """
     return separator.join(format_chord(r, s) for r, s in progression)
-
 
 
 # ---------------------------------------------------------------------------
@@ -2154,7 +2097,6 @@ def interval_sequence(notes: list[Note]) -> list[int]:
     return result
 
 
-
 def common_intervals(notes: list[Note], top_n: int = 5) -> list[tuple[int, int]]:
     """Find the most frequently used melodic intervals.
 
@@ -2171,7 +2113,6 @@ def common_intervals(notes: list[Note], top_n: int = 5) -> list[tuple[int, int]]
         counts[iv] = counts.get(iv, 0) + 1
     sorted_intervals = sorted(counts.items(), key=lambda x: -x[1])
     return sorted_intervals[:top_n]
-
 
 
 # ---------------------------------------------------------------------------
@@ -2210,7 +2151,6 @@ def detect_inversion(notes: list[Note], root: str, shape: str) -> int:
     return 0
 
 
-
 def inversion_label(inversion: int) -> str:
     """Return a human-readable label for a chord inversion.
 
@@ -2222,7 +2162,6 @@ def inversion_label(inversion: int) -> str:
     """
     labels = {0: "root position", 1: "1st inversion", 2: "2nd inversion", 3: "3rd inversion"}
     return labels.get(inversion, f"{inversion}th inversion")
-
 
 
 def scale_degree(pitch: str, key: str = "C") -> int:
@@ -2238,7 +2177,6 @@ def scale_degree(pitch: str, key: str = "C") -> int:
     return (_semi(pitch) - _semi(key)) % 12
 
 
-
 def scale_degree_name(pitch: str, key: str = "C") -> str:
     """Return a human-readable scale degree name.
 
@@ -2250,7 +2188,6 @@ def scale_degree_name(pitch: str, key: str = "C") -> str:
         Degree name string (e.g. "5", "b3 (minor 3rd)").
     """
     return _DEGREE_NAMES.get(scale_degree(pitch, key), "?")
-
 
 
 # ---------------------------------------------------------------------------
@@ -2272,7 +2209,6 @@ def chord_tones(root: str, shape: str) -> list[str]:
     return [_NOTE_NAMES[(k + s) % 12] for s in _CHORD_SEMI.get(shape, [0, 4, 7])]
 
 
-
 def is_chord_tone(pitch: str, root: str, shape: str) -> bool:
     """Check if a pitch is a chord tone.
 
@@ -2287,7 +2223,6 @@ def is_chord_tone(pitch: str, root: str, shape: str) -> bool:
     return pitch in chord_tones(root, shape) or _NOTE_NAMES[_semi(pitch)] in chord_tones(
         root, shape
     )
-
 
 
 def filter_chord_tones(
@@ -2312,7 +2247,6 @@ def filter_chord_tones(
         else:
             result.append(Note.rest(n.duration) if n.pitch is not None else n)
     return result
-
 
 
 # ---------------------------------------------------------------------------
@@ -2381,7 +2315,6 @@ def parse_chord_symbol(symbol: str) -> tuple[str, str]:
     return (root, suffix if suffix else "maj")
 
 
-
 def parse_chord_symbols(text: str) -> list[tuple[str, str]]:
     """Parse a space-separated string of chord symbols.
 
@@ -2393,3 +2326,164 @@ def parse_chord_symbols(text: str) -> list[tuple[str, str]]:
     """
     return [parse_chord_symbol(s.strip()) for s in text.split() if s.strip()]
 
+
+# ---------------------------------------------------------------------------
+# Chord Voicing AI — voice_progression (v133.0)
+# ---------------------------------------------------------------------------
+
+
+def voice_progression(
+    progression: list[tuple[str, str]],
+    style: str = "classical",
+    octave: int = 3,
+    duration: float = 4.0,
+) -> list[list[Note]]:
+    """Produce pianistic voicings for a progression that minimize hand movement.
+
+    Unlike generate_chord_voicing (single chord) or smooth_voicings
+    (constraint-based), this uses style-specific intelligence:
+
+    Styles:
+        'classical': Close position, common-tone retention, smooth bass.
+            Root always in bass. Upper voices move by step when possible.
+        'jazz_rootless': Alternating rootless A/B voicings for smooth
+            voice leading. No root (bass player handles it). The Bill
+            Evans approach.
+        'quartal': McCoy Tyner-style stacked 4ths. Root-anchored but
+            harmonically ambiguous. Best for modal jazz.
+        'drop2': Drop-2 voicings (second-highest note dropped an octave).
+            The standard jazz guitar voicing — wide spread, clear.
+        'shell': 2-note shell voicings (root + 3rd or root + 7th).
+            Minimal, rhythmic comping. Thelonious Monk territory.
+
+    Args:
+        progression: List of (root, shape) tuples.
+        style:       Voicing style name.
+        octave:      Base octave.
+        duration:    Duration per chord.
+
+    Returns:
+        List of Note lists, one voicing per chord.
+
+    Example::
+
+        >>> prog = [("D", "min7"), ("G", "dom7"), ("C", "maj7")]
+        >>> voicings = voice_progression(prog, style="jazz_rootless")
+        >>> len(voicings)
+        3
+    """
+    if not progression:
+        return []
+
+    result: list[list[Note]] = []
+
+    if style == "classical":
+        # Close position with common-tone retention
+        prev_notes: list[int] | None = None
+        for root, shape in progression:
+            k = _semi(root)
+            semis = list(_CHORD_SEMI.get(shape, [0, 4, 7]))
+            # Root in bass
+            bass = k + octave * 12
+            # Upper voices: close position above bass
+            upper = [k + s + (octave + 1) * 12 for s in semis]
+
+            if prev_notes is not None:
+                # Retain common tones, minimize movement for others
+                adjusted = [bass]
+                for u in upper[1:]:  # skip root duplication
+                    pc = u % 12
+                    # Find closest octave placement to previous voice
+                    best = u
+                    best_dist = 999
+                    for prev in prev_notes:
+                        for o in range(octave, octave + 3):
+                            cand = pc + o * 12
+                            if abs(cand - prev) < best_dist:
+                                best_dist = abs(cand - prev)
+                                best = cand
+                    adjusted.append(best)
+                adjusted.sort()
+                notes = [
+                    Note(_NOTE_NAMES[p % 12], max(2, min(6, p // 12)), duration) for p in adjusted
+                ]
+                prev_notes = adjusted
+            else:
+                all_pitches = sorted([bass] + upper[1:])
+                notes = [
+                    Note(_NOTE_NAMES[p % 12], max(2, min(6, p // 12)), duration)
+                    for p in all_pitches
+                ]
+                prev_notes = all_pitches
+            result.append(notes)
+
+    elif style == "jazz_rootless":
+        # Alternate A and B rootless voicings for smooth leading
+        for i, (root, shape) in enumerate(progression):
+            if i % 2 == 0:
+                notes = rootless_a(root, shape, octave, duration)
+            else:
+                notes = rootless_b(root, shape, octave, duration)
+            result.append(notes)
+
+    elif style == "quartal":
+        for root, shape in progression:
+            notes = quartal_voicing(root, octave, duration, layers=4)
+            result.append(notes)
+
+    elif style == "drop2":
+        prev_abs: list[int] | None = None
+        for root, shape in progression:
+            notes = generate_chord_voicing(root, shape, octave, "drop2", duration)
+            current = [_semi(str(n.pitch)) + n.octave * 12 for n in notes]
+            if prev_abs is not None:
+                # Minimize movement by shifting octaves
+                adjusted = []
+                for j, c in enumerate(current):
+                    pc = c % 12
+                    target = prev_abs[j] if j < len(prev_abs) else c
+                    best = c
+                    best_dist = abs(c - target)
+                    for o in range(octave, octave + 3):
+                        cand = pc + o * 12
+                        if abs(cand - target) < best_dist:
+                            best_dist = abs(cand - target)
+                            best = cand
+                    adjusted.append(best)
+                adjusted.sort()
+                notes = [
+                    Note(_NOTE_NAMES[p % 12], max(2, min(6, p // 12)), duration) for p in adjusted
+                ]
+                prev_abs = adjusted
+            else:
+                prev_abs = current
+            result.append(notes)
+
+    elif style == "shell":
+        for root, shape in progression:
+            k = _semi(root)
+            semis = _CHORD_SEMI.get(shape, [0, 4, 7])
+            # Root + 3rd (or closest chord tone after root)
+            root_note = Note(_NOTE_NAMES[k], octave, duration)
+            if len(semis) >= 2:
+                # For 7th chords: root + 7th (the shell)
+                if len(semis) >= 4:
+                    guide = semis[3]  # 7th
+                else:
+                    guide = semis[1]  # 3rd
+                guide_note = Note(
+                    _NOTE_NAMES[(k + guide) % 12],
+                    octave + (k + guide) // 12,
+                    duration,
+                )
+                result.append([root_note, guide_note])
+            else:
+                result.append([root_note])
+
+    else:
+        raise ValueError(
+            f"Unknown voicing style {style!r}. Choose: classical, "
+            "jazz_rootless, quartal, drop2, shell"
+        )
+
+    return result
