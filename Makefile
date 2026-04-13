@@ -394,6 +394,17 @@ docs: ## [Dev] Generate API reference docs → docs/api.html
 	@echo "  Open docs/api.html or visit $$(make -s pages-url)api.html"
 
 
+master: songs-wav ## [Dev] Master all rendered WAVs → dist/mastered/ (LUFS-normalized, peak-limited)
+	@mkdir -p dist/mastered
+	@echo "Mastering $$(ls dist/wav/*.wav 2>/dev/null | wc -l | tr -d ' ') WAV files..."
+	@for wav in dist/wav/*.wav; do \
+		name=$$(basename "$$wav" .wav); \
+		$(CM) --master "$$wav" --flac -o "dist/mastered/$${name}.flac" 2>/dev/null \
+			|| $(CM) --master "$$wav" -o "dist/mastered/$${name}.wav"; \
+	done
+	@echo "Done. Mastered files in dist/mastered/"
+
+
 render-one: ## [Dev] Render one song to all formats (WAV+FLAC+MP3). Usage: make render-one SONG=name
 	@test -n "$(SONG)" || (echo "Usage: make render-one SONG=trance_odyssey"; exit 1)
 	@mkdir -p dist/wav dist/flac dist/mp3

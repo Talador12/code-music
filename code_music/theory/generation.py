@@ -5020,3 +5020,324 @@ def compare_songs(
         },
         "differences": differences,
     }
+
+
+# ---------------------------------------------------------------------------
+# Interactive Theory Course (v141.0)
+# ---------------------------------------------------------------------------
+
+_THEORY_LESSONS = [
+    {
+        "id": 1,
+        "title": "Notes and Octaves",
+        "topic": "basics",
+        "description": "The 12 chromatic notes and octave numbering system.",
+        "concepts": ["note names", "octaves", "semitones", "enharmonics"],
+        "exercises": [
+            {"type": "identify", "question": "How many semitones in an octave?", "answer": "12"},
+            {"type": "identify", "question": "What note is 7 semitones above C?", "answer": "G"},
+            {"type": "identify", "question": "What is the enharmonic of C#?", "answer": "Db"},
+        ],
+    },
+    {
+        "id": 2,
+        "title": "Major Scales",
+        "topic": "scales",
+        "description": "The major scale pattern: W-W-H-W-W-W-H.",
+        "concepts": ["whole steps", "half steps", "major scale formula", "key signatures"],
+        "exercises": [
+            {"type": "identify", "question": "How many sharps in G major?", "answer": "1"},
+            {"type": "identify", "question": "What is the 5th note of C major?", "answer": "G"},
+            {
+                "type": "identify",
+                "question": "What mode starts on the 6th degree of major?",
+                "answer": "aeolian",
+            },
+        ],
+    },
+    {
+        "id": 3,
+        "title": "Minor Scales",
+        "topic": "scales",
+        "description": "Natural, harmonic, and melodic minor scales.",
+        "concepts": ["natural minor", "harmonic minor", "melodic minor", "relative major"],
+        "exercises": [
+            {
+                "type": "identify",
+                "question": "What is the relative minor of C major?",
+                "answer": "A",
+            },
+            {
+                "type": "identify",
+                "question": "What degree is raised in harmonic minor?",
+                "answer": "7",
+            },
+            {"type": "identify", "question": "How many flats in F minor?", "answer": "4"},
+        ],
+    },
+    {
+        "id": 4,
+        "title": "Intervals",
+        "topic": "intervals",
+        "description": "Distance between two notes measured in semitones and quality.",
+        "concepts": ["major", "minor", "perfect", "augmented", "diminished", "tritone"],
+        "exercises": [
+            {"type": "interval", "note_a": "C", "note_b": "G", "answer": "perfect 5th"},
+            {"type": "interval", "note_a": "C", "note_b": "E", "answer": "major 3rd"},
+            {"type": "interval", "note_a": "C", "note_b": "Bb", "answer": "minor 7th"},
+        ],
+    },
+    {
+        "id": 5,
+        "title": "Triads",
+        "topic": "chords",
+        "description": "Three-note chords built in thirds: major, minor, diminished, augmented.",
+        "concepts": ["major triad", "minor triad", "diminished triad", "augmented triad"],
+        "exercises": [
+            {"type": "identify", "question": "What notes are in C major triad?", "answer": "C E G"},
+            {"type": "identify", "question": "What quality is C-Eb-G?", "answer": "minor"},
+            {"type": "identify", "question": "What quality is C-E-G#?", "answer": "augmented"},
+        ],
+    },
+    {
+        "id": 6,
+        "title": "Seventh Chords",
+        "topic": "chords",
+        "description": "Four-note chords: maj7, min7, dom7, half-dim, dim7.",
+        "concepts": ["major 7th", "minor 7th", "dominant 7th", "half-diminished", "diminished 7th"],
+        "exercises": [
+            {"type": "identify", "question": "What type is C-E-G-Bb?", "answer": "dom7"},
+            {"type": "identify", "question": "What type is C-Eb-G-Bb?", "answer": "min7"},
+            {"type": "identify", "question": "What type is C-E-G-B?", "answer": "maj7"},
+        ],
+    },
+    {
+        "id": 7,
+        "title": "Chord Progressions",
+        "topic": "harmony",
+        "description": "Common chord movement patterns in tonal music.",
+        "concepts": ["I-IV-V-I", "ii-V-I", "12-bar blues", "circle of fifths"],
+        "exercises": [
+            {"type": "identify", "question": "What Roman numeral is the dominant?", "answer": "V"},
+            {"type": "identify", "question": "What chord resolves V7 in C major?", "answer": "C"},
+            {"type": "identify", "question": "What is ii-V-I in C major?", "answer": "Dm G C"},
+        ],
+    },
+    {
+        "id": 8,
+        "title": "Cadences",
+        "topic": "harmony",
+        "description": "Musical punctuation: how phrases end.",
+        "concepts": ["perfect", "plagal", "half", "deceptive"],
+        "exercises": [
+            {"type": "identify", "question": "What cadence is V-I?", "answer": "perfect"},
+            {"type": "identify", "question": "What cadence is IV-I?", "answer": "plagal"},
+            {"type": "identify", "question": "What cadence ends on V?", "answer": "half"},
+        ],
+    },
+    {
+        "id": 9,
+        "title": "Voice Leading",
+        "topic": "harmony",
+        "description": "Smooth movement between chords: minimal motion, no parallel 5ths.",
+        "concepts": ["common tones", "stepwise motion", "parallel fifths", "contrary motion"],
+        "exercises": [
+            {
+                "type": "identify",
+                "question": "What motion type moves voices in opposite directions?",
+                "answer": "contrary",
+            },
+            {
+                "type": "identify",
+                "question": "What interval is forbidden in parallel motion?",
+                "answer": "5th",
+            },
+            {
+                "type": "identify",
+                "question": "A note shared between two chords is called a?",
+                "answer": "common tone",
+            },
+        ],
+    },
+    {
+        "id": 10,
+        "title": "Modes",
+        "topic": "scales",
+        "description": "The seven modes of the major scale: Ionian through Locrian.",
+        "concepts": ["ionian", "dorian", "phrygian", "lydian", "mixolydian", "aeolian", "locrian"],
+        "exercises": [
+            {
+                "type": "identify",
+                "question": "What mode has a raised 4th degree?",
+                "answer": "lydian",
+            },
+            {
+                "type": "identify",
+                "question": "What mode has a flat 7th and is major-sounding?",
+                "answer": "mixolydian",
+            },
+            {
+                "type": "identify",
+                "question": "What mode starts on the 2nd degree of major?",
+                "answer": "dorian",
+            },
+        ],
+    },
+    {
+        "id": 11,
+        "title": "Rhythm and Meter",
+        "topic": "rhythm",
+        "description": "Time signatures, subdivisions, syncopation.",
+        "concepts": ["time signature", "simple meter", "compound meter", "syncopation", "swing"],
+        "exercises": [
+            {"type": "identify", "question": "How many beats in 4/4 time?", "answer": "4"},
+            {"type": "identify", "question": "What is 6/8 classified as?", "answer": "compound"},
+            {
+                "type": "identify",
+                "question": "Emphasis on off-beats is called?",
+                "answer": "syncopation",
+            },
+        ],
+    },
+    {
+        "id": 12,
+        "title": "Song Form",
+        "topic": "form",
+        "description": "How sections organize into complete pieces.",
+        "concepts": ["verse", "chorus", "bridge", "AABA", "sonata", "rondo", "binary", "ternary"],
+        "exercises": [
+            {"type": "identify", "question": "What form is A-B-A-C-A?", "answer": "rondo"},
+            {
+                "type": "identify",
+                "question": "What form has exposition-development-recap?",
+                "answer": "sonata",
+            },
+            {"type": "identify", "question": "What form is A-B?", "answer": "binary"},
+        ],
+    },
+]
+
+
+def theory_course(
+    lesson_id: int | None = None,
+    topic: str | None = None,
+) -> dict | list[dict]:
+    """Interactive music theory course with structured lessons.
+
+    12 lessons covering notes, scales, intervals, chords, progressions,
+    cadences, voice leading, modes, rhythm, and form. Each lesson has
+    a topic, description, concepts, and graded exercises.
+
+    Call with no args to get the full syllabus. Call with a lesson_id
+    to get a specific lesson. Call with a topic to filter by category.
+
+    Args:
+        lesson_id: Specific lesson number (1-12).
+        topic:     Filter by topic: basics, scales, intervals, chords,
+                   harmony, rhythm, form.
+
+    Returns:
+        Single lesson dict (if lesson_id given), or list of lessons.
+
+    Example::
+
+        >>> syllabus = theory_course()
+        >>> len(syllabus)
+        12
+        >>> lesson = theory_course(lesson_id=1)
+        >>> lesson["title"]
+        'Notes and Octaves'
+    """
+    lessons = _THEORY_LESSONS
+
+    if lesson_id is not None:
+        for lesson in lessons:
+            if lesson["id"] == lesson_id:
+                return lesson
+        return {"error": f"No lesson with id {lesson_id}. Valid: 1-{len(lessons)}"}
+
+    if topic is not None:
+        return [l for l in lessons if l["topic"] == topic]
+
+    return lessons
+
+
+def grade_lesson(
+    lesson_id: int,
+    answers: list[str],
+) -> dict:
+    """Grade answers for a theory course lesson.
+
+    Compares user answers against the lesson's exercise answers.
+    Returns score, percentage, letter grade, and per-question feedback.
+
+    Args:
+        lesson_id: Lesson number (1-12).
+        answers:   List of user answers (one per exercise).
+
+    Returns:
+        Dict with score, total, percentage, grade, and feedback list.
+
+    Example::
+
+        >>> result = grade_lesson(1, ["12", "G", "Db"])
+        >>> result["percentage"]
+        100.0
+        >>> result["grade"]
+        'A'
+    """
+    lesson = theory_course(lesson_id=lesson_id)
+    if isinstance(lesson, dict) and "error" in lesson:
+        return lesson
+
+    exercises = lesson["exercises"]
+    correct = [ex["answer"] for ex in exercises]
+
+    total = len(correct)
+    feedback: list[dict] = []
+    right = 0
+
+    for i, (user, expected) in enumerate(zip(answers, correct)):
+        is_correct = user.strip().lower() == expected.strip().lower()
+        if is_correct:
+            right += 1
+        feedback.append(
+            {
+                "question": i + 1,
+                "your_answer": user,
+                "correct_answer": expected,
+                "correct": is_correct,
+            }
+        )
+
+    # Grade remaining unanswered
+    for i in range(len(answers), total):
+        feedback.append(
+            {
+                "question": i + 1,
+                "your_answer": "(no answer)",
+                "correct_answer": correct[i],
+                "correct": False,
+            }
+        )
+
+    pct = round(right / max(total, 1) * 100, 1)
+    if pct >= 90:
+        grade = "A"
+    elif pct >= 80:
+        grade = "B"
+    elif pct >= 70:
+        grade = "C"
+    elif pct >= 60:
+        grade = "D"
+    else:
+        grade = "F"
+
+    return {
+        "lesson": lesson["title"],
+        "score": right,
+        "total": total,
+        "percentage": pct,
+        "grade": grade,
+        "feedback": feedback,
+    }

@@ -285,6 +285,8 @@ from .generation import (  # noqa: F401
     auto_accompany,
     compare_songs,
     generate_form,
+    grade_lesson,
+    theory_course,
     generate_full_song,
     generate_fugue,
     generate_period,
@@ -653,4 +655,6 @@ __all__ = [
     "progression_dna",
     "progression_distance",
     "find_similar_progressions_dna",
+    "theory_course",
+    "grade_lesson",
 ]

@@ -266,6 +266,8 @@ from .theory import (
     auto_accompany,
     compare_songs,
     generate_form,
+    grade_lesson,
+    theory_course,
     generate_full_song,
     generate_fugue,
     generate_period,
@@ -942,6 +944,8 @@ __all__ = [
     # v139.0 — auto-accompaniment, song comparison
     "auto_accompany",
     "compare_songs",
+    "theory_course",
+    "grade_lesson",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

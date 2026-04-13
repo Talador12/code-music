@@ -1595,3 +1595,145 @@ class EffectsChain:
 
             chain.add(fn, wet=wet, bypass=bypass, label=name, **kwargs)
         return chain
+
+
+# ---------------------------------------------------------------------------
+# Time-stretch and pitch-shift (v141.0)
+# ---------------------------------------------------------------------------
+
+
+def time_stretch(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate: float = 1.0,
+    grain_size_ms: float = 40.0,
+) -> FloatArray:
+    """Time-stretch audio without changing pitch.
+
+    Grain-based overlap-add (OLA) stretcher. Rate > 1.0 speeds up (shorter),
+    rate < 1.0 slows down (longer). Pitch stays the same.
+
+    Args:
+        samples:       Mono or stereo audio.
+        sample_rate:   Sample rate (used for grain size calculation).
+        rate:          Stretch factor. 0.5 = half speed (2x longer),
+                       2.0 = double speed (half length).
+        grain_size_ms: Grain window size in milliseconds.
+
+    Returns:
+        Time-stretched audio (same sample rate, different length).
+
+    Example::
+
+        >>> import numpy as np
+        >>> audio = np.random.randn(44100, 2) * 0.1
+        >>> slow = time_stretch(audio, 44100, rate=0.5)
+        >>> slow.shape[0] > audio.shape[0]
+        True
+    """
+    if rate <= 0:
+        raise ValueError("rate must be positive")
+    if abs(rate - 1.0) < 0.001:
+        return samples.copy()
+
+    is_stereo = samples.ndim == 2
+    if is_stereo:
+        left = _time_stretch_mono(samples[:, 0], sample_rate, rate, grain_size_ms)
+        right = _time_stretch_mono(samples[:, 1], sample_rate, rate, grain_size_ms)
+        min_len = min(len(left), len(right))
+        return np.column_stack([left[:min_len], right[:min_len]])
+    return _time_stretch_mono(samples, sample_rate, rate, grain_size_ms)
+
+
+def _time_stretch_mono(mono: np.ndarray, sr: int, rate: float, grain_size_ms: float) -> np.ndarray:
+    """OLA time-stretch for mono audio."""
+    grain_len = max(64, int(grain_size_ms * sr / 1000))
+    hop_in = grain_len // 2  # input hop
+    hop_out = int(hop_in / rate)  # output hop
+
+    # Hann window for smooth overlap
+    window = np.hanning(grain_len).astype(np.float64)
+
+    n = len(mono)
+    out_len = int(n / rate) + grain_len
+    out = np.zeros(out_len, dtype=np.float64)
+    norm = np.zeros(out_len, dtype=np.float64)
+
+    pos_in = 0
+    pos_out = 0
+
+    while pos_in + grain_len <= n and pos_out + grain_len <= out_len:
+        grain = mono[pos_in : pos_in + grain_len] * window
+        out[pos_out : pos_out + grain_len] += grain
+        norm[pos_out : pos_out + grain_len] += window
+        pos_in += hop_in
+        pos_out += hop_out
+
+    # Normalize overlap regions
+    mask = norm > 1e-8
+    out[mask] /= norm[mask]
+
+    # Trim trailing silence
+    last_nonzero = np.max(np.nonzero(np.abs(out) > 1e-10), initial=0)
+    return out[: last_nonzero + 1] if last_nonzero > 0 else out
+
+
+def pitch_shift(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    semitones: float = 0.0,
+    grain_size_ms: float = 40.0,
+) -> FloatArray:
+    """Pitch-shift audio without changing duration.
+
+    Combines time-stretching with resampling. Shift up = positive semitones,
+    shift down = negative. Duration stays the same.
+
+    Args:
+        samples:       Mono or stereo audio.
+        sample_rate:   Sample rate.
+        semitones:     Pitch shift in semitones. +12 = one octave up.
+        grain_size_ms: Grain window size.
+
+    Returns:
+        Pitch-shifted audio (same length and sample rate).
+
+    Example::
+
+        >>> import numpy as np
+        >>> audio = np.random.randn(44100, 2) * 0.1
+        >>> shifted = pitch_shift(audio, 44100, semitones=7)
+        >>> abs(shifted.shape[0] - audio.shape[0]) < 100
+        True
+    """
+    if abs(semitones) < 0.01:
+        return samples.copy()
+
+    # Pitch shift = time-stretch by inverse ratio, then resample
+    ratio = 2.0 ** (semitones / 12.0)
+
+    # Step 1: Time-stretch to compensate for upcoming resample
+    stretched = time_stretch(samples, sample_rate, rate=ratio, grain_size_ms=grain_size_ms)
+
+    # Step 2: Resample to shift pitch (changes length back to original)
+    original_len = len(samples)
+    is_stereo = stretched.ndim == 2
+
+    if is_stereo:
+        left = np.interp(
+            np.linspace(0, len(stretched) - 1, original_len),
+            np.arange(len(stretched)),
+            stretched[:, 0],
+        )
+        right = np.interp(
+            np.linspace(0, len(stretched) - 1, original_len),
+            np.arange(len(stretched)),
+            stretched[:, 1],
+        )
+        return np.column_stack([left, right])
+
+    return np.interp(
+        np.linspace(0, len(stretched) - 1, original_len),
+        np.arange(len(stretched)),
+        stretched,
+    )

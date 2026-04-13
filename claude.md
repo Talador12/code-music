@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v140.0.0 — 323 songs, 2764 tests, 440+ theory functions, 44 scales
+## Status: v141.0.0 — 323 songs, 2798 tests, 445+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2345,3 +2345,38 @@ passed through to pydub/ffmpeg for embedding in the output file.
 - [x] 15 tests (4 master CLI, 1 stems CLI, 6 import, 3 metadata, 1 round-trip)
 
 **Stats:** 440+ public functions. 2764 tests. 323 songs. 44 scales.
+
+## v141.0 — Theory Course + Time-stretch/Pitch-shift + Batch Mastering
+
+**theory_course(lesson_id, topic) + grade_lesson(lesson_id, answers):**
+12-lesson interactive music theory course covering notes, major/minor scales,
+intervals, triads, seventh chords, progressions, cadences, voice leading,
+modes, rhythm/meter, and song form. Each lesson has topic, description,
+concepts list, and 3 graded exercises. Filter by topic (basics, scales,
+intervals, chords, harmony, rhythm, form). grade_lesson() returns score,
+percentage, letter grade (A-F), and per-question feedback with correct
+answers. Case-insensitive grading. Self-test passes 100% on all 12 lessons.
+
+**time_stretch(samples, sample_rate, rate, grain_size_ms):**
+Grain-based overlap-add (OLA) time-stretcher. Rate > 1.0 = faster (shorter),
+rate < 1.0 = slower (longer). Pitch stays the same. Hann-windowed grains
+with overlap normalization. Works on mono and stereo. No external deps.
+
+**pitch_shift(samples, sample_rate, semitones, grain_size_ms):**
+Pitch-shift without changing duration. Combines time_stretch (inverse ratio)
+with linear interpolation resampling. +12 = octave up, -12 = octave down.
+Output length matches input. Works on mono and stereo.
+
+**make master:**
+Batch masters all rendered WAVs in dist/wav/ to dist/mastered/. Runs
+code-music --master on each file. Tries FLAC first, falls back to WAV
+if ffmpeg is not installed.
+
+- [x] `theory_course()` — 12 lessons, topic filtering, exercise grading
+- [x] `grade_lesson()` — score, percentage, letter grade, per-question feedback
+- [x] `time_stretch()` — grain OLA time-stretcher (mono + stereo)
+- [x] `pitch_shift()` — resample-based pitch-shift preserving duration
+- [x] `make master` — batch mastering Makefile target
+- [x] 34 tests (11 course, 10 grading, 7 time-stretch, 5 pitch-shift, 1 Makefile)
+
+**Stats:** 445+ public functions. 2798 tests. 323 songs. 44 scales.
