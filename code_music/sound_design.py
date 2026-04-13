@@ -238,6 +238,22 @@ class _WavetableLayer:
         self.detune_cents = detune_cents
 
 
+class _WavetableScanSpec:
+    __slots__ = ("tables", "scan_rate", "volume", "detune_cents")
+
+    def __init__(
+        self,
+        tables: list[FloatArray],
+        scan_rate: float,
+        volume: float,
+        detune_cents: float,
+    ):
+        self.tables = tables
+        self.scan_rate = scan_rate
+        self.volume = volume
+        self.detune_cents = detune_cents
+
+
 class _LFOSpec:
     __slots__ = ("target", "rate", "depth", "wave")
 
@@ -348,7 +364,60 @@ def _modal_synth(
     return out
 
 
-_PHYSICAL_MODELS = {"karplus_strong", "waveguide_pipe", "modal"}
+def _bowed_string(
+    freq: float, n: int, sr: int, bow_pressure: float = 0.5, brightness: float = 0.6
+) -> FloatArray:
+    """Bowed string model using a waveguide with continuous excitation.
+
+    Unlike plucked strings (Karplus-Strong) which excite once and decay,
+    a bowed string has sustained excitation from the bow friction. The bow
+    pressure controls how hard the string is driven - low pressure gives
+    a gentle sul tasto, high pressure gives a forceful marcato.
+
+    Args:
+        freq:         Fundamental frequency.
+        n:            Number of samples.
+        sr:           Sample rate.
+        bow_pressure: Bow force 0.0-1.0. Low = gentle, high = aggressive.
+        brightness:   Tone brightness 0.0-1.0. Low = muffled, high = bright.
+    """
+    period = max(2, int(sr / freq))
+    buf = np.zeros(period, dtype=np.float64)
+    out = np.zeros(n, dtype=np.float64)
+
+    # Bow velocity oscillates slowly (simulates bow movement)
+    bow_speed = 0.2  # bow speed in arbitrary units
+    rng = np.random.default_rng(77)
+
+    for i in range(n):
+        idx = i % period
+        string_vel = buf[idx]
+
+        # Bow friction model: stick-slip behavior
+        # When bow and string velocities are close, friction sticks (drives string)
+        # When they diverge, it slips (releases)
+        bow_vel = bow_speed * np.sin(2 * np.pi * 5.0 * i / sr)  # slow bow oscillation
+        delta_v = bow_vel - string_vel
+        # Friction curve: hyperbolic tangent approximation of stick-slip
+        friction = bow_pressure * np.tanh(4.0 * delta_v)
+        # Add small noise for rosin texture
+        friction += rng.standard_normal() * 0.002 * bow_pressure
+
+        # Inject friction force into delay line
+        next_idx = (idx + 1) % period
+        new_val = brightness * buf[idx] + (1 - brightness) * buf[next_idx]
+        buf[idx] = 0.995 * new_val + friction * 0.15
+
+        out[i] = buf[idx]
+
+    # Normalize
+    peak = np.max(np.abs(out))
+    if peak > 0:
+        out /= peak
+    return out
+
+
+_PHYSICAL_MODELS = {"karplus_strong", "waveguide_pipe", "modal", "bowed_string"}
 
 
 # ---------------------------------------------------------------------------
@@ -456,6 +525,7 @@ class SoundDesigner:
         self._noises: list[_NoiseLayer] = []
         self._fm_layers: list[_FMLayer] = []
         self._wavetable_layers: list[_WavetableLayer] = []
+        self._wavetable_scans: list[_WavetableScanSpec] = []
         self._granular_layers: list[_GranularSpec] = []
         self._physical_layers: list[_PhysicalModelSpec] = []
         self._spectral_procs: list = []  # list of callables (audio, sr) -> audio
@@ -570,6 +640,51 @@ class SoundDesigner:
         self._wavetable_layers.append(_WavetableLayer(table, volume, detune_cents))
         return self
 
+    def wavetable_scan(
+        self,
+        tables: list["Wavetable"],
+        scan_rate: float = 0.5,
+        volume: float = 1.0,
+        detune_cents: float = 0.0,
+    ) -> "SoundDesigner":
+        """Add a scanning wavetable oscillator that morphs between tables.
+
+        An LFO sweeps through a bank of wavetables over time. At any moment
+        the output is an interpolation between two adjacent tables. This
+        produces evolving, animated timbres - the hallmark of wavetable
+        synthesis in modern synths like Serum and Vital.
+
+        Args:
+            tables:       List of Wavetable objects (the bank). Minimum 2.
+            scan_rate:    LFO rate in Hz for scanning (0.1=slow, 2.0=fast).
+            volume:       Layer volume (0.0-1.0).
+            detune_cents: Detune from base frequency in cents.
+
+        Returns:
+            self (for chaining).
+
+        Example::
+
+            wt_bank = [
+                Wavetable.from_wave("sine"),
+                Wavetable.from_wave("sawtooth"),
+                Wavetable.from_wave("square"),
+            ]
+            sd = SoundDesigner("scanner").wavetable_scan(wt_bank, scan_rate=0.3)
+        """
+        if len(tables) < 2:
+            raise ValueError("wavetable_scan requires at least 2 tables")
+        raw_tables = []
+        for wt in tables:
+            if isinstance(wt, Wavetable):
+                raw_tables.append(wt.table.copy())
+            else:
+                raw_tables.append(np.asarray(wt, dtype=np.float64))
+        self._wavetable_scans.append(
+            _WavetableScanSpec(raw_tables, scan_rate, volume, detune_cents)
+        )
+        return self
+
     # -- Granular synthesis ------------------------------------------------
 
     def granular(
@@ -620,6 +735,8 @@ class SoundDesigner:
                   Params: feedback (0.9–0.99), brightness (0–1).
                 - ``modal``: struck resonant body (bell, bar, gong).
                   Params: (uses default metal bar modes).
+                - ``bowed_string``: sustained bowed string (violin, cello).
+                  Params: bow_pressure (0-1), brightness (0-1).
             volume:     Layer volume.
             **kwargs:   Model-specific parameters.
 
@@ -628,6 +745,7 @@ class SoundDesigner:
             guitar = SoundDesigner("guitar").physical_model("karplus_strong", decay=0.998)
             flute = SoundDesigner("flute").physical_model("waveguide_pipe", feedback=0.97)
             gong = SoundDesigner("gong").physical_model("modal")
+            violin = SoundDesigner("violin").physical_model("bowed_string", bow_pressure=0.6)
         """
         if model_type not in _PHYSICAL_MODELS:
             raise ValueError(f"Unknown model {model_type!r}. Choose: {sorted(_PHYSICAL_MODELS)}")
@@ -877,6 +995,53 @@ class SoundDesigner:
             layer = wt_layer.table[idx0] * (1.0 - frac) + wt_layer.table[idx1] * frac
             mix += layer * wt_layer.volume
 
+        # -- Wavetable scanning layers ------------------------------------
+        for scan in self._wavetable_scans:
+            detune_ratio = 2.0 ** (scan.detune_cents / 1200.0)
+            wt_freq = (
+                freq * detune_ratio * pitch_mod
+                if freq_env is None
+                else freq_env * detune_ratio * pitch_mod
+            )
+            phase = np.cumsum(wt_freq / sr)
+
+            # LFO position determines which tables to interpolate
+            num_tables = len(scan.tables)
+            t_arr = np.arange(n) / sr
+            # Triangle LFO: scans 0 -> num_tables-1 -> 0 -> ...
+            lfo_phase = scan.scan_rate * t_arr
+            # Triangle wave mapped to [0, num_tables-1]
+            lfo_raw = 2.0 * np.abs(lfo_phase - np.floor(lfo_phase + 0.5))
+            scan_pos = lfo_raw * (num_tables - 1)
+
+            # For each sample, interpolate between adjacent tables
+            table_idx_a = np.clip(np.floor(scan_pos).astype(np.intp), 0, num_tables - 2)
+            table_idx_b = table_idx_a + 1
+            table_frac = scan_pos - table_idx_a
+
+            # Read from both tables at the oscillator phase
+            layer = np.zeros(n, dtype=np.float64)
+            for ti in range(num_tables):
+                mask = (table_idx_a == ti) | (table_idx_b == ti)
+                if not np.any(mask):
+                    continue
+                table = scan.tables[ti]
+                table_len = len(table)
+                pos_in_table = (phase[mask] % 1.0) * table_len
+                i0 = pos_in_table.astype(np.intp) % table_len
+                i1 = (i0 + 1) % table_len
+                f = pos_in_table - np.floor(pos_in_table)
+                table_val = table[i0] * (1.0 - f) + table[i1] * f
+
+                # Weight: if this is table_a, weight is (1 - frac); if table_b, weight is frac
+                is_a = table_idx_a[mask] == ti
+                is_b = table_idx_b[mask] == ti
+                weight = np.where(is_a, 1.0 - table_frac[mask], 0.0)
+                weight = np.where(is_b, weight + table_frac[mask], weight)
+                layer[mask] += table_val * weight
+
+            mix += layer * scan.volume
+
         # -- Granular synthesis layers -------------------------------------
         for gran in self._granular_layers:
             rng = np.random.default_rng(gran.seed)
@@ -921,6 +1086,14 @@ class SoundDesigner:
                 )
             elif phys.model_type == "modal":
                 layer = _modal_synth(freq, n, sr)
+            elif phys.model_type == "bowed_string":
+                layer = _bowed_string(
+                    freq,
+                    n,
+                    sr,
+                    bow_pressure=phys.params.get("bow_pressure", 0.5),
+                    brightness=phys.params.get("brightness", 0.6),
+                )
             else:
                 layer = np.zeros(n)
             mix += layer * phys.volume
@@ -1548,6 +1721,13 @@ pm_gong = (
     .filter("lowpass", cutoff=6000, resonance=0.5)
 )
 
+pm_violin = (
+    SoundDesigner("pm_violin")
+    .physical_model("bowed_string", volume=0.85, bow_pressure=0.5, brightness=0.6)
+    .envelope(attack=0.08, decay=0.2, sustain=0.8, release=0.4)
+    .filter("lowpass", cutoff=5000, resonance=0.4)
+)
+
 PRESETS = {
     "supersaw": supersaw,
     "sub_808": sub_808,
@@ -1566,4 +1746,5 @@ PRESETS = {
     "pm_guitar": pm_guitar,
     "pm_flute": pm_flute,
     "pm_gong": pm_gong,
+    "pm_violin": pm_violin,
 }

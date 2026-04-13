@@ -1737,3 +1737,109 @@ def pitch_shift(
         np.arange(len(stretched)),
         stretched,
     )
+
+
+# ---------------------------------------------------------------------------
+# Cross-synthesis (v142.0)
+# ---------------------------------------------------------------------------
+
+
+def cross_synthesis(
+    source: FloatArray,
+    target: FloatArray,
+    sample_rate: int = 44100,
+    fft_size: int = 2048,
+    blend: float = 1.0,
+    wet: float = 0.9,
+) -> FloatArray:
+    """Cross-synthesis: apply the spectral envelope of one sound to another.
+
+    Takes the magnitude spectrum from `target` and the phase spectrum from
+    `source`. The result has the pitch/timing of `source` but the timbral
+    character of `target`. Classic use: give a piano the spectrum of a voice,
+    or make strings sound like a choir.
+
+    Unlike the vocoder (which uses band-pass filters), this operates directly
+    in the frequency domain via STFT for higher fidelity.
+
+    Args:
+        source:      Signal providing phase (pitch, timing).
+        target:      Signal providing magnitude (timbre, spectral shape).
+        sample_rate: Sample rate.
+        fft_size:    FFT window size. Larger = smoother, more latency.
+        blend:       How much of target's spectrum to use (0=source, 1=target).
+        wet:         Wet/dry mix.
+
+    Returns:
+        Cross-synthesized audio (same shape as source).
+
+    Example::
+
+        >>> import numpy as np
+        >>> src = np.random.randn(22050, 2) * 0.1
+        >>> tgt = np.random.randn(22050, 2) * 0.1
+        >>> out = cross_synthesis(src, tgt, 22050)
+        >>> out.shape == src.shape
+        True
+    """
+    n = min(len(source), len(target))
+    source = source[:n]
+    target = target[:n]
+
+    is_stereo = source.ndim == 2
+    if is_stereo:
+        left = _cross_synth_mono(source[:, 0], target[:, 0], fft_size, blend)
+        right = _cross_synth_mono(source[:, 1], target[:, 1], fft_size, blend)
+        result = np.column_stack([left[:n], right[:n]])
+    else:
+        result = _cross_synth_mono(source, target, fft_size, blend)[:n]
+
+    if wet < 1.0:
+        result = wet * result + (1.0 - wet) * source
+    return result
+
+
+def _cross_synth_mono(
+    source: np.ndarray, target: np.ndarray, fft_size: int, blend: float
+) -> np.ndarray:
+    """STFT-based cross-synthesis for mono signals."""
+    hop = fft_size // 4
+    window = np.hanning(fft_size).astype(np.float64)
+    n = len(source)
+
+    # Pad to multiple of hop
+    pad_len = (fft_size + (n // hop) * hop) - n + fft_size
+    src_pad = np.pad(source, (0, max(0, pad_len)))
+    tgt_pad = np.pad(target, (0, max(0, pad_len)))
+
+    out = np.zeros(len(src_pad), dtype=np.float64)
+    norm = np.zeros(len(src_pad), dtype=np.float64)
+
+    pos = 0
+    while pos + fft_size <= len(src_pad):
+        src_frame = src_pad[pos : pos + fft_size] * window
+        tgt_frame = tgt_pad[pos : pos + fft_size] * window
+
+        src_fft = np.fft.rfft(src_frame)
+        tgt_fft = np.fft.rfft(tgt_frame)
+
+        # Magnitude from target, phase from source
+        src_mag = np.abs(src_fft)
+        tgt_mag = np.abs(tgt_fft)
+        src_phase = np.angle(src_fft)
+
+        # Blend magnitudes
+        blended_mag = (1.0 - blend) * src_mag + blend * tgt_mag
+
+        # Reconstruct with source phase
+        synth_fft = blended_mag * np.exp(1j * src_phase)
+        frame = np.fft.irfft(synth_fft, n=fft_size) * window
+
+        out[pos : pos + fft_size] += frame
+        norm[pos : pos + fft_size] += window**2
+        pos += hop
+
+    # Normalize overlap
+    mask = norm > 1e-8
+    out[mask] /= norm[mask]
+    return out[:n]

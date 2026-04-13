@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v141.0.0 — 323 songs, 2798 tests, 445+ theory functions, 44 scales
+## Status: v142.0.0 — 323 songs, 2818 tests, 450+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2380,3 +2380,36 @@ if ffmpeg is not installed.
 - [x] 34 tests (11 course, 10 grading, 7 time-stretch, 5 pitch-shift, 1 Makefile)
 
 **Stats:** 445+ public functions. 2798 tests. 323 songs. 44 scales.
+
+## v142.0 — Cross-synthesis + Wavetable Scanning + Bowed String Model
+
+**cross_synthesis(source, target, sample_rate, fft_size, blend, wet):**
+STFT-based cross-synthesis: takes magnitude spectrum from target and phase
+spectrum from source. The result has the pitch/timing of source but the
+timbral character of target. Overlap-add with Hann windowing for artifact-free
+reconstruction. blend parameter controls interpolation between source and
+target magnitudes. Higher fidelity than the vocoder (band-pass filter approach)
+because it operates directly in the frequency domain.
+
+**SoundDesigner.wavetable_scan(tables, scan_rate, volume, detune_cents):**
+LFO-scanned wavetable bank. A triangle LFO sweeps through a list of
+Wavetable objects, interpolating between adjacent tables at each sample.
+Produces the evolving, animated timbres characteristic of modern synths
+(Serum, Vital, Massive). scan_rate controls sweep speed in Hz. Works with
+any number of tables (minimum 2). Chainable with envelope, filter, LFO.
+
+**bowed_string physical model:**
+Waveguide with continuous friction excitation simulating a bowed string
+(violin, cello, viola). Unlike Karplus-Strong (single pluck then decay),
+the bow maintains sustained excitation through a stick-slip friction model
+(hyperbolic tangent approximation). bow_pressure controls excitation force
+(0=gentle sul tasto, 1=forceful marcato). Includes rosin noise texture.
+New preset: `pm_violin`. 18 total SoundDesigner presets.
+
+- [x] `cross_synthesis()` — STFT magnitude/phase transfer effect
+- [x] `SoundDesigner.wavetable_scan()` — LFO-scanned wavetable bank
+- [x] `bowed_string` physical model — sustained friction-driven waveguide
+- [x] `pm_violin` preset — bowed string with ADSR + lowpass
+- [x] 20 tests (7 cross-synthesis, 6 wavetable scanning, 7 bowed string)
+
+**Stats:** 450+ public functions. 2818 tests. 323 songs. 44 scales.
