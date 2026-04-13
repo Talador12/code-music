@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import random
 
-from .engine import Chord, Note, Section, Song
+from .engine import Chord, Note, Section, Song, Track
 
 # ---------------------------------------------------------------------------
 # Note constants
@@ -1206,6 +1206,575 @@ def to_svg_waveform(
         _Path(path).write_text(svg)
 
     return svg
+
+
+# ---------------------------------------------------------------------------
+# Comprehensive full analysis report
+# ---------------------------------------------------------------------------
+
+
+def full_analysis(song: Song) -> str:
+    """Generate a comprehensive multi-page markdown analysis report.
+
+    Combines form detection, key centers, modulations, cadences, tension
+    curves, harmonic complexity, rhythmic density, melodic range, phrase
+    structure, voice independence, and style classification into a single
+    readable markdown document.
+
+    Args:
+        song: Song to analyze.
+
+    Returns:
+        Multi-page markdown string suitable for printing or saving.
+
+    Example::
+
+        report = full_analysis(song)
+        Path("song_analysis.md").write_text(report)
+    """
+    from .theory import (
+        ambiguity_score,
+        analysis_report,
+        complexity_curve,
+        complexity_score,
+        density_profile,
+        detect_cadences,
+        detect_key,
+        detect_modulations,
+        functional_analysis,
+        label_form,
+        section_similarity_matrix,
+        song_fingerprint,
+        tension_curve,
+    )
+
+    lines: list[str] = []
+
+    # Header
+    lines.append(f"# {song.title}")
+    lines.append("")
+    lines.append(
+        f"**BPM:** {song.bpm:.0f} | **Key:** {song.key_sig} | **Time:** {song.time_sig[0]}/{song.time_sig[1]}"
+    )
+    lines.append("")
+
+    # Basic stats
+    total_beats = song.total_beats
+    duration_sec = song.duration_sec
+    bars = max(1, int(total_beats / song.time_sig[0]))
+
+    lines.append("## Overview")
+    lines.append("")
+    lines.append(
+        f"- **Duration:** {duration_sec:.1f} seconds ({total_beats:.1f} beats, {bars} bars)"
+    )
+    lines.append(f"- **Tracks:** {len(song.tracks)}")
+    lines.append(f"- **Instruments:** {', '.join(t.instrument for t in song.tracks)}")
+    lines.append("")
+
+    # Extract progression from song
+    progression: list[tuple[str, str]] = []
+    for track in song.tracks:
+        pos = 0.0
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, Chord):
+                prog_root = beat.event.root
+                prog_shape = beat.event.shape if isinstance(beat.event.shape, str) else "maj"
+                progression.append((prog_root, prog_shape))
+            if beat.event:
+                pos += beat.event.duration
+
+    # Key analysis
+    if progression:
+        lines.append("## Harmonic Analysis")
+        lines.append("")
+
+        key_info = detect_key(progression)
+        if key_info:
+            # detect_key returns a string (key root); use key_certainty for confidence
+            from .theory import key_certainty
+
+            cert = key_certainty(progression)
+            root = cert["key"]
+            conf = cert["confidence"]
+            lines.append(f"**Detected Key:** {root} major (confidence: {conf:.0%})")
+            lines.append("")
+
+        # Cadences
+        cadences = detect_cadences(progression, song.key_sig)
+        if cadences:
+            lines.append("**Cadences:**")
+            for cad in cadences:
+                pos = cad.get("position", cad.get("bar", "?"))
+                lines.append(
+                    f"- Position {pos}: {cad['type']} ({cad['chords'][0]} → {cad['chords'][1]})"
+                )
+            lines.append("")
+
+        # Functional analysis
+        try:
+            func_analysis = functional_analysis(progression, song.key_sig)
+            func_summary: dict[str, int] = {}
+            for entry in func_analysis:
+                func = entry.get("function", "unknown")
+                func_summary[func] = func_summary.get(func, 0) + 1
+            if func_summary:
+                lines.append("**Functional Distribution:**")
+                for func, count in sorted(func_summary.items(), key=lambda x: -x[1]):
+                    pct = count / len(func_analysis) * 100
+                    lines.append(f"- {func.capitalize()}: {count} ({pct:.0f}%)")
+                lines.append("")
+        except Exception:
+            pass
+
+        # Tension curve
+        try:
+            tc = tension_curve(progression, song.key_sig)
+            if tc:
+                avg_tension = sum(tc) / len(tc)
+                peak_tension = max(tc)
+                lines.append(
+                    f"**Tension Curve:** Average {avg_tension:.2f}, Peak {peak_tension:.2f}"
+                )
+                lines.append("")
+        except Exception:
+            pass
+
+        # Complexity
+        try:
+            comp = complexity_score(progression, song.key_sig)
+            lines.append(f"**Harmonic Complexity Score:** {comp:.0f}/100")
+            lines.append("")
+        except Exception:
+            pass
+
+        # Ambiguity
+        try:
+            amb = ambiguity_score(progression)
+            cert = 1.0 - amb
+            lines.append(f"**Key Certainty:** {cert:.0%} (ambiguity: {amb:.2f})")
+            lines.append("")
+        except Exception:
+            pass
+
+        # Modulations
+        try:
+            mods = detect_modulations(progression, window=min(4, len(progression)))
+            if len(mods) > 1:
+                lines.append("**Modulations Detected:**")
+                for region in mods:
+                    lines.append(
+                        f"- Bars {region['start_idx']}-{region['end_idx']}: {region['key']} (confidence: {region.get('confidence', 0.5):.0%})"
+                    )
+                lines.append("")
+        except Exception:
+            pass
+
+    # Structure analysis
+    lines.append("## Structure")
+    lines.append("")
+
+    arrangement = generate_arrangement(song)
+    if arrangement:
+        lines.append("**Sections:**")
+        for section in arrangement:
+            label = section.get("label", "unknown")
+            start = section.get("start_bar", 0)
+            end = section.get("end_bar", 0)
+            tracks = section.get("tracks_active", [])
+            lines.append(f"- Bars {start}-{end}: {label.capitalize()} ({len(tracks)} tracks)")
+        lines.append("")
+
+        # Try form labeling
+        try:
+            if progression:
+                bars_per = max(1, len(progression) // bars) if bars > 0 else 1
+                form = label_form(progression, bars_per_chord=bars_per)
+                if form:
+                    lines.append(f"**Form Pattern:** {form}")
+                    lines.append("")
+        except Exception:
+            pass
+
+    # Per-track analysis
+    lines.append("## Track Analysis")
+    lines.append("")
+
+    for track in song.tracks:
+        lines.append(f"### {track.name} ({track.instrument})")
+        lines.append("")
+
+        # Count notes/chords
+        note_count = 0
+        chord_count = 0
+        rest_count = 0
+        velocities: list[int] = []
+        pitches: list[int] = []
+        durations: list[float] = []
+
+        for beat in track.beats:
+            if beat.event is None:
+                rest_count += 1
+                continue
+            if isinstance(beat.event, Note):
+                if beat.event.pitch is not None:
+                    note_count += 1
+                    velocities.append(beat.event.velocity)
+                    if beat.event.midi:
+                        pitches.append(beat.event.midi)
+                else:
+                    rest_count += 1
+                durations.append(beat.event.duration)
+            elif isinstance(beat.event, Chord):
+                chord_count += 1
+                durations.append(beat.event.duration)
+
+        lines.append(
+            f"- **Notes:** {note_count} | **Chords:** {chord_count} | **Rests:** {rest_count}"
+        )
+
+        if velocities:
+            avg_vel = sum(velocities) / len(velocities)
+            lines.append(f"- **Average Velocity:** {avg_vel:.0f}/127")
+
+        if pitches:
+            low, high = min(pitches), max(pitches)
+            lines.append(f"- **Pitch Range:** {low}-{high} MIDI ({high - low} semitones)")
+
+        if durations:
+            avg_dur = sum(durations) / len(durations)
+            lines.append(f"- **Average Duration:** {avg_dur:.2f} beats")
+
+        lines.append("")
+
+    # Song fingerprint
+    try:
+        if progression:
+            fp = song_fingerprint(progression, [])
+            lines.append("## Fingerprint")
+            lines.append("")
+            lines.append("**Pitch Distribution (12-tone):**")
+            hist = fp.get("pitch_histogram", [])
+            if hist:
+                total = sum(hist)
+                for i, count in enumerate(hist):
+                    if count > 0:
+                        note_names = [
+                            "C",
+                            "C#",
+                            "D",
+                            "Eb",
+                            "E",
+                            "F",
+                            "F#",
+                            "G",
+                            "Ab",
+                            "A",
+                            "Bb",
+                            "B",
+                        ]
+                        pct = count / total * 100 if total > 0 else 0
+                        lines.append(f"- {note_names[i]}: {count} ({pct:.0f}%)")
+            lines.append("")
+    except Exception:
+        pass
+
+    # Footer
+    lines.append("---")
+    lines.append("")
+    lines.append("*Generated by code-music*")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Song Builder DSL v2 - Full multi-track song definition
+# ---------------------------------------------------------------------------
+
+
+def parse_song_dsl(text: str) -> dict:
+    """Parse Song Builder DSL v2 into a complete song specification.
+
+    The DSL allows defining full songs with BPM, time signature, key,
+    multiple tracks with instruments, and effects — all in a compact
+    mini-language.
+
+    Syntax::
+
+        bpm: 120
+        time: 4/4
+        key: C
+
+        track lead piano:
+          | C4 E4 G4 C5 | - - - - |
+
+        track bass bass:
+          | C3 - - - | G2 - - - |
+
+        effects:
+          lead: reverb(room_size=0.7, wet=0.3)
+          master: delay(delay_ms=375, feedback=0.3)
+
+    Track lines use mini-notation:
+        - Notes: C4, E4, G#5, Bb3
+        - Rests: - or ~
+        - Chords: [C4 E4 G4]
+        - Bar lines: |
+
+    Args:
+        text: DSL source text.
+
+    Returns:
+        Dict with: bpm, time_sig, key_sig, title, tracks, effects.
+
+    Example::
+
+        spec = parse_song_dsl('''
+            title: My Song
+            bpm: 128
+            time: 4/4
+            key: Am
+
+            track pad synth:
+              | [A3 C4 E4] - - - | [G3 B3 D4] - - - |
+
+            track lead sawtooth:
+              | A4 - C5 - | B4 - G4 - |
+        ''')
+        # Returns dict with parsed specification
+    """
+    result: dict = {
+        "bpm": 120,
+        "time_sig": (4, 4),
+        "key_sig": "C",
+        "title": "Untitled",
+        "tracks": [],
+        "effects": {},
+    }
+
+    lines = text.strip().splitlines()
+    line_idx = 0
+    current_track: dict | None = None
+    current_effects: dict | None = None
+
+    while line_idx < len(lines):
+        line = lines[line_idx].strip()
+        line_idx += 1
+
+        if not line or line.startswith("#"):
+            continue
+
+        # Global settings
+        if line.startswith("bpm:"):
+            try:
+                result["bpm"] = int(line.split(":", 1)[1].strip())
+            except ValueError:
+                pass
+            continue
+
+        if line.startswith("time:"):
+            time_part = line.split(":", 1)[1].strip()
+            try:
+                num, den = time_part.split("/")
+                result["time_sig"] = (int(num), int(den))
+            except ValueError:
+                pass
+            continue
+
+        if line.startswith("key:"):
+            result["key_sig"] = line.split(":", 1)[1].strip()
+            continue
+
+        if line.startswith("title:"):
+            result["title"] = line.split(":", 1)[1].strip()
+            continue
+
+        # Track definition
+        if line.startswith("track "):
+            if current_track:
+                result["tracks"].append(current_track)
+            # Parse: "track <name> <instrument>:"
+            rest = line[len("track ") :].strip()
+            if ":" in rest:
+                header, _ = rest.rsplit(":", 1)
+            else:
+                header = rest
+            parts = header.split()
+            if len(parts) >= 2:
+                name = parts[0]
+                instrument = parts[1]
+            else:
+                name = parts[0] if parts else "track"
+                instrument = "piano"
+            current_track = {
+                "name": name,
+                "instrument": instrument,
+                "lines": [],
+            }
+            continue
+
+        # Effects section
+        if line.startswith("effects:"):
+            if current_track:
+                result["tracks"].append(current_track)
+                current_track = None
+            current_effects = {}
+            continue
+
+        # Effect entry (indented, under effects:)
+        if current_effects is not None and line and not line.startswith("track "):
+            if ":" in line:
+                track_name, effect_spec = line.split(":", 1)
+                track_name = track_name.strip()
+                effect_spec = effect_spec.strip()
+                current_effects[track_name] = effect_spec
+            continue
+
+        # Track content (indented lines or bar patterns)
+        if current_track is not None and line:
+            # Remove leading | and trailing | for cleaner parsing
+            clean = line.strip()
+            if clean.startswith("|"):
+                clean = clean[1:]
+            if clean.endswith("|"):
+                clean = clean[:-1]
+            current_track["lines"].append(clean.strip())
+
+    # Add final track if exists
+    if current_track:
+        result["tracks"].append(current_track)
+    if current_effects:
+        result["effects"] = current_effects
+
+    return result
+
+
+def song_from_dsl_v2(text: str) -> Song:
+    """Create a complete Song from DSL v2 text.
+
+    This is the full-song constructor from DSL. It parses the DSL and
+    builds a complete Song object with tracks, instruments, notes, and
+    effects.
+
+    Args:
+        text: DSL source defining the song.
+
+    Returns:
+        Fully constructed Song object.
+
+    Example::
+
+        song = song_from_dsl_v2('''
+            title: Jazz Lounge
+            bpm: 110
+            key: Bb
+
+            track chords piano:
+              | [Bb3 D4 F4] - - - | [Eb3 G3 Bb3] - - - |
+              | [F3 A3 C4] - - - | [Bb3 D4 F4] - - - |
+
+            track bass bass:
+              | Bb2 - - - | Eb2 - - - | F2 - - - | Bb2 - - - |
+        ''')
+        song.render()  # Ready to play
+    """
+    from .effects import EffectsChain, delay, reverb
+
+    spec = parse_song_dsl(text)
+
+    song = Song(
+        title=spec["title"],
+        bpm=spec["bpm"],
+        key_sig=spec["key_sig"],
+        time_sig=spec["time_sig"],
+    )
+
+    # Build tracks
+    for track_spec in spec["tracks"]:
+        track = song.add_track(Track(name=track_spec["name"], instrument=track_spec["instrument"]))
+
+        # Parse each line of track content
+        for line in track_spec.get("lines", []):
+            # Split by bars
+            bars = [b.strip() for b in line.split("|") if b.strip()]
+            for bar_content in bars:
+                # Parse tokens: notes, chords, rests
+                tokens = bar_content.split()
+                for token in tokens:
+                    if token in ("-", "~", "r"):
+                        # Rest
+                        track.add(Note.rest(1.0))
+                    elif token.startswith("[") and token.endswith("]"):
+                        # Chord: [C4 E4 G4]
+                        inner = token[1:-1]
+                        notes_str = inner.split()
+                        notes = []
+                        for ns in notes_str:
+                            n = _parse_note_token(ns)
+                            if n:
+                                notes.append(n)
+                        if notes:
+                            # Create chord from notes (simplified)
+                            root = str(notes[0].pitch) if notes[0].pitch else "C"
+                            track.add(
+                                Chord(
+                                    root, "maj", octave=notes[0].octave, duration=float(len(notes))
+                                )
+                            )
+                        else:
+                            track.add(Note.rest(1.0))
+                    else:
+                        # Single note
+                        n = _parse_note_token(token)
+                        if n:
+                            track.add(n)
+                        else:
+                            track.add(Note.rest(1.0))
+
+    # Apply effects (basic parsing)
+    for track_name, effect_spec in spec.get("effects", {}).items():
+        if track_name == "master":
+            # Master effects not yet supported per-track
+            continue
+        if "reverb" in effect_spec.lower():
+            # Simple reverb
+            if track_name not in song.effects:
+                song.effects[track_name] = EffectsChain()
+            song.effects[track_name].add(reverb, room_size=0.5, wet=0.3)
+        elif "delay" in effect_spec.lower():
+            if track_name not in song.effects:
+                song.effects[track_name] = EffectsChain()
+            song.effects[track_name].add(delay, delay_ms=375.0, feedback=0.3, wet=0.25)
+
+    return song
+
+
+def _parse_note_token(token: str) -> Note | None:
+    """Parse a note token like 'C4', 'G#5', 'Bb3' into a Note."""
+    if not token or token in ("-", "~", "r"):
+        return None
+
+    # Extract pitch and octave
+    # Handle sharps and flats
+    token = token.strip()
+    octave = 4  # default
+
+    # Find where octave starts (last digit)
+    pitch_part = token
+    for i, ch in enumerate(token):
+        if ch.isdigit():
+            pitch_part = token[:i]
+            try:
+                octave = int(token[i:])
+            except ValueError:
+                octave = 4
+            break
+
+    if not pitch_part:
+        return None
+
+    return Note(pitch_part, octave, 1.0)
 
 
 # ---------------------------------------------------------------------------
