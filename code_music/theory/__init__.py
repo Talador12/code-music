@@ -244,6 +244,8 @@ from .analysis import (  # noqa: F401
     velocity_curve,
     velocity_stats,
     voice_independence_score,
+    style_fingerprint,
+    analyze_arrangement,
 )
 from .generation import (  # noqa: F401
     SongTemplate,
@@ -277,6 +279,7 @@ from .generation import (  # noqa: F401
     generate_canon,
     generate_drums,
     generate_from_matrix,
+    generate_form,
     generate_full_song,
     generate_fugue,
     generate_period,
@@ -339,6 +342,7 @@ __all__ = [
     "aksak",
     "ambiguity_score",
     "analysis_report",
+    "analyze_arrangement",
     "analyze_harmony",
     "andalusian_cadence",
     "apply_groove",
@@ -446,6 +450,7 @@ __all__ = [
     "generate_counterpoint",
     "generate_drums",
     "generate_from_matrix",
+    "generate_form",
     "generate_full_song",
     "generate_period",
     "generate_phrase",
@@ -637,4 +642,5 @@ __all__ = [
     "voice_lead_satb",
     "voice_progression",
     "whole_tone_run",
+    "style_fingerprint",
 ]

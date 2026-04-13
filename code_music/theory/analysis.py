@@ -8,6 +8,7 @@ from ._core import (
     _DISSONANCES,
     _FUNCTION_MAP,
     _GENRE_TEMPLATES,
+    _INSTRUMENT_RANGES,
     _INTERVAL_NAMES,
     _NOTE_NAMES,
     _QUALITY_MAP,
@@ -2670,6 +2671,234 @@ def critique(
 
 
 # ---------------------------------------------------------------------------
+# Song-Level Critique (v140.0) — Full arrangement analysis
+# ---------------------------------------------------------------------------
+
+
+def critique_song(
+    song,
+    key: str | None = None,
+) -> dict:
+    """Comprehensive critique of a complete Song object.
+
+    Extends the progression-level critique() to analyze full arrangements,
+    including inter-track voice independence, register usage, instrument
+    balance, and arrangement cohesion. The theory professor now reviews
+    your entire composition, not just the chord chart.
+
+    Args:
+        song: Song to analyze.
+        key:  Optional key override. If None, uses song.key_sig.
+
+    Returns:
+        Dict with:
+            overall_score:    0-100 grade for the entire song.
+            overall_grade:    Letter grade (A/B/C/D/F).
+            harmony_critique: Standard critique() output for progression.
+            tracks:           Per-track analysis dicts.
+            arrangement:      Arrangement-level observations.
+            issues:           Combined list of all issues found.
+            strengths:        Combined list of all strengths.
+            suggestions:      Prioritized improvement suggestions.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note, Chord
+        >>> song = Song(title="Test", key_sig="C")
+        >>> # ... add tracks ...
+        >>> result = critique_song(song)
+        >>> result["overall_grade"]
+        'B'
+    """
+    from ..engine import Chord, Note
+
+    analysis_key = key or getattr(song, "key_sig", "C") or "C"
+
+    issues: list[str] = []
+    strengths: list[str] = []
+    suggestions: list[str] = []
+
+    # --- Extract progression from song ---
+    progression: list[tuple[str, str]] = []
+    for track in song.tracks:
+        for beat in track.beats:
+            if beat.event and isinstance(beat.event, Chord):
+                shape = beat.event.shape if isinstance(beat.event.shape, str) else "maj"
+                progression.append((beat.event.root, shape))
+
+    # --- Base harmony critique ---
+    harmony_critique = critique(progression, key=analysis_key)
+
+    # --- Per-track analysis ---
+    track_analyses: list[dict] = []
+    all_notes: list[Note] = []
+    track_ranges: list[tuple[int, int]] = []
+    track_densities: list[float] = []
+
+    for track in song.tracks:
+        track_notes = [
+            beat.event
+            for beat in track.beats
+            if beat.event and isinstance(beat.event, Note) and beat.event.pitch is not None
+        ]
+
+        if track_notes:
+            all_notes.extend(track_notes)
+
+            # Calculate range
+            midi_vals = [_semi(str(n.pitch)) + n.octave * 12 for n in track_notes]
+            range_min, range_max = min(midi_vals), max(midi_vals)
+            track_ranges.append((range_min, range_max))
+
+            # Calculate density (notes per beat)
+            total_beats = sum(b.event.duration for b in track.beats if b.event)
+            density = len(track_notes) / max(total_beats, 1)
+            track_densities.append(density)
+
+            track_analyses.append(
+                {
+                    "name": track.name,
+                    "instrument": track.instrument,
+                    "note_count": len(track_notes),
+                    "range_semitones": range_max - range_min,
+                    "range_midi": (range_min, range_max),
+                    "density": round(density, 2),
+                }
+            )
+        else:
+            track_analyses.append(
+                {
+                    "name": track.name,
+                    "instrument": track.instrument,
+                    "note_count": 0,
+                    "range_semitones": 0,
+                    "range_midi": None,
+                    "density": 0,
+                }
+            )
+
+    # --- Arrangement analysis ---
+    arrangement: dict = {
+        "track_count": len(song.tracks),
+        "active_tracks": sum(1 for ta in track_analyses if ta["note_count"] > 0),
+        "register_overlap": False,
+        "voice_independence": 1.0,
+        "balance_score": 100,
+    }
+
+    # Check for register overlap (voices stepping on each other)
+    if len(track_ranges) >= 2:
+        for i in range(len(track_ranges)):
+            for j in range(i + 1, len(track_ranges)):
+                min1, max1 = track_ranges[i]
+                min2, max2 = track_ranges[j]
+                # Check if ranges overlap significantly (>50% of smaller range)
+                overlap_start = max(min1, min2)
+                overlap_end = min(max1, max2)
+                if overlap_start < overlap_end:
+                    overlap_size = overlap_end - overlap_start
+                    smaller_range = min(max1 - min1, max2 - min2)
+                    if smaller_range > 0 and overlap_size / smaller_range > 0.5:
+                        arrangement["register_overlap"] = True
+                        issues.append(f"Significant register overlap between tracks {i} and {j}.")
+
+    # Check density balance
+    if track_densities:
+        max_density = max(track_densities)
+        min_density = (
+            min(d for d in track_densities if d > 0) if any(d > 0 for d in track_densities) else 0
+        )
+        if max_density > 0 and min_density > 0:
+            density_ratio = max_density / min_density
+            if density_ratio > 5:
+                arrangement["balance_score"] -= 15
+                issues.append("Severe density imbalance — some tracks much busier than others.")
+                suggestions.append(
+                    "Balance activity across tracks; thin busy tracks or add interest to sparse ones."
+                )
+            elif density_ratio > 3:
+                arrangement["balance_score"] -= 8
+                issues.append("Moderate density imbalance between tracks.")
+
+    # Calculate voice independence (are tracks doing different things?)
+    if len(track_densities) >= 2:
+        # Simple independence metric: variety in density and range
+        density_variance = sum(
+            (d - sum(track_densities) / len(track_densities)) ** 2 for d in track_densities
+        )
+        arrangement["voice_independence"] = round(
+            min(1.0, density_variance / len(track_densities) + 0.5), 2
+        )
+
+    # --- Overall scoring ---
+    base_score = harmony_critique["score"]
+    arrangement_score = arrangement["balance_score"]
+
+    # Weight: 60% harmony, 40% arrangement
+    overall_score = int(base_score * 0.6 + arrangement_score * 0.4)
+
+    # Adjust for track count (bonus for layered writing, penalty for overstuffing)
+    active_count = arrangement["active_tracks"]
+    if active_count >= 3 and active_count <= 6:
+        overall_score += 3
+        strengths.append(f"Well-layered arrangement with {active_count} active tracks.")
+    elif active_count > 8:
+        overall_score -= 5
+        issues.append("Very dense arrangement — consider thinning for clarity.")
+
+    # Register spread bonus
+    if track_ranges:
+        global_min = min(r[0] for r in track_ranges)
+        global_max = max(r[1] for r in track_ranges)
+        total_span = global_max - global_min
+        if total_span >= 36:  # 3+ octaves
+            overall_score += 5
+            strengths.append("Excellent register spread across the arrangement.")
+        elif total_span < 12 and active_count >= 3:
+            overall_score -= 5
+            issues.append("Narrow overall register — tracks may be crowding the same range.")
+            suggestions.append(
+                "Use different octaves for different track roles (bass low, melody high)."
+            )
+
+    # Clamp score
+    overall_score = max(0, min(100, overall_score))
+
+    # Grade
+    if overall_score >= 90:
+        overall_grade = "A"
+    elif overall_score >= 80:
+        overall_grade = "B"
+    elif overall_score >= 70:
+        overall_grade = "C"
+    elif overall_score >= 60:
+        overall_grade = "D"
+    else:
+        overall_grade = "F"
+
+    # Combine all feedback
+    all_issues = harmony_critique.get("issues", []) + issues
+    all_strengths = harmony_critique.get("strengths", []) + strengths
+    all_suggestions = harmony_critique.get("suggestions", []) + suggestions
+
+    # Deduplicate
+    all_issues = list(dict.fromkeys(all_issues))
+    all_strengths = list(dict.fromkeys(all_strengths))
+    all_suggestions = list(dict.fromkeys(all_suggestions))
+
+    return {
+        "overall_score": overall_score,
+        "overall_grade": overall_grade,
+        "harmony_critique": harmony_critique,
+        "tracks": track_analyses,
+        "arrangement": arrangement,
+        "issues": all_issues,
+        "strengths": all_strengths,
+        "suggestions": all_suggestions,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Modulation detector (v134.0)
 # ---------------------------------------------------------------------------
 
@@ -2929,3 +3158,576 @@ def find_similar_melodies(
 
     scored.sort(key=lambda x: -x["score"])
     return scored[:top_k]
+
+
+# ---------------------------------------------------------------------------
+# Style Fingerprint (v136.0)
+# ---------------------------------------------------------------------------
+
+
+def style_fingerprint(
+    song,
+) -> dict:
+    """Compute a multi-dimensional feature vector for a Song.
+
+    Captures the musical DNA of a song across 8 dimensions: harmonic,
+    melodic, rhythmic, timbral, dynamic, structural, register, and
+    density. Two songs with similar fingerprints share a similar feel.
+    Use for clustering, recommendation, or style comparison.
+
+    Args:
+        song: Song object to fingerprint.
+
+    Returns:
+        Dict with feature categories, each containing numeric values:
+            harmonic:   root_diversity, quality_diversity, tension_mean,
+                        tension_range, cadence_count, key_stability.
+            melodic:    pitch_range, avg_interval, step_ratio,
+                        leap_ratio, rest_ratio, contour_direction.
+            rhythmic:   avg_duration, duration_variety, density,
+                        swing_amount, syncopation_estimate.
+            timbral:    instrument_count, unique_instruments,
+                        has_percussion, has_bass, has_melody.
+            dynamic:    velocity_mean, velocity_range, velocity_std,
+                        has_crescendo, has_decrescendo.
+            structural: track_count, total_beats, total_bars,
+                        section_count_estimate.
+            register:   lowest_midi, highest_midi, avg_midi,
+                        register_span.
+            density:    notes_per_beat, chords_per_beat,
+                        rests_per_beat, overall_density.
+            vector:     Flat list of all numeric values (for distance).
+
+    Example::
+
+        >>> from code_music import Song, Track, Note, Chord
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track())
+        >>> tr.add(Note("C", 4, 1.0))
+        >>> fp = style_fingerprint(song)
+        >>> "harmonic" in fp and "vector" in fp
+        True
+    """
+    import math
+
+    from ..engine import Chord, Note
+
+    # Collect all notes and chords
+    all_notes: list[Note] = []
+    all_chords: list[tuple[str, str]] = []
+    all_velocities: list[float] = []
+    all_durations: list[float] = []
+    instruments: list[str] = []
+    rest_count = 0
+    total_events = 0
+
+    for track in song.tracks:
+        instruments.append(track.instrument)
+        for beat in track.beats:
+            total_events += 1
+            if beat.event is None:
+                rest_count += 1
+            elif isinstance(beat.event, Note):
+                if beat.event.pitch is not None:
+                    all_notes.append(beat.event)
+                    all_velocities.append(beat.event.velocity)
+                    all_durations.append(beat.event.duration)
+                else:
+                    rest_count += 1
+            elif isinstance(beat.event, Chord):
+                shape = beat.event.shape if isinstance(beat.event.shape, str) else "maj"
+                all_chords.append((beat.event.root, shape))
+                all_velocities.append(beat.event.velocity)
+                all_durations.append(beat.event.duration)
+
+    total_beats = getattr(song, "total_beats", 0) or 1
+    total_events = max(total_events, 1)
+
+    # --- Harmonic features ---
+    roots = set(r for r, _ in all_chords)
+    qualities = set(s for _, s in all_chords)
+    root_diversity = len(roots) / max(len(all_chords), 1)
+    quality_diversity = len(qualities) / max(len(all_chords), 1)
+
+    tension_vals: list[float] = []
+    if all_chords:
+        analysis_key = getattr(song, "key_sig", "C") or "C"
+        try:
+            from .harmony import tension_curve
+
+            tension_vals = tension_curve(all_chords, key=analysis_key)
+        except Exception:
+            tension_vals = [0.5] * len(all_chords)
+
+    tension_mean = sum(tension_vals) / max(len(tension_vals), 1)
+    tension_range = (max(tension_vals) - min(tension_vals)) if tension_vals else 0.0
+
+    cadence_count = 0
+    if all_chords:
+        try:
+            from .harmony import detect_cadences
+
+            cadence_count = len(detect_cadences(all_chords, getattr(song, "key_sig", "C") or "C"))
+        except Exception:
+            pass
+
+    key_stability = 1.0
+    if all_chords:
+        try:
+            from .harmony import detect_key as _dk
+
+            _, _, conf = _dk(all_chords)
+            key_stability = conf
+        except Exception:
+            pass
+
+    harmonic = {
+        "root_diversity": round(root_diversity, 4),
+        "quality_diversity": round(quality_diversity, 4),
+        "tension_mean": round(tension_mean, 4),
+        "tension_range": round(tension_range, 4),
+        "cadence_count": cadence_count,
+        "key_stability": round(key_stability, 4),
+    }
+
+    # --- Melodic features ---
+    midi_vals = []
+    intervals = []
+    for n in all_notes:
+        try:
+            m = _semi(str(n.pitch)) + n.octave * 12
+            midi_vals.append(m)
+        except Exception:
+            pass
+
+    for i in range(1, len(midi_vals)):
+        intervals.append(abs(midi_vals[i] - midi_vals[i - 1]))
+
+    pitch_range = (max(midi_vals) - min(midi_vals)) if midi_vals else 0
+    avg_interval = sum(intervals) / max(len(intervals), 1)
+    steps = sum(1 for iv in intervals if iv <= 2)
+    leaps = sum(1 for iv in intervals if iv > 4)
+    step_ratio = steps / max(len(intervals), 1)
+    leap_ratio = leaps / max(len(intervals), 1)
+    rest_ratio = rest_count / total_events
+
+    # Contour direction: positive = ascending, negative = descending
+    contour_dir = 0.0
+    if len(midi_vals) >= 2:
+        ups = sum(1 for i in range(1, len(midi_vals)) if midi_vals[i] > midi_vals[i - 1])
+        downs = sum(1 for i in range(1, len(midi_vals)) if midi_vals[i] < midi_vals[i - 1])
+        total_motion = ups + downs
+        contour_dir = (ups - downs) / max(total_motion, 1)
+
+    melodic = {
+        "pitch_range": pitch_range,
+        "avg_interval": round(avg_interval, 4),
+        "step_ratio": round(step_ratio, 4),
+        "leap_ratio": round(leap_ratio, 4),
+        "rest_ratio": round(rest_ratio, 4),
+        "contour_direction": round(contour_dir, 4),
+    }
+
+    # --- Rhythmic features ---
+    avg_dur = sum(all_durations) / max(len(all_durations), 1)
+    dur_set = set(round(d, 3) for d in all_durations)
+    dur_variety = len(dur_set) / max(len(all_durations), 1)
+    density = (len(all_notes) + len(all_chords)) / total_beats
+    swing_amount = max((t.swing for t in song.tracks), default=0.0)
+
+    # Syncopation estimate: notes with odd-beat durations
+    syncopation = 0
+    for d in all_durations:
+        frac = d - int(d)
+        if 0.1 < frac < 0.9:
+            syncopation += 1
+    syncopation_est = syncopation / max(len(all_durations), 1)
+
+    rhythmic = {
+        "avg_duration": round(avg_dur, 4),
+        "duration_variety": round(dur_variety, 4),
+        "density": round(density, 4),
+        "swing_amount": round(swing_amount, 4),
+        "syncopation_estimate": round(syncopation_est, 4),
+    }
+
+    # --- Timbral features ---
+    unique_instr = set(instruments)
+    perc_names = {"drums_kick", "drums_snare", "drums_hat", "percussion"}
+    bass_names = {"bass", "sub_bass", "sub_808"}
+    melody_names = {"sawtooth", "sine", "square", "triangle", "piano", "organ", "pluck"}
+
+    timbral = {
+        "instrument_count": len(instruments),
+        "unique_instruments": len(unique_instr),
+        "has_percussion": 1.0 if unique_instr & perc_names else 0.0,
+        "has_bass": 1.0 if unique_instr & bass_names else 0.0,
+        "has_melody": 1.0 if unique_instr & melody_names else 0.0,
+    }
+
+    # --- Dynamic features ---
+    vel_mean = sum(all_velocities) / max(len(all_velocities), 1)
+    vel_range = (max(all_velocities) - min(all_velocities)) if all_velocities else 0.0
+    vel_std = 0.0
+    if len(all_velocities) > 1:
+        vel_std = math.sqrt(sum((v - vel_mean) ** 2 for v in all_velocities) / len(all_velocities))
+
+    # Detect crescendo/decrescendo by checking velocity trend
+    has_cresc = 0.0
+    has_decresc = 0.0
+    if len(all_velocities) >= 4:
+        half = len(all_velocities) // 2
+        first_half_avg = sum(all_velocities[:half]) / half
+        second_half_avg = sum(all_velocities[half:]) / (len(all_velocities) - half)
+        if second_half_avg > first_half_avg + 0.05:
+            has_cresc = 1.0
+        if first_half_avg > second_half_avg + 0.05:
+            has_decresc = 1.0
+
+    dynamic = {
+        "velocity_mean": round(vel_mean, 4),
+        "velocity_range": round(vel_range, 4),
+        "velocity_std": round(vel_std, 4),
+        "has_crescendo": has_cresc,
+        "has_decrescendo": has_decresc,
+    }
+
+    # --- Structural features ---
+    num, den = getattr(song, "time_sig", (4, 4))
+    beats_per_bar = num * 4 / den
+    total_bars = total_beats / beats_per_bar if beats_per_bar else 0
+
+    # Estimate sections by looking for repeated patterns in chord progression
+    section_est = 1
+    if len(all_chords) >= 8:
+        section_est = max(1, len(all_chords) // 4)
+
+    structural = {
+        "track_count": len(song.tracks),
+        "total_beats": round(total_beats, 2),
+        "total_bars": round(total_bars, 2),
+        "section_count_estimate": section_est,
+    }
+
+    # --- Register features ---
+    register = {
+        "lowest_midi": min(midi_vals) if midi_vals else 0,
+        "highest_midi": max(midi_vals) if midi_vals else 0,
+        "avg_midi": round(sum(midi_vals) / max(len(midi_vals), 1), 2),
+        "register_span": pitch_range,
+    }
+
+    # --- Density features ---
+    notes_per_beat = len(all_notes) / total_beats
+    chords_per_beat = len(all_chords) / total_beats
+    rests_per_beat = rest_count / total_beats
+    overall_density = (len(all_notes) + len(all_chords)) / total_beats
+
+    density_features = {
+        "notes_per_beat": round(notes_per_beat, 4),
+        "chords_per_beat": round(chords_per_beat, 4),
+        "rests_per_beat": round(rests_per_beat, 4),
+        "overall_density": round(overall_density, 4),
+    }
+
+    # --- Build flat vector for distance computation ---
+    vector: list[float] = []
+    for category in [
+        harmonic,
+        melodic,
+        rhythmic,
+        timbral,
+        dynamic,
+        structural,
+        register,
+        density_features,
+    ]:
+        for v in category.values():
+            vector.append(float(v))
+
+    return {
+        "harmonic": harmonic,
+        "melodic": melodic,
+        "rhythmic": rhythmic,
+        "timbral": timbral,
+        "dynamic": dynamic,
+        "structural": structural,
+        "register": register,
+        "density": density_features,
+        "vector": vector,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Arrangement Analyzer (v136.0)
+# ---------------------------------------------------------------------------
+
+
+def analyze_arrangement(
+    song,
+) -> dict:
+    """Analyze the arrangement of a Song - track roles, register usage,
+    instrument density, voice crossing, and instrument range compliance.
+
+    The arrangement review that a producer gives before mixing: which
+    track is doing what job, where they overlap, and where the gaps are.
+
+    Args:
+        song: Song object to analyze.
+
+    Returns:
+        Dict with:
+            tracks:          Per-track analysis (role, range, density, register).
+            roles:           Detected roles dict: melody, bass, pad, rhythm, other.
+            register_usage:  Which octave ranges are covered/empty.
+            voice_crossings: List of beat positions where tracks cross registers.
+            range_violations: Tracks playing outside instrument standard range.
+            frequency_balance: Low/mid/high register distribution.
+            suggestions:     List of arrangement improvement suggestions.
+            score:           0-100 arrangement quality score.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track(name="lead", instrument="piano"))
+        >>> tr.add(Note("C", 5, 2.0))
+        >>> result = analyze_arrangement(song)
+        >>> "tracks" in result and "score" in result
+        True
+    """
+    from ..engine import Chord, Note
+
+    issues: list[str] = []
+    suggestions: list[str] = []
+
+    # --- Per-track analysis ---
+    track_analyses: list[dict] = []
+    role_map: dict[str, list[str]] = {
+        "melody": [],
+        "bass": [],
+        "pad": [],
+        "rhythm": [],
+        "other": [],
+    }
+
+    # Instrument role heuristics
+    _bass_instruments = {"bass", "sub_bass", "sub_808", "fm_bass"}
+    _pad_instruments = {"pad", "organ", "vocal_pad", "strings", "wt_morph_pad"}
+    _rhythm_instruments = {"drums_kick", "drums_snare", "drums_hat", "percussion"}
+    _melody_instruments = {
+        "sawtooth",
+        "sine",
+        "square",
+        "triangle",
+        "piano",
+        "pluck",
+        "fm_electric_piano",
+        "fm_bell",
+        "wt_bright_lead",
+    }
+
+    all_track_midis: list[list[int]] = []
+
+    for track in song.tracks:
+        notes = []
+        midi_vals = []
+        total_dur = 0.0
+        note_count = 0
+        rest_count = 0
+
+        for beat in track.beats:
+            total_dur += beat.duration
+            if beat.event is None:
+                rest_count += 1
+            elif isinstance(beat.event, Note):
+                if beat.event.pitch is not None:
+                    notes.append(beat.event)
+                    note_count += 1
+                    try:
+                        m = _semi(str(beat.event.pitch)) + beat.event.octave * 12
+                        midi_vals.append(m)
+                    except Exception:
+                        pass
+                else:
+                    rest_count += 1
+            elif isinstance(beat.event, Chord):
+                note_count += 1
+                for cn in beat.event.notes:
+                    try:
+                        m = _semi(str(cn.pitch)) + cn.octave * 12
+                        midi_vals.append(m)
+                    except Exception:
+                        pass
+
+        all_track_midis.append(midi_vals)
+
+        # Determine role
+        instr = track.instrument
+        if instr in _rhythm_instruments:
+            role = "rhythm"
+        elif instr in _bass_instruments:
+            role = "bass"
+        elif instr in _pad_instruments:
+            role = "pad"
+        elif instr in _melody_instruments:
+            role = "melody"
+        else:
+            # Heuristic: high register + short notes = melody
+            avg_midi = sum(midi_vals) / max(len(midi_vals), 1) if midi_vals else 60
+            avg_dur = sum(n.duration for n in notes) / max(len(notes), 1) if notes else 1
+            if avg_midi >= 60 and avg_dur <= 1.0:
+                role = "melody"
+            elif avg_midi < 48:
+                role = "bass"
+            elif avg_dur >= 2.0:
+                role = "pad"
+            else:
+                role = "other"
+
+        role_map[role].append(track.name)
+
+        # Register classification
+        register = "mid"
+        if midi_vals:
+            avg = sum(midi_vals) / len(midi_vals)
+            if avg < 48:
+                register = "low"
+            elif avg > 72:
+                register = "high"
+
+        density = note_count / max(total_dur, 1)
+
+        track_analyses.append(
+            {
+                "name": track.name,
+                "instrument": track.instrument,
+                "role": role,
+                "register": register,
+                "note_count": note_count,
+                "rest_count": rest_count,
+                "density": round(density, 4),
+                "midi_range": (min(midi_vals), max(midi_vals)) if midi_vals else (0, 0),
+                "avg_midi": round(sum(midi_vals) / max(len(midi_vals), 1), 2) if midi_vals else 0,
+            }
+        )
+
+    # --- Voice crossings ---
+    crossings: list[dict] = []
+    if len(all_track_midis) >= 2:
+        # Compare adjacent tracks by role (e.g., bass should not go above melody)
+        for i in range(len(all_track_midis)):
+            for j in range(i + 1, len(all_track_midis)):
+                midis_a = all_track_midis[i]
+                midis_b = all_track_midis[j]
+                if not midis_a or not midis_b:
+                    continue
+                avg_a = sum(midis_a) / len(midis_a)
+                avg_b = sum(midis_b) / len(midis_b)
+                # Check if the "lower" track has notes above the "upper" track
+                if avg_a < avg_b:
+                    crossing_notes = sum(1 for m in midis_a if m > avg_b + 6)
+                else:
+                    crossing_notes = sum(1 for m in midis_b if m > avg_a + 6)
+                if crossing_notes > 0:
+                    crossings.append(
+                        {
+                            "track_a": song.tracks[i].name,
+                            "track_b": song.tracks[j].name,
+                            "crossing_count": crossing_notes,
+                        }
+                    )
+
+    # --- Range violations ---
+    range_violations: list[dict] = []
+    for ta in track_analyses:
+        instr = ta["instrument"]
+        if instr in _INSTRUMENT_RANGES:
+            low_midi, high_midi = _INSTRUMENT_RANGES[instr]  # already MIDI numbers
+            ta_low, ta_high = ta["midi_range"]
+            if ta_low and ta_low < low_midi:
+                range_violations.append(
+                    {
+                        "track": ta["name"],
+                        "instrument": instr,
+                        "issue": f"below range (MIDI {ta_low} < {low_midi})",
+                    }
+                )
+            if ta_high and ta_high > high_midi:
+                range_violations.append(
+                    {
+                        "track": ta["name"],
+                        "instrument": instr,
+                        "issue": f"above range (MIDI {ta_high} > {high_midi})",
+                    }
+                )
+
+    # --- Register/frequency balance ---
+    all_midis = [m for track_midis in all_track_midis for m in track_midis]
+    low_count = sum(1 for m in all_midis if m < 48)
+    mid_count = sum(1 for m in all_midis if 48 <= m <= 72)
+    high_count = sum(1 for m in all_midis if m > 72)
+    total_notes = max(len(all_midis), 1)
+
+    frequency_balance = {
+        "low": round(low_count / total_notes, 4),
+        "mid": round(mid_count / total_notes, 4),
+        "high": round(high_count / total_notes, 4),
+    }
+
+    # --- Register usage map ---
+    octave_usage: dict[int, int] = {}
+    for m in all_midis:
+        octave = m // 12
+        octave_usage[octave] = octave_usage.get(octave, 0) + 1
+
+    # --- Suggestions ---
+    if not role_map["bass"]:
+        suggestions.append("No bass track detected - consider adding low-end support")
+    if not role_map["melody"]:
+        suggestions.append("No clear melody track - consider adding a lead voice")
+    if not role_map["rhythm"]:
+        suggestions.append("No percussion/rhythm track - consider adding rhythmic foundation")
+    if len(role_map["melody"]) > 2:
+        suggestions.append(
+            f"Multiple melody tracks ({len(role_map['melody'])}) may compete for attention"
+        )
+    if crossings:
+        issues.append(f"Voice crossings detected in {len(crossings)} track pair(s)")
+    if range_violations:
+        issues.append(f"{len(range_violations)} instrument range violation(s)")
+    if frequency_balance["low"] < 0.05 and len(song.tracks) > 1:
+        suggestions.append("Low register is thin - bass or sub could fill the bottom end")
+    if frequency_balance["high"] < 0.05 and len(song.tracks) > 1:
+        suggestions.append("High register is empty - a lead or shimmer could add sparkle")
+    if frequency_balance["mid"] > 0.8:
+        suggestions.append("Most notes cluster in mid register - spread out for better separation")
+
+    # --- Score ---
+    score = 100
+    # Deductions
+    if not role_map["bass"]:
+        score -= 15
+    if not role_map["melody"]:
+        score -= 10
+    if not role_map["rhythm"]:
+        score -= 5
+    score -= len(crossings) * 5
+    score -= len(range_violations) * 5
+    if frequency_balance["mid"] > 0.8:
+        score -= 10
+    if len(song.tracks) < 2:
+        score -= 10
+    score = max(0, min(100, score))
+
+    return {
+        "tracks": track_analyses,
+        "roles": {k: v for k, v in role_map.items() if v},
+        "register_usage": dict(sorted(octave_usage.items())),
+        "voice_crossings": crossings,
+        "range_violations": range_violations,
+        "frequency_balance": frequency_balance,
+        "issues": issues,
+        "suggestions": suggestions,
+        "score": score,
+    }

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v130.0.0 — 323 songs, 2338 tests, 385+ theory functions, 44 scales
+## Status: v136.0.0 — 323 songs, 2657 tests, 420+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -1388,103 +1388,32 @@ Control chord density — expand or contract progressions.
 - [x] `reverse_progression`, `rotate_progression` — retrograde + rotation of chord progressions
 - [x] `melody_summary` — one-call comprehensive diagnostic (11 metrics: counts, duration, range, pitch center, rest/leap/repetition ratios)
 
-## Next session: ambitious items for fresh context
+## Completed roadmap items (archived)
 
-These are the big swings — each is a substantial project that benefits
-from a clean context window. Pick 1-3 per session.
+Items below were planned in earlier sessions and have since shipped.
 
-### Tier 1: Infrastructure (high impact, foundation work)
+### Tier 1: Infrastructure - DONE
+- [x] **Song Builder DSL v2** - `parse_song_dsl()` with BPM, time sig, instruments, bars (v137)
+- [x] **Genre Classifier** - `classify_genre()` with 10 genre profiles, weighted scoring (v131)
+- [ ] **MusicXML Export** - `to_musicxml(song)` for MuseScore/Finale/Sibelius
 
-**Song Builder DSL v2 — Full Language**
-The current `song_from_dsl` is basic (chords + melody lines). Build a
-real mini-language with BPM, time signature, instrument assignment,
-effects, and multi-track support. Goal: write an entire song in 20
-lines of DSL that compiles to a full Song object with effects.
+### Tier 2: Composition Intelligence - DONE
+- [x] **Full Song Generator** - `generate_full_song()` with 7 genres, multi-track (v131)
+- [x] **Countermelody Generator** - `generate_countermelody()` with 3 styles (v132)
+- [x] **Arrangement Engine** - `auto_arrange()` with 4 style presets (v131)
 
-**MusicXML Export**
-Standard notation interchange. `to_musicxml(song)` → valid MusicXML
-that opens in MuseScore/Finale/Sibelius. This makes code-music output
-readable by every musician on earth. Requires: part/measure/note
-mapping, clef selection, key/time signature, dynamics.
+### Tier 3: Analysis & Education - PARTIAL
+- [x] **Comprehensive Song Analyzer** - `full_analysis()` multi-page report (v136)
+- [ ] **Interactive Theory Course** - structured lesson sequence
 
-**Genre Classifier**
-`classify_genre(progression)` → predicted genre with confidence.
-Train on the 323-song corpus + the 10 genre templates. Features:
-root distribution, shape distribution, complexity score, tension
-curve shape, chord transition patterns. Simple decision tree or
-weighted scoring — no ML dependencies needed.
+### Tier 4: External Integration
+- [ ] **Web Playground (Pyodide)** - theory module in the browser
+- [ ] **MIDI Round-Trip v2** - import MIDI to Song
 
-### Tier 2: Composition Intelligence (creative features)
-
-**Full Song Generator**
-`generate_song(genre, key, bpm, sections, seed)` → complete Song
-object with multiple tracks, drums, bass, chords, melody, form,
-dynamics, and effects. Combines: generate_progression, backing_track,
-generate_scale_melody, harmonize_melody, comp_pattern, density_plan,
-SongTemplate, crescendo/decrescendo. The one-function "make me a song."
-
-**Intelligent Countermelody Generator**
-Given a melody and progression, generate a countermelody that:
-respects voice independence (contrary motion preferred), stays in
-key, targets chord tones on strong beats, and has its own contour
-shape. Combines: species_counterpoint rules, chord_tone targeting,
-contour shaping, voice independence scoring.
-
-**Arrangement Engine**
-`auto_arrange(song, style)` — take a lead sheet (chords + melody)
-and produce a full arrangement: assign instruments, add bass line,
-generate drum pattern, create comping, plan density curve, insert
-fills at section boundaries, add intro/outro. Style presets:
-jazz combo, rock band, orchestral, electronic, singer-songwriter.
-
-### Tier 3: Analysis & Education (knowledge tools)
-
-**Comprehensive Song Analyzer**
-`full_analysis(song)` → multi-page markdown report covering:
-form detection, key centers, modulations, cadences, tension curve,
-harmonic complexity curve, rhythmic density profile, melodic range,
-phrase structure, voice independence (if multi-track), instrument
-usage, style classification. The theory textbook analysis, automated.
-
-**Interactive Theory Course**
-A structured sequence of exercises that teaches music theory through
-code-music. Each lesson: explanation, example, exercise, auto-grading.
-Topics: intervals → scales → chords → progressions → voice leading →
-counterpoint → form → analysis. Uses: ear_training, quiz_intervals,
-quiz_chords, scale_exercise, memory_game, grade_counterpoint.
-
-### Tier 4: External Integration (ecosystem)
-
-**Web Playground (Pyodide)**
-Bundle theory.py for the browser. Users type code-music Python in a
-web editor, hear audio output instantly. No install. Uses Pyodide
-for Python-in-browser, Web Audio API for playback. Could be a
-GitHub Pages site.
-
-**MIDI Round-Trip Enhancement**
-The existing MIDI export works. Enhance: import MIDI → Song with
-velocity, timing, multi-track. Enable: record in a DAW, import
-into code-music, analyze, transform, export back. The bridge
-between code-music and every other music tool.
-
-### Tier 5: Quality & Maintenance
-
-**theory.py Refactor**
-theory.py is 10,500 lines. Consider splitting into submodules:
-`theory/harmony.py`, `theory/rhythm.py`, `theory/melody.py`,
-`theory/analysis.py`, `theory/generation.py`, `theory/serial.py`.
-Re-export from `theory/__init__.py` for backward compat. This makes
-the codebase navigable and each module independently testable.
-
-**Test Organization**
-80+ test files in `tests/`. Group by domain: `tests/harmony/`,
-`tests/rhythm/`, `tests/analysis/`, etc. Add parametrized tests
-for functions that work across all 44 scales and all 12 keys.
-
-**Pre-existing LSP Errors**
-engine.py, effects.py, synth.py, composition.py, export.py all have
-Pyright type errors (numpy type stubs). Not runtime bugs, but messy.
-Fix with targeted type annotations or `# type: ignore` comments.
+### Tier 5: Quality & Maintenance - PARTIAL
+- [x] **theory.py Refactor** - split into 7 submodules under theory/ (v131)
+- [ ] **Test Organization** - group 157+ test files by domain
+- [ ] **Pre-existing LSP Errors** - Pyright type stubs for numpy
 
 ## v9.0 Roadmap — Gallery & Showcase
 
@@ -2112,3 +2041,180 @@ printable as PDF.
 - [x] 16 tests (identity, transposition, contour, weights, corpus search, filtering)
 
 **Stats:** 405+ public functions. 2520 tests. 323 songs. 44 scales.
+
+## v136.0 — Comprehensive Song Analyzer
+
+### full_analysis — multi-page markdown analysis report
+- [x] `full_analysis(song)` → comprehensive markdown report
+- [x] Sections: Overview, Harmonic Analysis (key, cadences, function distribution,
+      tension curve, complexity, ambiguity, modulations), Structure (sections, form),
+      Track Analysis (per-track note/chord counts, velocities, pitch ranges, durations),
+      Fingerprint (pitch histogram)
+- [x] 14 tests (empty song, single track, chords, structure, markdown format,
+      velocity reporting, pitch range, duration, multi-track, fingerprint, rests,
+      edge cases)
+
+**Stats:** 406+ public functions. 2534 tests. 323 songs. 44 scales.
+
+
+## v137.0 — Song Builder DSL v2
+
+### parse_song_dsl — parse full song specification
+- [x] `parse_song_dsl(text)` → dict with bpm, time_sig, key_sig, title, tracks, effects
+- [x] Global settings: bpm, time, key, title
+- [x] Track definitions: `track <name> <instrument>:` with bar notation
+- [x] Mini-notation support: notes (C4, G#5), rests (-, ~), chords ([C4 E4 G4])
+- [x] Comments support (#)
+
+## v138.0 — Harmonic Language Model
+
+### train_harmonic_model — corpus-trained Markov chains
+- [x] `train_harmonic_model(progressions, order)` → model dict
+- [x] Learns chord transition probabilities from real songs
+- [x] Supports order 1 (bigram) and order 2 (trigram)
+- [x] Tracks starts, transitions, chord frequencies, corpus size
+
+### generate_progression_learned — learned progression generation
+- [x] `generate_progression_learned(model, length, key, start_chord, seed)` → progression
+- [x] Uses trained Markov model for idiomatic progressions
+- [x] Transposes to any key
+- [x] Weighted random selection based on learned probabilities
+
+### suggest_progression_learnt — high-level learned suggestion
+- [x] `suggest_progression_learnt(genre, length, key, seed)` → progression
+- [x] Pre-trained models for jazz, pop, blues, rock, classical
+- [x] Genre-appropriate idioms learned from 323-song corpus patterns
+- [x] Example: jazz → maj7/dominant chains, blues → dom7 chains, pop → I-V-vi-IV variations
+
+**Stats:** 411+ public functions. 2534 tests. 323 songs. 44 scales.
+
+## v139.0 — Fugue Generator
+
+### generate_fugue — Baroque counterpoint automated
+- [x] `generate_fugue(subject, voices, key, tonal, include_stretto, episodes, seed)` → Song
+- [x] **Exposition**: Subject entries in all voices alternating with tonal/real answers
+- [x] **Tonal answer**: Transposition to dominant with interval adjustments
+- [x] **Real answer**: Exact transposition to dominant
+- [x] **Countersubject**: Harmony line in 3rds/6ths complementing the subject
+- [x] **Episodes**: Connecting passages with sequential figures and modulation
+- [x] **Stretto**: Overlapping subject entries for climactic finish
+- [x] **Cadence**: All voices converge to tonic
+- [x] Supports 2-4 voices (soprano, alto, tenor, bass)
+- [x] 11 tests (basic, custom subject, voice counts, tonal/real, stretto toggle, episodes, keys, notes present, reproducibility, edge cases)
+
+**Stats:** 412+ public functions. 2545 tests. 323 songs. 44 scales.
+
+## Next session roadmap
+
+### Tier 1: Ship immediately (v141.x) - DONE
+- [x] **MusicXML Export** - `export_musicxml(song, path)` in notation.py (shipped earlier)
+- [x] **Harmonic Language Model** - `suggest_progression_learnt(genre, length, key)` with per-genre Markov models (shipped earlier)
+
+### Tier 2: Composition intelligence (v141.x-v142.x) - DONE
+- [x] **Song-Level Critique** - `critique_song(song, key)` with inter-track analysis, arrangement balance (v140)
+- [x] **Form Generators** - `generate_canon`, `generate_sonata_form`, `generate_rondo` (v140), `generate_theme_and_variations` (v134), `generate_fugue` (v139)
+- [x] **Unified Form Dispatcher** - `generate_form(style, key, bpm)` - 7 formal structures: sonata, rondo, aaba, verse_chorus, binary, ternary, theme_variations (v136)
+
+### Tier 3: Analysis & intelligence (v143.x-v145.x) - DONE (v136)
+- [x] **Style Fingerprint** - `style_fingerprint(song)` - 8-dimension feature vector (harmonic, melodic, rhythmic, timbral, dynamic, structural, register, density) + flat vector for distance computation (v136)
+- [ ] **Chord Progression DNA** - encode progressions as compact feature vectors (root motion histogram + quality distribution + tension curve stats). Enable instant corpus-wide similarity search without per-chord comparison
+- [x] **Arrangement Analyzer** - `analyze_arrangement(song)` - track roles (melody/bass/pad/rhythm), register usage, instrument density, voice crossing, range violations, frequency balance, scoring (v136)
+
+### Tier 4: Platform & ecosystem (v146.x-v148.x)
+- [ ] **Web Playground (Pyodide)** - theory module in the browser. Interactive docs with live code execution
+- [ ] **MIDI Round-Trip v2** - import MIDI to Song (currently only export works)
+- [ ] **Live Coding REPL** - `code-music repl` with audio playback and hot-reload
+- [ ] **Song Rendering CLI v2** - `code-music compose "jazz in Bb"` from command line
+
+### Tier 5: Quality & performance (ongoing)
+- [ ] **Test Organization** - group 157+ test files by domain (harmony/, rhythm/, melody/, analysis/, generation/, engine/, effects/)
+- [ ] **Benchmark Suite** - generation + rendering performance baselines
+- [ ] **Type Annotation Completion** - fix Pyright errors, add py.typed marker
+- [ ] **API Reference Generator** - auto-generate docs from docstrings, publish to GitHub Pages
+
+### Future exploration
+- MusicXML import/export round-trip improvements
+- Real-time audio streaming (low-latency playback without file export)
+- Collaborative editing (multi-user song composition via CRDTs)
+- Plugin system for custom instruments and effects
+- VST/AU bridge for external instrument integration
+
+## v140.0 — Song-Level Critique + Form Generators
+
+### critique_song - comprehensive full-song analysis
+- [x] `critique_song(song, key)` - detailed critique dict
+- [x] **Harmony critique**: Uses existing critique() on extracted progression
+- [x] **Per-track analysis**: Note count, range, density for each track
+- [x] **Register overlap detection**: Identifies tracks crowding same frequency range
+- [x] **Density balance**: Detects severe activity imbalance between tracks
+- [x] **Voice independence metric**: Measures track differentiation
+- [x] **Arrangement scoring**: Balance score based on track interactions
+- [x] **Register spread bonus**: Rewards wide frequency utilization
+- [x] **Combined feedback**: Merges harmony + arrangement issues/strengths/suggestions
+- [x] **Weighted scoring**: 60% harmony, 40% arrangement
+- [x] 14 tests
+
+### generate_canon - Canon/Round form generator
+- [x] `generate_canon(melody, voices, key, scale_name, delay_beats, interval, bpm, seed)` - Song
+- [x] 2-6 voices with register spread and pan positioning
+- [x] Canon at unison (interval=0) or any transposition (e.g. interval=7 for canon at the fifth)
+- [x] Auto-generated or user-provided melody
+- [x] 13 tests (basic, custom melody, voice counts, clamping, intervals, keys, delay, reproducibility, content)
+
+### generate_sonata_form - Sonata-Allegro form generator
+- [x] `generate_sonata_form(key, mode, bpm, include_development, include_coda, seed)` - Song
+- [x] **Exposition**: Theme A (tonic), transition, Theme B (dominant/relative major), closing
+- [x] **Development**: Fragmentation through 3 remote keys, retransition with dominant prep
+- [x] **Recapitulation**: Both themes return in tonic key
+- [x] **Coda**: Fragment of Theme A with authority
+- [x] Major and minor mode support with automatic second key area
+- [x] 10 tests (basic, minor, dev toggle, coda toggle, keys, bpm, reproducibility, content)
+
+### generate_rondo - Rondo form generator
+- [x] `generate_rondo(key, scale_name, episodes, bpm, seed)` - Song
+- [x] A-B-A-C-A pattern with 1-4 contrasting episodes
+- [x] Each episode in a different key (dominant, subdominant, relative minor, supertonic)
+- [x] Varied melodic contours and chord progressions per episode
+- [x] 11 tests (basic, episode counts, length scaling, clamping, keys, reproducibility, content)
+
+### Integration tests
+- [x] 5 cross-form tests (all return Song, titles contain key, all produce notes, top-level imports, theory imports)
+
+**Stats:** 416+ public functions. 2590 tests. 323 songs. 44 scales.
+
+## v136.0 — Form Generator + Style Fingerprint + Arrangement Analyzer
+
+**generate_form(style, key, bpm, chords_per_phrase, include_melody, seed):**
+Unified form generator that builds complete formal structures as multi-section
+Songs. 7 form templates: sonata (16 phrases with exposition/development/recap),
+rondo (11 phrases with A-B-A-C-A), aaba (8 phrases), verse_chorus (16 phrases
+with intro/verse/chorus/bridge/outro), binary (6 phrases), ternary (6 phrases),
+theme_variations (10 phrases). Development/bridge sections modulate to related
+keys. Produces chord, bass, and optional melody tracks.
+
+**style_fingerprint(song):**
+Multi-dimensional feature vector across 8 categories: harmonic (root diversity,
+quality diversity, tension mean/range, cadence count, key stability), melodic
+(pitch range, avg interval, step/leap/rest ratios, contour direction), rhythmic
+(avg duration, variety, density, swing, syncopation), timbral (instrument count,
+unique instruments, percussion/bass/melody detection), dynamic (velocity mean/
+range/std, crescendo/decrescendo detection), structural (track count, total
+beats/bars, section estimate), register (lowest/highest/avg MIDI, span), density
+(notes/chords/rests per beat). Flat vector output for distance computation.
+
+**analyze_arrangement(song):**
+Arrangement analysis with track role detection (melody/bass/pad/rhythm by
+instrument name and register heuristics), per-track analysis (note count, rest
+count, density, MIDI range, register), voice crossing detection between track
+pairs, instrument range violations against the 19-instrument range database,
+frequency balance (low/mid/high distribution), and 0-100 arrangement quality
+score. Generates actionable suggestions for missing bass, empty registers, and
+competing melody tracks.
+
+- [x] `generate_form()` — 7 formal structures, modulating development sections
+- [x] `style_fingerprint()` — 8-category feature vector with flat distance vector
+- [x] `analyze_arrangement()` — track roles, crossings, violations, balance, scoring
+- [x] 42 tests (18 generate_form, 11 style_fingerprint, 13 analyze_arrangement)
+- [x] All 3 functions exported from theory/__init__.py and code_music/__init__.py
+
+**Stats:** 420+ public functions. 2657 tests. 323 songs. 44 scales.

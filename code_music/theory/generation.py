@@ -4351,6 +4351,218 @@ def _create_stretto_subject(subject: list[Note], delay_beats: float = 2.0) -> li
     return [Note(n.pitch, n.octave, n.duration, velocity=n.velocity) for n in subject if n.pitch]
 
 
+# ---------------------------------------------------------------------------
+# Form Generator (v136.0)
+# ---------------------------------------------------------------------------
+
+# Formal structure templates: each maps to a list of (section_name, cadence) pairs
+_FORM_TEMPLATES = {
+    "sonata": [
+        # Exposition
+        ("exposition_theme1", "half"),
+        ("exposition_theme1", "perfect"),
+        ("exposition_transition", "half"),
+        ("exposition_theme2", "half"),
+        ("exposition_theme2", "perfect"),
+        ("exposition_closing", "perfect"),
+        # Development
+        ("development", "deceptive"),
+        ("development", "half"),
+        ("development", "half"),
+        ("development", "deceptive"),
+        # Recapitulation
+        ("recap_theme1", "half"),
+        ("recap_theme1", "perfect"),
+        ("recap_theme2", "half"),
+        ("recap_theme2", "perfect"),
+        ("coda", "plagal"),
+        ("coda", "perfect"),
+    ],
+    "rondo": [
+        ("A", "perfect"),
+        ("A", "perfect"),
+        ("B", "half"),
+        ("B", "perfect"),
+        ("A", "perfect"),
+        ("A", "perfect"),
+        ("C", "deceptive"),
+        ("C", "perfect"),
+        ("A", "perfect"),
+        ("A", "perfect"),
+        ("coda", "perfect"),
+    ],
+    "aaba": [
+        ("A", "half"),
+        ("A", "perfect"),
+        ("A", "half"),
+        ("A", "perfect"),
+        ("B", "half"),
+        ("B", "deceptive"),
+        ("A", "half"),
+        ("A", "perfect"),
+    ],
+    "verse_chorus": [
+        ("intro", "half"),
+        ("intro", "perfect"),
+        ("verse", "half"),
+        ("verse", "half"),
+        ("verse", "perfect"),
+        ("chorus", "half"),
+        ("chorus", "perfect"),
+        ("verse", "half"),
+        ("verse", "perfect"),
+        ("chorus", "half"),
+        ("chorus", "perfect"),
+        ("bridge", "deceptive"),
+        ("bridge", "half"),
+        ("chorus", "half"),
+        ("chorus", "perfect"),
+        ("outro", "plagal"),
+    ],
+    "binary": [
+        ("A", "half"),
+        ("A", "half"),
+        ("A", "perfect"),
+        ("B", "half"),
+        ("B", "half"),
+        ("B", "perfect"),
+    ],
+    "ternary": [
+        ("A", "half"),
+        ("A", "perfect"),
+        ("B", "half"),
+        ("B", "deceptive"),
+        ("A", "half"),
+        ("A", "perfect"),
+    ],
+    "theme_variations": [
+        ("theme", "half"),
+        ("theme", "perfect"),
+        ("variation1", "half"),
+        ("variation1", "perfect"),
+        ("variation2", "deceptive"),
+        ("variation2", "perfect"),
+        ("variation3", "half"),
+        ("variation3", "perfect"),
+        ("coda", "plagal"),
+        ("coda", "perfect"),
+    ],
+}
+
+
+def generate_form(
+    style: str = "sonata",
+    key: str = "C",
+    bpm: int = 120,
+    chords_per_phrase: int = 4,
+    include_melody: bool = True,
+    seed: int | None = None,
+) -> "Song":
+    """Generate a complete formal structure as a multi-section Song.
+
+    Builds complete musical forms by chaining generate_phrase calls
+    according to classical formal templates. Sonata form, rondo, AABA,
+    verse-chorus, binary, ternary, and theme-and-variations - all the
+    structures that have organized music for centuries.
+
+    Args:
+        style:             Form type: 'sonata', 'rondo', 'aaba',
+                           'verse_chorus', 'binary', 'ternary',
+                           'theme_variations'.
+        key:               Key center.
+        bpm:               Tempo.
+        chords_per_phrase: Chords per phrase unit.
+        include_melody:    If True, generates melody for each phrase.
+        seed:              Random seed.
+
+    Returns:
+        A Song with tracks for chords, melody (optional), and bass,
+        arranged into labeled sections following the chosen form.
+
+    Example::
+
+        >>> sonata = generate_form("sonata", key="C", bpm=120, seed=42)
+        >>> sonata.title
+        'Sonata in C'
+        >>> len(sonata.tracks) >= 2
+        True
+    """
+    import random as _rng
+
+    from ..engine import Chord, Note, Song, Track
+
+    rng = _rng.Random(seed)
+
+    template = _FORM_TEMPLATES.get(style, _FORM_TEMPLATES["sonata"])
+
+    title_map = {
+        "sonata": f"Sonata in {key}",
+        "rondo": f"Rondo in {key}",
+        "aaba": f"AABA Form in {key}",
+        "verse_chorus": f"Song in {key}",
+        "binary": f"Binary Form in {key}",
+        "ternary": f"Ternary Form in {key}",
+        "theme_variations": f"Theme and Variations in {key}",
+    }
+
+    song = Song(title=title_map.get(style, f"{style} in {key}"), bpm=bpm, key_sig=key)
+
+    chord_track = song.add_track(Track(name="chords", instrument="piano", volume=0.6))
+    bass_track = song.add_track(Track(name="bass", instrument="bass", volume=0.7))
+    melody_track = None
+    if include_melody:
+        melody_track = song.add_track(
+            Track(name="melody", instrument="sawtooth", volume=0.5, pan=0.2)
+        )
+
+    # Development sections modulate to related keys
+    _related_keys = {
+        "C": ["G", "F", "A"],
+        "G": ["D", "C", "E"],
+        "D": ["A", "G", "B"],
+        "A": ["E", "D", "F#"],
+        "E": ["B", "A", "C#"],
+        "B": ["F#", "E", "G#"],
+        "F#": ["C#", "B", "D#"],
+        "F": ["C", "Bb", "D"],
+        "Bb": ["F", "Eb", "G"],
+        "Eb": ["Bb", "Ab", "C"],
+        "Ab": ["Eb", "Db", "F"],
+        "Db": ["Ab", "Gb", "Bb"],
+    }
+
+    for section_name, cadence in template:
+        # Modulate for development/bridge sections
+        if "development" in section_name or section_name == "bridge":
+            related = _related_keys.get(key, [key])
+            phrase_key = rng.choice(related) if related else key
+        else:
+            phrase_key = key
+
+        phrase = generate_phrase(
+            key=phrase_key,
+            cadence=cadence,
+            length=chords_per_phrase,
+            include_melody=include_melody,
+            seed=rng.randint(0, 2**31),
+        )
+
+        # Add chords
+        for root, shape in phrase["progression"]:
+            chord_track.add(Chord(root, shape, 3, duration=2.0, velocity=60))
+
+        # Add bass (root notes)
+        for root, _shape in phrase["progression"]:
+            bass_track.add(Note(root, 2, duration=2.0, velocity=70))
+
+        # Add melody
+        if include_melody and melody_track and phrase.get("melody"):
+            for note in phrase["melody"]:
+                melody_track.add(note)
+
+    return song
+
+
 def generate_fugue(
     subject: list[Note] | None = None,
     voices: int = 3,
@@ -4389,6 +4601,8 @@ def generate_fugue(
         'Fugue in C major'
     """
     import random as _rng
+
+    from ..engine import Song, Track
 
     rng = _rng.Random(seed)
 

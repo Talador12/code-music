@@ -162,6 +162,7 @@ from .theory import (
     aksak,
     ambiguity_score,
     analysis_report,
+    analyze_arrangement,
     analyze_harmony,
     andalusian_cadence,
     apply_groove,
@@ -262,6 +263,7 @@ from .theory import (
     generate_canon,
     generate_countermelody,
     generate_from_matrix,
+    generate_form,
     generate_full_song,
     generate_fugue,
     generate_period,
@@ -442,6 +444,7 @@ from .theory import (
     voice_lead_satb,
     voice_progression,
     whole_tone_run,
+    style_fingerprint,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -923,6 +926,10 @@ __all__ = [
     "generate_rondo",
     "melody_similarity",
     "find_similar_melodies",
+    # v136.0 — form generator, style fingerprint, arrangement analyzer
+    "generate_form",
+    "style_fingerprint",
+    "analyze_arrangement",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",
