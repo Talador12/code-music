@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v138.0.0 — 323 songs, 2720 tests, 430+ theory functions, 44 scales
+## Status: v139.0.0 — 323 songs, 2749 tests, 435+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2121,13 +2121,13 @@ printable as PDF.
 - [x] **Arrangement Analyzer** - `analyze_arrangement(song)` - track roles (melody/bass/pad/rhythm), register usage, instrument density, voice crossing, range violations, frequency balance, scoring (v136)
 
 ### Tier 4: Platform & ecosystem (v146.x-v148.x)
-- [ ] **Web Playground (Pyodide)** - theory module in the browser. Interactive docs with live code execution
+- [x] **Web Playground (Pyodide)** - docs/playground.html with 9 examples, WAV rendering, Ctrl+Enter (shipped earlier)
 - [x] **MIDI Round-Trip v2** - import_midi() already exists in midi.py + CLI --import-midi
 - [x] **Live Coding REPL** - `code-music --repl` with slash commands (/play, /info, /tracks, /bpm, /export, /undo, /reset) (v138)
 - [x] **Song Rendering CLI v2** - `code-music --compose "jazz in Bb"` + `--analyze` (v137)
 
 ### Tier 5: Quality & performance (ongoing)
-- [ ] **Test Organization** - group 157+ test files by domain (harmony/, rhythm/, melody/, analysis/, generation/, engine/, effects/)
+- [ ] **Test Organization** - group 160+ test files by domain (dirs exist, files not moved yet - low priority cosmetic)
 - [x] **Benchmark Suite** - 13 perf tests: generation, analysis, rendering, corpus search (v137)
 - [x] **py.typed marker** - PEP 561 marker added, `__main__.py` for `python -m code_music` (v137)
 - [ ] **Type Annotation Completion** - fix Pyright errors across codebase
@@ -2287,3 +2287,28 @@ Returns, Examples). 430 functions documented.
 - [x] pyproject.toml version bump to 138.0.0
 
 **Stats:** 430+ public functions. 2720 tests. 323 songs. 44 scales.
+
+## v139.0 — Auto-Accompaniment + Song Comparison
+
+**auto_accompany(melody, key, genre, bpm, title, seed):**
+Give it a melody, get a full band. Detects key from melody if not provided,
+generates genre-appropriate chord progressions via generate_progression,
+builds bass lines (walking for jazz/blues, root-fifth for pop/rock,
+syncopated for electronic), adds drum patterns (skipped for ambient/classical).
+7 genre profiles: pop, jazz, rock, blues, classical, electronic, ambient.
+The inverse of compose() - start from a musical idea, get the rest filled in.
+
+**compare_songs(song_a, song_b):**
+Multi-dimensional song comparison using style_fingerprint vectors. Computes
+per-dimension similarity (harmonic, melodic, rhythmic, timbral, structural)
+using normalized Euclidean distance. Weighted overall score (harmonic 30%,
+melodic 25%, rhythmic 20%, structural 15%, timbral 10%). Lists notable
+differences: tempo, key, track count, exclusive instruments, harmonic/melodic
+divergence. Useful for A/B testing, style matching, plagiarism detection.
+
+- [x] `auto_accompany()` — melody-to-full-arrangement, 7 genres, key auto-detect
+- [x] `compare_songs()` — 5-dimension similarity with weighted overall score
+- [x] 29 tests (17 auto_accompany, 12 compare_songs)
+- [x] All functions exported from theory/__init__.py and code_music/__init__.py
+
+**Stats:** 435+ public functions. 2749 tests. 323 songs. 44 scales.

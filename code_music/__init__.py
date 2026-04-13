@@ -263,6 +263,8 @@ from .theory import (
     generate_canon,
     generate_countermelody,
     generate_from_matrix,
+    auto_accompany,
+    compare_songs,
     generate_form,
     generate_full_song,
     generate_fugue,
@@ -937,6 +939,9 @@ __all__ = [
     "progression_dna",
     "progression_distance",
     "find_similar_progressions_dna",
+    # v139.0 — auto-accompaniment, song comparison
+    "auto_accompany",
+    "compare_songs",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",

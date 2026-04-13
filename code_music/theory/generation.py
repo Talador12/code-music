@@ -4736,3 +4736,287 @@ def generate_fugue(
         tracks[v].add(Note(tonic, voice_octaves[v], 4.0, velocity=70))
 
     return song
+
+
+# ---------------------------------------------------------------------------
+# Auto-Accompaniment (v139.0)
+# ---------------------------------------------------------------------------
+
+
+def auto_accompany(
+    melody: list,
+    key: str | None = None,
+    genre: str = "pop",
+    bpm: int = 120,
+    title: str | None = None,
+    seed: int | None = None,
+) -> "Song":
+    """Generate a full accompaniment around a melody.
+
+    Takes a melody (list of Notes) and builds bass, chords, and drums
+    around it. Detects key if not provided, picks chord progressions
+    that fit the melody, generates style-appropriate bass lines and
+    drum patterns.
+
+    The inverse of compose() - instead of starting from a prompt, you
+    start from a musical idea and get the rest filled in.
+
+    Args:
+        melody:  List of Note objects (the lead melody).
+        key:     Key center. Auto-detected from melody if None.
+        genre:   Style for accompaniment: pop, jazz, rock, blues,
+                 classical, electronic, ambient.
+        bpm:     Tempo.
+        title:   Song title. Defaults to "Accompanied in {key}".
+        seed:    Random seed for reproducibility.
+
+    Returns:
+        A Song with melody, chords, bass, and drums tracks.
+
+    Example::
+
+        >>> from code_music import Note
+        >>> mel = [Note("C",5,1.0), Note("E",5,1.0), Note("G",5,1.0), Note("C",6,2.0)]
+        >>> song = auto_accompany(mel, key="C", genre="pop", seed=42)
+        >>> len(song.tracks) >= 3
+        True
+    """
+    import random as _rng
+
+    from ..engine import Chord, Note, Song, Track
+
+    rng = _rng.Random(seed)
+
+    # Filter out rests to detect key
+    pitched = [n for n in melody if hasattr(n, "pitch") and n.pitch is not None]
+
+    # Auto-detect key from melody
+    if key is None:
+        try:
+            from .harmony import detect_key as _dk
+
+            pitch_pairs = [(str(n.pitch), "maj") for n in pitched[:16]]
+            if pitch_pairs:
+                key, _, _ = _dk(pitch_pairs)
+            else:
+                key = "C"
+        except Exception:
+            key = "C"
+
+    # Calculate melody duration for progression length
+    melody_dur = sum(n.duration for n in melody)
+    bars = max(2, int(melody_dur / 4))
+    chords_needed = max(4, bars)
+
+    # Generate a progression that fits the genre
+    try:
+        prog = generate_progression(
+            key=key,
+            length=chords_needed,
+            genre=genre,
+            seed=rng.randint(0, 2**31),
+        )
+    except Exception:
+        prog = [(key, "maj"), ("F", "maj"), ("G", "maj"), (key, "maj")]
+        while len(prog) < chords_needed:
+            prog = prog + prog
+    prog = prog[:chords_needed]
+
+    # Build the song
+    if title is None:
+        title = f"Accompanied in {key}"
+    song = Song(title=title, bpm=bpm, key_sig=key)
+
+    # Melody track
+    melody_track = song.add_track(Track(name="melody", instrument="piano", volume=0.6, pan=0.15))
+    for note in melody:
+        melody_track.add(note)
+
+    # Chord track
+    chord_dur = melody_dur / max(len(prog), 1)
+    chord_track = song.add_track(Track(name="chords", instrument="pad", volume=0.35, pan=-0.1))
+    for root, shape in prog:
+        chord_track.add(Chord(root, shape, 3, duration=max(1.0, chord_dur), velocity=50))
+
+    # Bass track
+    bass_styles = {
+        "pop": "root_fifth",
+        "rock": "root_fifth",
+        "jazz": "walking",
+        "blues": "walking",
+        "classical": "root",
+        "electronic": "syncopated",
+        "ambient": "root",
+    }
+    bass_style = bass_styles.get(genre, "root")
+    try:
+        bass_notes = generate_bass_line(
+            prog,
+            style=bass_style,
+            seed=rng.randint(0, 2**31),
+        )
+        bass_track = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
+        for note in bass_notes:
+            bass_track.add(note)
+    except Exception:
+        bass_track = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
+        for root, _ in prog:
+            bass_track.add(Note(root, 2, duration=max(1.0, chord_dur), velocity=65))
+
+    # Drums (skip for ambient/classical)
+    if genre not in ("ambient", "classical"):
+        drum_genres = {
+            "pop": "rock",
+            "rock": "rock",
+            "jazz": "jazz",
+            "blues": "jazz",
+            "electronic": "electronic",
+        }
+        drum_genre = drum_genres.get(genre, "rock")
+        try:
+            drum_data = generate_drums(
+                drum_genre,
+                bars=bars,
+                seed=rng.randint(0, 2**31),
+            )
+            for drum_name, drum_notes in drum_data.items():
+                instr = f"drums_{drum_name}"
+                if instr not in ("drums_kick", "drums_snare", "drums_hat"):
+                    instr = "drums_kick"
+                dr_track = song.add_track(Track(name=drum_name, instrument=instr, volume=0.5))
+                for note in drum_notes:
+                    dr_track.add(note)
+        except Exception:
+            pass
+
+    return song
+
+
+# ---------------------------------------------------------------------------
+# Song Comparison (v139.0)
+# ---------------------------------------------------------------------------
+
+
+def compare_songs(
+    song_a,
+    song_b,
+) -> dict:
+    """Compare two Songs across multiple dimensions.
+
+    Side-by-side analysis of harmonic, melodic, rhythmic, timbral, and
+    structural characteristics. Returns similarity scores and per-dimension
+    breakdowns. Useful for A/B comparison, style matching, and plagiarism
+    detection.
+
+    Args:
+        song_a: First Song.
+        song_b: Second Song.
+
+    Returns:
+        Dict with:
+            overall_similarity:  0.0-1.0 composite score.
+            dimensions:          Per-dimension scores:
+                harmonic:        Root/quality overlap, key match.
+                melodic:         Pitch range, interval, contour.
+                rhythmic:        Duration, density, tempo.
+                timbral:         Instrument overlap.
+                structural:      Track count, length ratio.
+            metadata:            Title, BPM, key, track count per song.
+            differences:         List of notable differences.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> a = Song(title="A", bpm=120); a.add_track(Track()).add(Note("C",4,1.0))
+        >>> b = Song(title="B", bpm=120); b.add_track(Track()).add(Note("C",4,1.0))
+        >>> result = compare_songs(a, b)
+        >>> result["overall_similarity"] > 0.0
+        True
+    """
+    import math
+
+    from .analysis import style_fingerprint
+
+    fp_a = style_fingerprint(song_a)
+    fp_b = style_fingerprint(song_b)
+
+    def _dict_similarity(d1: dict, d2: dict) -> float:
+        """Compare two feature dicts by normalized Euclidean distance."""
+        keys = set(d1.keys()) | set(d2.keys())
+        if not keys:
+            return 1.0
+        sq_sum = sum((float(d1.get(k, 0)) - float(d2.get(k, 0))) ** 2 for k in keys)
+        dist = math.sqrt(sq_sum)
+        max_possible = math.sqrt(len(keys))
+        return max(0.0, 1.0 - dist / max(max_possible, 1.0))
+
+    harmonic_sim = _dict_similarity(fp_a["harmonic"], fp_b["harmonic"])
+    melodic_sim = _dict_similarity(fp_a["melodic"], fp_b["melodic"])
+    rhythmic_sim = _dict_similarity(fp_a["rhythmic"], fp_b["rhythmic"])
+    timbral_sim = _dict_similarity(fp_a["timbral"], fp_b["timbral"])
+    structural_sim = _dict_similarity(fp_a["structural"], fp_b["structural"])
+
+    weights = {
+        "harmonic": 0.30,
+        "melodic": 0.25,
+        "rhythmic": 0.20,
+        "timbral": 0.10,
+        "structural": 0.15,
+    }
+    overall = sum(
+        weights[k] * v
+        for k, v in {
+            "harmonic": harmonic_sim,
+            "melodic": melodic_sim,
+            "rhythmic": rhythmic_sim,
+            "timbral": timbral_sim,
+            "structural": structural_sim,
+        }.items()
+    )
+
+    differences: list[str] = []
+
+    bpm_a = getattr(song_a, "bpm", 120)
+    bpm_b = getattr(song_b, "bpm", 120)
+    if abs(bpm_a - bpm_b) > 10:
+        differences.append(f"Tempo: {bpm_a:.0f} vs {bpm_b:.0f} BPM")
+
+    key_a = getattr(song_a, "key_sig", "C") or "C"
+    key_b = getattr(song_b, "key_sig", "C") or "C"
+    if key_a != key_b:
+        differences.append(f"Key: {key_a} vs {key_b}")
+
+    tracks_a = len(song_a.tracks)
+    tracks_b = len(song_b.tracks)
+    if tracks_a != tracks_b:
+        differences.append(f"Track count: {tracks_a} vs {tracks_b}")
+
+    instr_a = set(t.instrument for t in song_a.tracks)
+    instr_b = set(t.instrument for t in song_b.tracks)
+    only_a = instr_a - instr_b
+    only_b = instr_b - instr_a
+    if only_a:
+        differences.append(f"Only in A: {', '.join(sorted(only_a))}")
+    if only_b:
+        differences.append(f"Only in B: {', '.join(sorted(only_b))}")
+
+    if harmonic_sim < 0.5:
+        differences.append("Harmonic content differs significantly")
+    if melodic_sim < 0.5:
+        differences.append("Melodic character differs significantly")
+
+    return {
+        "overall_similarity": round(overall, 4),
+        "dimensions": {
+            "harmonic": round(harmonic_sim, 4),
+            "melodic": round(melodic_sim, 4),
+            "rhythmic": round(rhythmic_sim, 4),
+            "timbral": round(timbral_sim, 4),
+            "structural": round(structural_sim, 4),
+        },
+        "metadata": {
+            "a": {"title": song_a.title, "bpm": bpm_a, "key": key_a, "tracks": tracks_a},
+            "b": {"title": song_b.title, "bpm": bpm_b, "key": key_b, "tracks": tracks_b},
+        },
+        "differences": differences,
+    }
