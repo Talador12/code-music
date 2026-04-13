@@ -3731,3 +3731,210 @@ def analyze_arrangement(
         "suggestions": suggestions,
         "score": score,
     }
+
+
+# ---------------------------------------------------------------------------
+# Chord Progression DNA (v137.0)
+# ---------------------------------------------------------------------------
+
+
+def progression_dna(
+    progression: list[tuple[str, str]],
+) -> dict:
+    """Encode a chord progression as a compact feature vector.
+
+    Extracts root motion histogram, quality distribution, tension curve
+    statistics, and interval patterns into a fixed-size numeric fingerprint.
+    Two progressions with similar DNA share a similar harmonic feel.
+    Enables instant corpus-wide similarity search without per-chord comparison.
+
+    Args:
+        progression: List of (root, shape) tuples.
+
+    Returns:
+        Dict with:
+            root_motion:       12-bin histogram of semitone root movements.
+            quality_dist:      Dict of chord quality -> fraction.
+            tension_stats:     mean, std, min, max, range of tension curve.
+            interval_pattern:  List of semitone intervals between roots.
+            length:            Number of chords.
+            unique_roots:      Number of distinct roots.
+            unique_qualities:  Number of distinct chord qualities.
+            vector:            Flat float list for distance computation.
+
+    Example::
+
+        >>> dna = progression_dna([("C","maj"),("G","maj"),("A","min"),("F","maj")])
+        >>> len(dna["vector"]) > 0
+        True
+        >>> dna["length"]
+        4
+    """
+    import math
+
+    if not progression:
+        return {
+            "root_motion": [0.0] * 12,
+            "quality_dist": {},
+            "tension_stats": {"mean": 0.0, "std": 0.0, "min": 0.0, "max": 0.0, "range": 0.0},
+            "interval_pattern": [],
+            "length": 0,
+            "unique_roots": 0,
+            "unique_qualities": 0,
+            "vector": [0.0] * 22,
+        }
+
+    # Root motion histogram (12 bins, one per semitone 0-11)
+    root_motion = [0] * 12
+    intervals = []
+    for i in range(1, len(progression)):
+        prev_semi = _semi(progression[i - 1][0])
+        curr_semi = _semi(progression[i][0])
+        motion = (curr_semi - prev_semi) % 12
+        root_motion[motion] += 1
+        intervals.append(motion)
+
+    total_motions = max(sum(root_motion), 1)
+    root_motion_norm = [round(c / total_motions, 4) for c in root_motion]
+
+    # Quality distribution
+    quality_counts: dict[str, int] = {}
+    for _, shape in progression:
+        quality_counts[shape] = quality_counts.get(shape, 0) + 1
+    total_chords = len(progression)
+    quality_dist = {k: round(v / total_chords, 4) for k, v in quality_counts.items()}
+
+    # Tension statistics
+    tension_vals: list[float] = []
+    try:
+        from .harmony import tension_curve
+
+        tension_vals = tension_curve(progression)
+    except Exception:
+        tension_vals = [0.5] * len(progression)
+
+    t_mean = sum(tension_vals) / max(len(tension_vals), 1)
+    t_min = min(tension_vals) if tension_vals else 0.0
+    t_max = max(tension_vals) if tension_vals else 0.0
+    t_range = t_max - t_min
+    t_std = 0.0
+    if len(tension_vals) > 1:
+        t_std = math.sqrt(sum((v - t_mean) ** 2 for v in tension_vals) / len(tension_vals))
+
+    tension_stats = {
+        "mean": round(t_mean, 4),
+        "std": round(t_std, 4),
+        "min": round(t_min, 4),
+        "max": round(t_max, 4),
+        "range": round(t_range, 4),
+    }
+
+    unique_roots = len(set(r for r, _ in progression))
+    unique_quals = len(set(s for _, s in progression))
+
+    # Build flat vector: 12 root motion + 5 tension stats + 2 counts + 3 quality features
+    # Quality features: fraction of major, minor, dominant
+    maj_frac = sum(v for k, v in quality_dist.items() if k in ("maj", "maj7", "maj9")) / 1.0
+    min_frac = sum(v for k, v in quality_dist.items() if k in ("min", "min7", "min9", "m7")) / 1.0
+    dom_frac = sum(v for k, v in quality_dist.items() if k in ("dom7", "7", "9", "13")) / 1.0
+
+    vector: list[float] = []
+    vector.extend(root_motion_norm)  # 12
+    vector.extend([t_mean, t_std, t_min, t_max, t_range])  # 5
+    vector.extend([float(unique_roots), float(unique_quals)])  # 2
+    vector.extend([maj_frac, min_frac, dom_frac])  # 3
+
+    return {
+        "root_motion": root_motion_norm,
+        "quality_dist": quality_dist,
+        "tension_stats": tension_stats,
+        "interval_pattern": intervals,
+        "length": total_chords,
+        "unique_roots": unique_roots,
+        "unique_qualities": unique_quals,
+        "vector": vector,
+    }
+
+
+def progression_distance(
+    dna_a: dict,
+    dna_b: dict,
+) -> float:
+    """Compute distance between two progression DNA vectors.
+
+    Uses Euclidean distance on the flat feature vectors. Lower = more
+    similar. Zero = identical harmonic DNA.
+
+    Args:
+        dna_a: First progression DNA (from progression_dna()).
+        dna_b: Second progression DNA (from progression_dna()).
+
+    Returns:
+        Euclidean distance (0.0 = identical).
+
+    Example::
+
+        >>> dna1 = progression_dna([("C","maj"),("G","maj"),("A","min"),("F","maj")])
+        >>> dna2 = progression_dna([("C","maj"),("G","maj"),("A","min"),("F","maj")])
+        >>> progression_distance(dna1, dna2)
+        0.0
+    """
+    import math
+
+    vec_a = dna_a.get("vector", [])
+    vec_b = dna_b.get("vector", [])
+
+    if not vec_a or not vec_b:
+        return float("inf")
+
+    # Pad shorter vector with zeros
+    max_len = max(len(vec_a), len(vec_b))
+    a = vec_a + [0.0] * (max_len - len(vec_a))
+    b = vec_b + [0.0] * (max_len - len(vec_b))
+
+    return round(math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b))), 4)
+
+
+def find_similar_progressions_dna(
+    query: list[tuple[str, str]],
+    corpus: list[tuple[str, list[tuple[str, str]]]],
+    top_k: int = 5,
+) -> list[dict]:
+    """Search a corpus for progressions with similar DNA to a query.
+
+    Computes progression_dna for the query, then ranks all corpus entries
+    by Euclidean distance. Faster than per-chord comparison for large
+    corpuses because it operates on fixed-size vectors.
+
+    Args:
+        query:  The progression to search for.
+        corpus: List of (name, progression) tuples.
+        top_k:  Maximum results to return.
+
+    Returns:
+        List of dicts sorted by distance (ascending):
+            name:       Corpus entry name.
+            distance:   DNA distance (lower = more similar).
+            progression: The matched progression.
+
+    Example::
+
+        >>> query = [("C","maj"),("G","maj"),("A","min"),("F","maj")]
+        >>> corpus = [("pop1", [("C","maj"),("F","maj"),("G","maj"),("C","maj")])]
+        >>> results = find_similar_progressions_dna(query, corpus)
+        >>> len(results) >= 1
+        True
+    """
+    if not query or not corpus:
+        return []
+
+    query_dna = progression_dna(query)
+    scored: list[dict] = []
+
+    for name, prog in corpus:
+        prog_dna = progression_dna(prog)
+        dist = progression_distance(query_dna, prog_dna)
+        scored.append({"name": name, "distance": dist, "progression": prog})
+
+    scored.sort(key=lambda x: x["distance"])
+    return scored[:top_k]

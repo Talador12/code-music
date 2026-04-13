@@ -147,6 +147,8 @@ examples:
   code-music --list-instruments         show all available instruments
   code-music --random                   generate and play a random song
   code-music --random jazz              generate and play a jazz song
+  code-music compose "jazz in Bb"       generate from natural language prompt
+  code-music analyze my_song.py         print full analysis report
 """
     parser = argparse.ArgumentParser(
         prog="code-music",
@@ -211,6 +213,18 @@ examples:
         action="store_true",
         help="Show song metadata (title, BPM, duration, tracks) without rendering",
     )
+    parser.add_argument(
+        "--compose",
+        nargs="+",
+        default=None,
+        metavar="WORD",
+        help="Natural language song prompt, e.g. --compose jazz ballad in Bb at 90 bpm",
+    )
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="Print a full analysis report for the song (no audio render)",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--benchmark",
@@ -254,6 +268,68 @@ examples:
         if args.bpm:
             song.bpm = args.bpm
         _play(song)
+        return 0
+
+    # ── Compose mode (natural language → Song) ──────────────────────────
+    if args.compose is not None:
+        from .theory import compose as _compose
+
+        prompt = " ".join(args.compose)
+        if not prompt.strip():
+            print("error: compose requires a prompt, e.g. --compose jazz in Bb", file=sys.stderr)
+            return 1
+
+        import random as _rng2
+
+        seed = _rng2.randint(0, 2**31)
+        print(f'  Composing: "{prompt}" (seed={seed})...')
+        song = _compose(prompt, seed=seed)
+        if args.bpm:
+            song.bpm = args.bpm
+        print(f'  Generated: "{song.title}" — {song.bpm:.0f} BPM, {len(song.tracks)} tracks')
+
+        if args.play:
+            from .playback import play as _play2
+
+            _play2(song)
+        elif args.output or args.flac or args.mp3 or args.ogg or args.midi:
+            from .export import export_flac, export_mp3, export_ogg, export_wav
+            from .synth import Synth
+
+            t0 = time.monotonic()
+            samples = Synth(song.sample_rate).render_song(song)
+            elapsed = time.monotonic() - t0
+            print(f"  Rendered in {elapsed:.1f}s")
+
+            if args.midi:
+                from .midi import export_midi
+
+                suffix = ".mid"
+            elif args.mp3:
+                suffix = ".mp3"
+            elif args.ogg:
+                suffix = ".ogg"
+            elif args.flac:
+                suffix = ".flac"
+            else:
+                suffix = ".wav"
+
+            out_path = args.output or Path(song.title.lower().replace(" ", "_") + suffix)
+            if args.midi:
+                result = export_midi(song, out_path)
+            elif args.mp3:
+                result = export_mp3(samples, out_path, song.sample_rate)
+            elif args.ogg:
+                result = export_ogg(samples, out_path, song.sample_rate)
+            elif args.flac:
+                result = export_flac(samples, out_path, song.sample_rate)
+            else:
+                result = export_wav(samples, out_path, song.sample_rate)
+            print(f"  Exported: {result}")
+        else:
+            from .playback import play as _play3
+
+            _play3(song)
         return 0
 
     # ── MIDI import mode (no script required) ──────────────────────────
@@ -311,6 +387,19 @@ examples:
         ratio = song.duration_sec / elapsed if elapsed > 0 else float("inf")
         print(f"  Rendered in {elapsed:.2f}s ({ratio:.1f}x realtime)")
         print(f"  {samples.shape[0]} samples, {samples.shape[1]} channels")
+        return 0
+    elif args.analyze:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        from .composition import full_analysis
+
+        report = full_analysis(song)
+        print(report)
         return 0
     elif args.info:
         try:

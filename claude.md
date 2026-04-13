@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v136.0.0 — 323 songs, 2657 tests, 420+ theory functions, 44 scales
+## Status: v137.0.0 — 323 songs, 2686 tests, 425+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2117,14 +2117,14 @@ printable as PDF.
 
 ### Tier 3: Analysis & intelligence (v143.x-v145.x) - DONE (v136)
 - [x] **Style Fingerprint** - `style_fingerprint(song)` - 8-dimension feature vector (harmonic, melodic, rhythmic, timbral, dynamic, structural, register, density) + flat vector for distance computation (v136)
-- [ ] **Chord Progression DNA** - encode progressions as compact feature vectors (root motion histogram + quality distribution + tension curve stats). Enable instant corpus-wide similarity search without per-chord comparison
+- [x] **Chord Progression DNA** - `progression_dna()` + `progression_distance()` + `find_similar_progressions_dna()` - 22-element feature vector (12 root motion bins + 5 tension stats + 2 counts + 3 quality fracs), Euclidean distance, corpus search (v137)
 - [x] **Arrangement Analyzer** - `analyze_arrangement(song)` - track roles (melody/bass/pad/rhythm), register usage, instrument density, voice crossing, range violations, frequency balance, scoring (v136)
 
 ### Tier 4: Platform & ecosystem (v146.x-v148.x)
 - [ ] **Web Playground (Pyodide)** - theory module in the browser. Interactive docs with live code execution
-- [ ] **MIDI Round-Trip v2** - import MIDI to Song (currently only export works)
+- [x] **MIDI Round-Trip v2** - import_midi() already exists in midi.py + CLI --import-midi
 - [ ] **Live Coding REPL** - `code-music repl` with audio playback and hot-reload
-- [ ] **Song Rendering CLI v2** - `code-music compose "jazz in Bb"` from command line
+- [x] **Song Rendering CLI v2** - `code-music --compose "jazz in Bb"` + `--analyze` (v137)
 
 ### Tier 5: Quality & performance (ongoing)
 - [ ] **Test Organization** - group 157+ test files by domain (harmony/, rhythm/, melody/, analysis/, generation/, engine/, effects/)
@@ -2218,3 +2218,39 @@ competing melody tracks.
 - [x] All 3 functions exported from theory/__init__.py and code_music/__init__.py
 
 **Stats:** 420+ public functions. 2657 tests. 323 songs. 44 scales.
+
+## v137.0 — Chord Progression DNA + CLI Compose/Analyze
+
+**progression_dna(progression):**
+Encodes a chord progression as a 22-element feature vector: 12-bin root
+motion histogram (normalized), 5 tension curve stats (mean, std, min, max,
+range), unique root/quality counts, and major/minor/dominant quality fractions.
+Fixed-size vectors enable instant corpus-wide similarity without per-chord
+comparison.
+
+**progression_distance(dna_a, dna_b):**
+Euclidean distance between DNA vectors. Zero = identical harmonic DNA.
+
+**find_similar_progressions_dna(query, corpus, top_k):**
+Corpus search by DNA distance. Computes query DNA once, ranks all entries
+by Euclidean distance. Returns top-k sorted ascending.
+
+**CLI --compose:**
+`code-music --compose jazz ballad in Bb at 90 bpm` generates a Song from
+natural language via the existing `compose()` function, then plays or exports.
+Supports all format flags (--flac, --mp3, --wav, --midi) and --play.
+
+**CLI --analyze:**
+`code-music my_song.py --analyze` prints a full markdown analysis report
+(form, key, modulations, cadences, tension, complexity, density, style) via
+`full_analysis()`. No audio render - pure analysis.
+
+- [x] `progression_dna()` — 22-element feature vector from progression
+- [x] `progression_distance()` — Euclidean distance between DNA vectors
+- [x] `find_similar_progressions_dna()` — corpus search by DNA distance
+- [x] CLI `--compose` — natural language song generation from command line
+- [x] CLI `--analyze` — full analysis report without rendering
+- [x] 29 tests (14 DNA, 5 distance, 5 corpus search, 5 CLI/imports)
+- [x] All functions exported from theory/__init__.py and code_music/__init__.py
+
+**Stats:** 425+ public functions. 2686 tests. 323 songs. 44 scales.

@@ -246,6 +246,9 @@ from .analysis import (  # noqa: F401
     voice_independence_score,
     style_fingerprint,
     analyze_arrangement,
+    progression_dna,
+    progression_distance,
+    find_similar_progressions_dna,
 )
 from .generation import (  # noqa: F401
     SongTemplate,
@@ -643,4 +646,7 @@ __all__ = [
     "voice_progression",
     "whole_tone_run",
     "style_fingerprint",
+    "progression_dna",
+    "progression_distance",
+    "find_similar_progressions_dna",
 ]

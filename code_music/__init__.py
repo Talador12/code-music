@@ -445,6 +445,9 @@ from .theory import (
     voice_progression,
     whole_tone_run,
     style_fingerprint,
+    progression_dna,
+    progression_distance,
+    find_similar_progressions_dna,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -930,6 +933,10 @@ __all__ = [
     "generate_form",
     "style_fingerprint",
     "analyze_arrangement",
+    # v137.0 — chord progression DNA, CLI compose + analyze
+    "progression_dna",
+    "progression_distance",
+    "find_similar_progressions_dna",
     "quantize_track",
     "render_preview",
     "to_svg_waveform",
