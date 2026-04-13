@@ -63,18 +63,23 @@ def export_wav(samples: FloatArray, path: str | Path, sample_rate: int = 44100) 
 
 
 def export_mp3(
-    samples: FloatArray, path: str | Path, sample_rate: int = 44100, bitrate: str = "320k"
+    samples: FloatArray,
+    path: str | Path,
+    sample_rate: int = 44100,
+    bitrate: str = "320k",
+    metadata: dict[str, str] | None = None,
 ) -> Path:
     """Write stereo float64 samples to an MP3 file via pydub + ffmpeg.
 
     Requires pydub and ffmpeg on PATH. 320kbps is Spotify's maximum ingest
-    quality — use it.
+    quality - use it.
 
     Args:
-        samples: Shape (N, 2) float64 array in range [-1, 1].
-        path: Output file path.
+        samples:     Shape (N, 2) float64 array in range [-1, 1].
+        path:        Output file path.
         sample_rate: Sample rate in Hz.
-        bitrate: MP3 bitrate string (default '320k').
+        bitrate:     MP3 bitrate string (default '320k').
+        metadata:    Optional dict of ID3 tags (artist, title, album, year).
 
     Returns:
         Resolved Path of the written file.
@@ -98,7 +103,8 @@ def export_mp3(
     wav_buf.seek(0)
 
     segment = AudioSegment.from_wav(wav_buf)
-    segment.export(str(out), format="mp3", bitrate=bitrate)
+    tags = metadata or {}
+    segment.export(str(out), format="mp3", bitrate=bitrate, tags=tags)
     return out
 
 
@@ -116,12 +122,17 @@ def _wav_buf(samples: FloatArray, sample_rate: int) -> io.BytesIO:
 
 
 def export_ogg(
-    samples: FloatArray, path: str | Path, sample_rate: int = 44100, quality: float = 8.0
+    samples: FloatArray,
+    path: str | Path,
+    sample_rate: int = 44100,
+    quality: float = 8.0,
+    metadata: dict[str, str] | None = None,
 ) -> Path:
     """Write stereo float64 samples to an OGG Vorbis file via pydub + ffmpeg.
 
     Args:
-        quality: Vorbis quality 0–10 (default 8 ≈ ~256kbps). Spotify accepts OGG.
+        quality:  Vorbis quality 0-10 (default 8, about 256kbps). Spotify accepts OGG.
+        metadata: Optional dict of Vorbis comment tags (artist, title, album, year).
     """
     try:
         from pydub import AudioSegment
@@ -131,15 +142,30 @@ def export_ogg(
     out = Path(path).with_suffix(".ogg")
     out.parent.mkdir(parents=True, exist_ok=True)
     segment = AudioSegment.from_wav(_wav_buf(samples, sample_rate))
-    segment.export(str(out), format="ogg", codec="libvorbis", parameters=["-q:a", str(quality)])
+    tags = metadata or {}
+    segment.export(
+        str(out),
+        format="ogg",
+        codec="libvorbis",
+        parameters=["-q:a", str(quality)],
+        tags=tags,
+    )
     return out
 
 
-def export_flac(samples: FloatArray, path: str | Path, sample_rate: int = 44100) -> Path:
+def export_flac(
+    samples: FloatArray,
+    path: str | Path,
+    sample_rate: int = 44100,
+    metadata: dict[str, str] | None = None,
+) -> Path:
     """Write stereo float64 samples to a FLAC file (lossless) via pydub + ffmpeg.
 
     FLAC is lossless and the best option for archival / DAW round-tripping.
     Spotify accepts FLAC for upload via Spotify for Artists.
+
+    Args:
+        metadata: Optional dict of Vorbis comment tags (artist, title, album, year).
     """
     try:
         from pydub import AudioSegment
@@ -149,5 +175,6 @@ def export_flac(samples: FloatArray, path: str | Path, sample_rate: int = 44100)
     out = Path(path).with_suffix(".flac")
     out.parent.mkdir(parents=True, exist_ok=True)
     segment = AudioSegment.from_wav(_wav_buf(samples, sample_rate))
-    segment.export(str(out), format="flac")
+    tags = metadata or {}
+    segment.export(str(out), format="flac", tags=tags)
     return out

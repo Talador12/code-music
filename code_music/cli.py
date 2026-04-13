@@ -231,6 +231,25 @@ examples:
         action="store_true",
         help="Print a full analysis report for the song (no audio render)",
     )
+    parser.add_argument(
+        "--master",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Master a WAV file: normalize LUFS, true peak limit, dither. "
+        "Output to <name>_mastered.<fmt>",
+    )
+    parser.add_argument(
+        "--target-lufs",
+        type=float,
+        default=-14.0,
+        help="Target LUFS for mastering (default: -14.0, Spotify standard)",
+    )
+    parser.add_argument(
+        "--stems",
+        action="store_true",
+        help="Export individual track stems instead of mixed audio",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--benchmark",
@@ -261,6 +280,74 @@ examples:
         from .repl import start_repl
 
         start_repl(bpm=args.bpm or 120)
+        return 0
+
+    if args.master:
+        import numpy as np
+
+        from .mastering import master_audio, measure_lufs
+
+        wav_path = args.master.resolve()
+        if not wav_path.exists():
+            print(f"error: {wav_path} not found", file=sys.stderr)
+            return 1
+
+        # Read WAV
+        try:
+            from scipy.io import wavfile
+
+            sr, raw = wavfile.read(str(wav_path))
+        except Exception as e:
+            print(f"error reading {wav_path.name}: {e}", file=sys.stderr)
+            return 1
+
+        # Convert to float64 stereo
+        audio = raw.astype(np.float64)
+        if audio.ndim == 1:
+            audio = np.column_stack([audio, audio])
+        if audio.max() > 1.0:
+            audio = audio / 32768.0  # int16 to float
+
+        input_lufs = measure_lufs(audio, sr)
+        target = args.target_lufs
+        print(f"  Mastering '{wav_path.name}'")
+        print(f"  Input: {input_lufs:.1f} LUFS, {sr} Hz, {audio.shape[0] / sr:.1f}s")
+        print(f"  Target: {target:.1f} LUFS")
+
+        t0 = time.monotonic()
+        mastered = master_audio(audio, sr, target_lufs=target)
+        elapsed = time.monotonic() - t0
+
+        output_lufs = measure_lufs(mastered, sr)
+        print(f"  Output: {output_lufs:.1f} LUFS (processed in {elapsed:.2f}s)")
+
+        # Determine output format and path
+        if args.flac:
+            suffix = ".flac"
+        elif args.mp3:
+            suffix = ".mp3"
+        elif args.ogg:
+            suffix = ".ogg"
+        else:
+            suffix = ".wav"
+
+        if args.output:
+            out_path = args.output
+        else:
+            out_path = wav_path.with_stem(wav_path.stem + "_mastered").with_suffix(suffix)
+
+        from .export import export_flac, export_mp3, export_ogg, export_wav
+
+        if suffix == ".flac":
+            result = export_flac(mastered, out_path, sr)
+        elif suffix == ".mp3":
+            result = export_mp3(mastered, out_path, sr)
+        elif suffix == ".ogg":
+            result = export_ogg(mastered, out_path, sr)
+        else:
+            result = export_wav(mastered, out_path, sr)
+
+        print(f"  Exported: {result}")
         return 0
 
     if args.random is not None:
@@ -412,6 +499,25 @@ examples:
 
         report = full_analysis(song)
         print(report)
+        return 0
+    elif args.stems:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+
+        out_dir = args.output or (script.parent / f"{script.stem}_stems")
+        fmt = "flac" if args.flac else ("mp3" if args.mp3 else "wav")
+        print(f"  Exporting stems for '{song.title}' ({len(song.tracks)} tracks) ...")
+        t0 = time.monotonic()
+        paths = song.export_stems(str(out_dir), fmt=fmt)
+        elapsed = time.monotonic() - t0
+        print(f"  Exported {len(paths)} stems in {elapsed:.1f}s → {out_dir}/")
+        for p in paths:
+            print(f"    {p.name}")
         return 0
     elif args.info:
         try:

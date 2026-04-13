@@ -2271,6 +2271,60 @@ class Song:
 
         return results
 
+    @classmethod
+    def import_stems(
+        cls,
+        directory: str,
+        bpm: float = 120,
+        title: str | None = None,
+        sample_rate: int = 44100,
+    ) -> "Song":
+        """Import a directory of WAV files as a Song with SampleTracks.
+
+        Each WAV file becomes a SampleTrack triggered at beat 0. The file
+        name (without extension) becomes the track name. This is the inverse
+        of export_stems() - round-trip a song through stems and back.
+
+        Args:
+            directory:   Path to directory containing WAV files.
+            bpm:         Tempo for the imported song.
+            title:       Song title. Defaults to directory name.
+            sample_rate: Sample rate for the song.
+
+        Returns:
+            A Song with one SampleTrack per WAV file found.
+
+        Example::
+
+            >>> import tempfile, os
+            >>> song = Song.import_stems(tempfile.gettempdir(), bpm=120)
+        """
+        from pathlib import Path as _Path
+
+        stem_dir = _Path(directory)
+        if not stem_dir.is_dir():
+            raise FileNotFoundError(f"Not a directory: {directory}")
+
+        if title is None:
+            title = stem_dir.name
+
+        song = cls(title=title, bpm=bpm, sample_rate=sample_rate)
+
+        wav_files = sorted(
+            p for p in stem_dir.iterdir() if p.suffix.lower() in (".wav", ".flac", ".mp3")
+        )
+
+        for wav_path in wav_files:
+            st = SampleTrack.from_wav(
+                str(wav_path),
+                name=wav_path.stem,
+                volume=0.8,
+            )
+            st.trigger(at=0.0)
+            song.add_sample_track(st)
+
+        return song
+
     @property
     def beat_duration_sec(self) -> float:
         return 60.0 / self.bpm

@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v139.0.0 — 323 songs, 2749 tests, 435+ theory functions, 44 scales
+## Status: v140.0.0 — 323 songs, 2764 tests, 440+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2312,3 +2312,36 @@ divergence. Useful for A/B testing, style matching, plagiarism detection.
 - [x] All functions exported from theory/__init__.py and code_music/__init__.py
 
 **Stats:** 435+ public functions. 2749 tests. 323 songs. 44 scales.
+
+## v140.1 — Mastering CLI + Stem Import/Export + Metadata Embedding
+
+**CLI --master:**
+`code-music --master song.wav --target-lufs=-14 --flac` masters an existing
+WAV file: reads audio, measures input LUFS, runs full mastering chain
+(normalize LUFS, true peak limit, dither), exports to WAV/FLAC/MP3/OGG.
+Completes the production pipeline: write -> render -> master -> distribute.
+
+**CLI --stems:**
+`code-music my_song.py --stems` exports each track as a separate audio file.
+Supports --flac and --mp3 format flags. Output directory defaults to
+`<script_name>_stems/`. Lists all exported stems with filenames.
+
+**Song.import_stems(directory, bpm, title, sample_rate):**
+Import a directory of WAV/FLAC/MP3 files as SampleTracks. Each file becomes
+a SampleTrack triggered at beat 0. File name (without extension) becomes the
+track name. Round-trip: export_stems -> import_stems. The inverse of
+export_stems().
+
+**Metadata embedding:**
+export_mp3(), export_flac(), and export_ogg() now accept an optional
+`metadata` dict for ID3/Vorbis tags (artist, title, album, year). Tags are
+passed through to pydub/ffmpeg for embedding in the output file.
+
+- [x] CLI `--master` — master WAV files with LUFS normalization
+- [x] CLI `--stems` — export individual track stems
+- [x] CLI `--target-lufs` — configurable LUFS target for mastering
+- [x] `Song.import_stems()` — import WAV directory as SampleTracks
+- [x] `metadata` parameter on export_mp3/export_flac/export_ogg
+- [x] 15 tests (4 master CLI, 1 stems CLI, 6 import, 3 metadata, 1 round-trip)
+
+**Stats:** 440+ public functions. 2764 tests. 323 songs. 44 scales.
