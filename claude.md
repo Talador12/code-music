@@ -2128,8 +2128,9 @@ printable as PDF.
 
 ### Tier 5: Quality & performance (ongoing)
 - [ ] **Test Organization** - group 157+ test files by domain (harmony/, rhythm/, melody/, analysis/, generation/, engine/, effects/)
-- [ ] **Benchmark Suite** - generation + rendering performance baselines
-- [ ] **Type Annotation Completion** - fix Pyright errors, add py.typed marker
+- [x] **Benchmark Suite** - 13 perf tests: generation, analysis, rendering, corpus search (v137)
+- [x] **py.typed marker** - PEP 561 marker added, `__main__.py` for `python -m code_music` (v137)
+- [ ] **Type Annotation Completion** - fix Pyright errors across codebase
 - [ ] **API Reference Generator** - auto-generate docs from docstrings, publish to GitHub Pages
 
 ### Future exploration
