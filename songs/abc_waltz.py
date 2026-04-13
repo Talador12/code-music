@@ -1,6 +1,6 @@
 """ABC Waltz — 3/4 time song with ABC notation export."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import EffectsChain, Note, Song, Track, reverb
 from code_music.composition import to_abc
 
 song = Song(title="ABC Waltz", bpm=90, sample_rate=44100, key_sig="D", time_sig=(3, 4))

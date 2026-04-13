@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from ._core import Note, _GROOVE_TEMPLATES
-
+from ._core import _GROOVE_TEMPLATES, Note
 
 
 def harmonic_rhythm(song, beats_per_bar: int = 4) -> dict:

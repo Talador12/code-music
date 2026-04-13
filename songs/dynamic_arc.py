@@ -1,8 +1,7 @@
 """Dynamic Arc — crescendo to sforzando to decrescendo with rubato."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Note, Song, Track, crescendo, decrescendo, reverb
 from code_music.theory import rubato, sforzando
-from code_music import crescendo, decrescendo
 
 song = Song(title="Dynamic Arc", bpm=72)
 

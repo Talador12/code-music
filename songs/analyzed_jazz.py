@@ -1,7 +1,7 @@
 """Analyzed Jazz — jazz song with full analysis report printed."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
-from code_music.composition import analyze_song, song_summary, to_lead_sheet
+from code_music.composition import song_summary
 from code_music.theory import generate_bass_line
 
 song = Song(title="Analyzed Jazz", bpm=130, sample_rate=44100, key_sig="C")

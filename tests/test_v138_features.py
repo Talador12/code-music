@@ -2,9 +2,8 @@
 
 import io
 import unittest
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # REPL module
@@ -76,7 +75,7 @@ class TestREPLModule(unittest.TestCase):
         assert "piano" in out.getvalue()
 
     def test_handle_slash_reset(self):
-        from code_music import Note, Song, Track
+        from code_music import Song, Track
         from code_music.repl import _handle_slash_command
 
         song = Song(title="Old", bpm=90)

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from ._core import (
-    Note,
     _CHORD_SEMI,
     _NOTE_NAMES,
     _PATTERN_DB,
     _SCALE_INTERVALS,
+    Note,
     _semi,
 )
 
@@ -2414,7 +2414,8 @@ def develop_motif(
     Example::
 
         >>> motif = [Note("C", 5, 0.5), Note("D", 5, 0.5), Note("E", 5, 0.5), Note("C", 5, 0.5)]
-        >>> passage = develop_motif(motif, techniques=["repeat", "sequence", "inversion"], repetitions=3)
+        >>> techs = ["repeat", "sequence", "inversion"]
+        >>> passage = develop_motif(motif, techniques=techs, repetitions=3)
         >>> len(passage) == len(motif) * 3  # each technique produces motif-length output
         True
     """

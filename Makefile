@@ -393,6 +393,10 @@ docs: ## [Dev] Generate API reference docs → docs/api.html
 	$(BIN)/python scripts/build_api_docs.py
 	@echo "  Open docs/api.html or visit $$(make -s pages-url)api.html"
 
+gallery: ## [Dev] Generate preset gallery → docs/gallery.html (renders all presets)
+	$(BIN)/python scripts/build_gallery.py
+	@echo "  Open docs/gallery.html or visit $$(make -s pages-url)gallery.html"
+
 
 master: songs-wav ## [Dev] Master all rendered WAVs → dist/mastered/ (LUFS-normalized, peak-limited)
 	@mkdir -p dist/mastered

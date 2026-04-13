@@ -1,6 +1,6 @@
 """Tests for restyle() — style transfer between genres."""
 
-from code_music.theory import restyle, generate_full_song, classify_genre
+from code_music.theory import generate_full_song, restyle
 
 
 class TestRestyle:
@@ -65,9 +65,6 @@ class TestRestyle:
 
     def test_restyle_preserves_structure_length(self):
         song = self._pop_song()
-        original_chord_count = sum(
-            1 for t in song.tracks for b in t.beats if b.event and hasattr(b.event, "root")
-        )
         result = restyle(song, "jazz", seed=42)
         result_chord_count = sum(
             1 for t in result.tracks for b in t.beats if b.event and hasattr(b.event, "root")

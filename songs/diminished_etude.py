@@ -1,6 +1,6 @@
 """Diminished Etude — diminished scale patterns."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Song, Track, reverb
 from code_music.theory import diminished_run
 
 song = Song(title="Diminished Etude", bpm=130, sample_rate=44100)

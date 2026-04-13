@@ -34,7 +34,7 @@ hat_tr.extend(drums_data["hat"])
 
 # Blues lick melody
 lead = song.add_track(Track(name="lead", instrument="piano", volume=0.45, pan=0.2))
-from code_music.theory import blues_lick
+from code_music.theory import blues_lick  # noqa: E402
 
 for _ in range(6):
     lead.extend(blues_lick("E", octave=5, duration=0.5, seed=_))

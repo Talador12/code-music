@@ -1,6 +1,6 @@
 """Chromatic Descent — chromatic run down + trill ornaments."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Song, Track, reverb
 from code_music.theory import chromatic_run, trill
 
 song = Song(title="Chromatic Descent", bpm=100, sample_rate=44100)

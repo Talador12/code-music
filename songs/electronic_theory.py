@@ -1,6 +1,6 @@
 """Electronic Theory — generated drums + walking bass meets electronic production."""
 
-from code_music import Chord, EffectsChain, Note, Pattern, Song, SoundDesigner, Track, reverb
+from code_music import Chord, EffectsChain, Pattern, Song, SoundDesigner, Track, reverb
 from code_music.theory import generate_bass_line, generate_drums
 
 supersaw = (

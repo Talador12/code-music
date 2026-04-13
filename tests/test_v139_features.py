@@ -3,7 +3,6 @@
 import unittest
 
 from code_music import (
-    Chord,
     Note,
     Song,
     Track,
@@ -11,7 +10,6 @@ from code_music import (
     compare_songs,
     scale,
 )
-
 
 # ---------------------------------------------------------------------------
 # auto_accompany

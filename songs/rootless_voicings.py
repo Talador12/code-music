@@ -1,6 +1,6 @@
 """Rootless Voicings — jazz piano without root notes (bass handles it)."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import EffectsChain, Song, Track, reverb
 from code_music.theory import generate_bass_line, generate_chord_voicing
 
 song = Song(title="Rootless Voicings", bpm=95, sample_rate=44100)

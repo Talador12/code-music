@@ -1,8 +1,6 @@
 """Full Analysis — demonstrates all three analysis tools on one song."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.composition import song_map, to_lead_sheet, to_tab
-from code_music.theory import analyze_harmony
 
 song = Song(title="Full Analysis", bpm=110, sample_rate=44100, key_sig="A")
 song.add_track(Track(name="pad", instrument="pad", volume=0.4)).extend(

@@ -1,6 +1,6 @@
 """Pattern Chain — jazz licks chained together with connectors."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
+from code_music import Chord, EffectsChain, Song, Track, delay, reverb
 from code_music.theory import chain_patterns
 
 song = Song(title="Pattern Chain", bpm=140)

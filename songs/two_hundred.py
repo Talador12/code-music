@@ -17,7 +17,6 @@ from code_music import (
     reverb,
 )
 from code_music.composition import continue_melody
-from code_music.mastering import master_audio, measure_lufs
 from code_music.sound_design import spectral_freeze
 from code_music.theory import generate_bass_line
 

@@ -1,8 +1,7 @@
 """Tests for Song Builder DSL v2 - full song definition language."""
 
-import pytest
 
-from code_music import Note, Song, Track, parse_song_dsl, song_from_dsl_v2
+from code_music import Song, parse_song_dsl, song_from_dsl_v2
 
 
 class TestParseSongDsl:

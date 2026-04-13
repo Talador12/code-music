@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v142.0.0 — 323 songs, 2818 tests, 450+ theory functions, 44 scales
+## Status: v143.0.0 — 323 songs, 2838 tests, 455+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2413,3 +2413,33 @@ New preset: `pm_violin`. 18 total SoundDesigner presets.
 - [x] 20 tests (7 cross-synthesis, 6 wavetable scanning, 7 bowed string)
 
 **Stats:** 450+ public functions. 2818 tests. 323 songs. 44 scales.
+
+## v143.0 — Envelope Follower + Gallery Builder + Lint Cleanup
+
+**EnvFollower(attack_ms, release_ms):**
+Amplitude envelope extractor with one-pole ballistics. Three methods:
+follow() extracts envelope from audio (mono/stereo, normalized 0-1),
+duck() applies sidechain ducking (loud sidechain = quiet target),
+gate() applies envelope-based gating (below threshold = attenuated).
+Classic pump effect in one function call. Integrated into ModMatrix via
+connect_env_follower() for routing sidechain to any destination.
+
+**make gallery (scripts/build_gallery.py):**
+Renders all 18 SoundDesigner presets at C3/C4/C5, encodes as base64 WAV
+data URIs, generates docs/gallery.html with inline audio players and SVG
+waveform visualizations. Dark-themed, single-page, zero server needed.
+
+**Lint cleanup:**
+Fixed 140+ lint errors across the codebase: import sorting (I001),
+unused imports (F401), unused variables (F841), ambiguous names (E741),
+line length (E501), and f-string issues (F541). Added per-file ignores
+in pyproject.toml for F821 (Song forward refs) and E402 (song scripts).
+make check now passes clean.
+
+- [x] `EnvFollower` — follow, duck, gate methods
+- [x] `ModMatrix.connect_env_follower()` — sidechain routing
+- [x] `make gallery` — preset gallery with audio players
+- [x] Lint cleanup: 140+ errors fixed, make check passes clean
+- [x] 20 tests (7 follow, 5 duck, 3 gate, 5 ModMatrix integration)
+
+**Stats:** 455+ public functions. 2838 tests. 323 songs. 44 scales.

@@ -1,6 +1,6 @@
 """Balkan Stomp — aksak rhythms in 7/8 and 11/8 with displaced melody."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
+from code_music import EffectsChain, Note, Song, Track, delay, reverb
 from code_music.theory import aksak, displace
 
 song = Song(title="Balkan Stomp", bpm=160, time_sig=(7, 8))

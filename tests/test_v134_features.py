@@ -2,12 +2,11 @@
 
 from code_music.engine import Note
 from code_music.theory import (
-    generate_theme_and_variations,
     critique,
     detect_modulations,
+    generate_theme_and_variations,
     twelve_bar_blues,
 )
-
 
 # ---------------------------------------------------------------------------
 # generate_theme_and_variations

@@ -1,11 +1,10 @@
 """Tests for classify_genre() — genre classification via weighted scoring."""
 
 from code_music.theory import (
-    classify_genre,
-    twelve_bar_blues,
-    rhythm_changes,
-    coltrane_changes,
     andalusian_cadence,
+    classify_genre,
+    rhythm_changes,
+    twelve_bar_blues,
 )
 
 

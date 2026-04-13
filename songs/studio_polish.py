@@ -1,7 +1,6 @@
 """Studio Polish — jazz trio mastered for streaming platforms."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
-from code_music.mastering import master_audio
 
 song = Song(title="Studio Polish", bpm=95, sample_rate=44100)
 song.master()  # existing master chain for EQ + compress + limit

@@ -1234,16 +1234,12 @@ def full_analysis(song: Song) -> str:
     """
     from .theory import (
         ambiguity_score,
-        analysis_report,
-        complexity_curve,
         complexity_score,
-        density_profile,
         detect_cadences,
         detect_key,
         detect_modulations,
         functional_analysis,
         label_form,
-        section_similarity_matrix,
         song_fingerprint,
         tension_curve,
     )
@@ -1254,7 +1250,8 @@ def full_analysis(song: Song) -> str:
     lines.append(f"# {song.title}")
     lines.append("")
     lines.append(
-        f"**BPM:** {song.bpm:.0f} | **Key:** {song.key_sig} | **Time:** {song.time_sig[0]}/{song.time_sig[1]}"
+        f"**BPM:** {song.bpm:.0f} | **Key:** {song.key_sig}"
+        f" | **Time:** {song.time_sig[0]}/{song.time_sig[1]}"
     )
     lines.append("")
 
@@ -1364,7 +1361,9 @@ def full_analysis(song: Song) -> str:
                 lines.append("**Modulations Detected:**")
                 for region in mods:
                     lines.append(
-                        f"- Bars {region['start_idx']}-{region['end_idx']}: {region['key']} (confidence: {region.get('confidence', 0.5):.0%})"
+                        f"- Bars {region['start_idx']}-{region['end_idx']}:"
+                        f" {region['key']}"
+                        f" (confidence: {region.get('confidence', 0.5):.0%})"
                     )
                 lines.append("")
         except Exception:

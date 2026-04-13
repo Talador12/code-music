@@ -1,6 +1,6 @@
 """Guitar Techniques — hammer-ons, pull-offs, and slides."""
 
-from code_music import EffectsChain, Note, Song, Track, delay, reverb
+from code_music import EffectsChain, Note, Song, Track, delay
 from code_music.theory import hammer_on, pull_off, slide
 
 song = Song(title="Guitar Techniques", bpm=100)

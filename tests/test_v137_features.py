@@ -1,15 +1,12 @@
 """Tests for v137.0: progression_dna, progression_distance, CLI compose/analyze."""
 
-import subprocess
-import sys
 import unittest
 
 from code_music import (
+    find_similar_progressions_dna,
     progression_distance,
     progression_dna,
-    find_similar_progressions_dna,
 )
-
 
 # ---------------------------------------------------------------------------
 # progression_dna
@@ -185,9 +182,10 @@ class TestCLICompose(unittest.TestCase):
 
     def test_compose_flag_accepted(self):
         """CLI main accepts --compose without crashing on parse."""
-        from code_music.cli import main
         import io
-        from contextlib import redirect_stdout, redirect_stderr
+        from contextlib import redirect_stderr, redirect_stdout
+
+        from code_music.cli import main
 
         # --compose with --help should show it in usage
         out = io.StringIO()
@@ -202,9 +200,10 @@ class TestCLICompose(unittest.TestCase):
 
     def test_analyze_flag_accepted(self):
         """CLI main accepts --analyze in help text."""
-        from code_music.cli import main
         import io
-        from contextlib import redirect_stdout, redirect_stderr
+        from contextlib import redirect_stderr, redirect_stdout
+
+        from code_music.cli import main
 
         out = io.StringIO()
         err = io.StringIO()
@@ -237,9 +236,9 @@ class TestCLIImports(unittest.TestCase):
 
     def test_import_from_theory(self):
         from code_music.theory import (
-            progression_dna,
-            progression_distance,
             find_similar_progressions_dna,
+            progression_distance,
+            progression_dna,
         )
 
         assert callable(progression_dna)

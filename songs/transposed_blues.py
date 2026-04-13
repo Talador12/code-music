@@ -1,6 +1,6 @@
 """Transposed Blues — same progression in two keys."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Song, Track, reverb
 from code_music.theory import generate_bass_line, transpose_progression
 
 prog_a = [("A", "dom7"), ("D", "dom7"), ("E", "dom7"), ("A", "dom7")]

@@ -1,6 +1,6 @@
 """Inverted Chords — root position vs first and second inversions."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import EffectsChain, Song, Track, reverb
 from code_music.theory import generate_chord_voicing, invert_chord
 
 root = generate_chord_voicing("C", "maj", voicing="close")

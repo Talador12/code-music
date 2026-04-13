@@ -3,31 +3,23 @@
 from __future__ import annotations
 
 from ._core import (
-    Note,
     _CHORD_SEMI,
     _GENRE_TEMPLATES,
-    _GROOVE_TEMPLATES,
     _INSTRUMENT_RANGES,
-    _INTERVAL_NAMES,
     _JUST_RATIOS,
     _MOZART_MINUET_TABLE,
     _NOTE_NAMES,
-    _PATTERN_DB,
     _SCALE_INTERVALS,
+    Note,
     _semi,
     euclid,
 )
-from .analysis import classify_genre, corpus_stats, key_distribution
+from .analysis import corpus_stats, key_distribution
 from .melody import (
-    crescendo,
-    decrescendo,
     dynamics_curve,
-    fragment,
     generate_scale_melody,
-    harmonize_melody,
     humanize_velocity,
 )
-
 
 # ---------------------------------------------------------------------------
 # Smart generators
@@ -2774,6 +2766,7 @@ def generate_full_song(
         'Jazz in Bb'
     """
     import random as _rng
+
     from ..engine import Chord, Song, Track
 
     rng = _rng.Random(seed)
@@ -2959,6 +2952,7 @@ def auto_arrange(
         ['bass', 'piano', 'drums', 'melody']
     """
     import random as _rng
+
     from ..engine import Chord, Song, Track
 
     rng = _rng.Random(seed)
@@ -3260,6 +3254,7 @@ def generate_phrase(
         4
     """
     import random as _rng
+
     from .harmony import parse_roman
 
     rng = _rng.Random(seed)
@@ -3366,6 +3361,7 @@ def generate_theme_and_variations(
         'Theme and Variations in C'
     """
     import random as _rng
+
     from ..engine import Chord, Song, Track
 
     rng = _rng.Random(seed)
@@ -3710,6 +3706,7 @@ def generate_canon(
         'Canon in D'
     """
     import random as _rng
+
     from ..engine import Song, Track
 
     rng = _rng.Random(seed)
@@ -3827,9 +3824,11 @@ def generate_sonata_form(
         2
     """
     import random as _rng
+
     from ..engine import Chord, Song, Track
     from .harmony import parse_roman
-    from .melody import generate_variation as _gen_var, fragment as _fragment
+    from .melody import fragment as _fragment
+    from .melody import generate_variation as _gen_var
 
     rng = _rng.Random(seed)
     child_seed = lambda: rng.randint(0, 2**31)  # noqa: E731
@@ -4053,6 +4052,7 @@ def generate_rondo(
         2
     """
     import random as _rng
+
     from ..engine import Chord, Song, Track
     from .harmony import parse_roman
 
@@ -4159,7 +4159,7 @@ def _create_tonal_answer(subject: list[Note], key: str) -> list[Note]:
     from ._core import _NOTE_NAMES, _semi
 
     key_semi = _semi(key)
-    dominant_semi = (key_semi + 7) % 12  # Perfect 5th
+    _dominant_semi = (key_semi + 7) % 12  # noqa: F841 — kept for documentation
     transposition = 7  # Semitones to dominant
 
     answer: list[Note] = []
@@ -4230,7 +4230,6 @@ def _create_countersubject(subject: list[Note], key: str, above: bool = True) ->
     major_scale = _SCALE_INTERVALS["major"]
 
     countersubject: list[Note] = []
-    subject_pitches = [n for n in subject if n.pitch is not None]
 
     for i, note in enumerate(subject):
         if note.pitch is None:
@@ -4623,8 +4622,8 @@ def generate_fugue(
     answer_fn = _create_tonal_answer if tonal else _create_real_answer
     answer = answer_fn(subject, key)
 
-    # Create countersubjects
-    countersubject = _create_countersubject(subject, key, above=True)
+    # Create countersubject (used in episode generation via _create_episode)
+    _create_countersubject(subject, key, above=True)
 
     # Build the fugue structure
     song = Song(title=f"Fugue in {key} major", bpm=100, key_sig=key)
@@ -4704,7 +4703,7 @@ def generate_fugue(
     # FINAL STRETTO (if requested): Overlapping entries at the end
     if include_stretto and voices >= 2:
         # Subject in all voices with decreasing delays
-        stretto_subject = [_create_stretto_subject(subject, 0.0)]
+        _create_stretto_subject(subject, 0.0)  # warm up stretto transform
 
         for i, voice_idx in enumerate(entry_order):
             # Start times decrease: bass first, then tenor soon after, etc.
@@ -5257,7 +5256,7 @@ def theory_course(
         return {"error": f"No lesson with id {lesson_id}. Valid: 1-{len(lessons)}"}
 
     if topic is not None:
-        return [l for l in lessons if l["topic"] == topic]
+        return [lesson for lesson in lessons if lesson["topic"] == topic]
 
     return lessons
 

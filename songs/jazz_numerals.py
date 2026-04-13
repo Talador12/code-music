@@ -1,7 +1,7 @@
 """Jazz Numerals — jazz turnaround written in Roman numeral notation."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.theory import parse_roman, progression_from_roman
+from code_music.theory import progression_from_roman
 
 song = Song(title="Jazz Numerals", bpm=140)
 
@@ -19,7 +19,7 @@ for _ in range(2):
 
 # Walking bass
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
-from code_music.theory import generate_bass_line
+from code_music.theory import generate_bass_line  # noqa: E402
 
 for _ in range(2):
     notes = generate_bass_line(jazz_prog, style="walking", seed=42)

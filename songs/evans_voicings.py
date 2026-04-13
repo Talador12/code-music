@@ -1,6 +1,6 @@
 """Evans Voicings — Bill Evans rootless A/B voicings through a ii-V-I."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import EffectsChain, Note, Song, Track, reverb
 from code_music.theory import generate_bass_line, rootless_a, rootless_b
 
 song = Song(title="Evans Voicings", bpm=120)

@@ -22,9 +22,7 @@ pre-loaded. Special REPL commands:
 from __future__ import annotations
 
 import code
-import sys
 import traceback
-
 
 _HELP_TEXT = """\
 code-music REPL commands:

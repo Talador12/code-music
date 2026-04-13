@@ -1,14 +1,11 @@
 """Tests for v141.0: theory course, time-stretch, pitch-shift, batch master."""
 
-import io
 import unittest
-from contextlib import redirect_stdout, redirect_stderr
 
 import numpy as np
 
 from code_music import grade_lesson, theory_course
 from code_music.effects import pitch_shift, time_stretch
-
 
 # ---------------------------------------------------------------------------
 # Theory Course
@@ -44,7 +41,7 @@ class TestTheoryCourse(unittest.TestCase):
     def test_filter_by_topic_scales(self):
         lessons = theory_course(topic="scales")
         assert isinstance(lessons, list)
-        assert all(l["topic"] == "scales" for l in lessons)
+        assert all(lsn["topic"] == "scales" for lsn in lessons)
         assert len(lessons) >= 2
 
     def test_filter_by_topic_harmony(self):
@@ -61,7 +58,7 @@ class TestTheoryCourse(unittest.TestCase):
                 assert "answer" in ex, f"Exercise in lesson {lesson['id']} missing answer"
 
     def test_unique_lesson_ids(self):
-        ids = [l["id"] for l in theory_course()]
+        ids = [lsn["id"] for lsn in theory_course()]
         assert len(ids) == len(set(ids))
 
 
@@ -112,7 +109,8 @@ class TestGradeLesson(unittest.TestCase):
             assert result["percentage"] == 100.0, f"Lesson {lesson['id']} self-grading failed"
 
     def test_imports_from_theory(self):
-        from code_music.theory import grade_lesson as gl, theory_course as tc
+        from code_music.theory import grade_lesson as gl
+        from code_music.theory import theory_course as tc
 
         assert callable(gl)
         assert callable(tc)

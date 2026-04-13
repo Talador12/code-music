@@ -1,6 +1,6 @@
 """Hemiola Waltz — 3-against-2 rhythmic illusion over a waltz pad."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Song, Track, reverb
 from code_music.theory import hemiola
 
 song = Song(title="Hemiola Waltz", bpm=108, time_sig=(3, 4))

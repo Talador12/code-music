@@ -1,6 +1,6 @@
 """SATB Chorale — four-part voice leading through a hymn-like progression."""
 
-from code_music import Chord, EffectsChain, Song, Track, reverb
+from code_music import EffectsChain, Song, Track, reverb
 from code_music.theory import voice_lead_satb
 
 song = Song(title="SATB Chorale", bpm=72)

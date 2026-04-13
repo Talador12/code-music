@@ -1,6 +1,5 @@
 """Tests for full_analysis comprehensive song analyzer."""
 
-import pytest
 
 from code_music import Chord, Note, Song, Track, full_analysis
 

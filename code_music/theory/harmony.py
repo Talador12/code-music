@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from ._core import (
-    Note,
     _CHORD_SEMI,
     _COMMON_NEXT,
     _DEGREE_NAMES,
@@ -20,6 +19,7 @@ from ._core import (
     _SCALE_INTERVALS,
     _SHAPE_SYMBOLS,
     _VOICING_DB,
+    Note,
     _abs_to_note,
     _diatonic_chords,
     _find_nearest,
@@ -27,7 +27,6 @@ from ._core import (
     _semi,
     _smooth_voice_lead,
 )
-
 
 # ---------------------------------------------------------------------------
 # Chord-scale theory

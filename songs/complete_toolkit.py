@@ -2,15 +2,7 @@
 
 from code_music import Chord, EffectsChain, Note, Song, Track, euclid, reverb
 from code_music.composition import (
-    analyze_song,
-    generate_intro,
-    generate_outro,
-    song_map,
     song_summary,
-    to_abc,
-    to_html,
-    to_lead_sheet,
-    to_tab,
 )
 
 song = Song(title="Complete Toolkit", bpm=110, sample_rate=44100, key_sig="Am")

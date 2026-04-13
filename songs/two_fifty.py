@@ -8,7 +8,6 @@ from code_music import (
     Chord,
     EffectsChain,
     Note,
-    Pattern,
     Song,
     SoundDesigner,
     Track,
@@ -18,7 +17,6 @@ from code_music import (
 )
 from code_music.composition import continue_melody
 from code_music.theory import (
-    generate_bass_line,
     parallel_motion,
     pedal_point,
     retrograde_rhythm,

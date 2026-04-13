@@ -1,6 +1,6 @@
 """Double Harmonic Dusk — the Byzantine scale, both exotic and ancient."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
+from code_music import EffectsChain, Note, Song, Track, delay, reverb
 from code_music.theory import generate_scale_melody
 
 song = Song(title="Double Harmonic Dusk", bpm=80)

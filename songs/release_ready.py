@@ -1,7 +1,6 @@
 """Release Ready — a fully mastered ambient track ready for Spotify."""
 
 from code_music import Chord, EffectsChain, Note, Song, SoundDesigner, Track, reverb
-from code_music.mastering import master_audio, measure_lufs, stereo_analysis
 
 warm = (
     SoundDesigner("warm")

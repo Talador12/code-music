@@ -1,6 +1,5 @@
 """Tests for the Fugue Generator."""
 
-import pytest
 
 from code_music import Note, Song, generate_fugue
 

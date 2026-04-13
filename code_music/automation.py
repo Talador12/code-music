@@ -117,6 +117,158 @@ class Automation:
 
 
 # ---------------------------------------------------------------------------
+# Envelope Follower (v143.0)
+# ---------------------------------------------------------------------------
+
+
+class EnvFollower:
+    """Extract an amplitude envelope from an audio signal.
+
+    Follows the loudness contour of audio using rectification + smoothing.
+    The classic sidechain pump: feed a kick drum into EnvFollower, then
+    invert the output to duck a pad. Works at mix level without needing
+    the sidechain() effect.
+
+    Args:
+        attack_ms:  Attack time in milliseconds (how fast envelope rises).
+        release_ms: Release time in milliseconds (how fast envelope falls).
+
+    Example::
+
+        env = EnvFollower(attack_ms=5, release_ms=100)
+
+        # Extract envelope from kick audio
+        kick_env = env.follow(kick_audio, sample_rate=44100)
+
+        # Apply as sidechain duck to pad
+        ducked_pad = env.duck(pad_audio, kick_audio, sample_rate=44100, amount=0.8)
+    """
+
+    def __init__(self, attack_ms: float = 5.0, release_ms: float = 100.0) -> None:
+        self.attack_ms = attack_ms
+        self.release_ms = release_ms
+
+    def follow(self, audio: FloatArray, sample_rate: int = 44100) -> FloatArray:
+        """Extract the amplitude envelope from audio.
+
+        Args:
+            audio:       Mono or stereo audio signal.
+            sample_rate: Sample rate in Hz.
+
+        Returns:
+            Envelope signal (same length as audio, values 0.0-1.0).
+        """
+        import math
+
+        # Convert stereo to mono for envelope detection
+        if audio.ndim == 2:
+            mono = np.mean(np.abs(audio), axis=1)
+        else:
+            mono = np.abs(audio)
+
+        n = len(mono)
+        env = np.zeros(n, dtype=np.float64)
+
+        # Ballistics coefficients
+        attack_coeff = math.exp(-1.0 / max(1, self.attack_ms * sample_rate / 1000))
+        release_coeff = math.exp(-1.0 / max(1, self.release_ms * sample_rate / 1000))
+
+        # One-pole envelope follower
+        prev = 0.0
+        for i in range(n):
+            inp = mono[i]
+            if inp > prev:
+                prev = attack_coeff * prev + (1.0 - attack_coeff) * inp
+            else:
+                prev = release_coeff * prev + (1.0 - release_coeff) * inp
+            env[i] = prev
+
+        # Normalize to 0-1
+        peak = np.max(env)
+        if peak > 0:
+            env /= peak
+
+        return env
+
+    def duck(
+        self,
+        target: FloatArray,
+        sidechain: FloatArray,
+        sample_rate: int = 44100,
+        amount: float = 0.8,
+        invert: bool = True,
+    ) -> FloatArray:
+        """Apply sidechain ducking to target using sidechain signal.
+
+        The classic pump effect: when the sidechain signal is loud, the
+        target gets quiet. When the sidechain is quiet, the target plays
+        at full volume.
+
+        Args:
+            target:      Audio to duck (pad, bass, etc).
+            sidechain:   Audio to follow (kick, vocal, etc).
+            sample_rate: Sample rate.
+            amount:      Ducking depth (0=none, 1=full silence on hit).
+            invert:      If True, envelope ducks target (default sidechain behavior).
+                         If False, envelope boosts target (gating).
+
+        Returns:
+            Ducked audio (same shape as target).
+
+        Example::
+
+            env = EnvFollower(attack_ms=5, release_ms=150)
+            pumped_pad = env.duck(pad_audio, kick_audio, amount=0.8)
+        """
+        n = min(len(target), len(sidechain))
+        env = self.follow(sidechain[:n], sample_rate)
+
+        if invert:
+            gain = 1.0 - amount * env
+        else:
+            gain = (1.0 - amount) + amount * env
+
+        if target.ndim == 2:
+            return target[:n] * gain[:, np.newaxis]
+        return target[:n] * gain
+
+    def gate(
+        self,
+        target: FloatArray,
+        sidechain: FloatArray,
+        sample_rate: int = 44100,
+        threshold: float = 0.3,
+        amount: float = 0.9,
+    ) -> FloatArray:
+        """Gate target audio using sidechain envelope.
+
+        When sidechain is below threshold, target is attenuated. When
+        above threshold, target plays through. Classic noise gate or
+        rhythmic gating effect.
+
+        Args:
+            target:      Audio to gate.
+            sidechain:   Audio to follow for gate trigger.
+            sample_rate: Sample rate.
+            threshold:   Gate opens above this envelope level (0-1).
+            amount:      Attenuation depth when gate is closed (0=none, 1=full).
+
+        Returns:
+            Gated audio.
+        """
+        n = min(len(target), len(sidechain))
+        env = self.follow(sidechain[:n], sample_rate)
+
+        # Smooth gate: sigmoid around threshold
+        gate_signal = 1.0 / (1.0 + np.exp(-20.0 * (env - threshold)))
+        gain = (1.0 - amount) + amount * gate_signal
+
+        if target.ndim == 2:
+            return target[:n] * gain[:, np.newaxis]
+        return target[:n] * gain
+
+
+# ---------------------------------------------------------------------------
 # Modulation Matrix
 # ---------------------------------------------------------------------------
 
@@ -132,9 +284,9 @@ class _ModRoute:
 
 
 class ModMatrix:
-    """Modulation routing matrix — connect sources to destinations.
+    """Modulation routing matrix - connect sources to destinations.
 
-    Sources: 'lfo1', 'lfo2', 'random', 'envelope'
+    Sources: 'lfo1', 'lfo2', 'random', 'envelope', 'env_follower'
     Destinations: '<track>.volume', '<track>.pan', '<track>.filter_cutoff'
 
     Example::
@@ -143,12 +295,13 @@ class ModMatrix:
         mm.connect("lfo1", "pad.volume", amount=0.3, rate=2.0)
         mm.connect("random", "lead.pan", amount=0.2)
 
-        # Apply to rendered audio
-        modulated = mm.apply(audio, sr=44100, bpm=120)
+        # Sidechain pump via envelope follower
+        mm.connect_env_follower("pad.volume", kick_audio, amount=-0.8)
     """
 
     def __init__(self) -> None:
         self._routes: list[_ModRoute] = []
+        self._env_followers: list[dict] = []
 
     def connect(
         self, source: str, dest: str, amount: float = 0.5, rate: float = 1.0
@@ -162,6 +315,37 @@ class ModMatrix:
             rate:   Rate in Hz (for LFO sources).
         """
         self._routes.append(_ModRoute(source, dest, amount, rate))
+        return self
+
+    def connect_env_follower(
+        self,
+        dest: str,
+        sidechain_audio: FloatArray,
+        amount: float = -0.8,
+        attack_ms: float = 5.0,
+        release_ms: float = 100.0,
+    ) -> "ModMatrix":
+        """Connect an envelope follower as a modulation source.
+
+        Shorthand for sidechain pumping. The envelope of sidechain_audio
+        modulates the destination parameter.
+
+        Args:
+            dest:            Destination parameter ('<track>.<param>').
+            sidechain_audio: Audio to extract envelope from (e.g. kick).
+            amount:          Modulation depth. Negative = ducking (default).
+            attack_ms:       Envelope attack time.
+            release_ms:      Envelope release time.
+        """
+        self._env_followers.append(
+            {
+                "dest": dest,
+                "audio": sidechain_audio,
+                "amount": amount,
+                "attack_ms": attack_ms,
+                "release_ms": release_ms,
+            }
+        )
         return self
 
     def generate_mod_signal(
@@ -198,6 +382,26 @@ class ModMatrix:
         else:
             return np.zeros(n)
 
+    def generate_env_follower_signals(self, n: int, sr: int) -> list[tuple[str, float, FloatArray]]:
+        """Generate envelope follower modulation signals.
+
+        Returns:
+            List of (dest, amount, envelope_signal) tuples.
+        """
+        results = []
+        for ef in self._env_followers:
+            follower = EnvFollower(
+                attack_ms=ef["attack_ms"],
+                release_ms=ef["release_ms"],
+            )
+            audio = ef["audio"]
+            # Truncate or pad sidechain audio to match target length
+            if len(audio) < n:
+                audio = np.pad(audio, ((0, n - len(audio)),) + ((0, 0),) * (audio.ndim - 1))
+            env = follower.follow(audio[:n], sr)
+            results.append((ef["dest"], ef["amount"], env))
+        return results
+
     @property
     def routes(self) -> list[dict]:
         """List all routes as dicts."""
@@ -206,11 +410,17 @@ class ModMatrix:
             for r in self._routes
         ]
 
+    @property
+    def env_follower_count(self) -> int:
+        """Number of envelope follower connections."""
+        return len(self._env_followers)
+
     def __repr__(self) -> str:
-        return f"ModMatrix({len(self._routes)} routes)"
+        total = len(self._routes) + len(self._env_followers)
+        return f"ModMatrix({total} routes)"
 
     def __len__(self) -> int:
-        return len(self._routes)
+        return len(self._routes) + len(self._env_followers)
 
 
 # ---------------------------------------------------------------------------

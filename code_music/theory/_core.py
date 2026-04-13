@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from ..engine import Note, euclid  # noqa: F401 — re-exported for submodules
 
-
 # ---------------------------------------------------------------------------
 # Note utilities
 # ---------------------------------------------------------------------------

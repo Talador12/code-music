@@ -1,6 +1,6 @@
 """Reich Phase — Steve Reich-style phasing between two identical patterns."""
 
-from code_music import EffectsChain, Note, Song, Track, delay, reverb
+from code_music import EffectsChain, Note, Song, Track, reverb
 from code_music.theory import phase_shift
 
 song = Song(title="Reich Phase", bpm=130)

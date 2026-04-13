@@ -30,7 +30,7 @@ for section_name, bar_count in bars:
 
 # Simple melody over the whole thing
 lead = song.add_track(Track(name="lead", instrument="sawtooth", volume=0.45, pan=0.15))
-from code_music.theory import generate_scale_melody
+from code_music.theory import generate_scale_melody  # noqa: E402
 
 melody = generate_scale_melody("G", "major", length=64, octave=5, contour="arch", seed=42)
 lead.extend(melody)

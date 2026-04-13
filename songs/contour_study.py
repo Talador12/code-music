@@ -1,6 +1,6 @@
 """Contour Study — analyzes melodic shape of different melodies."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import Note, Song, Track
 from code_music.theory import melody_contour
 
 asc = [Note(n, o, 0.5) for n, o in [("C", 4), ("E", 4), ("G", 4), ("C", 5)]]

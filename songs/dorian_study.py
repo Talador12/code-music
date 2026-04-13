@@ -1,6 +1,6 @@
 """Dorian Study — scale_info guides chord and melody choices."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb, scale
+from code_music import Chord, EffectsChain, Song, Track, reverb, scale
 from code_music.theory import scale_info
 
 info = scale_info("dorian", "D")

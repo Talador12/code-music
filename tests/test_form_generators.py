@@ -1,9 +1,7 @@
 """Tests for form generators: generate_canon, generate_sonata_form, generate_rondo."""
 
-import pytest
 
-from code_music import Note, Song, generate_canon, generate_sonata_form, generate_rondo
-
+from code_music import Note, Song, generate_canon, generate_rondo, generate_sonata_form
 
 # ---------------------------------------------------------------------------
 # generate_canon
@@ -284,7 +282,7 @@ class TestFormGeneratorIntegration:
 
     def test_imports_from_top_level(self):
         """All generators importable from code_music directly."""
-        from code_music import generate_canon, generate_sonata_form, generate_rondo
+        from code_music import generate_canon, generate_rondo, generate_sonata_form
 
         assert callable(generate_canon)
         assert callable(generate_sonata_form)
@@ -292,7 +290,7 @@ class TestFormGeneratorIntegration:
 
     def test_imports_from_theory(self):
         """All generators importable from code_music.theory."""
-        from code_music.theory import generate_canon, generate_sonata_form, generate_rondo
+        from code_music.theory import generate_canon, generate_rondo, generate_sonata_form
 
         assert callable(generate_canon)
         assert callable(generate_sonata_form)

@@ -1,6 +1,6 @@
 """Palm Mute Riff — chunky metal rhythm with palm-muted power chords."""
 
-from code_music import EffectsChain, Note, Song, Track, distortion, reverb
+from code_music import EffectsChain, Note, Song, Track, distortion
 from code_music.theory import dotted, palm_mute, split_note
 
 song = Song(title="Palm Mute Riff", bpm=140)

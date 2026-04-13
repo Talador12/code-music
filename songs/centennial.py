@@ -2,7 +2,6 @@
 
 from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
 from code_music.theory import (
-    SongTemplate,
     additive_rhythm,
     analysis_report,
     andalusian_cadence,

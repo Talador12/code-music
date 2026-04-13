@@ -1,7 +1,6 @@
 """Cadence Detective — a progression designed to showcase all four cadence types."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.theory import detect_cadences, functional_analysis
 
 song = Song(title="Cadence Detective", bpm=80)
 

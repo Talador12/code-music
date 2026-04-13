@@ -1,6 +1,6 @@
 """Bossa Comp — syncopated bossa nova comping with Latin bass."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import EffectsChain, Song, Track, reverb
 from code_music.theory import bass_line_latin, comp_pattern
 
 song = Song(title="Bossa Comp", bpm=130)

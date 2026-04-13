@@ -2,12 +2,11 @@
 
 from code_music.engine import Note
 from code_music.theory import (
-    generate_period,
     compose,
-    melody_similarity,
     find_similar_melodies,
+    generate_period,
+    melody_similarity,
 )
-
 
 # ---------------------------------------------------------------------------
 # generate_period

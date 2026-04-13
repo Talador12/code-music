@@ -1,6 +1,6 @@
 """Interval Study — names all intervals from C."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import Note, Song, Track
 from code_music.theory import interval_name
 
 notes = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]

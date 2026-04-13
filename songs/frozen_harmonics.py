@@ -1,6 +1,6 @@
 """Frozen Harmonics — spectral freeze creates infinite sustain from short sounds."""
 
-from code_music import Chord, EffectsChain, Note, Song, SoundDesigner, Track, reverb
+from code_music import EffectsChain, Note, Song, SoundDesigner, Track, reverb
 from code_music.sound_design import spectral_freeze
 
 frozen_string = (

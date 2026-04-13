@@ -1,7 +1,7 @@
 """Harmonic X-Ray — play a complex progression then its skeleton."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.theory import complexity_score, harmonic_skeleton
+from code_music.theory import harmonic_skeleton
 
 song = Song(title="Harmonic X-Ray", bpm=90)
 

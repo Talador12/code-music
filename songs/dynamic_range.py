@@ -1,7 +1,6 @@
 """Dynamic Range — classical-inspired piece showcasing the full LUFS metering system."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.mastering import measure_lufs
 
 song = Song(title="Dynamic Range", bpm=72, sample_rate=44100)
 

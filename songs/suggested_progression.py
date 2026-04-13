@@ -1,6 +1,6 @@
 """Suggested Progression — auto-suggested chord sequence."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music import Chord, EffectsChain, Song, Track, reverb
 from code_music.theory import generate_bass_line, suggest_next_chord
 
 prog = [("C", "maj")]

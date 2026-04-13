@@ -1,6 +1,6 @@
 """Pitch Class Analysis — frequency of each note in a melody."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import Note, Song, Track
 from code_music.theory import count_pitch_classes, melodic_interval_histogram
 
 melody = [

@@ -3,17 +3,16 @@
 from __future__ import annotations
 
 from ._core import (
-    Note,
     _CHORD_SEMI,
     _DISSONANCES,
     _FUNCTION_MAP,
-    _GENRE_TEMPLATES,
     _INSTRUMENT_RANGES,
     _INTERVAL_NAMES,
     _NOTE_NAMES,
     _QUALITY_MAP,
     _ROMAN,
     _SCALE_INTERVALS,
+    Note,
     _motion_type,
     _semi,
 )
@@ -2814,7 +2813,8 @@ def critique_song(
                 arrangement["balance_score"] -= 15
                 issues.append("Severe density imbalance — some tracks much busier than others.")
                 suggestions.append(
-                    "Balance activity across tracks; thin busy tracks or add interest to sparse ones."
+                    "Balance activity across tracks; thin busy tracks"
+                    " or add interest to sparse ones."
                 )
             elif density_ratio > 3:
                 arrangement["balance_score"] -= 8

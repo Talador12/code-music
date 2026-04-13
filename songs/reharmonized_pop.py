@@ -1,6 +1,6 @@
 """Reharmonized Pop — I-V-vi-IV jazzed up via reharmonize()."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
+from code_music import Chord, EffectsChain, Note, Song, Track, reverb
 from code_music.theory import reharmonize
 
 song = Song(title="Reharmonized Pop", bpm=110)

@@ -1,7 +1,7 @@
 """Auto Arrangement — arrangement detection labels song sections."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, euclid, reverb
-from code_music.composition import generate_arrangement, song_map
+from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music.composition import generate_arrangement
 
 song = Song(title="Auto Arrangement", bpm=128, sample_rate=44100)
 song.add_track(Track(name="kick", instrument="drums_kick", volume=0.7)).extend(

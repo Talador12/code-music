@@ -1,6 +1,5 @@
 """Tests for the Song-Level Critique feature."""
 
-import pytest
 
 from code_music import Chord, Note, Song, Track, critique_song
 

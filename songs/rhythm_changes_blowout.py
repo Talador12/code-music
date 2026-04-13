@@ -18,7 +18,7 @@ for root, shape in prog:
 
 # Bass — root-fifth pattern
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.5))
-from code_music.theory import generate_bass_line
+from code_music.theory import generate_bass_line  # noqa: E402
 
 for _ in range(2):
     notes = generate_bass_line(prog, style="root_fifth", seed=42)

@@ -5,8 +5,7 @@ import unittest
 import numpy as np
 
 from code_music.effects import cross_synthesis
-from code_music.sound_design import SoundDesigner, Wavetable, PRESETS
-
+from code_music.sound_design import PRESETS, SoundDesigner, Wavetable
 
 # ---------------------------------------------------------------------------
 # Cross-synthesis

@@ -1,7 +1,7 @@
 """JSON Collab v2 — serialized song exchange with theory + analysis."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, euclid, reverb
-from code_music.composition import song_summary, to_lead_sheet
+from code_music import Chord, EffectsChain, Note, Song, Track, reverb
+from code_music.composition import song_summary
 from code_music.serialization import song_from_json, song_to_json
 from code_music.theory import analyze_harmony, generate_bass_line, generate_drums
 

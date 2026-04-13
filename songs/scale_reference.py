@@ -1,6 +1,6 @@
 """Scale Reference — prints info about common scales."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb, scale
+from code_music import Song, Track, scale
 from code_music.theory import scale_info
 
 for s in ["major", "minor", "dorian", "pentatonic", "blues"]:

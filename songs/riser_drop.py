@@ -1,6 +1,6 @@
 """Riser Drop — tension-building riser into a chord drop."""
 
-from code_music import Chord, EffectsChain, Note, Song, SoundDesigner, Track, euclid, reverb
+from code_music import Chord, EffectsChain, Note, Song, SoundDesigner, Track, reverb
 from code_music.composition import generate_fill, generate_riser
 
 supersaw = (

@@ -13,14 +13,14 @@ from code_music import (
     Note,
     Song,
     Track,
+    analyze_arrangement,
     compose,
     generate_form,
-    generate_full_song,
     generate_fugue,
+    generate_full_song,
     progression_dna,
     scale,
     style_fingerprint,
-    analyze_arrangement,
 )
 
 

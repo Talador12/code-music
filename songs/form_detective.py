@@ -1,7 +1,7 @@
 """Form Detective — a song with clear AABA form, verified by detect_sections."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, reverb
-from code_music.theory import detect_sections, label_form
+from code_music.theory import label_form
 
 song = Song(title="Form Detective", bpm=120)
 

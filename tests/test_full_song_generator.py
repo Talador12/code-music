@@ -1,6 +1,6 @@
 """Tests for generate_full_song() and auto_arrange() — v131 features."""
 
-from code_music.theory import generate_full_song, auto_arrange
+from code_music.theory import auto_arrange, generate_full_song
 
 
 class TestGenerateFullSong:

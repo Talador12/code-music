@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from ._core import _NOTE_NAMES, _semi
 
-
-
 # ---------------------------------------------------------------------------
 # Multi-tonic / post-tonal systems (v64.0)
 # ---------------------------------------------------------------------------

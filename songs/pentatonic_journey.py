@@ -1,7 +1,7 @@
 """Pentatonic Journey — pentatonic melody continuation with section markers."""
 
 from code_music import Chord, EffectsChain, Note, Song, Track, euclid, reverb
-from code_music.composition import Chorus, Intro, Verse, continue_melody
+from code_music.composition import Intro, Verse, continue_melody
 
 intro_seed = [Note("C", 5, 1.0), Note("D", 5, 1.0)]
 intro_melody = continue_melody(intro_seed, bars=2, key="C", mode="pentatonic", seed_rng=10)

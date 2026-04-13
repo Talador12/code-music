@@ -1,6 +1,6 @@
 """Range Analysis — shows note range of different melodies."""
 
-from code_music import EffectsChain, Note, Song, Track, reverb
+from code_music import Note, Song, Track
 from code_music.theory import note_range, rhythmic_density
 
 melody = [

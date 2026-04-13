@@ -1,6 +1,6 @@
 """DSL Pop Song — a full song written in the mini-DSL notation."""
 
-from code_music import Chord, EffectsChain, Note, Song, Track, delay, reverb
+from code_music import Chord, EffectsChain, Song, Track, delay, reverb
 from code_music.theory import song_from_dsl
 
 dsl_text = """
