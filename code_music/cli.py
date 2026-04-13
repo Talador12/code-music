@@ -149,6 +149,7 @@ examples:
   code-music --random jazz              generate and play a jazz song
   code-music compose "jazz in Bb"       generate from natural language prompt
   code-music analyze my_song.py         print full analysis report
+  code-music --repl                     interactive music coding REPL
 """
     parser = argparse.ArgumentParser(
         prog="code-music",
@@ -214,6 +215,11 @@ examples:
         help="Show song metadata (title, BPM, duration, tracks) without rendering",
     )
     parser.add_argument(
+        "--repl",
+        action="store_true",
+        help="Start interactive music coding REPL with all imports pre-loaded",
+    )
+    parser.add_argument(
         "--compose",
         nargs="+",
         default=None,
@@ -250,6 +256,12 @@ examples:
 
     if args.new:
         return _scaffold_song(args.new)
+
+    if args.repl:
+        from .repl import start_repl
+
+        start_repl(bpm=args.bpm or 120)
+        return 0
 
     if args.random is not None:
         import random as _rng

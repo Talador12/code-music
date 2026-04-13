@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v137.0.0 — 323 songs, 2686 tests, 425+ theory functions, 44 scales
+## Status: v138.0.0 — 323 songs, 2720 tests, 430+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2123,7 +2123,7 @@ printable as PDF.
 ### Tier 4: Platform & ecosystem (v146.x-v148.x)
 - [ ] **Web Playground (Pyodide)** - theory module in the browser. Interactive docs with live code execution
 - [x] **MIDI Round-Trip v2** - import_midi() already exists in midi.py + CLI --import-midi
-- [ ] **Live Coding REPL** - `code-music repl` with audio playback and hot-reload
+- [x] **Live Coding REPL** - `code-music --repl` with slash commands (/play, /info, /tracks, /bpm, /export, /undo, /reset) (v138)
 - [x] **Song Rendering CLI v2** - `code-music --compose "jazz in Bb"` + `--analyze` (v137)
 
 ### Tier 5: Quality & performance (ongoing)
@@ -2131,7 +2131,7 @@ printable as PDF.
 - [x] **Benchmark Suite** - 13 perf tests: generation, analysis, rendering, corpus search (v137)
 - [x] **py.typed marker** - PEP 561 marker added, `__main__.py` for `python -m code_music` (v137)
 - [ ] **Type Annotation Completion** - fix Pyright errors across codebase
-- [ ] **API Reference Generator** - auto-generate docs from docstrings, publish to GitHub Pages
+- [x] **API Reference Generator** - `make docs` generates docs/api.html (430 functions, 19 modules, searchable) (v138)
 
 ### Future exploration
 - MusicXML import/export round-trip improvements
@@ -2255,3 +2255,35 @@ Supports all format flags (--flac, --mp3, --wav, --midi) and --play.
 - [x] All functions exported from theory/__init__.py and code_music/__init__.py
 
 **Stats:** 425+ public functions. 2686 tests. 323 songs. 44 scales.
+
+## v138.0 — Live Coding REPL + API Reference Generator
+
+**code-music --repl:**
+Interactive Python REPL with all 430+ code_music functions pre-imported.
+Creates a default Song object. Slash commands for immediate feedback:
+/play (render + play), /info (metadata), /tracks (list), /bpm (get/set),
+/export (WAV/FLAC/MP3/MIDI), /undo (remove last track), /reset (fresh song),
+/add (execute code + auto-play). Built on Python's code.InteractiveConsole
+with command interception. Handles Song falsiness (empty songs are falsy
+in code_music, so all checks use `is not None`).
+
+**API Reference Generator (make docs):**
+`scripts/build_api_docs.py` introspects the code_music module, extracts
+all public functions/classes with signatures and docstrings, categorizes
+by source module (19 categories), and generates a single-page HTML reference
+at `docs/api.html`. Dark-themed, searchable via JS filter, includes class
+methods, module attribution, and formatted docstring sections (Args,
+Returns, Examples). 430 functions documented.
+
+**Makefile `docs` target:**
+`make docs` runs the generator and prints the GitHub Pages URL.
+
+- [x] `code_music/repl.py` — MusicConsole, slash command handler, start_repl()
+- [x] CLI `--repl` flag wired into cli.py
+- [x] `scripts/build_api_docs.py` — introspection + HTML generation
+- [x] `docs/api.html` — 430 functions, 19 modules, dark theme, search
+- [x] Makefile `docs` target
+- [x] 21 tests (15 REPL commands, 1 CLI flag, 5 docs validation)
+- [x] pyproject.toml version bump to 138.0.0
+
+**Stats:** 430+ public functions. 2720 tests. 323 songs. 44 scales.
