@@ -2142,6 +2142,114 @@ taiko = (
     .filter("lowpass", cutoff=500, resonance=0.5)
 )
 
+# ---------------------------------------------------------------------------
+# Wavetable scanning presets (v169.0)
+# ---------------------------------------------------------------------------
+
+wt_scan_evolve = (
+    SoundDesigner("wt_scan_evolve")
+    .wavetable_scan(
+        [
+            Wavetable.from_wave("sine"),
+            Wavetable.from_wave("sawtooth"),
+            Wavetable.from_wave("square"),
+            Wavetable.from_wave("triangle"),
+        ],
+        scan_rate=0.3,
+        volume=0.6,
+    )
+    .envelope(attack=0.05, decay=0.15, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.5)
+)
+
+wt_scan_pad = (
+    SoundDesigner("wt_scan_pad")
+    .wavetable_scan(
+        [
+            Wavetable.from_harmonics([1.0]),
+            Wavetable.from_harmonics([1.0, 0.5, 0.25]),
+            Wavetable.from_harmonics([1.0, 0.5, 0.25, 0.125, 0.0625]),
+            Wavetable.from_harmonics([1.0, 0.3, 0.1, 0.3, 0.1]),
+        ],
+        scan_rate=0.15,
+        volume=0.5,
+    )
+    .envelope(attack=0.4, decay=0.2, sustain=0.8, release=0.8)
+    .filter("lowpass", cutoff=3000, resonance=0.4)
+    .lfo("filter_cutoff", rate=0.1, depth=0.3)
+)
+
+wt_scan_lead = (
+    SoundDesigner("wt_scan_lead")
+    .wavetable_scan(
+        [Wavetable.from_wave("sawtooth"), Wavetable.from_wave("square")],
+        scan_rate=1.5,
+        volume=0.6,
+        detune_cents=5,
+    )
+    .envelope(attack=0.01, decay=0.1, sustain=0.6, release=0.2)
+    .filter("lowpass", cutoff=5000, resonance=0.6)
+)
+
+wt_scan_bass = (
+    SoundDesigner("wt_scan_bass")
+    .wavetable_scan(
+        [
+            Wavetable.from_wave("sine"),
+            Wavetable.from_wave("sawtooth"),
+            Wavetable.from_wave("square"),
+        ],
+        scan_rate=0.5,
+        volume=0.7,
+    )
+    .envelope(attack=0.005, decay=0.15, sustain=0.7, release=0.15)
+    .filter("lowpass", cutoff=1200, resonance=0.7)
+)
+
+wt_scan_texture = (
+    SoundDesigner("wt_scan_texture")
+    .wavetable_scan(
+        [
+            Wavetable.from_harmonics([1.0, 0.0, 0.5, 0.0, 0.25]),
+            Wavetable.from_harmonics([0.5, 1.0, 0.3, 0.8, 0.1]),
+            Wavetable.from_harmonics([0.1, 0.3, 1.0, 0.3, 0.5]),
+        ],
+        scan_rate=0.08,
+        volume=0.5,
+    )
+    .envelope(attack=0.8, decay=0.3, sustain=0.6, release=1.2)
+    .filter("lowpass", cutoff=2000, resonance=0.5)
+)
+
+# ---------------------------------------------------------------------------
+# Spectral presets (v169.0)
+# ---------------------------------------------------------------------------
+
+spectral_frozen = (
+    SoundDesigner("spectral_frozen")
+    .add_osc("sawtooth", volume=0.6)
+    .spectral(spectral_freeze(0.9))
+    .envelope(attack=0.3, decay=0.2, sustain=0.8, release=1.0)
+    .filter("lowpass", cutoff=3000, resonance=0.3)
+)
+
+spectral_shifted = (
+    SoundDesigner("spectral_shifted")
+    .add_osc("sawtooth", volume=0.5)
+    .add_osc("square", detune_cents=5, volume=0.3)
+    .spectral(spectral_shift(5.0))
+    .envelope(attack=0.02, decay=0.15, sustain=0.6, release=0.3)
+    .filter("lowpass", cutoff=5000, resonance=0.4)
+)
+
+spectral_smeared = (
+    SoundDesigner("spectral_smeared")
+    .add_osc("sawtooth", volume=0.5)
+    .spectral(spectral_smear(0.7))
+    .envelope(attack=0.5, decay=0.2, sustain=0.7, release=0.8)
+    .filter("lowpass", cutoff=2500, resonance=0.5)
+)
+
 PRESETS = {
     # Original 18
     "supersaw": supersaw,
@@ -2203,4 +2311,14 @@ PRESETS = {
     "tabla": tabla,
     "shaker": shaker,
     "taiko": taiko,
+    # Wavetable scanning (v169)
+    "wt_scan_evolve": wt_scan_evolve,
+    "wt_scan_pad": wt_scan_pad,
+    "wt_scan_lead": wt_scan_lead,
+    "wt_scan_bass": wt_scan_bass,
+    "wt_scan_texture": wt_scan_texture,
+    # Spectral (v169)
+    "spectral_frozen": spectral_frozen,
+    "spectral_shifted": spectral_shifted,
+    "spectral_smeared": spectral_smeared,
 }

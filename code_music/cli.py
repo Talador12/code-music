@@ -227,6 +227,40 @@ examples:
         help="Natural language song prompt, e.g. --compose jazz ballad in Bb at 90 bpm",
     )
     parser.add_argument(
+        "--list-scales",
+        action="store_true",
+        help="Show all available scales with interval patterns",
+    )
+    parser.add_argument(
+        "--list-chords",
+        action="store_true",
+        help="Show all available chord shapes with intervals",
+    )
+    parser.add_argument(
+        "--track-waveforms",
+        type=str,
+        default=None,
+        nargs="?",
+        const="auto",
+        metavar="PATH",
+        help="Export per-track waveform SVG",
+    )
+    parser.add_argument(
+        "--sheet-music",
+        type=str,
+        default=None,
+        nargs="?",
+        const="auto",
+        metavar="PATH",
+        help="Export sheet music SVG for first track (or use --track N)",
+    )
+    parser.add_argument(
+        "--track",
+        type=int,
+        default=0,
+        help="Track index for --sheet-music (default: 0)",
+    )
+    parser.add_argument(
         "--analyze",
         action="store_true",
         help="Print a full analysis report for the song (no audio render)",
@@ -296,6 +330,25 @@ examples:
         print(f"{len(instruments)} instruments available:\n")
         for name in instruments:
             print(f"  {name}")
+        return 0
+
+    if args.list_scales:
+        from .engine import SCALES
+
+        print(f"{len(SCALES)} scales available:\n")
+        for name in sorted(SCALES.keys()):
+            intervals = SCALES[name]
+            pattern = "-".join(str(i) for i in intervals)
+            print(f"  {name:25s} [{pattern}]")
+        return 0
+
+    if args.list_chords:
+        from .engine import CHORD_SHAPES
+
+        print(f"{len(CHORD_SHAPES)} chord shapes available:\n")
+        for name in sorted(CHORD_SHAPES.keys()):
+            intervals = CHORD_SHAPES[name]
+            print(f"  {name:15s} {intervals}")
         return 0
 
     if args.new:
@@ -541,6 +594,40 @@ examples:
         )
         svg = to_spectrogram(song, path=out_path)
         print(f"  Spectrogram: {out_path} ({len(svg)} chars)")
+        return 0
+    elif args.track_waveforms is not None:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        from .composition import to_track_waveforms
+
+        out_path = (
+            args.track_waveforms
+            if args.track_waveforms != "auto"
+            else f"{script.stem}_track_waveforms.svg"
+        )
+        svg = to_track_waveforms(song, path=out_path)
+        print(f"  Track waveforms: {out_path} ({len(svg)} chars)")
+        return 0
+    elif args.sheet_music is not None:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        from .composition import to_sheet_music
+
+        out_path = (
+            args.sheet_music if args.sheet_music != "auto" else f"{script.stem}_sheet_music.svg"
+        )
+        svg = to_sheet_music(song, track_index=args.track, path=out_path)
+        print(f"  Sheet music: {out_path} ({len(svg)} chars)")
         return 0
     elif args.analyze:
         try:

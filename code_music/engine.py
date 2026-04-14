@@ -156,6 +156,23 @@ SCALES = {
     "super_locrian": [0, 1, 3, 4, 6, 8, 10],  # Altered scale (7th mode melodic minor)
     "lydian_augmented": [0, 2, 4, 6, 8, 9, 11],  # 3rd mode melodic minor
     "locrian_natural2": [0, 2, 3, 5, 6, 8, 10],  # Half-diminished / 6th mode mel. minor
+    # ── Additional modes ──────────────────────────────────────────────────────
+    "aeolian": [0, 2, 3, 5, 7, 8, 10],  # = natural minor (alias)
+    "acoustic": [0, 2, 4, 6, 7, 9, 10],  # Lydian dominant / overtone scale
+    "altered": [0, 1, 3, 4, 6, 8, 10],  # Super Locrian / diminished whole tone
+    "half_diminished": [0, 2, 3, 5, 6, 8, 10],  # Locrian natural 2
+    # ── Additional world scales ──────────────────────────────────────────────
+    "double_harmonic": [0, 1, 4, 5, 7, 8, 11],  # Byzantine / Arabic (alt name)
+    "spanish_gypsy": [0, 1, 4, 5, 7, 8, 10],  # Phrygian dominant (alt name)
+    "arabian": [0, 2, 4, 5, 6, 8, 10],  # Major locrian
+    "balinese": [0, 1, 3, 7, 8],  # Indonesian pelog variant
+    "chinese": [0, 4, 6, 7, 11],  # Pentatonic with tritone
+    "egyptian": [0, 2, 5, 7, 10],  # Suspended pentatonic
+    "iwato": [0, 1, 5, 6, 10],  # Japanese (dark)
+    "kumoi": [0, 2, 3, 7, 9],  # Japanese pentatonic variant
+    "pelog": [0, 1, 3, 7, 8],  # Indonesian gamelan
+    "prometheus": [0, 2, 4, 6, 9, 10],  # Scriabin's mystic scale
+    "tritone": [0, 1, 4, 6, 7, 10],  # Two augmented triads a tritone apart
     # ── Chromatic ─────────────────────────────────────────────────────────────
     "chromatic": list(range(12)),
 }
@@ -176,6 +193,15 @@ CHORD_SHAPES.update(
         "power": [0, 7],
         "flat5": [0, 4, 6],
         "aug7": [0, 4, 8, 10],
+        # Extended jazz voicings (v169)
+        "min11": [0, 3, 7, 10, 14, 17],
+        "min13": [0, 3, 7, 10, 14, 17, 21],
+        "7#11": [0, 4, 7, 10, 18],  # Lydian dominant
+        "maj7#11": [0, 4, 7, 11, 18],  # Lydian
+        "7alt": [0, 4, 7, 10, 13, 15],  # Altered dominant (b9 #9)
+        "dim_maj7": [0, 3, 6, 11],  # Diminished major 7th
+        "aug_maj7": [0, 4, 8, 11],  # Augmented major 7th
+        "quartal": [0, 5, 10, 15],  # Stacked 4ths (McCoy Tyner)
     }
 )
 

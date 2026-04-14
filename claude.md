@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v168.0.0 — 415 songs, 3324 tests, 590+ theory functions, 44 scales
+## Status: v169.0.0 — 415 songs, 3338 tests, 595+ theory functions, 53 scales
 
 ## Current state (for new conversations)
 
@@ -3275,3 +3275,60 @@ percussion), taiko (massive sine + modal Japanese drum).
 - [x] 13 tests (6 presets, 5 songs, 2 albums)
 
 **Stats:** 590+ public functions. 3324 tests. 415 songs. 77 presets. 5 albums. 44 scales.
+
+## v169.0 — Infrastructure: Presets + Scales + Chords + CLI Discovery
+
+Focus: library depth, not new songs. Every synthesis type now has presets.
+Every scale gap filled. CLI discovery for all reference data.
+
+**8 new core presets (51 -> 59 core, 77 -> 85 total):**
+
+Wavetable scanning (5 - previously ZERO):
+wt_scan_evolve (sine->saw->square->triangle morph), wt_scan_pad (harmonic
+bank sweep), wt_scan_lead (fast saw/square toggle), wt_scan_bass (low
+morph), wt_scan_texture (slow harmonic evolution).
+
+Spectral (3 - previously ZERO):
+spectral_frozen (freeze 90% of spectrum), spectral_shifted (up 5 semitones),
+spectral_smeared (blur 70% of frequency bins).
+
+**15 new scales (38 -> 53):**
+aeolian, acoustic, altered, half_diminished, double_harmonic, spanish_gypsy,
+arabian, balinese, chinese, egyptian, iwato, kumoi, pelog, prometheus, tritone.
+Synced engine.py SCALES with theory/_core.py _SCALE_INTERVALS.
+
+**8 new chord shapes (28 -> 36):**
+min11, min13, 7#11 (lydian dominant), maj7#11 (lydian), 7alt (altered),
+dim_maj7, aug_maj7, quartal (stacked 4ths).
+
+**CLI discovery commands:**
+`code-music --list-scales` — all 53 scales with interval patterns.
+`code-music --list-chords` — all 36 chord shapes with intervals.
+
+**CLI visualization flags:**
+`code-music song.py --track-waveforms` — per-track waveform SVG.
+`code-music song.py --sheet-music` — staff notation SVG.
+`code-music song.py --sheet-music --track 2` — specific track.
+
+**Every synthesis type now has presets:**
+| Type | Count | Examples |
+|------|-------|---------|
+| Subtractive | 15+ | supersaw, acid_bass, detuned_pad |
+| FM | 6 | fm_bell, fm_brass, fm_clarinet |
+| Wavetable | 5 | wt_glass, wt_organ, wt_digital |
+| WT Scanning | 5 | wt_scan_evolve, wt_scan_pad |
+| Granular | 5 | grain_cloud, grain_stutter, grain_rain |
+| Physical | 9 | pm_violin, pm_cello, sitar, taiko |
+| Formant | 6 | choir_ah, ethereal_voice, vocal_lead |
+| Spectral | 3 | spectral_frozen, spectral_shifted |
+
+- [x] 5 wavetable scanning presets (was 0)
+- [x] 3 spectral presets (was 0)
+- [x] 15 new scales synced from theory module
+- [x] 8 new chord shapes (jazz extensions + quartal)
+- [x] CLI --list-scales, --list-chords discovery
+- [x] CLI --track-waveforms, --sheet-music visualization
+- [x] 14 tests (3 scales, 3 chords, 4 presets, 1 counts, 3 CLI)
+
+**Stats:** 595+ public functions. 3338 tests. 415 songs. 85 presets.
+53 scales. 36 chords. 5 albums. 8 synthesis types all with presets.
