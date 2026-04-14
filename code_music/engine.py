@@ -1416,6 +1416,65 @@ class Clip:
     def __len__(self) -> int:
         return len(self.beats)
 
+    def crossfade(self, other: "Clip", overlap_beats: int = 2) -> "Clip":
+        """Crossfade from this clip into another.
+
+        The last `overlap_beats` of self fade out while the first
+        `overlap_beats` of other fade in. Velocities are interpolated
+        linearly across the overlap region. Events outside the overlap
+        are untouched.
+
+        Args:
+            other:          The clip to transition into.
+            overlap_beats:  Number of beats for the crossfade.
+
+        Returns:
+            New Clip with the crossfaded transition.
+        """
+        import copy
+
+        if overlap_beats <= 0 or overlap_beats > min(len(self), len(other)):
+            # No overlap possible, just concatenate
+            return Clip(
+                beats=copy.deepcopy(self.beats) + copy.deepcopy(other.beats),
+                name=self.name,
+                source=self.source,
+            )
+
+        result_beats: list["Beat"] = []
+
+        # Pre-overlap from self
+        pre = copy.deepcopy(self.beats[:-overlap_beats])
+        result_beats.extend(pre)
+
+        # Overlap zone: fade self out, fade other in
+        for i in range(overlap_beats):
+            fade_out = 1.0 - (i + 1) / (overlap_beats + 1)
+            fade_in = (i + 1) / (overlap_beats + 1)
+
+            beat_a = copy.deepcopy(self.beats[len(self) - overlap_beats + i])
+            beat_b = copy.deepcopy(other.beats[i])
+
+            # Pick the higher-velocity event and scale it
+            if beat_a.event is not None and beat_b.event is not None:
+                # Blend: use beat_b's pitch but interpolated velocity
+                merged = copy.deepcopy(beat_b)
+                vel_a = getattr(beat_a.event, "velocity", 70) * fade_out
+                vel_b = getattr(beat_b.event, "velocity", 70) * fade_in
+                if hasattr(merged.event, "velocity"):
+                    merged.event.velocity = vel_a + vel_b
+                result_beats.append(merged)
+            elif beat_b.event is not None:
+                result_beats.append(beat_b)
+            else:
+                result_beats.append(beat_a)
+
+        # Post-overlap from other
+        post = copy.deepcopy(other.beats[overlap_beats:])
+        result_beats.extend(post)
+
+        return Clip(beats=result_beats, name=self.name, source=self.source)
+
     def __repr__(self) -> str:
         return f"Clip({self.name!r}, {len(self.beats)} beats, source={self.source!r})"
 
@@ -1508,6 +1567,9 @@ class Session:
     _volumes: dict[str, float] = field(default_factory=dict)
     grid: dict[str, list[ClipSlot]] = field(default_factory=dict)
     scene_count: int = 0
+    _muted: set[str] = field(default_factory=set)
+    _soloed: set[str] = field(default_factory=set)
+    _pans: dict[str, float] = field(default_factory=dict)
 
     def add_track(
         self,
@@ -1570,6 +1632,51 @@ class Session:
                 slot.stop()
         return self
 
+    def stop_track(self, track_name: str) -> "Session":
+        """Stop all clips on a specific track."""
+        if track_name in self.grid:
+            for slot in self.grid[track_name]:
+                slot.stop()
+        return self
+
+    def mute(self, track_name: str) -> "Session":
+        """Mute a track (set volume to 0 in render)."""
+        self._muted.add(track_name)
+        return self
+
+    def unmute(self, track_name: str) -> "Session":
+        """Unmute a track."""
+        self._muted.discard(track_name)
+        return self
+
+    def solo(self, track_name: str) -> "Session":
+        """Solo a track (mute everything else in render)."""
+        self._soloed.add(track_name)
+        return self
+
+    def unsolo(self, track_name: str) -> "Session":
+        """Remove solo from a track."""
+        self._soloed.discard(track_name)
+        return self
+
+    def set_volume(self, track_name: str, volume: float) -> "Session":
+        """Set a track's volume (0.0-1.0)."""
+        self._volumes[track_name] = max(0.0, min(1.0, volume))
+        return self
+
+    def set_pan(self, track_name: str, pan: float) -> "Session":
+        """Set a track's stereo pan (-1.0 to 1.0)."""
+        self._pans[track_name] = max(-1.0, min(1.0, pan))
+        return self
+
+    def _effective_volume(self, track_name: str) -> float:
+        """Get the effective volume for a track, accounting for mute/solo."""
+        if self._soloed and track_name not in self._soloed:
+            return 0.0
+        if track_name in self._muted:
+            return 0.0
+        return self._volumes.get(track_name, 0.8)
+
     def render(
         self,
         scene_order: list[int] | None = None,
@@ -1595,7 +1702,8 @@ class Session:
             track = Track(
                 name=name,
                 instrument=self._instruments.get(name, "sine"),
-                volume=self._volumes.get(name, 0.8),
+                volume=self._effective_volume(name),
+                pan=self._pans.get(name, 0.0),
             )
 
             for scene_idx in scene_order:

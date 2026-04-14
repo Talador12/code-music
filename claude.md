@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v145.0.0 — 323 songs, 2886 tests, 465+ theory functions, 44 scales
+## Status: v146.0.0 — 328 songs, 2911 tests, 470+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2501,3 +2501,32 @@ in code.
 - [x] 26 tests (7 ClipSlot, 12 Session, 3 export_stems, 4 imports)
 
 **Stats:** 465+ public functions. 2886 tests. 323 songs. 44 scales.
+
+## v146.0 — Session Mix Controls + Clip Crossfade + 5 New Songs
+
+**Session enhancements:**
+stop_track(name) stops all clips on one track. mute()/unmute() zeroes
+track volume in render. solo()/unsolo() mutes everything else. set_volume()
+and set_pan() with clamping. _effective_volume() resolves mute/solo priority.
+All reflected in render() output.
+
+**Clip.crossfade(other, overlap_beats):**
+Smooth transition between two clips. The last N beats of self fade out
+(velocity interpolation) while the first N beats of other fade in. Events
+outside the overlap are untouched. Zero overlap = concatenation.
+
+**5 new songs (323 -> 328):**
+- session_looper: Ableton-style session grid, 3 scenes, intro/drop/breakdown
+- clip_remix: reversed clips + crossfade transitions
+- sidechain_pump: classic EDM ducking with EffectsChain sidechain
+- mute_solo_mix: Session mute/solo for breakdown sections via song_append
+- crossfade_journey: contrasting clips (major/minor) with smooth transitions
+
+- [x] `Session.stop_track()` — stop clips on one track
+- [x] `Session.mute/unmute/solo/unsolo` — mix-level controls
+- [x] `Session.set_volume/set_pan` — per-track mix parameters
+- [x] `Clip.crossfade()` — velocity-interpolated transitions
+- [x] 5 new songs using Session, Clip, and crossfade
+- [x] 25 tests (2 stop_track, 4 mute/solo, 4 mix, 5 crossfade, 5 songs, 5 Session)
+
+**Stats:** 470+ public functions. 2911 tests. 328 songs. 44 scales.
