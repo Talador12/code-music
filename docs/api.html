@@ -176,7 +176,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <nav class="sidebar">
   <h1>code-music</h1>
   <div class="version">v5.0.0</div>
-  <div class="stats">448 functions, 19 modules</div>
+  <div class="stats">462 functions, 19 modules</div>
   <input type="text" id="search" placeholder="Search functions..." autocomplete="off">
     <a href="#engine" class="nav-link">Engine (52)</a>
   <a href="#harmony" class="nav-link">Harmony (65)</a>
@@ -184,7 +184,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
   <a href="#rhythm" class="nav-link">Rhythm (30)</a>
   <a href="#generation" class="nav-link">Generation (68)</a>
   <a href="#analysis" class="nav-link">Analysis (75)</a>
-  <a href="#composition" class="nav-link">Composition (27)</a>
+  <a href="#composition" class="nav-link">Composition (30)</a>
   <a href="#effects" class="nav-link">Effects (37)</a>
   <a href="#sound-design" class="nav-link">Sound Design (3)</a>
   <a href="#synth" class="nav-link">Synth (1)</a>
@@ -196,12 +196,12 @@ h2 .count { color: var(--fg2); font-size: 13px; }
   <a href="#automation" class="nav-link">Automation (6)</a>
   <a href="#playback" class="nav-link">Playback (1)</a>
   <a href="#serial---post-tonal" class="nav-link">Serial / Post-Tonal (10)</a>
-  <a href="#other" class="nav-link">Other (6)</a>
+  <a href="#other" class="nav-link">Other (17)</a>
 </nav>
 <main class="main">
   <h1 style="color:var(--accent);margin-bottom:8px;">API Reference</h1>
   <p style="color:var(--fg2);margin-bottom:30px;">
-    448 public functions and classes across 19 modules.
+    462 public functions and classes across 19 modules.
     Auto-generated from docstrings.
   </p>
   <section id="engine">
@@ -544,6 +544,9 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 <div class="method"><span class="method-name">.export_stems</span><span class="sig">(self, out_dir: &#x27;str&#x27;, fmt: &#x27;str&#x27; = &#x27;wav&#x27;, include_effects: &#x27;bool&#x27; = False, use_title_prefix: &#x27;bool&#x27; = False) -&gt; &#x27;list&#x27;</span>
 <p class="method-doc">Render each track as a separate audio file (stem export).</p>
+</div>
+<div class="method"><span class="method-name">.fill_tracks</span><span class="sig">(self, roles: &#x27;list[str] | None&#x27; = None, genre: &#x27;str&#x27; = &#x27;pop&#x27;, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
+<p class="method-doc">Auto-fill missing instrument roles in the song.</p>
 </div>
 <div class="method"><span class="method-name">.from_dict</span><span class="sig">(data: &#x27;dict&#x27;) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
 <p class="method-doc">Reconstruct a Song from a dict produced by ``to_dict()``.</p>
@@ -5970,7 +5973,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="composition">
-<h2>Composition <span class="count">(27)</span></h2>
+<h2>Composition <span class="count">(30)</span></h2>
 <div class="func" id="Bridge">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Bridge</span><span class="sig">(bars: &#x27;int&#x27; = 4, **kwargs)</span></div>
 <div class="source">from code_music.composition</div>
@@ -6299,6 +6302,37 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>╚══════════════════════════════════════╝</p>
 </ul></div>
 </div>
+<div class="func" id="suggest_arrangement">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">suggest_arrangement</span><span class="sig">(song: &#x27;Song&#x27;) -&gt; &#x27;list[dict]&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Suggest section boundaries for a song based on structural analysis.</p>
+<p>Analyzes chord repetition patterns, melodic density changes, and track</p>
+<p>activity to identify where intro, verse, chorus, bridge, and outro</p>
+<p>sections likely begin. Returns a list of suggested sections with beat</p>
+<p>positions and labels.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song to analyze.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>List of dicts, each with:</p>
+<p>label:       Section name (intro, verse, chorus, bridge, outro).</p>
+<p>start_beat:  Beat position where section begins.</p>
+<p>end_beat:    Beat position where section ends.</p>
+<p>bars:        Number of bars in the section.</p>
+<p>confidence:  How confident the suggestion is (0.0-1.0).</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note, Chord
+    &gt;&gt;&gt; song = Song(title=&quot;Test&quot;, bpm=120)
+    &gt;&gt;&gt; tr = song.add_track(Track())
+    &gt;&gt;&gt; for _ in range(4):
+    ...     tr.add(Chord(&quot;C&quot;, &quot;maj&quot;, 4, duration=4.0))
+    &gt;&gt;&gt; sections = suggest_arrangement(song)
+    &gt;&gt;&gt; len(sections) &gt;= 1
+</pre>
+<p>True</p></div>
+</div>
 <div class="func" id="tempo_map">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">tempo_map</span><span class="sig">(song: &#x27;Song&#x27;) -&gt; &#x27;str&#x27;</span></div>
 <div class="source">from code_music.composition</div>
@@ -6417,6 +6451,36 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </pre>
 <p>True</p></div>
 </div>
+<div class="func" id="to_spectrogram">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">to_spectrogram</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 900, height: &#x27;int&#x27; = 400, bg: &#x27;str&#x27; = &#x27;#0a0a10&#x27;, fft_size: &#x27;int&#x27; = 2048, log_freq: &#x27;bool&#x27; = True, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Render a Song&#x27;s audio as a spectrogram SVG.</p>
+<p>STFT-based frequency x time visualization. Each time-frequency bin</p>
+<p>is colored by magnitude (dark = quiet, bright = loud). Log-frequency</p>
+<p>axis by default for musical analysis (octaves are equally spaced).</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song to visualize.</li>
+<li><code>width</code>: SVG width in pixels.</li>
+<li><code>height</code>: SVG height in pixels.</li>
+<li><code>bg</code>: Background color.</li>
+<li><code>fft_size</code>: FFT window size.</li>
+<li><code>log_freq</code>: If True, use log frequency axis (musical). If False, linear.</li>
+<li><code>path</code>: Optional file path to write SVG.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>SVG string.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note
+    &gt;&gt;&gt; song = Song(title=&quot;Test&quot;, bpm=120, sample_rate=22050)
+    &gt;&gt;&gt; tr = song.add_track(Track(instrument=&quot;sine&quot;))
+    &gt;&gt;&gt; tr.add(Note(&quot;C&quot;, 4, 2.0))
+    &gt;&gt;&gt; svg = to_spectrogram(song)
+    &gt;&gt;&gt; &quot;&lt;svg&quot; in svg
+</pre>
+<p>True</p></div>
+</div>
 <div class="func" id="to_svg_waveform">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">to_svg_waveform</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 800, height: &#x27;int&#x27; = 200, color: &#x27;str&#x27; = &#x27;#7c3aed&#x27;, bg: &#x27;str&#x27; = &#x27;#1a1a2e&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
 <div class="source">from code_music.composition</div>
@@ -6458,6 +6522,34 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>A|-------------------|</p>
 <p>E|-------------------|</p>
 </ul></div>
+</div>
+<div class="func" id="to_track_waveforms">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">to_track_waveforms</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 900, track_height: &#x27;int&#x27; = 80, bg: &#x27;str&#x27; = &#x27;#0a0a10&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Render per-track waveforms as a stacked SVG.</p>
+<p>Each track gets its own waveform row, colored differently, with track</p>
+<p>name labels. Total height = track_height * number of tracks. Shows</p>
+<p>the relative amplitude and timing of each track at a glance.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song to visualize.</li>
+<li><code>width</code>: SVG width.</li>
+<li><code>track_height</code>: Height per track row.</li>
+<li><code>bg</code>: Background color.</li>
+<li><code>path</code>: Optional file path to write SVG.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>SVG string.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note
+    &gt;&gt;&gt; song = Song(title=&quot;Test&quot;, bpm=120, sample_rate=22050)
+    &gt;&gt;&gt; tr = song.add_track(Track(name=&quot;lead&quot;, instrument=&quot;sine&quot;))
+    &gt;&gt;&gt; tr.add(Note(&quot;C&quot;, 4, 2.0))
+    &gt;&gt;&gt; svg = to_track_waveforms(song)
+    &gt;&gt;&gt; &quot;&lt;svg&quot; in svg
+</pre>
+<p>True</p></div>
 </div>
 </section>
 <section id="effects">
@@ -7740,7 +7832,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="other">
-<h2>Other <span class="count">(6)</span></h2>
+<h2>Other <span class="count">(17)</span></h2>
 <div class="func" id="Lyrics">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Lyrics</span><span class="sig">(lines: &#x27;list[tuple[float, str]]&#x27; = &lt;factory&gt;) -&gt; None</span></div>
 <div class="source">from code_music.voice</div>
@@ -7832,6 +7924,27 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="source">from code_music.voice</div>
 <div class="doc"><p>Return list of available backends in preference order.</p></div>
 </div>
+<div class="func" id="discover_plugins">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">discover_plugins</span><span class="sig">() -&gt; &#x27;dict&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Auto-discover plugins from installed packages via entry points.</p>
+<p>Scans for packages that declare ``[project.entry-points.&quot;code_music.plugins&quot;]``</p>
+<p>in their pyproject.toml. Each entry point should be a module that registers</p>
+<p>instruments/effects/generators via the decorator API when imported.</p>
+<p>Third-party packages declare plugins like this in pyproject.toml::</p>
+<p>[project.entry-points.&quot;code_music.plugins&quot;]</p>
+<p>my_pack = &quot;my_package.instruments&quot;</p>
+<p>When discover_plugins() runs, it imports &quot;my_package.instruments&quot; which</p>
+<p>triggers the @register_instrument decorators inside that module.</p>
+<h4 class="doc-section">Returns</h4>
+<p>Dict with discovered_count and any errors.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; result = discover_plugins()
+    &gt;&gt;&gt; result[&quot;discovered_count&quot;] &gt;= 0
+</pre>
+<p>True</p></div>
+</div>
 <div class="func" id="generate_voice">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">generate_voice</span><span class="sig">(clip: &#x27;VoiceClip&#x27;, sample_rate: &#x27;int&#x27; = 44100) -&gt; &#x27;FloatArray&#x27;</span></div>
 <div class="source">from code_music.voice</div>
@@ -7844,6 +7957,37 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <h4 class="doc-section">Returns</h4>
 <p>Stereo float64 numpy array, shape (N, 2), range [-1, 1].</p></div>
 </div>
+<div class="func" id="get_effect">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">get_effect</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable | None&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Look up a registered effect function by name.</p></div>
+</div>
+<div class="func" id="get_generator">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">get_generator</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable | None&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Look up a registered song generator by name.</p></div>
+</div>
+<div class="func" id="get_instrument">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">get_instrument</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable | None&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Look up a registered instrument factory by name.</p>
+<p>Returns None if no instrument is registered with that name.</p></div>
+</div>
+<div class="func" id="list_plugin_effects">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">list_plugin_effects</span><span class="sig">() -&gt; &#x27;list[str]&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>List all registered effect names.</p></div>
+</div>
+<div class="func" id="list_plugin_generators">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">list_plugin_generators</span><span class="sig">() -&gt; &#x27;list[str]&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>List all registered generator names.</p></div>
+</div>
+<div class="func" id="list_plugin_instruments">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">list_plugin_instruments</span><span class="sig">() -&gt; &#x27;list[str]&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>List all registered instrument names.</p></div>
+</div>
 <div class="func" id="list_voices">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">list_voices</span><span class="sig">(backend: &#x27;str&#x27; = &#x27;say&#x27;) -&gt; &#x27;list[str]&#x27;</span></div>
 <div class="source">from code_music.voice</div>
@@ -7851,6 +7995,77 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <h4 class="doc-section">Args</h4>
 <ul>
 <li><code>backend</code>: &quot;say&quot; | &quot;bark&quot; | &quot;elevenlabs&quot; | &quot;openai&quot;</li>
+</ul></div>
+</div>
+<div class="func" id="plugin_summary">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">plugin_summary</span><span class="sig">() -&gt; &#x27;dict&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Return a summary of all registered plugins.</p>
+<h4 class="doc-section">Returns</h4>
+<p>Dict with instrument_count, effect_count, generator_count,</p>
+<p>and lists of names for each category.</p></div>
+</div>
+<div class="func" id="register_effect">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">register_effect</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Register an audio effect function.</p>
+<p>The decorated function should accept (samples, sample_rate, **kwargs)</p>
+<p>and return processed samples. Once registered, the effect can be</p>
+<p>referenced by name in EffectsChain and CLI.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>name</code>: Effect name.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Decorator that registers the effect function.</p>
+<h4 class="doc-section">Example</h4>
+<p>@register_effect(&quot;shimmer_verb&quot;)</p>
+<p>def shimmer_verb(samples, sr, shimmer=0.5, room=0.8):</p>
+<pre class="example">
+        ...
+</pre>
+<p>return processed</p></div>
+</div>
+<div class="func" id="register_generator">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">register_generator</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Register a song generator function.</p>
+<p>The decorated function should accept (key, bpm, seed, **kwargs)</p>
+<p>and return a Song. Once registered, the generator can be invoked</p>
+<p>via compose() or the CLI.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>name</code>: Generator name (used as genre/style name).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Decorator that registers the generator function.</p>
+<h4 class="doc-section">Example</h4>
+<p>@register_generator(&quot;vaporwave&quot;)</p>
+<p>def vaporwave(key=&quot;C&quot;, bpm=80, seed=None):</p>
+<p>song = Song(title=&quot;Vaporwave&quot;, bpm=bpm)</p>
+<pre class="example">
+        ...
+</pre>
+<p>return song</p></div>
+</div>
+<div class="func" id="register_instrument">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">register_instrument</span><span class="sig">(name: &#x27;str&#x27;) -&gt; &#x27;Callable&#x27;</span></div>
+<div class="source">from code_music.plugins</div>
+<div class="doc"><p>Register a SoundDesigner factory as a named instrument.</p>
+<p>The decorated function should take no args and return a SoundDesigner.</p>
+<p>Once registered, the instrument can be used by name in Track(instrument=name)</p>
+<p>and will be auto-discovered by the synth engine.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>name</code>: Instrument name (used in Track.instrument).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Decorator that registers the factory function.</p>
+<h4 class="doc-section">Example</h4>
+<p>@register_instrument(&quot;wobble_bass&quot;)</p>
+<ul>
+<li><code>def wobble_bass()</code>: </li>
+<p>return SoundDesigner(&quot;wobble_bass&quot;).oscillator(&quot;sawtooth&quot;).lfo(...)</p>
 </ul></div>
 </div>
 </section>

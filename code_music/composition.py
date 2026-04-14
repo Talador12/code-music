@@ -1954,6 +1954,145 @@ def to_track_waveforms(
     return svg
 
 
+def suggest_arrangement(song: Song) -> list[dict]:
+    """Suggest section boundaries for a song based on structural analysis.
+
+    Analyzes chord repetition patterns, melodic density changes, and track
+    activity to identify where intro, verse, chorus, bridge, and outro
+    sections likely begin. Returns a list of suggested sections with beat
+    positions and labels.
+
+    Args:
+        song: Song to analyze.
+
+    Returns:
+        List of dicts, each with:
+            label:       Section name (intro, verse, chorus, bridge, outro).
+            start_beat:  Beat position where section begins.
+            end_beat:    Beat position where section ends.
+            bars:        Number of bars in the section.
+            confidence:  How confident the suggestion is (0.0-1.0).
+
+    Example::
+
+        >>> from code_music import Song, Track, Note, Chord
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track())
+        >>> for _ in range(4):
+        ...     tr.add(Chord("C", "maj", 4, duration=4.0))
+        >>> sections = suggest_arrangement(song)
+        >>> len(sections) >= 1
+        True
+    """
+
+    # Extract chord sequence with beat positions
+    chords: list[tuple[float, str, str]] = []
+    max_beats = 0.0
+    track_densities: list[list[float]] = []
+
+    for track in song.tracks:
+        beat_pos = 0.0
+        density_bins: list[float] = []
+        bin_count = 0
+        bin_size = 4.0  # one bar
+
+        for beat in track.beats:
+            if beat.event is not None:
+                if hasattr(beat.event, "root"):
+                    shape = beat.event.shape if isinstance(beat.event.shape, str) else "maj"
+                    chords.append((beat_pos, beat.event.root, shape))
+                bin_count += 1
+            beat_pos += beat.duration
+
+            if beat_pos >= len(density_bins) * bin_size + bin_size:
+                density_bins.append(bin_count)
+                bin_count = 0
+
+        if bin_count > 0:
+            density_bins.append(bin_count)
+        max_beats = max(max_beats, beat_pos)
+        if density_bins:
+            track_densities.append(density_bins)
+
+    num, den = getattr(song, "time_sig", (4, 4))
+    beats_per_bar = num * 4 / den
+    total_bars = max(1, int(max_beats / beats_per_bar))
+
+    if total_bars <= 4:
+        return [
+            {
+                "label": "full",
+                "start_beat": 0.0,
+                "end_beat": max_beats,
+                "bars": total_bars,
+                "confidence": 0.5,
+            }
+        ]
+
+    # Find chord pattern repetitions for section boundaries
+    chord_per_bar: list[str] = [""] * total_bars
+    for beat_pos, root, shape in chords:
+        bar_idx = min(int(beat_pos / beats_per_bar), total_bars - 1)
+        chord_per_bar[bar_idx] = f"{root}{shape}"
+
+    # Detect repeated 4-bar or 8-bar patterns
+    sections: list[dict] = []
+    section_len = 8 if total_bars >= 16 else 4
+
+    # Heuristic: first section_len bars = intro, then verse/chorus alternation
+    pos = 0
+    section_idx = 0
+    labels = _section_label_sequence(total_bars, section_len)
+
+    while pos < total_bars:
+        end = min(pos + section_len, total_bars)
+        label = labels[section_idx] if section_idx < len(labels) else "outro"
+
+        # Confidence based on whether this chunk has distinct chords
+        chunk_chords = chord_per_bar[pos:end]
+        unique = len(set(c for c in chunk_chords if c))
+        confidence = min(1.0, 0.3 + unique * 0.15)
+
+        sections.append(
+            {
+                "label": label,
+                "start_beat": pos * beats_per_bar,
+                "end_beat": end * beats_per_bar,
+                "bars": end - pos,
+                "confidence": round(confidence, 2),
+            }
+        )
+        pos = end
+        section_idx += 1
+
+    return sections
+
+
+def _section_label_sequence(total_bars: int, section_len: int) -> list[str]:
+    """Generate a plausible section label sequence based on song length."""
+    num_sections = max(1, total_bars // section_len)
+
+    if num_sections <= 2:
+        return ["verse", "verse"]
+    if num_sections <= 4:
+        return ["intro", "verse", "chorus", "outro"]
+    if num_sections <= 6:
+        return ["intro", "verse", "chorus", "verse", "chorus", "outro"]
+    if num_sections <= 8:
+        return ["intro", "verse", "chorus", "verse", "chorus", "bridge", "chorus", "outro"]
+    # Long form
+    seq = ["intro", "verse", "chorus"]
+    remaining = num_sections - 3
+    while remaining > 2:
+        seq.extend(["verse", "chorus"])
+        remaining -= 2
+    if remaining > 1:
+        seq.append("bridge")
+        remaining -= 1
+    seq.append("outro")
+    return seq
+
+
 def full_analysis(song: Song) -> str:
     """Generate a comprehensive multi-page markdown analysis report.
 

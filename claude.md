@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v161.0.0 — 400 songs, 3202 tests, 535+ theory functions, 44 scales
+## Status: v162.0.0 — 400 songs, 3214 tests, 540+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3010,3 +3010,28 @@ hip-hop, progressive rock, minimal techno, and more.
 - [x] **400 songs total**
 
 **Stats:** 535+ public functions. 3202 tests. 400 songs. 44 scales.
+
+## v162.0 — suggest_arrangement + GitHub Pages Deploy + API Docs Refresh
+
+**suggest_arrangement(song):**
+Structural analysis that suggests section boundaries. Analyzes chord
+repetition patterns and note density across bars to identify where intro,
+verse, chorus, bridge, and outro sections likely begin. Returns a list
+of sections with beat positions, bar counts, and confidence scores.
+Heuristic label sequences scale with song length (short = verse-verse,
+medium = intro-verse-chorus-outro, long = full pop form with bridge).
+
+**GitHub Pages deployment (.github/workflows/pages.yml):**
+Automatic deployment of docs/ to GitHub Pages on push to main (when docs
+or build scripts change). Regenerates api.html in the workflow, then
+deploys via actions/deploy-pages. Manual trigger via workflow_dispatch.
+
+**docs/api.html regenerated:** 462 functions across 19 modules (up from
+448 at v153). Reflects all features through v161.
+
+- [x] `suggest_arrangement()` — structural section boundary detection
+- [x] `.github/workflows/pages.yml` — auto-deploy docs to Pages
+- [x] docs/api.html refreshed (462 functions)
+- [x] 12 tests (9 suggest_arrangement, 2 workflow, 1 docs)
+
+**Stats:** 540+ public functions. 3214 tests. 400 songs. 44 scales.

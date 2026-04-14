@@ -28,6 +28,7 @@ from .composition import (
     song_from_dsl_v2,
     song_map,
     song_summary,
+    suggest_arrangement,
     tempo_map,
     to_abc,
     to_harmonic_rhythm,
@@ -989,6 +990,7 @@ __all__ = [
     "to_piano_roll",
     "to_spectrogram",
     "to_track_waveforms",
+    "suggest_arrangement",
     "to_harmonic_rhythm",
     # v151-152 spatial audio
     "spatial_pan",
