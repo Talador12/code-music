@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v160.0.0 — 387 songs, 3176 tests, 535+ theory functions, 44 scales
+## Status: v161.0.0 — 400 songs, 3202 tests, 535+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2981,3 +2981,32 @@ fill_tracks(), get a complete arrangement.
 - [x] 18 tests (8 fill_tracks, 10 songs)
 
 **Stats:** 535+ public functions. 3176 tests. 387 songs. 44 scales.
+
+## v161.0 — 400 SONGS MILESTONE
+
+**MILESTONE: 400 songs.** The library now has 400 original compositions
+spanning every major genre: pop, rock, jazz, blues, classical, electronic,
+ambient, metal, Latin, funk, reggae, flamenco, Indian, synthwave, gospel,
+DnB, baroque, Afrobeat, shoegaze, tango, Saharan, Celtic, country, lo-fi,
+hip-hop, progressive rock, minimal techno, and more.
+
+**13 new songs (387 -> 400):**
+- reggae_riddim: roots reggae with offbeat organ skank + one-drop drums
+- flamenco_fuego: Phrygian dominant scale with palmas rhythm
+- indian_raga: hirajoshi scale with tanpura drone
+- synthwave_neon: 80s arpeggiated synths with lush pad
+- gospel_choir: rich maj7/min7 voicings with organ
+- drum_and_bass: 174 BPM syncopated breakbeat with sub bass
+- baroque_prelude: Bach-style arpeggios with walking bass
+- afrobeat_lagos: polyrhythmic Fela-style with horn stabs
+- shoegaze_wall: dual guitars with heavy reverb + distortion
+- tango_passion: harmonic minor with bandoneon organ
+- desert_blues: Saharan pentatonic riff with dual guitars
+- orchestral_waltz: 3/4 oom-pah-pah with string pads at 180 BPM
+- fill_tracks_demo: demonstrates Song.fill_tracks(genre="jazz")
+
+- [x] 13 new songs across 13 genres
+- [x] 13 smoke tests
+- [x] **400 songs total**
+
+**Stats:** 535+ public functions. 3202 tests. 400 songs. 44 scales.
