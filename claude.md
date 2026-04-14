@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v153.0.0 — 353 songs, 3048 tests, 500+ theory functions, 44 scales
+## Status: v154.0.0 — 353 songs, 3060 tests, 510+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2749,3 +2749,31 @@ items remaining (down from 264), mostly v16-v19 future work.
 - [x] 14 tests (9 Doppler, 5 songs)
 
 **Stats:** 500+ public functions. 3048 tests. 353 songs. 44 scales.
+
+## v154.0 — Plugin Registry System
+
+**Decorator-based plugin registration for instruments, effects, and generators.**
+
+Three decorators:
+- `@register_instrument("name")` — factory returns SoundDesigner
+- `@register_effect("name")` — function takes (samples, sr, **kwargs)
+- `@register_generator("name")` — function takes (key, bpm, seed, **kwargs) returns Song
+
+Lookup functions: `get_instrument/get_effect/get_generator` return the
+registered callable or None. `list_instruments/list_effects/list_generators`
+return sorted name lists. `plugin_summary()` returns full registry state.
+`clear_all()` resets for testing.
+
+No config files, no entry_points - just import the module and the decorators
+register on load. Third parties can `pip install code-music-plugin-foo` and
+it auto-discovers on import.
+
+- [x] `code_music/plugins.py` — full registry module
+- [x] `@register_instrument/effect/generator` decorators
+- [x] `get_instrument/effect/generator` lookups
+- [x] `list_plugin_instruments/effects/generators` name lists
+- [x] `plugin_summary()` full registry state
+- [x] All exported from code_music top level
+- [x] 12 tests (4 instrument, 2 effect, 2 generator, 2 summary, 1 clear, 1 imports)
+
+**Stats:** 510+ public functions. 3060 tests. 353 songs. 44 scales.

@@ -47,6 +47,7 @@ from .effects import (
     conv_reverb,
     # v151-152 spatial audio
     decode_bformat,
+    # v151-152 spatial audio
     delay,
     distortion,
     encode_bformat,
@@ -163,6 +164,24 @@ from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
 from .pattern import Pattern
 from .playback import play
+from .plugins import (
+    get_effect,
+    get_generator,
+    get_instrument,
+    plugin_summary,
+    register_effect,
+    register_generator,
+    register_instrument,
+)
+from .plugins import (
+    list_effects as list_plugin_effects,
+)
+from .plugins import (
+    list_generators as list_plugin_generators,
+)
+from .plugins import (
+    list_instruments as list_plugin_instruments,
+)
 from .serialization import song_from_json, song_to_json
 from .sound_design import SoundDesigner, Timbre, Wavetable
 from .synth import Synth
@@ -973,6 +992,17 @@ __all__ = [
     "decode_bformat",
     "sum_bformat",
     "spatial_mix",
+    # v154 plugin system
+    "register_instrument",
+    "register_effect",
+    "register_generator",
+    "get_instrument",
+    "get_effect",
+    "get_generator",
+    "plugin_summary",
+    "list_plugin_instruments",
+    "list_plugin_effects",
+    "list_plugin_generators",
     "tempo_map",
     "generate_bass_line",
     "generate_drums",
