@@ -37,6 +37,7 @@ from .composition import (
     to_spectrogram,
     to_svg_waveform,
     to_tab,
+    to_track_waveforms,
 )
 from .effects import (
     EffectsChain,
@@ -987,6 +988,7 @@ __all__ = [
     "to_svg_waveform",
     "to_piano_roll",
     "to_spectrogram",
+    "to_track_waveforms",
     "to_harmonic_rhythm",
     # v151-152 spatial audio
     "spatial_pan",

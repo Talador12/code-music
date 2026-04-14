@@ -1807,6 +1807,153 @@ def to_spectrogram(
     return svg
 
 
+def to_track_waveforms(
+    song: Song,
+    width: int = 900,
+    track_height: int = 80,
+    bg: str = "#0a0a10",
+    path: str | None = None,
+) -> str:
+    """Render per-track waveforms as a stacked SVG.
+
+    Each track gets its own waveform row, colored differently, with track
+    name labels. Total height = track_height * number of tracks. Shows
+    the relative amplitude and timing of each track at a glance.
+
+    Args:
+        song:         Song to visualize.
+        width:        SVG width.
+        track_height: Height per track row.
+        bg:           Background color.
+        path:         Optional file path to write SVG.
+
+    Returns:
+        SVG string.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="Test", bpm=120, sample_rate=22050)
+        >>> tr = song.add_track(Track(name="lead", instrument="sine"))
+        >>> tr.add(Note("C", 4, 2.0))
+        >>> svg = to_track_waveforms(song)
+        >>> "<svg" in svg
+        True
+    """
+    import numpy as np
+
+    from .synth import Synth
+
+    _COLORS = [
+        "#7755ff",
+        "#44cc88",
+        "#ffaa44",
+        "#55aaff",
+        "#ff5577",
+        "#ffdd44",
+        "#44dddd",
+        "#ff77cc",
+        "#88cc44",
+        "#cc77ff",
+    ]
+
+    synth = Synth(sample_rate=song.sample_rate)
+    total_beats = song.total_beats
+    margin_left = 70
+    margin_right = 10
+    plot_w = width - margin_left - margin_right
+    total_height = max(100, track_height * len(song.tracks) + 30)
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{total_height}" font-family="monospace">',
+        f'<rect width="{width}" height="{total_height}" fill="{bg}"/>',
+        f'<text x="{margin_left}" y="16" fill="#888" font-size="11">'
+        f"{song.title} - Per-Track Waveforms</text>",
+    ]
+
+    if not song.tracks:
+        parts.append(
+            f'<text x="{width // 2}" y="{total_height // 2}" fill="#555" '
+            f'text-anchor="middle" font-size="14">No tracks</text>'
+        )
+        parts.append("</svg>")
+        svg = "\n".join(parts)
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    for idx, track in enumerate(song.tracks):
+        y_offset = 24 + idx * track_height
+        color = _COLORS[idx % len(_COLORS)]
+        mid_y = y_offset + track_height // 2
+
+        # Track label
+        parts.append(
+            f'<text x="{margin_left - 5}" y="{mid_y + 4}" fill="{color}" '
+            f'font-size="10" text-anchor="end">{track.name}</text>'
+        )
+
+        # Center line
+        parts.append(
+            f'<line x1="{margin_left}" y1="{mid_y}" '
+            f'x2="{width - margin_right}" y2="{mid_y}" '
+            f'stroke="#1a1a25" stroke-width="1"/>'
+        )
+
+        # Render track to mono
+        try:
+            mono = synth.render_track(track, song.bpm, total_beats)
+        except Exception:
+            mono = np.zeros(int(song.sample_rate * 2))
+
+        if len(mono) == 0:
+            continue
+
+        # Downsample to width points
+        n = len(mono)
+        samples = min(plot_w, n)
+        step = max(1, n // samples)
+        half_h = track_height // 2 - 4
+
+        points_top = []
+        points_bot = []
+        for i in range(samples):
+            chunk = mono[i * step : (i + 1) * step]
+            if len(chunk) == 0:
+                continue
+            peak = float(np.max(np.abs(chunk)))
+            x = margin_left + i * plot_w / samples
+            amp = peak * half_h
+            points_top.append(f"{x:.1f},{mid_y - amp:.1f}")
+            points_bot.append(f"{x:.1f},{mid_y + amp:.1f}")
+
+        if points_top:
+            pts = " ".join(points_top + list(reversed(points_bot)))
+            parts.append(f'<polygon points="{pts}" fill="{color}" opacity="0.6"/>')
+
+    # Separator lines between tracks
+    for idx in range(1, len(song.tracks)):
+        y = 24 + idx * track_height
+        parts.append(
+            f'<line x1="{margin_left}" y1="{y}" '
+            f'x2="{width - margin_right}" y2="{y}" '
+            f'stroke="#1a1a25" stroke-width="0.5"/>'
+        )
+
+    parts.append("</svg>")
+    svg = "\n".join(parts)
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
 def full_analysis(song: Song) -> str:
     """Generate a comprehensive multi-page markdown analysis report.
 

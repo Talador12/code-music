@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v158.0.0 — 372 songs, 3129 tests, 525+ theory functions, 44 scales
+## Status: v159.0.0 — 377 songs, 3148 tests, 530+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2919,3 +2919,34 @@ Auto-discovery demo. Load vintage pack. Build song mixing custom + vintage.
 - [x] 14 tests (7 spectrogram, 2 CLI, 1 example, 4 songs)
 
 **Stats:** 525+ public functions. 3129 tests. 372 songs. 44 scales.
+
+## v159.0 — Per-Track Waveforms + Batch Visualization + 5 Songs
+
+**to_track_waveforms(song, width, track_height, bg, path):**
+Stacked SVG showing each track's waveform in its own row. Each track is
+rendered to mono via Synth, downsampled, and drawn as a filled polygon
+with per-track coloring (10-color palette). Track name labels on the left.
+Separator lines between rows. Empty songs show "No tracks" message.
+
+**make visualize-all:**
+Batch renders piano roll + spectrogram SVGs for every song in songs/ to
+dist/viz/. Two SVGs per song ({name}_piano_roll.svg, {name}_spectrogram.svg).
+Gracefully skips songs that fail to load.
+
+**5 new songs (372 -> 377):**
+- phrygian_metal: dark Phrygian mode with double kick drums at 160 BPM
+- persian_night: exotic Persian scale with atmospheric reverb pad
+- japanese_garden: sparse In-Sen scale with plucked koto and rests
+- dorian_groove: funky Dorian with syncopated bass and swing
+- arabic_nights: double harmonic (maqam hijaz) with tambourine
+
+**Visualization system now has 5 types:**
+to_piano_roll, to_svg_waveform, to_track_waveforms, to_harmonic_rhythm,
+to_spectrogram. All SVG, all dark-themed. make visualize-all for batch.
+
+- [x] `to_track_waveforms()` — stacked per-track waveform SVG
+- [x] `make visualize-all` — batch piano roll + spectrogram for all songs
+- [x] 5 new songs across metal, Persian, Japanese, funk, Arabic scales
+- [x] 14 tests (8 waveforms, 1 Makefile, 5 songs)
+
+**Stats:** 530+ public functions. 3148 tests. 377 songs. 44 scales.

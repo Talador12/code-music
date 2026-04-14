@@ -462,6 +462,27 @@ s.export_stems('dist/collab/stems/$$name', use_title_prefix=True)" 2>/dev/null \
 	done
 	@echo "Done. Stems in dist/collab/stems/, WAVs in dist/wav/"
 
+visualize-all: ## [Dev] Batch render piano roll + spectrogram SVGs for all songs → dist/viz/
+	@mkdir -p dist/viz
+	@echo "Rendering visualizations..."
+	@for py in songs/*.py; do \
+		name=$$(basename "$$py" .py); \
+		[ "$$name" = "__init__" ] && continue; \
+		[ "$$name" = "_template_beginner" ] && continue; \
+		$(BIN)/python -c "\
+import sys; sys.path.insert(0,'.'); \
+from code_music.cli import _load_song; \
+from code_music.composition import to_piano_roll, to_spectrogram; \
+from pathlib import Path; \
+try: \
+    s = _load_song(Path('$$py')); \
+    to_piano_roll(s, path='dist/viz/$${name}_piano_roll.svg'); \
+    to_spectrogram(s, path='dist/viz/$${name}_spectrogram.svg'); \
+    print('  $$name: 2 SVGs'); \
+except Exception as e: print('  $$name: skipped ('+str(e)+')')" 2>/dev/null; \
+	done
+	@echo "Done. $$(ls dist/viz/*.svg 2>/dev/null | wc -l | tr -d ' ') SVGs in dist/viz/"
+
 render-one: ## [Dev] Render one song to all formats (WAV+FLAC+MP3). Usage: make render-one SONG=name
 	@test -n "$(SONG)" || (echo "Usage: make render-one SONG=trance_odyssey"; exit 1)
 	@mkdir -p dist/wav dist/flac dist/mp3
