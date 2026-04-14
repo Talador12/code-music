@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v156.0.0 — 363 songs, 3090 tests, 510+ theory functions, 44 scales
+## Status: v157.0.0 — 368 songs, 3110 tests, 520+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2842,3 +2842,47 @@ progressions.html, playground.html, index.html
 - [x] 10 tests (5 gallery, 5 songs)
 
 **Stats:** 510+ public functions. 3090 tests. 363 songs. 44 scales.
+
+## v157.0 — Entry-Point Plugin Discovery + Vintage Preset Pack + 5 Songs
+
+**discover_plugins():**
+Auto-discovers plugins from installed packages via `importlib.metadata`
+entry points. Third-party packages declare plugins in pyproject.toml::
+
+    [project.entry-points."code_music.plugins"]
+    my_pack = "my_package.instruments"
+
+When discover_plugins() runs, it imports the module, triggering decorators.
+Compatible with Python 3.10-3.12+ (handles both dict and SelectableGroups).
+
+**code_music.packs.vintage:**
+Built-in preset pack with 6 instruments + 2 effects:
+
+Instruments:
+- vintage_epiano: Rhodes-style FM electric piano (dual-operator)
+- vintage_strings: Solina-style string ensemble (4 detuned saws)
+- vintage_organ: Hammond drawbar organ (additive harmonics wavetable)
+- vintage_bass: Minimoog-style bass (saw + sub square)
+- vintage_lead: Prophet-5 style poly lead (saw + square + LFO)
+- vintage_pad: Juno-style lush pad (4 detuned saws + slow sweep)
+
+Effects:
+- tape_saturation: soft clip + one-pole warmth filter (Studer/Ampex style)
+- wow_flutter: pitch modulation from tape transport imperfections
+
+All registered via @register_instrument/@register_effect on import.
+Direct access via `from code_music.packs.vintage import vintage_epiano`.
+
+**5 new songs (363 -> 368):**
+- vintage_keys: Rhodes + Hammond jazz combo
+- tape_dreams: lo-fi with tape saturation + wow/flutter
+- analog_strings: Solina-era string ensemble piece
+- synth_pop: vintage lead + pad with drum clip loops
+- prophet_ballad: emotional piece with vintage strings + lead
+
+- [x] `discover_plugins()` — entry-point based auto-discovery
+- [x] `code_music/packs/vintage.py` — 6 instruments + 2 effects
+- [x] 5 new songs using the vintage pack
+- [x] 15 tests (3 discovery, 7 pack, 5 songs)
+
+**Stats:** 520+ public functions. 3110 tests. 368 songs. 44 scales.

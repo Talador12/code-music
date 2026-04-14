@@ -186,6 +186,66 @@ def list_generators() -> list[str]:
     return sorted(_generators.keys())
 
 
+def discover_plugins() -> dict:
+    """Auto-discover plugins from installed packages via entry points.
+
+    Scans for packages that declare ``[project.entry-points."code_music.plugins"]``
+    in their pyproject.toml. Each entry point should be a module that registers
+    instruments/effects/generators via the decorator API when imported.
+
+    Third-party packages declare plugins like this in pyproject.toml::
+
+        [project.entry-points."code_music.plugins"]
+        my_pack = "my_package.instruments"
+
+    When discover_plugins() runs, it imports "my_package.instruments" which
+    triggers the @register_instrument decorators inside that module.
+
+    Returns:
+        Dict with discovered_count and any errors.
+
+    Example::
+
+        >>> result = discover_plugins()
+        >>> result["discovered_count"] >= 0
+        True
+    """
+    import sys
+
+    errors: list[str] = []
+    discovered = 0
+
+    if sys.version_info >= (3, 12):
+        from importlib.metadata import entry_points
+
+        eps = entry_points(group="code_music.plugins")
+    else:
+        try:
+            from importlib.metadata import entry_points
+
+            all_eps = entry_points()
+            if hasattr(all_eps, "select"):
+                eps = all_eps.select(group="code_music.plugins")
+            elif isinstance(all_eps, dict):
+                eps = all_eps.get("code_music.plugins", [])
+            else:
+                eps = []
+        except Exception:
+            eps = []
+
+    for ep in eps:
+        try:
+            ep.load()
+            discovered += 1
+        except Exception as e:
+            errors.append(f"{ep.name}: {e}")
+
+    return {
+        "discovered_count": discovered,
+        "errors": errors,
+    }
+
+
 def clear_all() -> None:
     """Clear all registries. Useful for testing."""
     _instruments.clear()

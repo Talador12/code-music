@@ -165,6 +165,7 @@ from .notation import export_abc, export_lilypond, export_musicxml
 from .pattern import Pattern
 from .playback import play
 from .plugins import (
+    discover_plugins,
     get_effect,
     get_generator,
     get_instrument,
@@ -999,6 +1000,7 @@ __all__ = [
     "get_instrument",
     "get_effect",
     "get_generator",
+    "discover_plugins",
     "plugin_summary",
     "list_plugin_instruments",
     "list_plugin_effects",
