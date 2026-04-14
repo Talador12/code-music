@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v166.0.0 — 410 songs, 3295 tests, 575+ theory functions, 44 scales
+## Status: v167.0.0 — 410 songs, 3306 tests, 580+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3188,3 +3188,53 @@ pattern. flow_summary() returns density/syllable stats.
 - [x] 23 tests (10 VocalTrack, 2 backends, 10 flow, 1 imports)
 
 **Stats:** 575+ public functions. 3295 tests. 410 songs. 45 presets. 44 scales.
+
+## v167.0 — Cinematic Pack + Electronic Pack + Album Infrastructure
+
+**20 new presets across 2 packs (45 -> 65 total):**
+
+Cinematic pack (code_music/packs/cinematic.py) - 9 instruments + 1 effect:
+- epic_brass: triple-stacked saw + FM for massive brass ensemble
+- epic_strings: 6 detuned saws with slow filter sweep
+- cinematic_pad: dark, evolving atmospheric pad
+- trailer_hit: massive impact with pitch-swept sine
+- tension_drone: suspense scene drone with slow filter movement
+- choir_epic: dual formant (ah + oh) epic choir
+- harp_pluck: Karplus-Strong concert harp
+- timpani: modal + sine orchestral drum
+- celeste: FM music box
+- cinematic_reverb: 25x35x15m hall reverb
+
+Electronic pack (code_music/packs/electronic.py) - 11 instruments + 1 effect:
+- edm_supersaw: 7-oscillator festival supersaw
+- edm_pluck: short pluck for melodies and arps
+- wobble_bass: dubstep bass with LFO filter sweep
+- neuro_bass: DnB reese bass (3 detuned saws)
+- trance_lead: classic trance saw + square + sweep
+- ambient_pad_deep: very slow attack, evolving pad
+- future_bass_chord: kawaii chord stab with fast LFO
+- lofi_keys: warm detuned FM piano
+- lofi_pad: muffled nostalgic pad
+- glitch_perc: granular burst percussion
+- siren_lead: pitch-swept sine for drops
+- sidechain_pump: fake sidechain via LFO volume duck
+
+**Album infrastructure (albums/ directory):**
+3 curated albums with tracklists:
+- Ambient Horizons: 8-track ambient/electronic
+- Electric Dreams: 8-track electronic/dance
+- World Fusion: 8-track global music
+
+Each album file defines TITLE, ARTIST, YEAR, GENRE, TARGET_LUFS, TRACKLIST.
+Render with `python albums/ambient_horizons.py --render` or
+`make album ALBUM=ambient_horizons`.
+
+**Preset library totals: 39 core + 6 vintage + 9 cinematic + 11 electronic
+= 65 instruments + 4 effects.**
+
+- [x] `code_music/packs/cinematic.py` — 9 instruments + 1 effect
+- [x] `code_music/packs/electronic.py` — 11 instruments + 1 effect
+- [x] 3 album tracklists in albums/
+- [x] 11 tests (3 cinematic, 4 electronic, 2 all-packs, 2 albums)
+
+**Stats:** 580+ public functions. 3306 tests. 410 songs. 65 presets. 44 scales.
