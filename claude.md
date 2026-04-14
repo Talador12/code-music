@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v151.0.0 — 348 songs, 3006 tests, 490+ theory functions, 44 scales
+## Status: v152.0.0 — 348 songs, 3029 tests, 496+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2677,3 +2677,44 @@ chord name. Reveals harmonic rhythm at a glance.
 - [x] 28 tests (7 spatial_pan, 3 orbit, 3 track attrs, 5 harmonic SVG, 5 songs, 5 misc)
 
 **Stats:** 490+ public functions. 3006 tests. 348 songs. 44 scales.
+
+## v152.0 — First-Order Ambisonics + spatial_mix + Spatial Example
+
+**encode_bformat(mono, azimuth, elevation, distance):**
+Encodes a mono signal to first-order Ambisonics B-format (4 channels:
+W, X, Y, Z using SN3D normalization). W = omnidirectional pressure,
+X/Y/Z = figure-of-eight velocity components along front-back, left-right,
+up-down axes. Standard interchange format for spatial audio.
+
+**sum_bformat(*signals):**
+Sum multiple B-format signals into a combined 3D sound field. Encode each
+source at its position, sum them, decode once. More efficient than decoding
+each source separately.
+
+**decode_bformat(bformat, layout, sample_rate):**
+Decode B-format to any speaker layout. 4 layouts: binaural (headphones,
+with cross-feed), stereo (virtual speakers at +/-30), quad (4 corners),
+5.1 (surround with LFE). Virtual speaker decoding via spherical harmonic
+projection.
+
+**spatial_mix(song, sample_rate, layout):**
+Render a Song with spatial positioning applied to all tracks. Tracks with
+spatial_azimuth are encoded to B-format (including orbit animation for
+tracks with spatial_orbit_rate), summed into a combined sound field, then
+decoded to the target layout. Tracks without spatial attributes use
+standard stereo panning. One function, full 3D mix.
+
+**examples/16_spatial.py:**
+Tutorial covering spatial_pan, orbit, the full ambisonics pipeline
+(encode -> sum -> decode to binaural/stereo/quad/5.1), and spatial_mix
+with mixed spatial + stereo tracks.
+
+- [x] `encode_bformat()` — mono to B-format (SN3D first-order)
+- [x] `sum_bformat()` — combine multiple B-format sound fields
+- [x] `decode_bformat()` — B-format to binaural/stereo/quad/5.1
+- [x] `spatial_mix()` — render Song with 3D positioning
+- [x] `examples/16_spatial.py` — full spatial audio tutorial
+- [x] All 6 spatial functions exported from code_music.__init__
+- [x] 23 tests (6 encode, 3 sum, 6 decode, 5 spatial_mix, 1 example, 2 imports)
+
+**Stats:** 496+ public functions. 3029 tests. 348 songs. 44 scales.

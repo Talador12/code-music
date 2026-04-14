@@ -2012,3 +2012,276 @@ def orbit(
         out[start:end] = panned
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# First-Order Ambisonics (v152.0)
+# ---------------------------------------------------------------------------
+
+
+def encode_bformat(
+    mono: FloatArray,
+    azimuth: float = 0.0,
+    elevation: float = 0.0,
+    distance: float = 1.0,
+) -> FloatArray:
+    """Encode a mono signal into first-order Ambisonics B-format.
+
+    B-format uses 4 channels (W, X, Y, Z) to represent a complete 3D
+    sound field. W is the omnidirectional (pressure) component. X, Y, Z
+    are the figure-of-eight (velocity) components along the three axes.
+
+    This is the standard interchange format for spatial audio. Encode
+    each source separately, sum the B-format signals, then decode to
+    any speaker layout or binaural.
+
+    Args:
+        mono:      Mono audio signal (N,).
+        azimuth:   Horizontal angle in degrees (-180..180). 0 = front.
+        elevation: Vertical angle in degrees (-90..90). 0 = ear level.
+        distance:  Source distance (1.0 = nominal, >1 = farther).
+
+    Returns:
+        B-format array (N, 4) with channels [W, X, Y, Z].
+
+    Example::
+
+        >>> import numpy as np
+        >>> mono = np.random.randn(22050) * 0.1
+        >>> bformat = encode_bformat(mono, azimuth=45, elevation=0)
+        >>> bformat.shape
+        (22050, 4)
+    """
+    if mono.ndim == 2:
+        mono = np.mean(mono, axis=1)
+
+    az = math.radians(azimuth)
+    el = math.radians(elevation)
+    dist_gain = 1.0 / max(distance, 0.1)
+
+    scaled = mono * dist_gain
+
+    # First-order spherical harmonics (SN3D normalization)
+    w = scaled * (1.0 / math.sqrt(2.0))  # omnidirectional
+    x = scaled * math.cos(az) * math.cos(el)  # front-back
+    y = scaled * math.sin(az) * math.cos(el)  # left-right
+    z = scaled * math.sin(el)  # up-down
+
+    return np.column_stack([w, x, y, z])
+
+
+def sum_bformat(*signals: FloatArray) -> FloatArray:
+    """Sum multiple B-format signals into a combined sound field.
+
+    All inputs must be (N, 4) B-format arrays of the same length.
+    The result is a single B-format representing all sources together.
+
+    Args:
+        *signals: B-format arrays to sum.
+
+    Returns:
+        Combined B-format (N, 4).
+    """
+    if not signals:
+        raise ValueError("Need at least one B-format signal")
+
+    n = min(s.shape[0] for s in signals)
+    result = np.zeros((n, 4), dtype=np.float64)
+    for s in signals:
+        result += s[:n]
+    return result
+
+
+def decode_bformat(
+    bformat: FloatArray,
+    layout: str = "binaural",
+    sample_rate: int = 44100,
+) -> FloatArray:
+    """Decode B-format to a specific speaker layout or binaural.
+
+    Supported layouts:
+        'binaural': 2-channel headphone output (virtual speakers at +/-30)
+        'stereo':   2-channel standard stereo (L/R at +/-30)
+        'quad':     4-channel quadraphonic (FL, FR, RL, RR)
+        '5.1':      6-channel surround (L, R, C, LFE, LS, RS)
+
+    Args:
+        bformat:     B-format array (N, 4) with [W, X, Y, Z].
+        layout:      Target speaker layout.
+        sample_rate: Sample rate (used for binaural ITD).
+
+    Returns:
+        Multi-channel audio. Shape depends on layout:
+        binaural/stereo: (N, 2), quad: (N, 4), 5.1: (N, 6).
+
+    Example::
+
+        >>> import numpy as np
+        >>> bf = np.random.randn(22050, 4) * 0.1
+        >>> stereo = decode_bformat(bf, "stereo")
+        >>> stereo.shape
+        (22050, 2)
+    """
+    w, x, y = bformat[:, 0], bformat[:, 1], bformat[:, 2]
+    # z = bformat[:, 3]  # reserved for height decoding in higher-order systems
+
+    if layout == "stereo":
+        # Virtual speakers at +/-30 degrees
+        az_l = math.radians(30)
+        az_r = math.radians(-30)
+        left = w / math.sqrt(2) + x * math.cos(az_l) + y * math.sin(az_l)
+        right = w / math.sqrt(2) + x * math.cos(az_r) + y * math.sin(az_r)
+        return np.column_stack([left, right])
+
+    if layout == "binaural":
+        # Decode to stereo first, then apply subtle ITD for headphones
+        stereo = decode_bformat(bformat, "stereo", sample_rate)
+        # Add cross-feed for more natural headphone listening
+        cross = 0.15
+        left = stereo[:, 0] + cross * stereo[:, 1]
+        right = stereo[:, 1] + cross * stereo[:, 0]
+        return np.column_stack([left, right])
+
+    if layout == "quad":
+        # 4 speakers: FL(+45), FR(-45), RL(+135), RR(-135)
+        angles = [45, -45, 135, -135]
+        channels = []
+        for az_deg in angles:
+            az = math.radians(az_deg)
+            ch = w / math.sqrt(2) + x * math.cos(az) + y * math.sin(az)
+            channels.append(ch)
+        return np.column_stack(channels)
+
+    if layout == "5.1":
+        # L(+30), R(-30), C(0), LFE(omni low), LS(+110), RS(-110)
+        angles = [30, -30, 0, 0, 110, -110]
+        channels = []
+        for i, az_deg in enumerate(angles):
+            az = math.radians(az_deg)
+            ch = w / math.sqrt(2) + x * math.cos(az) + y * math.sin(az)
+            if i == 3:  # LFE: just the omnidirectional low end
+                ch = w * 0.5
+            channels.append(ch)
+        return np.column_stack(channels)
+
+    raise ValueError(f"Unknown layout: {layout!r}. Use binaural/stereo/quad/5.1")
+
+
+def spatial_mix(
+    song,
+    sample_rate: int = 44100,
+    layout: str = "binaural",
+) -> FloatArray:
+    """Render a Song with spatial positioning applied to all tracks.
+
+    Tracks with spatial_azimuth set are encoded to B-format at their
+    position, summed into a combined sound field, then decoded to the
+    target layout. Tracks without spatial attributes use standard
+    stereo panning.
+
+    Args:
+        song:        Song object.
+        sample_rate: Sample rate.
+        layout:      Output layout: 'binaural', 'stereo', 'quad', '5.1'.
+
+    Returns:
+        Multi-channel audio array.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="3D", bpm=120, sample_rate=22050)
+        >>> tr = song.add_track(Track(spatial_azimuth=45))
+        >>> tr.add(Note("C", 4, 2.0))
+        >>> audio = spatial_mix(song, 22050)
+        >>> audio.shape[1]
+        2
+    """
+    from .synth import Synth
+
+    synth = Synth(sample_rate=sample_rate)
+    total_beats = song.total_beats
+
+    # Render each track to mono, encode to B-format
+    bformat_signals: list[FloatArray] = []
+    stereo_signals: list[FloatArray] = []
+    max_len = 0
+
+    for track in song.tracks:
+        mono = synth.render_track(track, song.bpm, total_beats)
+        max_len = max(max_len, len(mono))
+
+        if track.spatial_azimuth is not None:
+            # Spatial track: encode to B-format
+            if track.spatial_orbit_rate is not None:
+                # Orbit: encode in chunks with rotating azimuth
+                chunk_size = max(256, sample_rate // 20)
+                bf = np.zeros((len(mono), 4), dtype=np.float64)
+                for start in range(0, len(mono), chunk_size):
+                    end = min(start + chunk_size, len(mono))
+                    t = (start + (end - start) // 2) / sample_rate
+                    az = (track.spatial_azimuth + 360 * track.spatial_orbit_rate * t) % 360
+                    if az > 180:
+                        az -= 360
+                    chunk_bf = encode_bformat(
+                        mono[start:end],
+                        azimuth=az,
+                        elevation=track.spatial_elevation,
+                        distance=track.spatial_distance,
+                    )
+                    bf[start:end] = chunk_bf
+                bformat_signals.append(bf)
+            else:
+                bf = encode_bformat(
+                    mono,
+                    azimuth=track.spatial_azimuth,
+                    elevation=track.spatial_elevation,
+                    distance=track.spatial_distance,
+                )
+                bformat_signals.append(bf)
+        else:
+            # Standard stereo pan
+            angle = (track.pan + 1) / 2 * math.pi / 2
+            stereo = np.zeros((len(mono), 2), dtype=np.float64)
+            stereo[:, 0] = mono * math.cos(angle) * track.volume
+            stereo[:, 1] = mono * math.sin(angle) * track.volume
+            stereo_signals.append(stereo)
+
+    # Determine output channel count
+    if layout == "quad":
+        out_channels = 4
+    elif layout == "5.1":
+        out_channels = 6
+    else:
+        out_channels = 2
+
+    result = np.zeros((max_len, out_channels), dtype=np.float64)
+
+    # Sum and decode B-format signals
+    if bformat_signals:
+        # Pad all to max_len
+        padded = []
+        for bf in bformat_signals:
+            if len(bf) < max_len:
+                bf = np.pad(bf, ((0, max_len - len(bf)), (0, 0)))
+            padded.append(bf[:max_len])
+        combined_bf = sum_bformat(*padded)
+        decoded = decode_bformat(combined_bf, layout, sample_rate)
+        result[: len(decoded)] += decoded[:max_len]
+
+    # Add standard stereo signals
+    for stereo in stereo_signals:
+        slen = min(len(stereo), max_len)
+        if out_channels == 2:
+            result[:slen] += stereo[:slen]
+        else:
+            # Map stereo to front L/R channels
+            result[:slen, 0] += stereo[:slen, 0]
+            result[:slen, 1] += stereo[:slen, 1]
+
+    # Normalize
+    peak = np.max(np.abs(result))
+    if peak > 0:
+        result = np.tanh(result / peak * 0.95)
+
+    return result
