@@ -1308,6 +1308,119 @@ class Section:
 
 
 @dataclass
+class Clip:
+    """A loopable slice of a Track's beats.
+
+    Extract a range of beats, then loop, reverse, or trim. The building
+    block for live-looping style composition: grab 4 bars of drums, loop
+    them 8 times, layer with a 2-bar bass clip looped 16 times.
+
+    Attributes:
+        beats:  The extracted Beat objects.
+        name:   Optional label.
+        source: Name of the source track (for reference).
+
+    Example::
+
+        clip = Clip.from_track(drum_track, start_beat=0, end_beat=4)
+        looped = clip.loop(8)  # 32 beats of drums
+        drum_track.extend(looped.to_events())
+    """
+
+    beats: list["Beat"] = field(default_factory=list)
+    name: str = "clip"
+    source: str = ""
+
+    @classmethod
+    def from_track(
+        cls,
+        track: "Track",
+        start_beat: int = 0,
+        end_beat: int | None = None,
+        name: str | None = None,
+    ) -> "Clip":
+        """Extract a clip from a track by beat index range.
+
+        Args:
+            track:      Source track.
+            start_beat: First beat index (inclusive).
+            end_beat:   Last beat index (exclusive). None = end of track.
+            name:       Clip label. Defaults to track name.
+        """
+        import copy
+
+        end = end_beat if end_beat is not None else len(track.beats)
+        extracted = [copy.deepcopy(b) for b in track.beats[start_beat:end]]
+        return cls(
+            beats=extracted,
+            name=name or track.name,
+            source=track.name,
+        )
+
+    def loop(self, n: int) -> "Clip":
+        """Repeat the clip N times, returning a new Clip.
+
+        Args:
+            n: Number of repetitions.
+
+        Returns:
+            New Clip with beats repeated N times.
+
+        Example::
+
+            four_bars = Clip.from_track(drums, 0, 16)
+            thirty_two_bars = four_bars.loop(8)
+        """
+        import copy
+
+        looped = []
+        for _ in range(n):
+            looped.extend(copy.deepcopy(self.beats))
+        return Clip(beats=looped, name=self.name, source=self.source)
+
+    def reverse(self) -> "Clip":
+        """Return a new Clip with beats in reverse order."""
+        import copy
+
+        return Clip(
+            beats=list(reversed([copy.deepcopy(b) for b in self.beats])),
+            name=self.name,
+            source=self.source,
+        )
+
+    def trim(self, start: int = 0, end: int | None = None) -> "Clip":
+        """Return a new Clip trimmed to the given beat range.
+
+        Args:
+            start: First beat index (inclusive).
+            end:   Last beat index (exclusive). None = end.
+        """
+        import copy
+
+        sliced = [copy.deepcopy(b) for b in self.beats[start:end]]
+        return Clip(beats=sliced, name=self.name, source=self.source)
+
+    def to_events(self) -> list:
+        """Extract the Note/Chord/None events from each beat.
+
+        Returns:
+            List of events suitable for Track.extend().
+        """
+        return [b.event for b in self.beats]
+
+    @property
+    def duration(self) -> float:
+        """Total duration in beats."""
+        return sum(b.duration for b in self.beats)
+
+    def __len__(self) -> int:
+        return len(self.beats)
+
+    def __repr__(self) -> str:
+        return f"Clip({self.name!r}, {len(self.beats)} beats, source={self.source!r})"
+
+
+@dataclass
 class Track:
     """A sequence of Beats with instrument/synth metadata.
 

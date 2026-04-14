@@ -91,6 +91,7 @@ from .engine import (
     WHOLE,
     Beat,
     Chord,
+    Clip,
     Note,
     # new
     PolyphonicTrack,
@@ -498,6 +499,7 @@ __all__ = [
     "Beat",
     "Track",
     "Song",
+    "Clip",
     "Section",
     "scale",
     "arp",

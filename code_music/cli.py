@@ -250,6 +250,13 @@ examples:
         action="store_true",
         help="Export individual track stems instead of mixed audio",
     )
+    parser.add_argument(
+        "--merge",
+        type=Path,
+        default=None,
+        metavar="FILE",
+        help="Merge another song script into this one (overlay tracks at beat 0)",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--benchmark",
@@ -499,6 +506,37 @@ examples:
 
         report = full_analysis(song)
         print(report)
+        return 0
+    elif args.merge:
+        merge_script = args.merge.resolve()
+        if not merge_script.exists():
+            print(f"error: {merge_script} not found", file=sys.stderr)
+            return 1
+        try:
+            song = _load_song(script)
+            other = _load_song(merge_script)
+        except Exception as e:
+            print(f"error loading songs: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+
+        from .automation import song_overlay
+
+        song_overlay(song, other, at_beat=0.0)
+        print(f"  Merged '{other.title}' into '{song.title}' ({len(song.tracks)} tracks total)")
+
+        # Render the merged result
+        from .export import export_wav
+        from .synth import Synth
+
+        t0 = time.monotonic()
+        samples = Synth(song.sample_rate).render_song(song)
+        elapsed = time.monotonic() - t0
+        print(f"  Rendered in {elapsed:.1f}s")
+        out_path = args.output or Path(f"{script.stem}_merged.wav")
+        result = export_wav(samples, out_path, song.sample_rate)
+        print(f"  Exported: {result}")
         return 0
     elif args.stems:
         try:

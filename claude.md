@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v143.0.0 — 323 songs, 2838 tests, 455+ theory functions, 44 scales
+## Status: v144.0.0 — 323 songs, 2860 tests, 460+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2443,3 +2443,31 @@ make check now passes clean.
 - [x] 20 tests (7 follow, 5 duck, 3 gate, 5 ModMatrix integration)
 
 **Stats:** 455+ public functions. 2838 tests. 323 songs. 44 scales.
+
+## v144.0 — Clip System + CLI Merge + Automation Example
+
+**Clip class (engine.py):**
+Loopable track slices for live-looping style composition. Clip.from_track()
+extracts a beat range from any track (deep copied, independent of source).
+loop(n) repeats N times, reverse() flips beat order, trim(start, end) sub-slices,
+to_events() converts back to event list for Track.extend(). Duration property
+sums all beat durations. The building block for pattern-based composition: grab
+4 bars of drums, loop 8 times, layer with a 2-bar bass clip looped 16 times.
+
+**CLI --merge:**
+`code-music song_a.py --merge song_b.py` overlays song_b's tracks into song_a
+at beat 0 and renders the merged result. Uses song_overlay() from automation.py.
+Output defaults to `<script>_merged.wav`, overridable with -o.
+
+**examples/15_automation.py:**
+Showcase of automation curves (volume fade-in), EnvFollower (kick ducks pad),
+ModMatrix routing (LFO on pad pan), and Clip operations (extract, loop, reverse,
+trim). Demonstrates the full modulation/composition toolchain.
+
+- [x] `Clip` class — from_track, loop, reverse, trim, to_events, duration
+- [x] CLI `--merge` — overlay two song scripts
+- [x] `examples/15_automation.py` — automation/clip showcase
+- [x] 21 tests (5 from_track, 3 loop, 2 reverse, 2 trim, 3 to_events,
+      2 duration, 1 repr, 1 CLI, 1 example, 1 import)
+
+**Stats:** 460+ public functions. 2860 tests. 323 songs. 44 scales.
