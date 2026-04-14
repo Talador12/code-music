@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v150.0.0 — 343 songs, 2978 tests, 485+ theory functions, 44 scales
+## Status: v151.0.0 — 348 songs, 3006 tests, 490+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2636,3 +2636,44 @@ hits for emotional lift before the final chorus.
 - [x] 17 tests (9 analyze, 3 modulation, 5 songs)
 
 **Stats:** 485+ public functions. 2978 tests. 343 songs. 44 scales.
+
+## v151.0 — Spatial Audio + Harmonic Rhythm SVG + 5 New Songs (3000 tests!)
+
+**spatial_pan(samples, sr, azimuth, elevation, distance):**
+Physics-based binaural 3D positioning. Interaural time difference (ITD)
+via Woodworth formula, interaural level difference (ILD) via head shadow
+model, distance attenuation via inverse distance law, elevation cue via
+high-frequency roll-off. No HRTF dataset needed - pure math. Works on
+mono and stereo input. Azimuth -180..180, elevation -90..90.
+
+**orbit(samples, sr, rate, radius, elevation):**
+Continuously rotating spatial position. Applies spatial_pan with a
+smoothly animated azimuth in ~50ms chunks. Classic spatial effect for
+pads, drones, and ambient textures. Rate in orbits/second.
+
+**Track spatial attributes:**
+spatial_azimuth, spatial_elevation, spatial_distance, spatial_orbit_rate
+fields on Track. Set at construction time, apply via effects.
+
+**to_harmonic_rhythm(song, width, height):**
+SVG timeline of chord changes. Each chord is a colored block (circle of
+fifths hue mapping, minor chords darker). Width = duration, label =
+chord name. Reveals harmonic rhythm at a glance.
+
+**5 new songs (343 -> 348):**
+- spatial_orbit: orbiting lead around the listener with static bass/shimmer
+- binaural_jazz: jazz quartet positioned in 3D (piano left, bass center, drums right, sax far right)
+- harmonic_viz: fast vs slow harmonic rhythm with SVG export
+- classical_fugue: 3-voice fugue in D minor via generate_fugue
+- verse_chorus_pop: standard pop form via generate_form
+
+**MILESTONE: 3006 tests. First time over 3000.**
+
+- [x] `spatial_pan()` — ITD/ILD binaural panning
+- [x] `orbit()` — rotating spatial position
+- [x] Track.spatial_azimuth/elevation/distance/orbit_rate attributes
+- [x] `to_harmonic_rhythm()` — chord timeline SVG
+- [x] 5 new songs (2 spatial, 1 harmonic viz, 1 fugue, 1 pop form)
+- [x] 28 tests (7 spatial_pan, 3 orbit, 3 track attrs, 5 harmonic SVG, 5 songs, 5 misc)
+
+**Stats:** 490+ public functions. 3006 tests. 348 songs. 44 scales.

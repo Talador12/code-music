@@ -1800,8 +1800,13 @@ class Track:
     volume: float = 0.8
     pan: float = 0.0  # -1.0 (L) to 1.0 (R)
     swing: float = 0.0  # 0.0 = straight, 0.5 = medium swing, 0.67 = heavy
-    density: float = 1.0  # 0.0–1.0 probability each note plays (1.0 = all notes)
+    density: float = 1.0  # 0.0-1.0 probability each note plays (1.0 = all notes)
     density_seed: int | None = None  # random seed for reproducible dropout
+    # Spatial audio (v151.0) - binaural 3D positioning
+    spatial_azimuth: float | None = None  # horizontal angle (-180..180), None = use pan
+    spatial_elevation: float = 0.0  # vertical angle (-90..90)
+    spatial_distance: float = 1.0  # distance from listener
+    spatial_orbit_rate: float | None = None  # orbits/sec, None = static
 
     def add(self, event: Note | Chord | None) -> "Track":
         """Append a note, chord, or rest beat. Returns self for chaining."""

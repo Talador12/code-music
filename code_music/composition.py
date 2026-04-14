@@ -1458,6 +1458,147 @@ def to_piano_roll(
 # ---------------------------------------------------------------------------
 
 
+def to_harmonic_rhythm(
+    song: Song,
+    width: int = 800,
+    height: int = 120,
+    bg: str = "#0a0a10",
+    path: str | None = None,
+) -> str:
+    """Visualize harmonic rhythm as an SVG timeline.
+
+    Shows chord changes over time: each chord gets a colored block.
+    Width = duration, label = chord name. Reveals harmonic rhythm at a
+    glance - are changes fast (every beat) or slow (every 4 bars)?
+
+    Args:
+        song:   Song to visualize.
+        width:  SVG width.
+        height: SVG height.
+        bg:     Background color.
+        path:   Optional file path to write SVG.
+
+    Returns:
+        SVG string.
+
+    Example::
+
+        >>> from code_music import Song, Track, Chord
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track())
+        >>> tr.add(Chord("C", "maj", 4, duration=4.0))
+        >>> svg = to_harmonic_rhythm(song)
+        >>> "<svg" in svg
+        True
+    """
+    from .engine import Chord as _Chord
+
+    # Chord hue map by root (circle of fifths coloring)
+    _ROOT_HUES = {
+        "C": 0,
+        "G": 30,
+        "D": 60,
+        "A": 90,
+        "E": 120,
+        "B": 150,
+        "F#": 180,
+        "Gb": 180,
+        "Db": 210,
+        "Ab": 240,
+        "Eb": 270,
+        "Bb": 300,
+        "F": 330,
+    }
+
+    # Extract chords with time positions
+    chord_events: list[dict] = []
+    for track in song.tracks:
+        beat_pos = 0.0
+        for beat in track.beats:
+            if beat.event is not None and isinstance(beat.event, _Chord):
+                chord_events.append(
+                    {
+                        "root": beat.event.root,
+                        "shape": beat.event.shape if isinstance(beat.event.shape, str) else "maj",
+                        "start": beat_pos,
+                        "duration": beat.event.duration,
+                    }
+                )
+            beat_pos += beat.duration
+
+    if not chord_events:
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">'
+            f'<rect width="{width}" height="{height}" fill="{bg}"/>'
+            f'<text x="{width // 2}" y="{height // 2}" fill="#555" text-anchor="middle" '
+            f'font-size="14" font-family="monospace">No chords</text></svg>'
+        )
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    # Sort by start time and deduplicate overlapping chords
+    chord_events.sort(key=lambda c: c["start"])
+    total_dur = max(c["start"] + c["duration"] for c in chord_events)
+    x_scale = (width - 20) / max(total_dur, 1)
+
+    margin = 10
+    bar_height = height - 50
+
+    parts: list[str] = []
+    parts.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'font-family="monospace">'
+    )
+    parts.append(f'<rect width="{width}" height="{height}" fill="{bg}"/>')
+    parts.append(
+        f'<text x="{margin}" y="16" fill="#888" font-size="11">'
+        f"{song.title} - Harmonic Rhythm ({len(chord_events)} changes)</text>"
+    )
+
+    for chord in chord_events:
+        x = margin + chord["start"] * x_scale
+        w = max(2, chord["duration"] * x_scale - 1)
+        hue = _ROOT_HUES.get(chord["root"], 0)
+        # Minor chords are darker
+        lightness = 35 if "min" in chord["shape"] or "dim" in chord["shape"] else 50
+        fill = f"hsl({hue}, 70%, {lightness}%)"
+
+        parts.append(
+            f'<rect x="{x:.1f}" y="24" width="{w:.1f}" height="{bar_height}" '
+            f'fill="{fill}" rx="2" opacity="0.85"/>'
+        )
+        # Label if wide enough
+        label = f"{chord['root']}{chord['shape']}"
+        if w > len(label) * 6:
+            parts.append(
+                f'<text x="{x + w / 2:.1f}" y="{24 + bar_height / 2 + 4}" '
+                f'fill="white" font-size="10" text-anchor="middle">{label}</text>'
+            )
+
+    # Beat markers
+    beat = 0.0
+    while beat <= total_dur:
+        bx = margin + beat * x_scale
+        parts.append(
+            f'<text x="{bx:.1f}" y="{height - 4}" fill="#555" font-size="9" '
+            f'text-anchor="middle">{int(beat)}</text>'
+        )
+        beat += 4
+
+    parts.append("</svg>")
+    svg = "\n".join(parts)
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
 def full_analysis(song: Song) -> str:
     """Generate a comprehensive multi-page markdown analysis report.
 

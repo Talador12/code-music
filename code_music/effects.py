@@ -1843,3 +1843,172 @@ def _cross_synth_mono(
     mask = norm > 1e-8
     out[mask] /= norm[mask]
     return out[:n]
+
+
+# ---------------------------------------------------------------------------
+# Spatial Audio / Binaural Panner (v151.0)
+# ---------------------------------------------------------------------------
+
+
+def spatial_pan(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    azimuth: float = 0.0,
+    elevation: float = 0.0,
+    distance: float = 1.0,
+) -> FloatArray:
+    """Position a mono or stereo signal in 3D space using binaural cues.
+
+    Uses interaural time difference (ITD), interaural level difference (ILD),
+    and distance attenuation to create a convincing spatial impression on
+    headphones. No HRTF dataset needed - pure physics model.
+
+    Azimuth 0 = center, +90 = hard right, -90 = hard left, 180 = behind.
+    Elevation 0 = ear level, +90 = above, -90 = below.
+    Distance 1.0 = close, higher = farther (attenuated + more reverb).
+
+    Args:
+        samples:     Mono (N,) or stereo (N,2) audio.
+        sample_rate: Sample rate in Hz.
+        azimuth:     Horizontal angle in degrees (-180 to 180).
+        elevation:   Vertical angle in degrees (-90 to 90).
+        distance:    Distance from listener (1.0 = nominal).
+
+    Returns:
+        Stereo (N,2) binaural audio.
+
+    Example::
+
+        >>> import numpy as np
+        >>> mono = np.random.randn(22050) * 0.1
+        >>> binaural = spatial_pan(mono, 22050, azimuth=45)
+        >>> binaural.shape
+        (22050, 2)
+    """
+    # Convert to mono if stereo
+    if samples.ndim == 2:
+        mono = np.mean(samples, axis=1)
+    else:
+        mono = samples.copy()
+
+    n = len(mono)
+    az_rad = math.radians(azimuth)
+    el_rad = math.radians(elevation)
+
+    # Head radius in meters (average human)
+    head_radius = 0.0875  # ~8.75 cm
+
+    # Speed of sound in m/s
+    speed_of_sound = 343.0
+
+    # --- Interaural Time Difference (ITD) ---
+    # Woodworth formula: ITD = (r/c) * (sin(theta) + theta)
+    # where theta is the azimuth angle
+    itd = (head_radius / speed_of_sound) * (math.sin(abs(az_rad)) + abs(az_rad))
+    itd_samples = int(itd * sample_rate)
+
+    # --- Interaural Level Difference (ILD) ---
+    # Higher frequencies are shadowed more by the head
+    # Simple model: 0-6 dB based on azimuth
+    ild_db = 6.0 * math.sin(abs(az_rad))
+    # Elevation reduces the horizontal effect slightly
+    ild_db *= math.cos(el_rad) * 0.8 + 0.2
+    ild_factor = 10.0 ** (-ild_db / 20.0)
+
+    # --- Distance attenuation ---
+    # Inverse distance law: amplitude falls off as 1/distance
+    dist_gain = 1.0 / max(distance, 0.1)
+    # At close range, increase bass (proximity effect)
+    # At far range, roll off highs (air absorption)
+
+    # --- Build stereo output ---
+    left = np.zeros(n, dtype=np.float64)
+    right = np.zeros(n, dtype=np.float64)
+
+    if azimuth >= 0:
+        # Source is to the right
+        # Right ear: closer, louder, no delay
+        right[:] = mono * dist_gain
+        # Left ear: farther, quieter, delayed
+        if itd_samples > 0 and itd_samples < n:
+            left[itd_samples:] = mono[:-itd_samples] * ild_factor * dist_gain
+        else:
+            left[:] = mono * ild_factor * dist_gain
+    else:
+        # Source is to the left
+        left[:] = mono * dist_gain
+        if itd_samples > 0 and itd_samples < n:
+            right[itd_samples:] = mono[:-itd_samples] * ild_factor * dist_gain
+        else:
+            right[:] = mono * ild_factor * dist_gain
+
+    # Elevation cue: slight high-frequency roll-off for sources above/below
+    if abs(elevation) > 15:
+        el_factor = 1.0 - min(abs(elevation) / 90.0, 1.0) * 0.3
+        # Simple low-pass approximation via moving average
+        kernel_size = max(2, int(abs(elevation) / 10))
+        kernel = np.ones(kernel_size) / kernel_size
+        left = np.convolve(left, kernel, mode="same") * el_factor + left * (1 - el_factor)
+        right = np.convolve(right, kernel, mode="same") * el_factor + right * (1 - el_factor)
+
+    return np.column_stack([left, right])
+
+
+def orbit(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate: float = 0.5,
+    radius: float = 2.0,
+    elevation: float = 0.0,
+) -> FloatArray:
+    """Make a sound orbit around the listener's head.
+
+    Applies spatial_pan with a continuously rotating azimuth. The sound
+    traces a circle at the given rate and radius. Classic spatial effect
+    for pads, drones, and ambient textures.
+
+    Args:
+        samples:     Mono or stereo audio.
+        sample_rate: Sample rate.
+        rate:        Orbits per second (Hz). 0.5 = one full circle every 2s.
+        radius:      Distance from listener.
+        elevation:   Vertical angle (fixed during orbit).
+
+    Returns:
+        Stereo binaural audio with orbiting spatial position.
+
+    Example::
+
+        >>> import numpy as np
+        >>> mono = np.random.randn(44100) * 0.1
+        >>> orbiting = orbit(mono, 44100, rate=0.25, radius=2.0)
+        >>> orbiting.shape[1]
+        2
+    """
+    if samples.ndim == 2:
+        mono = np.mean(samples, axis=1)
+    else:
+        mono = samples.copy()
+
+    n = len(mono)
+    # Process in chunks to smoothly animate the azimuth
+    chunk_size = max(256, sample_rate // 20)  # ~50ms chunks
+    out = np.zeros((n, 2), dtype=np.float64)
+
+    for start in range(0, n, chunk_size):
+        end = min(start + chunk_size, n)
+        chunk = mono[start:end]
+
+        # Calculate azimuth at the midpoint of this chunk
+        t = (start + (end - start) // 2) / sample_rate
+        azimuth = math.degrees(2.0 * math.pi * rate * t) % 360
+        # Map 0-360 to -180..180
+        if azimuth > 180:
+            azimuth -= 360
+
+        panned = spatial_pan(
+            chunk, sample_rate, azimuth=azimuth, elevation=elevation, distance=radius
+        )
+        out[start:end] = panned
+
+    return out
