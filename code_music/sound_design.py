@@ -2034,6 +2034,114 @@ rimshot = (
     .filter("highpass", cutoff=2000, resonance=0.5)
 )
 
+# ---------------------------------------------------------------------------
+# Granular expansion (v168.0)
+# ---------------------------------------------------------------------------
+
+grain_texture = (
+    SoundDesigner("grain_texture")
+    .granular(grain_size=0.08, density=12, scatter=0.6, seed=33)
+    .envelope(attack=0.3, decay=0.2, sustain=0.7, release=0.8)
+    .filter("lowpass", cutoff=3000, resonance=0.4)
+)
+
+grain_stutter = (
+    SoundDesigner("grain_stutter")
+    .granular(grain_size=0.01, density=60, scatter=0.3, seed=55)
+    .envelope(attack=0.002, decay=0.1, sustain=0.3, release=0.1)
+    .filter("bandpass", cutoff=2500, resonance=0.7)
+)
+
+grain_rain = (
+    SoundDesigner("grain_rain")
+    .granular(grain_size=0.015, density=40, scatter=0.9, seed=99)
+    .envelope(attack=0.5, decay=0.3, sustain=0.5, release=1.0)
+    .filter("lowpass", cutoff=4000, resonance=0.3)
+)
+
+# ---------------------------------------------------------------------------
+# Wavetable expansion (v168.0)
+# ---------------------------------------------------------------------------
+
+wt_glass = (
+    SoundDesigner("wt_glass")
+    .add_wavetable(Wavetable.from_harmonics([1.0, 0.0, 0.5, 0.0, 0.25, 0.0, 0.125]), volume=0.6)
+    .envelope(attack=0.001, decay=0.4, sustain=0.1, release=0.5)
+    .filter("lowpass", cutoff=6000, resonance=0.4)
+)
+
+wt_vocal_formant = (
+    SoundDesigner("wt_vocal_formant")
+    .add_wavetable(Wavetable.from_harmonics([1.0, 0.7, 0.3, 0.8, 0.2, 0.1, 0.05]), volume=0.5)
+    .add_wavetable(
+        Wavetable.from_harmonics([0.5, 1.0, 0.4, 0.2, 0.6, 0.1]), detune_cents=5, volume=0.3
+    )
+    .envelope(attack=0.1, decay=0.15, sustain=0.7, release=0.4)
+    .filter("lowpass", cutoff=3500, resonance=0.5)
+)
+
+wt_digital = (
+    SoundDesigner("wt_digital")
+    .add_wavetable(Wavetable.from_wave("square"), volume=0.4)
+    .add_wavetable(Wavetable.from_wave("sawtooth"), detune_cents=12, volume=0.3)
+    .envelope(attack=0.005, decay=0.1, sustain=0.5, release=0.2)
+    .filter("lowpass", cutoff=4000, resonance=0.6)
+)
+
+# ---------------------------------------------------------------------------
+# Ethnic / world instruments (v168.0)
+# ---------------------------------------------------------------------------
+
+sitar = (
+    SoundDesigner("sitar")
+    .physical_model("karplus_strong", volume=0.85, decay=0.996, brightness=0.8)
+    .fm("sine", mod_ratio=3.0, mod_index=1.0, volume=0.15)
+    .envelope(attack=0.002, decay=0.5, sustain=0.15, release=0.4)
+    .filter("lowpass", cutoff=5000, resonance=0.5)
+)
+
+shamisen = (
+    SoundDesigner("shamisen")
+    .physical_model("karplus_strong", volume=0.9, decay=0.993, brightness=0.65)
+    .envelope(attack=0.001, decay=0.3, sustain=0.05, release=0.2)
+    .filter("lowpass", cutoff=4500, resonance=0.4)
+)
+
+didgeridoo = (
+    SoundDesigner("didgeridoo")
+    .add_osc("sawtooth", volume=0.4)
+    .formant("oh", breathiness=0.3, vibrato_rate=3.0, vibrato_depth=0.01, volume=0.4)
+    .envelope(attack=0.1, decay=0.2, sustain=0.85, release=0.5)
+    .filter("lowpass", cutoff=800, resonance=0.7)
+)
+
+# ---------------------------------------------------------------------------
+# Percussion / texture expansion (v168.0)
+# ---------------------------------------------------------------------------
+
+tabla = (
+    SoundDesigner("tabla")
+    .physical_model("modal", volume=0.8)
+    .add_osc("sine", volume=0.3)
+    .envelope(attack=0.001, decay=0.2, sustain=0.05, release=0.15)
+    .filter("bandpass", cutoff=800, resonance=0.6)
+)
+
+shaker = (
+    SoundDesigner("shaker")
+    .granular(grain_size=0.002, density=150, scatter=0.8, seed=66)
+    .envelope(attack=0.001, decay=0.04, sustain=0.0, release=0.03)
+    .filter("highpass", cutoff=5000, resonance=0.3)
+)
+
+taiko = (
+    SoundDesigner("taiko")
+    .add_osc("sine", volume=0.7)
+    .physical_model("modal", volume=0.3)
+    .envelope(attack=0.002, decay=0.6, sustain=0.1, release=0.5)
+    .filter("lowpass", cutoff=500, resonance=0.5)
+)
+
 PRESETS = {
     # Original 18
     "supersaw": supersaw,
@@ -2079,4 +2187,20 @@ PRESETS = {
     "trap_808": trap_808,
     "clap": clap,
     "rimshot": rimshot,
+    # Granular (v168)
+    "grain_texture": grain_texture,
+    "grain_stutter": grain_stutter,
+    "grain_rain": grain_rain,
+    # Wavetable (v168)
+    "wt_glass": wt_glass,
+    "wt_vocal_formant": wt_vocal_formant,
+    "wt_digital": wt_digital,
+    # Ethnic (v168)
+    "sitar": sitar,
+    "shamisen": shamisen,
+    "didgeridoo": didgeridoo,
+    # Percussion (v168)
+    "tabla": tabla,
+    "shaker": shaker,
+    "taiko": taiko,
 }

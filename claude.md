@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v167.0.0 — 410 songs, 3306 tests, 580+ theory functions, 44 scales
+## Status: v168.0.0 — 415 songs, 3324 tests, 590+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3238,3 +3238,40 @@ Render with `python albums/ambient_horizons.py --render` or
 - [x] 11 tests (3 cinematic, 4 electronic, 2 all-packs, 2 albums)
 
 **Stats:** 580+ public functions. 3306 tests. 410 songs. 65 presets. 44 scales.
+
+## v168.0 — 12 Core Presets + 5 Songs + 2 Albums (77 Total Presets)
+
+**12 new core presets (39 -> 51 core, 65 -> 77 total):**
+
+Granular (3): grain_texture (ambient texture), grain_stutter (glitch burst),
+grain_rain (sparse rainfall).
+
+Wavetable (3): wt_glass (crystalline harmonics), wt_vocal_formant (formant-like
+harmonic stack), wt_digital (square + saw digital).
+
+Ethnic/World (3): sitar (Karplus-Strong + FM overtones), shamisen (bright
+plucked), didgeridoo (sawtooth + formant "oh" buzz).
+
+Percussion (3): tabla (modal + sine Indian drum), shaker (granular high
+percussion), taiko (massive sine + modal Japanese drum).
+
+**5 new songs (410 -> 415):**
+- taiko_thunder: taiko ensemble with shamisen melody
+- sitar_raga: Indian classical with sitar, tabla, tanpura drone
+- granular_meditation: layered granular textures with room reverb
+- glass_music_box: crystalline wavetable with shaker rhythm
+- cinematic_trailer: epic brass + strings + choir + timpani full score
+
+**2 new albums (3 -> 5 total):**
+- Classical Portraits: 8-track orchestral (quartets, baroque, sonata, trailer)
+- Jazz Sessions: 8-track jazz (bebop, waltz, bossa, AABA standards)
+
+**Preset library: 51 core + 26 pack = 77 instruments + 4 effects = 81 total.**
+**Album catalog: 5 albums, 40 tracks.**
+
+- [x] 12 new core presets (granular + wavetable + ethnic + percussion)
+- [x] 5 new songs using new presets
+- [x] 2 new album tracklists (classical, jazz)
+- [x] 13 tests (6 presets, 5 songs, 2 albums)
+
+**Stats:** 590+ public functions. 3324 tests. 415 songs. 77 presets. 5 albums. 44 scales.
