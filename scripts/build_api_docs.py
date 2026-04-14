@@ -10,10 +10,8 @@ reference with function signatures, docstrings, and module groupings.
 from __future__ import annotations
 
 import html
-import importlib
 import inspect
 import sys
-import textwrap
 from pathlib import Path
 
 

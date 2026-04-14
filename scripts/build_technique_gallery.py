@@ -77,7 +77,6 @@ def build():
     from code_music.sound_design import (
         SoundDesigner,
         Wavetable,
-        spectral_freeze,
     )
 
     sr = 22050

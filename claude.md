@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v155.0.0 — 358 songs, 3075 tests, 510+ theory functions, 44 scales
+## Status: v156.0.0 — 363 songs, 3090 tests, 510+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2809,3 +2809,36 @@ all gallery pages in one command).
 - [x] 10 tests (5 gallery validation, 5 songs)
 
 **Stats:** 510+ public functions. 3075 tests. 358 songs. 44 scales.
+
+## v156.0 — Chord Gallery + Progression Gallery + 5 Songs
+
+**docs/chords.html:**
+All 28 chord shapes rendered as simultaneous notes on electric piano, rooted
+on C4. Categorized: triads (4), suspensions (2), power (1), seventh chords (6),
+sixth chords (2), extended (6), other (7). Each card shows chord name, note
+names, semitone offsets, and audio player.
+
+**docs/progressions.html:**
+20 famous chord progressions rendered as piano sequences. From I-IV-V-I to
+Pachelbel's Canon to 12-bar blues. Each card: Roman numeral name, description,
+chord sequence, and audio player. The harmonic vocabulary of Western music
+in one page.
+
+**5 new songs (358 -> 363):**
+- pachelbel_canon: the Canon progression with canonic violin entries
+- pentatonic_jam: minor pentatonic over 12-bar blues backing
+- hungarian_minor: exotic gypsy scale with dramatic character
+- neapolitan: bII-V-i resolution with picardy third ending
+- enigmatic_scale: Verdi's chromatic scale over augmented harmony
+
+**Gallery system now has 8 pages:**
+api.html, gallery.html, techniques.html, scales.html, chords.html,
+progressions.html, playground.html, index.html
+
+- [x] `scripts/build_chord_gallery.py` — 28 chord shapes with audio
+- [x] `scripts/build_progression_gallery.py` — 20 progressions with audio
+- [x] `make gallery-chords/progressions` + updated gallery-all
+- [x] 5 new songs across classical, blues, exotic scales
+- [x] 10 tests (5 gallery, 5 songs)
+
+**Stats:** 510+ public functions. 3090 tests. 363 songs. 44 scales.

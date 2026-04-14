@@ -13,7 +13,6 @@ from __future__ import annotations
 import base64
 import html
 import io
-import struct
 import sys
 import wave
 from pathlib import Path

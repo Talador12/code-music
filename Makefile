@@ -403,7 +403,13 @@ gallery-techniques: ## [Dev] Generate synthesis technique comparison → docs/te
 gallery-scales: ## [Dev] Generate scale atlas gallery → docs/scales.html
 	$(BIN)/python scripts/build_scale_gallery.py
 
-gallery-all: gallery gallery-techniques gallery-scales gallery-instruments ## [Dev] Build all galleries
+gallery-chords: ## [Dev] Generate chord shape gallery → docs/chords.html
+	$(BIN)/python scripts/build_chord_gallery.py
+
+gallery-progressions: ## [Dev] Generate progression gallery → docs/progressions.html
+	$(BIN)/python scripts/build_progression_gallery.py
+
+gallery-all: gallery gallery-techniques gallery-scales gallery-chords gallery-progressions gallery-instruments ## [Dev] Build all galleries
 	@echo "All galleries built in docs/"
 
 gallery-instruments: ## [Dev] Render all presets to individual WAVs → dist/gallery/instruments/
