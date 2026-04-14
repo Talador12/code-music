@@ -2466,6 +2466,13 @@ class Song:
         self.voice_tracks.append(track)
         return track
 
+    def add_vocal_track(self, track) -> object:
+        """Add a VocalTrack (TTS-based vocals) to the song. Returns the track."""
+        if not hasattr(self, "_vocal_tracks"):
+            self._vocal_tracks = []
+        self._vocal_tracks.append(track)
+        return track
+
     def arrange(
         self,
         sections: Sequence[Section],

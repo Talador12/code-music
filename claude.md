@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v165.0.0 — 410 songs, 3272 tests, 560+ theory functions, 44 scales
+## Status: v166.0.0 — 410 songs, 3295 tests, 575+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3144,3 +3144,47 @@ outputs to dist/albums/{name}/. One command from songs to Spotify-ready.
 - [x] 20 tests (9 formant, 5 presets, 1 Makefile, 5 songs)
 
 **Stats:** 560+ public functions. 3272 tests. 410 songs. 45 presets. 44 scales.
+
+## v166.0 — VocalTrack + Flow Patterns + TTS Backend Integration
+
+**VocalTrack (code_music/vocal.py):**
+Text-to-speech integration for adding vocals to songs. VocalTrack holds
+VocalEvents (text + beat position + duration + style), renders via a
+pluggable TTS backend. Five backends:
+
+| Backend | Quality | Deps | How |
+|---------|---------|------|-----|
+| formant | Vowel textures only | None (built-in) | Formant synthesis from SoundDesigner |
+| system | Low, robotic | macOS `say` / Linux `espeak` | Subprocess to WAV, read back |
+| bark | High, natural | `pip install bark` (GPU) | Suno Bark neural TTS |
+| coqui | High, many voices | `pip install TTS` | Coqui TTS Tacotron2 |
+| elevenlabs | Highest, clone-grade | `pip install elevenlabs` + API key | ElevenLabs cloud |
+
+All backends are optional. Library works with zero TTS deps installed -
+VocalTrack gracefully falls back to formant synthesis. Custom backends
+via register_tts_backend(). list_tts_backends() shows availability.
+
+**Flow patterns (code_music/flow.py):**
+Rhythmic templates for rap/spoken word. 6 styles:
+- boom_bap: classic 90s, emphasis on 2 and 4
+- triplet: Migos-style, 3 syllables per beat
+- double_time: Eminem-style 16th-note density
+- laid_back: Biggie-style behind-the-beat pocket
+- syncopated: Kendrick-style off-beat emphasis
+- southern: Wayne-style drawl, uneven phrase spacing
+
+generate_flow() returns FlowBeat objects (beat position + duration +
+emphasis + rest flag). apply_flow_to_lyrics() maps text lines onto the
+pattern. flow_summary() returns density/syllable stats.
+
+**Song.add_vocal_track():** Adds VocalTrack to song for render integration.
+
+- [x] `VocalTrack` — text + timing + pluggable TTS backends
+- [x] 5 TTS backends (formant, system, bark, coqui, elevenlabs)
+- [x] `generate_flow()` — 6 rap cadence styles
+- [x] `apply_flow_to_lyrics()` — map text to rhythm
+- [x] `Song.add_vocal_track()` — integration point
+- [x] All exported from code_music top level
+- [x] 23 tests (10 VocalTrack, 2 backends, 10 flow, 1 imports)
+
+**Stats:** 575+ public functions. 3295 tests. 410 songs. 45 presets. 44 scales.

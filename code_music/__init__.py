@@ -156,6 +156,7 @@ from .engine import (
     voice_lead,
 )
 from .export import export_flac, export_mp3, export_ogg, export_wav
+from .flow import FlowBeat, apply_flow_to_lyrics, flow_summary, generate_flow
 from .mastering import (
     dither,
     master_audio,
@@ -488,6 +489,12 @@ from .theory import (
     voice_lead_satb,
     voice_progression,
     whole_tone_run,
+)
+from .vocal import (
+    VocalEvent,
+    VocalTrack,
+    list_tts_backends,
+    register_tts_backend,
 )
 from .voice import Lyrics, VoiceClip, VoiceTrack, detect_backends, list_voices
 from .voice import generate as generate_voice
@@ -1008,6 +1015,15 @@ __all__ = [
     "get_instrument",
     "get_effect",
     "get_generator",
+    # v166 vocal + flow
+    "VocalTrack",
+    "VocalEvent",
+    "list_tts_backends",
+    "register_tts_backend",
+    "generate_flow",
+    "apply_flow_to_lyrics",
+    "flow_summary",
+    "FlowBeat",
     "discover_plugins",
     "plugin_summary",
     "list_plugin_instruments",
