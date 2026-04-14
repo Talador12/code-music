@@ -2375,3 +2375,107 @@ def spatial_mix(
         result = np.tanh(result / peak * 0.95)
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Room Model (v163.0)
+# ---------------------------------------------------------------------------
+
+
+def room_reverb(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    width: float = 5.0,
+    depth: float = 7.0,
+    height: float = 3.0,
+    absorption: float = 0.3,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Simple room model: dimensions to early reflections + late tail.
+
+    Calculates first-order reflections from 6 walls (floor, ceiling, left,
+    right, front, back) based on room dimensions. Each reflection is delayed
+    by its travel distance and attenuated by wall absorption. A diffuse
+    late tail is added via feedback delay network.
+
+    Args:
+        samples:     Mono or stereo audio.
+        sample_rate: Sample rate.
+        width:       Room width in meters (left-right).
+        depth:       Room depth in meters (front-back).
+        height:      Room height in meters (floor-ceiling).
+        absorption:  Wall absorption coefficient (0=reflective, 1=anechoic).
+        wet:         Wet/dry mix.
+
+    Returns:
+        Audio with room reverb applied.
+
+    Example::
+
+        >>> import numpy as np
+        >>> audio = np.random.randn(22050, 2) * 0.1
+        >>> roomy = room_reverb(audio, 22050, width=4, depth=6, height=3)
+        >>> roomy.shape == audio.shape
+        True
+    """
+    speed = 343.0  # m/s
+    reflect = 1.0 - absorption
+
+    # Listener at room center, source at (width/4, depth/3, height/2)
+    src_x, src_y, src_z = width / 4, depth / 3, height / 2
+    lis_x, lis_y, lis_z = width / 2, depth / 2, height / 2
+
+    # Six first-order reflections (image source method)
+    reflections = [
+        (2 * width - src_x, src_y, src_z),  # right wall
+        (-src_x, src_y, src_z),  # left wall
+        (src_x, 2 * depth - src_y, src_z),  # back wall
+        (src_x, -src_y, src_z),  # front wall
+        (src_x, src_y, 2 * height - src_z),  # ceiling
+        (src_x, src_y, -src_z),  # floor
+    ]
+
+    if samples.ndim == 2:
+        mono = np.mean(samples, axis=1)
+    else:
+        mono = samples.copy()
+
+    n = len(mono)
+    wet_signal = np.zeros(n, dtype=np.float64)
+
+    for rx, ry, rz in reflections:
+        dist = math.sqrt((rx - lis_x) ** 2 + (ry - lis_y) ** 2 + (rz - lis_z) ** 2)
+        delay_samples = int(dist / speed * sample_rate)
+        atten = reflect / max(dist, 0.1)
+
+        if 0 < delay_samples < n:
+            wet_signal[delay_samples:] += mono[: n - delay_samples] * atten
+
+    # Late diffuse tail: simple feedback comb filter
+    rt60 = (
+        0.161
+        * (width * depth * height)
+        / max(absorption * 2 * (width * depth + width * height + depth * height), 0.01)
+    )
+    rt60 = min(rt60, 5.0)  # cap at 5 seconds
+
+    comb_delays = [int(d * sample_rate) for d in [0.037, 0.041, 0.043, 0.047]]
+    feedback = 0.5 * reflect
+
+    for comb_delay in comb_delays:
+        if comb_delay >= n:
+            continue
+        buf = np.zeros(n, dtype=np.float64)
+        for i in range(comb_delay, n):
+            buf[i] = mono[i - comb_delay] * 0.15 + buf[i - comb_delay] * feedback
+        wet_signal += buf * 0.25
+
+    # Normalize wet signal
+    peak = np.max(np.abs(wet_signal))
+    if peak > 0:
+        wet_signal /= peak
+
+    if samples.ndim == 2:
+        wet_stereo = np.column_stack([wet_signal, wet_signal])
+        return (1 - wet) * samples + wet * wet_stereo
+    return (1 - wet) * samples + wet * wet_signal

@@ -1954,6 +1954,273 @@ def to_track_waveforms(
     return svg
 
 
+def to_sheet_music(
+    song: Song,
+    width: int = 1000,
+    staff_height: int = 80,
+    bg: str = "#ffffff",
+    note_color: str = "#000000",
+    staff_color: str = "#888888",
+    track_index: int = 0,
+    path: str | None = None,
+) -> str:
+    """Render a track as sheet music notation in SVG.
+
+    Draws a five-line staff with treble clef, time signature, bar lines,
+    and note heads positioned by pitch. Ledger lines for notes above/below
+    the staff. Duration represented by filled vs hollow note heads and stems.
+
+    Simplified notation - not engraver-quality, but readable and correct
+    enough for quick visual reference. Think "lead sheet" not "Henle Urtext."
+
+    Args:
+        song:         Song to render.
+        width:        SVG width.
+        staff_height: Height of the five-line staff area.
+        bg:           Background color.
+        note_color:   Note head and stem color.
+        staff_color:  Staff line and bar line color.
+        track_index:  Which track to render (0-based).
+        path:         Optional file path.
+
+    Returns:
+        SVG string.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track())
+        >>> tr.add(Note("C", 4, 1.0))
+        >>> svg = to_sheet_music(song)
+        >>> "<svg" in svg and "ellipse" in svg
+        True
+    """
+    from .engine import Chord as _Chord
+    from .engine import Note as _Note
+
+    _SEMI = {
+        "C": 0,
+        "C#": 1,
+        "Db": 1,
+        "D": 2,
+        "D#": 3,
+        "Eb": 3,
+        "E": 4,
+        "F": 5,
+        "F#": 6,
+        "Gb": 6,
+        "G": 7,
+        "G#": 8,
+        "Ab": 8,
+        "A": 9,
+        "A#": 10,
+        "Bb": 10,
+        "B": 11,
+    }
+
+    _DIATONIC = {0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6}
+
+    def _staff_y(midi, staff_top_y):
+        octave = midi // 12 - 5
+        pc = midi % 12
+        diatonic = _DIATONIC.get(pc)
+        if diatonic is None:
+            for semi in [pc - 1, pc + 1]:
+                if semi % 12 in _DIATONIC:
+                    diatonic = _DIATONIC[semi % 12]
+                    break
+            if diatonic is None:
+                diatonic = 0
+        staff_pos = octave * 7 + diatonic
+        sp = staff_height / 8
+        y = staff_top_y + staff_height - (staff_pos - 2) * (sp / 2)
+        return y, sp
+
+    if track_index >= len(song.tracks):
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+            f'height="120"><rect width="{width}" height="120" fill="{bg}"/>'
+            f'<text x="{width // 2}" y="60" fill="#888" text-anchor="middle" '
+            f'font-size="14" font-family="serif">No track {track_index}</text></svg>'
+        )
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    track = song.tracks[track_index]
+    notes_data: list[dict] = []
+    beat_pos = 0.0
+    for beat in track.beats:
+        if beat.event is not None:
+            if isinstance(beat.event, _Note) and beat.event.pitch is not None:
+                semi = _SEMI.get(str(beat.event.pitch), 0)
+                midi = semi + beat.event.octave * 12
+                notes_data.append(
+                    {
+                        "beat": beat_pos,
+                        "midi": midi,
+                        "duration": beat.event.duration,
+                        "pitch_name": str(beat.event.pitch),
+                        "accidental": "#" in str(beat.event.pitch) or "b" in str(beat.event.pitch),
+                    }
+                )
+            elif isinstance(beat.event, _Chord):
+                for cn in beat.event.notes:
+                    if cn.pitch is not None:
+                        semi = _SEMI.get(str(cn.pitch), 0)
+                        midi = semi + cn.octave * 12
+                        notes_data.append(
+                            {
+                                "beat": beat_pos,
+                                "midi": midi,
+                                "duration": beat.event.duration,
+                                "pitch_name": str(cn.pitch),
+                                "accidental": "#" in str(cn.pitch) or "b" in str(cn.pitch),
+                            }
+                        )
+        beat_pos += beat.duration
+
+    total_beats = max(beat_pos, 1)
+    margin_left = 80
+    margin_right = 20
+    margin_top = 30
+    total_height = margin_top + staff_height + 40
+    plot_w = width - margin_left - margin_right
+    staff_top = margin_top
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{total_height}" font-family="serif">',
+        f'<rect width="{width}" height="{total_height}" fill="{bg}"/>',
+        f'<text x="{width // 2}" y="18" fill="#333" font-size="13" '
+        f'text-anchor="middle">{song.title} - {track.name}</text>',
+    ]
+
+    # Five staff lines
+    for i in range(5):
+        y = staff_top + i * (staff_height / 4)
+        parts.append(
+            f'<line x1="{margin_left - 10}" y1="{y:.1f}" '
+            f'x2="{width - margin_right}" y2="{y:.1f}" '
+            f'stroke="{staff_color}" stroke-width="0.8"/>'
+        )
+
+    # Treble clef
+    clef_y = staff_top + staff_height * 0.6
+    parts.append(
+        f'<text x="{margin_left - 5}" y="{clef_y:.1f}" fill="{note_color}" '
+        f'font-size="48" text-anchor="end">\U0001d11e</text>'
+    )
+
+    # Time signature
+    num, den = getattr(song, "time_sig", (4, 4))
+    ts_x = margin_left + 5
+    parts.append(
+        f'<text x="{ts_x}" y="{staff_top + staff_height * 0.35:.1f}" '
+        f'fill="{note_color}" font-size="18" font-weight="bold" '
+        f'text-anchor="middle">{num}</text>'
+    )
+    parts.append(
+        f'<text x="{ts_x}" y="{staff_top + staff_height * 0.75:.1f}" '
+        f'fill="{note_color}" font-size="18" font-weight="bold" '
+        f'text-anchor="middle">{den}</text>'
+    )
+
+    # Bar lines
+    beats_per_bar = num * 4 / den
+    note_start_x = margin_left + 20
+    note_area = plot_w - 20
+    bar_beat = 0.0
+    while bar_beat <= total_beats:
+        x = note_start_x + (bar_beat / total_beats) * note_area
+        parts.append(
+            f'<line x1="{x:.1f}" y1="{staff_top}" '
+            f'x2="{x:.1f}" y2="{staff_top + staff_height}" '
+            f'stroke="{staff_color}" stroke-width="0.5"/>'
+        )
+        bar_beat += beats_per_bar
+
+    # Final double bar
+    end_x = note_start_x + note_area
+    parts.append(
+        f'<line x1="{end_x:.1f}" y1="{staff_top}" '
+        f'x2="{end_x:.1f}" y2="{staff_top + staff_height}" '
+        f'stroke="{note_color}" stroke-width="2"/>'
+    )
+
+    # Note heads + stems + ledger lines + accidentals
+    mid_staff = staff_top + staff_height / 2
+    bottom_line = staff_top + staff_height
+    top_line = staff_top
+    quarter_h = staff_height / 4
+
+    for nd in notes_data:
+        x = note_start_x + (nd["beat"] / total_beats) * note_area
+        y, sp = _staff_y(nd["midi"], staff_top)
+        r = sp * 0.4
+
+        fill = note_color if nd["duration"] <= 1.0 else "none"
+        sw = "1.5" if fill == "none" else "0"
+        parts.append(
+            f'<ellipse cx="{x:.1f}" cy="{y:.1f}" rx="{r:.1f}" '
+            f'ry="{r * 0.75:.1f}" fill="{fill}" stroke="{note_color}" '
+            f'stroke-width="{sw}"/>'
+        )
+
+        if nd["duration"] < 4.0:
+            if y > mid_staff:
+                parts.append(
+                    f'<line x1="{x + r:.1f}" y1="{y:.1f}" '
+                    f'x2="{x + r:.1f}" y2="{y - staff_height * 0.4:.1f}" '
+                    f'stroke="{note_color}" stroke-width="1"/>'
+                )
+            else:
+                parts.append(
+                    f'<line x1="{x - r:.1f}" y1="{y:.1f}" '
+                    f'x2="{x - r:.1f}" y2="{y + staff_height * 0.4:.1f}" '
+                    f'stroke="{note_color}" stroke-width="1"/>'
+                )
+
+        if y > bottom_line + sp * 0.3:
+            ly = bottom_line + quarter_h
+            while ly < y + sp * 0.3:
+                parts.append(
+                    f'<line x1="{x - r * 1.5:.1f}" y1="{ly:.1f}" '
+                    f'x2="{x + r * 1.5:.1f}" y2="{ly:.1f}" '
+                    f'stroke="{staff_color}" stroke-width="0.8"/>'
+                )
+                ly += quarter_h
+        elif y < top_line - sp * 0.3:
+            ly = top_line - quarter_h
+            while ly > y - sp * 0.3:
+                parts.append(
+                    f'<line x1="{x - r * 1.5:.1f}" y1="{ly:.1f}" '
+                    f'x2="{x + r * 1.5:.1f}" y2="{ly:.1f}" '
+                    f'stroke="{staff_color}" stroke-width="0.8"/>'
+                )
+                ly -= quarter_h
+
+        if nd["accidental"]:
+            symbol = "\u266f" if "#" in nd["pitch_name"] else "\u266d"
+            parts.append(
+                f'<text x="{x - r * 2:.1f}" y="{y + 4:.1f}" '
+                f'fill="{note_color}" font-size="12">{symbol}</text>'
+            )
+
+    parts.append("</svg>")
+    svg = "\n".join(parts)
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
 def suggest_arrangement(song: Song) -> list[dict]:
     """Suggest section boundaries for a song based on structural analysis.
 

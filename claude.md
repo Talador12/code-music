@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v162.0.0 — 400 songs, 3214 tests, 540+ theory functions, 44 scales
+## Status: v163.0.0 — 400 songs, 3231 tests, 545+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3035,3 +3035,31 @@ deploys via actions/deploy-pages. Manual trigger via workflow_dispatch.
 - [x] 12 tests (9 suggest_arrangement, 2 workflow, 1 docs)
 
 **Stats:** 540+ public functions. 3214 tests. 400 songs. 44 scales.
+
+## v163.0 — Sheet Music SVG + Room Model Reverb
+
+**to_sheet_music(song, track_index, width, staff_height, bg, path):**
+Renders a track as traditional music notation in SVG. Five-line staff with
+treble clef (Unicode G-clef), time signature, bar lines, and note heads
+positioned by pitch on the diatonic staff. Features:
+- Filled note heads for quarter/eighth, hollow for half/whole
+- Stems up below middle line, down above
+- Ledger lines for notes above/below the staff
+- Accidental symbols (sharp/flat Unicode characters)
+- Chord expansion (all notes rendered simultaneously)
+- Final double bar line
+
+The 6th visualization type. Completes the suite: piano roll, waveform,
+per-track waveforms, harmonic rhythm, spectrogram, and now sheet music.
+
+**room_reverb(samples, sr, width, depth, height, absorption, wet):**
+Physics-based room reverb from dimensions. Calculates 6 first-order wall
+reflections via image source method (distance-based delay + absorption
+attenuation). Late diffuse tail via 4-tap feedback comb filter network.
+RT60 estimated from Sabine equation (room volume / surface absorption).
+
+- [x] `to_sheet_music()` — SVG sheet music with staff, clefs, note heads
+- [x] `room_reverb()` — dimension-based room model with early reflections
+- [x] 17 tests (11 sheet music, 6 room reverb)
+
+**Stats:** 545+ public functions. 3231 tests. 400 songs. 44 scales.
