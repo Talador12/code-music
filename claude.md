@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v147.0.0 — 333 songs, 2921 tests, 470+ theory functions, 44 scales
+## Status: v148.0.0 — 333 songs, 2935 tests, 475+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2552,3 +2552,28 @@ in dist/gallery/instruments/. 54 WAV files total (18 * 3 pitches).
 - [x] 5 song smoke tests
 
 **Stats:** 470+ public functions. 2921 tests. 333 songs. 44 scales.
+
+## v148.0 — Clip Quantize + JSON Diff-Friendly + make collab
+
+**Clip.quantize_to_bars(beats_per_bar, mode):**
+Snaps clip length to the nearest bar boundary. Three modes: 'nearest'
+(round to closest), 'ceil' (round up, pad with rests), 'floor' (round
+down, trim). Minimum one bar for floor mode. Ensures clips align on the
+Session grid for tight transitions.
+
+**song_to_json(sort_keys=True):**
+Git-friendly JSON serialization. sort_keys=True produces alphabetically
+ordered keys at every level, making diffs clean and predictable. Applies
+to both file writes and string output.
+
+**make collab:**
+Renders all songs to WAV, then exports stems for every song to
+dist/collab/stems/{song_name}/. Uses use_title_prefix naming. One
+command to prepare a shared folder for collaborative remix work.
+
+- [x] `Clip.quantize_to_bars()` — bar-boundary snapping with nearest/ceil/floor
+- [x] `song_to_json(sort_keys=True)` — sorted keys for clean git diffs
+- [x] `make collab` — render all + export all stems
+- [x] 14 tests (9 quantize, 4 JSON, 1 Makefile)
+
+**Stats:** 475+ public functions. 2935 tests. 333 songs. 44 scales.

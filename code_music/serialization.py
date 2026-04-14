@@ -74,13 +74,19 @@ def _designer_to_dict(designer) -> dict | None:
     return None
 
 
-def song_to_json(song, path: str | Path | None = None, as_string: bool = False) -> dict | str:
+def song_to_json(
+    song,
+    path: str | Path | None = None,
+    as_string: bool = False,
+    sort_keys: bool = False,
+) -> dict | str:
     """Serialize a Song to a JSON-compatible dict.
 
     Args:
         song:      Song object.
         path:      If provided, write JSON to this file path.
         as_string: If True, return a JSON string instead of a dict.
+        sort_keys: If True, sort dict keys for git-friendly diffs.
 
     Returns:
         Dict (default), JSON string (if as_string=True), or dict (if path provided).
@@ -103,9 +109,9 @@ def song_to_json(song, path: str | Path | None = None, as_string: bool = False) 
     }
 
     if path is not None:
-        Path(path).write_text(json.dumps(data, indent=2))
+        Path(path).write_text(json.dumps(data, indent=2, sort_keys=sort_keys))
     if as_string:
-        return json.dumps(data, indent=2)
+        return json.dumps(data, indent=2, sort_keys=sort_keys)
     return data
 
 

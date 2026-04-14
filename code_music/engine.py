@@ -1475,6 +1475,43 @@ class Clip:
 
         return Clip(beats=result_beats, name=self.name, source=self.source)
 
+    def quantize_to_bars(self, beats_per_bar: int = 4, mode: str = "nearest") -> "Clip":
+        """Snap clip length to the nearest bar boundary.
+
+        Pads with rests or trims to make the clip an exact multiple of
+        beats_per_bar. Useful for ensuring clips align on the grid when
+        launched in a Session.
+
+        Args:
+            beats_per_bar: Beats per bar (default 4 for 4/4 time).
+            mode:          'nearest' (round to closest bar), 'ceil' (round up),
+                           'floor' (round down, may lose beats).
+
+        Returns:
+            New Clip with bar-aligned length.
+        """
+        import copy
+        import math
+
+        n = len(self.beats)
+        if n == 0 or beats_per_bar <= 0:
+            return Clip(beats=list(self.beats), name=self.name, source=self.source)
+
+        if mode == "ceil":
+            target = math.ceil(n / beats_per_bar) * beats_per_bar
+        elif mode == "floor":
+            target = max(beats_per_bar, math.floor(n / beats_per_bar) * beats_per_bar)
+        else:  # nearest
+            target = round(n / beats_per_bar) * beats_per_bar
+            if target == 0:
+                target = beats_per_bar
+
+        result = copy.deepcopy(self.beats[:target])
+        # Pad with rests if needed
+        while len(result) < target:
+            result.append(Beat(event=None))
+        return Clip(beats=result, name=self.name, source=self.source)
+
     def __repr__(self) -> str:
         return f"Clip({self.name!r}, {len(self.beats)} beats, source={self.source!r})"
 

@@ -429,6 +429,24 @@ master: songs-wav ## [Dev] Master all rendered WAVs → dist/mastered/ (LUFS-nor
 	@echo "Done. Mastered files in dist/mastered/"
 
 
+collab: songs-wav ## [Dev] Render all songs + export stems to dist/collab/
+	@mkdir -p dist/collab/stems
+	@echo "Exporting stems for all songs..."
+	@for py in songs/*.py; do \
+		name=$$(basename "$$py" .py); \
+		[ "$$name" = "__init__" ] && continue; \
+		[ "$$name" = "_template_beginner" ] && continue; \
+		$(BIN)/python -c "\
+import sys; sys.path.insert(0,'.'); \
+from code_music.cli import _load_song; \
+from pathlib import Path; \
+s = _load_song(Path('$$py')); \
+s.export_stems('dist/collab/stems/$$name', use_title_prefix=True)" 2>/dev/null \
+			&& echo "  $$name: stems exported" \
+			|| echo "  $$name: skipped (no tracks)"; \
+	done
+	@echo "Done. Stems in dist/collab/stems/, WAVs in dist/wav/"
+
 render-one: ## [Dev] Render one song to all formats (WAV+FLAC+MP3). Usage: make render-one SONG=name
 	@test -n "$(SONG)" || (echo "Usage: make render-one SONG=trance_odyssey"; exit 1)
 	@mkdir -p dist/wav dist/flac dist/mp3
