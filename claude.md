@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v146.0.0 — 328 songs, 2911 tests, 470+ theory functions, 44 scales
+## Status: v147.0.0 — 333 songs, 2921 tests, 470+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2530,3 +2530,25 @@ outside the overlap are untouched. Zero overlap = concatenation.
 - [x] 25 tests (2 stop_track, 4 mute/solo, 4 mix, 5 crossfade, 5 songs, 5 Session)
 
 **Stats:** 470+ public functions. 2911 tests. 328 songs. 44 scales.
+
+## v147.0 — 5 Showcase Songs + gallery-instruments + AGENTS.md Update
+
+**5 new songs (328 -> 333):**
+- bowed_quartet: 4 bowed string voices (pm_violin model) with classical voicings
+- wavetable_morphing: 3 scanning wavetable banks (slow/fast/harmonic)
+- auto_band: hand-written melody -> full arrangement via auto_accompany
+- spectral_blend: cross-synthesis self-modulation for spectral smearing
+- form_showcase: complete sonata form from generate_form
+
+**make gallery-instruments:**
+Renders all 18 SoundDesigner presets at C3/C4/C5 to individual WAV files
+in dist/gallery/instruments/. 54 WAV files total (18 * 3 pitches).
+
+**AGENTS.md:** Updated preset count from 17 to 18 (pm_violin).
+
+- [x] 5 new showcase songs demonstrating v136-v145 features
+- [x] `make gallery-instruments` Makefile target
+- [x] AGENTS.md preset count update
+- [x] 5 song smoke tests
+
+**Stats:** 470+ public functions. 2921 tests. 333 songs. 44 scales.

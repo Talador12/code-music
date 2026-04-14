@@ -397,6 +397,26 @@ gallery: ## [Dev] Generate preset gallery → docs/gallery.html (renders all pre
 	$(BIN)/python scripts/build_gallery.py
 	@echo "  Open docs/gallery.html or visit $$(make -s pages-url)gallery.html"
 
+gallery-instruments: ## [Dev] Render all presets to individual WAVs → dist/gallery/instruments/
+	@mkdir -p dist/gallery/instruments
+	$(BIN)/python -c "\
+	from code_music.sound_design import PRESETS; \
+	from code_music.export import export_wav; \
+	from code_music.sound_design import SoundDesigner; \
+	import numpy as np, math; \
+	sr = 22050; \
+	for name, sd in sorted(PRESETS.items()): \
+	    for pitch, freq in [('C3',130.81),('C4',261.63),('C5',523.25)]: \
+	        mono = sd.render(freq, 1.5, sr); \
+	        n = len(mono); stereo = np.zeros((n,2)); \
+	        stereo[:,0] = mono; stereo[:,1] = mono; \
+	        pk = np.max(np.abs(stereo)); \
+	        if pk > 0: stereo /= pk; \
+	        export_wav(stereo, f'dist/gallery/instruments/{name}_{pitch}.wav', sr); \
+	    print(f'  {name}: 3 WAVs'); \
+	"
+	@echo "Done. $$(ls dist/gallery/instruments/*.wav | wc -l | tr -d ' ') WAV files in dist/gallery/instruments/"
+
 
 master: songs-wav ## [Dev] Master all rendered WAVs → dist/mastered/ (LUFS-normalized, peak-limited)
 	@mkdir -p dist/mastered

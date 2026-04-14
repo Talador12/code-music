@@ -410,10 +410,10 @@ mastered = master_audio(audio, sr)         # full chain in one call
 
 - Songs using SoundDesigner must register instruments before adding tracks.
 - The `SoundDesigner.render()` method returns mono float64 — the Synth converts to stereo.
-- 17 SoundDesigner presets in `code_music.sound_design.PRESETS`: supersaw, sub_808,
+- 18 SoundDesigner presets in `code_music.sound_design.PRESETS`: supersaw, sub_808,
   metallic_hit, vocal_pad, plucked_string, fm_electric_piano, fm_bell, fm_brass,
   fm_bass, wt_organ, wt_bright_lead, wt_morph_pad, grain_cloud, grain_shimmer,
-  pm_guitar, pm_flute, pm_gong.
+  pm_guitar, pm_flute, pm_gong, pm_violin.
 - Smoke tests auto-discover songs and examples — no manual test registration needed.
 - When adding new songs: verify scale names against `SCALES` dict keys in engine.py.
 - The Chord class does NOT accept `inversion` as a constructor kwarg — set it after creation.
