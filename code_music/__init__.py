@@ -32,6 +32,7 @@ from .composition import (
     to_abc,
     to_html,
     to_lead_sheet,
+    to_piano_roll,
     to_svg_waveform,
     to_tab,
 )
@@ -955,6 +956,7 @@ __all__ = [
     "quantize_track",
     "render_preview",
     "to_svg_waveform",
+    "to_piano_roll",
     "tempo_map",
     "generate_bass_line",
     "generate_drums",

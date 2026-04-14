@@ -1209,6 +1209,251 @@ def to_svg_waveform(
 
 
 # ---------------------------------------------------------------------------
+# Piano Roll SVG Visualizer (v149.0)
+# ---------------------------------------------------------------------------
+
+# Track colors for the piano roll - 12 distinct hues
+_PIANO_ROLL_COLORS = [
+    "#7755ff",  # purple
+    "#44cc88",  # green
+    "#ffaa44",  # orange
+    "#55aaff",  # blue
+    "#ff5577",  # red
+    "#ffdd44",  # yellow
+    "#44dddd",  # cyan
+    "#ff77cc",  # pink
+    "#88cc44",  # lime
+    "#cc77ff",  # violet
+    "#ff8844",  # coral
+    "#44aacc",  # teal
+]
+
+
+def to_piano_roll(
+    song: Song,
+    width: int = 1200,
+    height: int = 500,
+    bg: str = "#0a0a10",
+    grid_color: str = "#1a1a25",
+    path: str | None = None,
+) -> str:
+    """Render a Song as a piano roll SVG visualization.
+
+    Each note becomes a colored rectangle: x-axis is time (beats),
+    y-axis is pitch (MIDI note number), width is duration, color is
+    per-track. Chords are expanded into individual note rectangles.
+    Includes a grid, track legend, and pitch labels.
+
+    Args:
+        song:       Song to visualize.
+        width:      SVG width in pixels.
+        height:     SVG height in pixels.
+        bg:         Background color.
+        grid_color: Grid line color.
+        path:       If provided, write SVG to this file path.
+
+    Returns:
+        SVG string.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="Test", bpm=120)
+        >>> tr = song.add_track(Track())
+        >>> tr.add(Note("C", 4, 1.0))
+        >>> svg = to_piano_roll(song)
+        >>> "<svg" in svg
+        True
+    """
+    from .engine import Chord as _Chord
+    from .engine import Note as _Note
+
+    _SEMI_MAP = {
+        "C": 0,
+        "C#": 1,
+        "Db": 1,
+        "D": 2,
+        "D#": 3,
+        "Eb": 3,
+        "E": 4,
+        "F": 5,
+        "F#": 6,
+        "Gb": 6,
+        "G": 7,
+        "G#": 8,
+        "Ab": 8,
+        "A": 9,
+        "A#": 10,
+        "Bb": 10,
+        "B": 11,
+    }
+
+    # Collect all notes with time positions
+    all_notes: list[dict] = []
+    total_beats = 0.0
+
+    for track_idx, track in enumerate(song.tracks):
+        beat_pos = 0.0
+        color = _PIANO_ROLL_COLORS[track_idx % len(_PIANO_ROLL_COLORS)]
+
+        for beat in track.beats:
+            if beat.event is not None:
+                if isinstance(beat.event, _Note) and beat.event.pitch is not None:
+                    pitch_str = str(beat.event.pitch)
+                    semi = _SEMI_MAP.get(pitch_str, 0)
+                    midi = semi + beat.event.octave * 12
+                    all_notes.append(
+                        {
+                            "start": beat_pos,
+                            "duration": beat.event.duration,
+                            "midi": midi,
+                            "track": track.name,
+                            "color": color,
+                            "velocity": getattr(beat.event, "velocity", 70),
+                        }
+                    )
+                elif isinstance(beat.event, _Chord):
+                    for cn in beat.event.notes:
+                        if cn.pitch is not None:
+                            semi = _SEMI_MAP.get(str(cn.pitch), 0)
+                            midi = semi + cn.octave * 12
+                            all_notes.append(
+                                {
+                                    "start": beat_pos,
+                                    "duration": beat.event.duration,
+                                    "midi": midi,
+                                    "track": track.name,
+                                    "color": color,
+                                    "velocity": getattr(beat.event, "velocity", 60),
+                                }
+                            )
+            beat_pos += beat.duration
+        total_beats = max(total_beats, beat_pos)
+
+    if not all_notes or total_beats == 0:
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" '
+            f'width="{width}" height="{height}">'
+            f'<rect width="{width}" height="{height}" fill="{bg}"/>'
+            f'<text x="{width // 2}" y="{height // 2}" fill="#555" '
+            f'text-anchor="middle" font-size="14" '
+            f'font-family="monospace">No notes to display</text>'
+            f"</svg>"
+        )
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    # Layout constants
+    margin_left = 50
+    margin_top = 30
+    margin_bottom = 40
+    margin_right = 20
+    legend_height = 25
+    plot_w = width - margin_left - margin_right
+    plot_h = height - margin_top - margin_bottom - legend_height
+
+    # Pitch range
+    midi_vals = [n["midi"] for n in all_notes]
+    midi_min = max(0, min(midi_vals) - 2)
+    midi_max = min(127, max(midi_vals) + 2)
+    midi_range = max(midi_max - midi_min, 1)
+
+    # Scale factors
+    x_scale = plot_w / max(total_beats, 1)
+    y_scale = plot_h / midi_range
+
+    # Note names for pitch labels
+    _NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+    parts: list[str] = []
+    parts.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{width}" height="{height}" '
+        f'font-family="monospace">'
+    )
+    parts.append(f'<rect width="{width}" height="{height}" fill="{bg}"/>')
+
+    # Title
+    parts.append(
+        f'<text x="{margin_left}" y="18" fill="#888" font-size="12">'
+        f"{song.title} - {song.bpm:.0f} BPM - {len(song.tracks)} tracks</text>"
+    )
+
+    # Grid: horizontal lines for octave C notes
+    for midi in range(midi_min, midi_max + 1):
+        if midi % 12 == 0:  # C notes
+            y = margin_top + plot_h - (midi - midi_min) * y_scale
+            parts.append(
+                f'<line x1="{margin_left}" y1="{y:.1f}" '
+                f'x2="{width - margin_right}" y2="{y:.1f}" '
+                f'stroke="{grid_color}" stroke-width="1"/>'
+            )
+            octave = midi // 12 - 1
+            parts.append(
+                f'<text x="{margin_left - 5}" y="{y + 4:.1f}" '
+                f'fill="#555" font-size="10" text-anchor="end">C{octave}</text>'
+            )
+
+    # Grid: vertical lines for beats
+    beat_grid = 4 if total_beats > 32 else (2 if total_beats > 16 else 1)
+    beat = 0.0
+    while beat <= total_beats:
+        x = margin_left + beat * x_scale
+        parts.append(
+            f'<line x1="{x:.1f}" y1="{margin_top}" '
+            f'x2="{x:.1f}" y2="{margin_top + plot_h}" '
+            f'stroke="{grid_color}" stroke-width="1"/>'
+        )
+        if beat % beat_grid == 0:
+            parts.append(
+                f'<text x="{x:.1f}" y="{margin_top + plot_h + 14}" '
+                f'fill="#555" font-size="9" text-anchor="middle">{int(beat)}</text>'
+            )
+        beat += beat_grid
+
+    # Note rectangles
+    for n in all_notes:
+        x = margin_left + n["start"] * x_scale
+        w = max(1, n["duration"] * x_scale - 1)
+        y = margin_top + plot_h - (n["midi"] - midi_min + 1) * y_scale
+        h = max(2, y_scale - 1)
+        opacity = 0.5 + (n["velocity"] / 127) * 0.5
+        parts.append(
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" '
+            f'fill="{n["color"]}" opacity="{opacity:.2f}" rx="1"/>'
+        )
+
+    # Track legend
+    seen_tracks: dict[str, str] = {}
+    for n in all_notes:
+        if n["track"] not in seen_tracks:
+            seen_tracks[n["track"]] = n["color"]
+    legend_y = height - legend_height + 5
+    legend_x = margin_left
+    for name, color in seen_tracks.items():
+        parts.append(
+            f'<rect x="{legend_x}" y="{legend_y}" width="10" height="10" fill="{color}" rx="2"/>'
+        )
+        parts.append(
+            f'<text x="{legend_x + 14}" y="{legend_y + 9}" fill="#888" font-size="10">{name}</text>'
+        )
+        legend_x += len(name) * 7 + 24
+
+    parts.append("</svg>")
+    svg = "\n".join(parts)
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
+# ---------------------------------------------------------------------------
 # Comprehensive full analysis report
 # ---------------------------------------------------------------------------
 

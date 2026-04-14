@@ -176,15 +176,15 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <nav class="sidebar">
   <h1>code-music</h1>
   <div class="version">v5.0.0</div>
-  <div class="stats">430 functions, 19 modules</div>
+  <div class="stats">440 functions, 19 modules</div>
   <input type="text" id="search" placeholder="Search functions..." autocomplete="off">
-    <a href="#engine" class="nav-link">Engine (49)</a>
+    <a href="#engine" class="nav-link">Engine (52)</a>
   <a href="#harmony" class="nav-link">Harmony (65)</a>
   <a href="#melody" class="nav-link">Melody (51)</a>
   <a href="#rhythm" class="nav-link">Rhythm (30)</a>
-  <a href="#generation" class="nav-link">Generation (64)</a>
+  <a href="#generation" class="nav-link">Generation (68)</a>
   <a href="#analysis" class="nav-link">Analysis (75)</a>
-  <a href="#composition" class="nav-link">Composition (23)</a>
+  <a href="#composition" class="nav-link">Composition (25)</a>
   <a href="#effects" class="nav-link">Effects (31)</a>
   <a href="#sound-design" class="nav-link">Sound Design (3)</a>
   <a href="#synth" class="nav-link">Synth (1)</a>
@@ -193,7 +193,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
   <a href="#midi" class="nav-link">MIDI (2)</a>
   <a href="#export" class="nav-link">Export (4)</a>
   <a href="#mastering" class="nav-link">Mastering (6)</a>
-  <a href="#automation" class="nav-link">Automation (5)</a>
+  <a href="#automation" class="nav-link">Automation (6)</a>
   <a href="#playback" class="nav-link">Playback (1)</a>
   <a href="#serial---post-tonal" class="nav-link">Serial / Post-Tonal (10)</a>
   <a href="#other" class="nav-link">Other (6)</a>
@@ -201,11 +201,11 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <main class="main">
   <h1 style="color:var(--accent);margin-bottom:8px;">API Reference</h1>
   <p style="color:var(--fg2);margin-bottom:30px;">
-    430 public functions and classes across 19 modules.
+    440 public functions and classes across 19 modules.
     Auto-generated from docstrings.
   </p>
   <section id="engine">
-<h2>Engine <span class="count">(49)</span></h2>
+<h2>Engine <span class="count">(52)</span></h2>
 <div class="func" id="Beat">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Beat</span><span class="sig">(event: &#x27;Note | Chord | None&#x27; = None) -&gt; None</span></div>
 <div class="source">from code_music.engine</div>
@@ -249,6 +249,82 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 <div class="method"><span class="method-name">.voicings</span><span class="sig">(self) -&gt; &quot;dict[str, &#x27;Chord&#x27;]&quot;</span>
 <p class="method-doc">Return a dict of all common voicings of this chord.</p>
+</div>
+</div>
+</div>
+<div class="func" id="Clip">
+<div class="func-header"><span class="kind">class</span> <span class="func-name">Clip</span><span class="sig">(beats: &quot;list[&#x27;Beat&#x27;]&quot; = &lt;factory&gt;, name: &#x27;str&#x27; = &#x27;clip&#x27;, source: &#x27;str&#x27; = &#x27;&#x27;) -&gt; None</span></div>
+<div class="source">from code_music.engine</div>
+<div class="doc"><p>A loopable slice of a Track&#x27;s beats.</p>
+<p>Extract a range of beats, then loop, reverse, or trim. The building</p>
+<p>block for live-looping style composition: grab 4 bars of drums, loop</p>
+<p>them 8 times, layer with a 2-bar bass clip looped 16 times.</p>
+<p>Attributes:</p>
+<ul>
+<li><code>beats</code>: The extracted Beat objects.</li>
+<li><code>name</code>: Optional label.</li>
+<li><code>source</code>: Name of the source track (for reference).</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<p>clip = Clip.from_track(drum_track, start_beat=0, end_beat=4)</p>
+<p>looped = clip.loop(8)  # 32 beats of drums</p>
+<p>drum_track.extend(looped.to_events())</p></div>
+<div class="methods">
+<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, beats: &quot;list[&#x27;Beat&#x27;]&quot; = &lt;factory&gt;, name: &#x27;str&#x27; = &#x27;clip&#x27;, source: &#x27;str&#x27; = &#x27;&#x27;) -&gt; None</span>
+<p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
+</div>
+<div class="method"><span class="method-name">.crossfade</span><span class="sig">(self, other: &quot;&#x27;Clip&#x27;&quot;, overlap_beats: &#x27;int&#x27; = 2) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Crossfade from this clip into another.</p>
+</div>
+<div class="method"><span class="method-name">.from_track</span><span class="sig">(track: &quot;&#x27;Track&#x27;&quot;, start_beat: &#x27;int&#x27; = 0, end_beat: &#x27;int | None&#x27; = None, name: &#x27;str | None&#x27; = None) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Extract a clip from a track by beat index range.</p>
+</div>
+<div class="method"><span class="method-name">.loop</span><span class="sig">(self, n: &#x27;int&#x27;) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Repeat the clip N times, returning a new Clip.</p>
+</div>
+<div class="method"><span class="method-name">.quantize_to_bars</span><span class="sig">(self, beats_per_bar: &#x27;int&#x27; = 4, mode: &#x27;str&#x27; = &#x27;nearest&#x27;) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Snap clip length to the nearest bar boundary.</p>
+</div>
+<div class="method"><span class="method-name">.reverse</span><span class="sig">(self) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Return a new Clip with beats in reverse order.</p>
+</div>
+<div class="method"><span class="method-name">.to_events</span><span class="sig">(self) -&gt; &#x27;list&#x27;</span>
+<p class="method-doc">Extract the Note/Chord/None events from each beat.</p>
+</div>
+<div class="method"><span class="method-name">.trim</span><span class="sig">(self, start: &#x27;int&#x27; = 0, end: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Clip&#x27;&quot;</span>
+<p class="method-doc">Return a new Clip trimmed to the given beat range.</p>
+</div>
+</div>
+</div>
+<div class="func" id="ClipSlot">
+<div class="func-header"><span class="kind">class</span> <span class="func-name">ClipSlot</span><span class="sig">(clip: &#x27;Clip | None&#x27; = None, state: &#x27;str&#x27; = &#x27;stopped&#x27;, loop: &#x27;bool&#x27; = True) -&gt; None</span></div>
+<div class="source">from code_music.engine</div>
+<div class="doc"><p>A slot that holds a Clip with play/stop state.</p>
+<p>Part of the Session grid. Each slot can be playing, stopped, or queued.</p>
+<p>When playing, the clip loops continuously. Quantize to bar boundaries</p>
+<p>for tight transitions.</p>
+<p>Attributes:</p>
+<ul>
+<li><code>clip</code>: The Clip in this slot (None = empty slot).</li>
+<li><code>state</code>: &#x27;stopped&#x27;, &#x27;playing&#x27;, &#x27;queued&#x27;.</li>
+<li><code>loop</code>: Whether the clip loops when it reaches the end.</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<p>slot = ClipSlot(clip=my_clip)</p>
+<p>slot.play()</p>
+<p>slot.stop()</p></div>
+<div class="methods">
+<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, clip: &#x27;Clip | None&#x27; = None, state: &#x27;str&#x27; = &#x27;stopped&#x27;, loop: &#x27;bool&#x27; = True) -&gt; None</span>
+<p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
+</div>
+<div class="method"><span class="method-name">.play</span><span class="sig">(self) -&gt; &quot;&#x27;ClipSlot&#x27;&quot;</span>
+<p class="method-doc">Start playing the clip.</p>
+</div>
+<div class="method"><span class="method-name">.queue</span><span class="sig">(self) -&gt; &quot;&#x27;ClipSlot&#x27;&quot;</span>
+<p class="method-doc">Queue the clip to start on the next bar boundary.</p>
+</div>
+<div class="method"><span class="method-name">.stop</span><span class="sig">(self) -&gt; &quot;&#x27;ClipSlot&#x27;&quot;</span>
+<p class="method-doc">Stop the clip.</p>
 </div>
 </div>
 </div>
@@ -363,6 +439,72 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </div>
 </div>
+<div class="func" id="Session">
+<div class="func-header"><span class="kind">class</span> <span class="func-name">Session</span><span class="sig">(bpm: &#x27;float&#x27; = 120, sample_rate: &#x27;int&#x27; = 44100, track_names: &#x27;list[str]&#x27; = &lt;factory&gt;, _instruments: &#x27;dict[str, str]&#x27; = &lt;factory&gt;, _volumes: &#x27;dict[str, float]&#x27; = &lt;factory&gt;, grid: &#x27;dict[str, list[ClipSlot]]&#x27; = &lt;factory&gt;, scene_count: &#x27;int&#x27; = 0, _muted: &#x27;set[str]&#x27; = &lt;factory&gt;, _soloed: &#x27;set[str]&#x27; = &lt;factory&gt;, _pans: &#x27;dict[str, float]&#x27; = &lt;factory&gt;) -&gt; None</span></div>
+<div class="source">from code_music.engine</div>
+<div class="doc"><p>Ableton-style session view: a grid of ClipSlots (tracks x scenes).</p>
+<p>Organize clips into a grid where rows are tracks and columns are scenes.</p>
+<p>Launch entire scenes at once (all clips in a column start together) or</p>
+<p>trigger individual slots. Render to a Song by playing scenes in sequence.</p>
+<p>Attributes:</p>
+<ul>
+<li><code>bpm</code>: Tempo.</li>
+<li><code>track_names</code>: List of track names (rows).</li>
+<li><code>scene_count</code>: Number of scenes (columns).</li>
+<li><code>grid</code>: 2D dict: grid[track_name][scene_index] = ClipSlot.</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<p>session = Session(bpm=120)</p>
+<p>session.add_track(&quot;drums&quot;, instrument=&quot;drums_kick&quot;)</p>
+<p>session.add_track(&quot;bass&quot;, instrument=&quot;bass&quot;)</p>
+<p>session.set_clip(&quot;drums&quot;, 0, kick_clip)</p>
+<p>session.set_clip(&quot;bass&quot;, 0, bass_clip)</p>
+<p>song = session.render(scene_order=[0, 0, 1, 1, 0])</p></div>
+<div class="methods">
+<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, bpm: &#x27;float&#x27; = 120, sample_rate: &#x27;int&#x27; = 44100, track_names: &#x27;list[str]&#x27; = &lt;factory&gt;, _instruments: &#x27;dict[str, str]&#x27; = &lt;factory&gt;, _volumes: &#x27;dict[str, float]&#x27; = &lt;factory&gt;, grid: &#x27;dict[str, list[ClipSlot]]&#x27; = &lt;factory&gt;, scene_count: &#x27;int&#x27; = 0, _muted: &#x27;set[str]&#x27; = &lt;factory&gt;, _soloed: &#x27;set[str]&#x27; = &lt;factory&gt;, _pans: &#x27;dict[str, float]&#x27; = &lt;factory&gt;) -&gt; None</span>
+<p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
+</div>
+<div class="method"><span class="method-name">.add_scene</span><span class="sig">(self) -&gt; &#x27;int&#x27;</span>
+<p class="method-doc">Add a new scene (column) to the grid. Returns the scene index.</p>
+</div>
+<div class="method"><span class="method-name">.add_track</span><span class="sig">(self, name: &#x27;str&#x27;, instrument: &#x27;str&#x27; = &#x27;sine&#x27;, volume: &#x27;float&#x27; = 0.8) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Add a track (row) to the session grid.</p>
+</div>
+<div class="method"><span class="method-name">.launch_scene</span><span class="sig">(self, scene_index: &#x27;int&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Start all clips in a scene (column).</p>
+</div>
+<div class="method"><span class="method-name">.mute</span><span class="sig">(self, track_name: &#x27;str&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Mute a track (set volume to 0 in render).</p>
+</div>
+<div class="method"><span class="method-name">.render</span><span class="sig">(self, scene_order: &#x27;list[int] | None&#x27; = None, loops_per_scene: &#x27;int&#x27; = 1) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
+<p class="method-doc">Render the session to a Song by playing scenes in sequence.</p>
+</div>
+<div class="method"><span class="method-name">.set_clip</span><span class="sig">(self, track_name: &#x27;str&#x27;, scene_index: &#x27;int&#x27;, clip: &#x27;Clip&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Place a clip into a slot.</p>
+</div>
+<div class="method"><span class="method-name">.set_pan</span><span class="sig">(self, track_name: &#x27;str&#x27;, pan: &#x27;float&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Set a track&#x27;s stereo pan (-1.0 to 1.0).</p>
+</div>
+<div class="method"><span class="method-name">.set_volume</span><span class="sig">(self, track_name: &#x27;str&#x27;, volume: &#x27;float&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Set a track&#x27;s volume (0.0-1.0).</p>
+</div>
+<div class="method"><span class="method-name">.solo</span><span class="sig">(self, track_name: &#x27;str&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Solo a track (mute everything else in render).</p>
+</div>
+<div class="method"><span class="method-name">.stop_all</span><span class="sig">(self) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Stop all playing clips.</p>
+</div>
+<div class="method"><span class="method-name">.stop_track</span><span class="sig">(self, track_name: &#x27;str&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Stop all clips on a specific track.</p>
+</div>
+<div class="method"><span class="method-name">.unmute</span><span class="sig">(self, track_name: &#x27;str&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Unmute a track.</p>
+</div>
+<div class="method"><span class="method-name">.unsolo</span><span class="sig">(self, track_name: &#x27;str&#x27;) -&gt; &quot;&#x27;Session&#x27;&quot;</span>
+<p class="method-doc">Remove solo from a track.</p>
+</div>
+</div>
+</div>
 <div class="func" id="Song">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Song</span><span class="sig">(title: &#x27;str&#x27; = &#x27;untitled&#x27;, bpm: &#x27;float&#x27; = 120.0, sample_rate: &#x27;int&#x27; = 44100, tracks: &#x27;list[Track]&#x27; = &lt;factory&gt;, voice_tracks: &#x27;list&#x27; = &lt;factory&gt;, poly_tracks: &#x27;list&#x27; = &lt;factory&gt;, sample_tracks: &#x27;list&#x27; = &lt;factory&gt;, time_sig: &#x27;tuple[int, int]&#x27; = (4, 4), time_sig_map: &#x27;list[tuple[float, int, int]]&#x27; = &lt;factory&gt;, composer: &#x27;str&#x27; = &#x27;&#x27;, key_sig: &#x27;str&#x27; = &#x27;C&#x27;, effects: &#x27;dict&#x27; = &lt;factory&gt;, bpm_map: &#x27;list[float]&#x27; = &lt;factory&gt;, _custom_instruments: &#x27;dict&#x27; = &lt;factory&gt;) -&gt; None</span></div>
 <div class="source">from code_music.engine</div>
@@ -397,11 +539,14 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="method"><span class="method-name">.export_json</span><span class="sig">(self, path)</span>
 <p class="method-doc">Save the song to a JSON file via ``to_dict()``.</p>
 </div>
-<div class="method"><span class="method-name">.export_stems</span><span class="sig">(self, out_dir: &#x27;str&#x27;, fmt: &#x27;str&#x27; = &#x27;wav&#x27;) -&gt; &#x27;list&#x27;</span>
+<div class="method"><span class="method-name">.export_stems</span><span class="sig">(self, out_dir: &#x27;str&#x27;, fmt: &#x27;str&#x27; = &#x27;wav&#x27;, include_effects: &#x27;bool&#x27; = False, use_title_prefix: &#x27;bool&#x27; = False) -&gt; &#x27;list&#x27;</span>
 <p class="method-doc">Render each track as a separate audio file (stem export).</p>
 </div>
 <div class="method"><span class="method-name">.from_dict</span><span class="sig">(data: &#x27;dict&#x27;) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
 <p class="method-doc">Reconstruct a Song from a dict produced by ``to_dict()``.</p>
+</div>
+<div class="method"><span class="method-name">.import_stems</span><span class="sig">(directory: &#x27;str&#x27;, bpm: &#x27;float&#x27; = 120, title: &#x27;str | None&#x27; = None, sample_rate: &#x27;int&#x27; = 44100) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
+<p class="method-doc">Import a directory of WAV files as a Song with SampleTracks.</p>
 </div>
 <div class="method"><span class="method-name">.info</span><span class="sig">(self) -&gt; &#x27;dict&#x27;</span>
 <p class="method-doc">Return a summary dict of this song&#x27;s metadata and structure.</p>
@@ -2199,7 +2344,8 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <h4 class="doc-section">Example</h4>
 <pre class="example">
     &gt;&gt;&gt; motif = [Note(&quot;C&quot;, 5, 0.5), Note(&quot;D&quot;, 5, 0.5), Note(&quot;E&quot;, 5, 0.5), Note(&quot;C&quot;, 5, 0.5)]
-    &gt;&gt;&gt; passage = develop_motif(motif, techniques=[&quot;repeat&quot;, &quot;sequence&quot;, &quot;inversion&quot;], repetitions=3)
+    &gt;&gt;&gt; techs = [&quot;repeat&quot;, &quot;sequence&quot;, &quot;inversion&quot;]
+    &gt;&gt;&gt; passage = develop_motif(motif, techniques=techs, repetitions=3)
     &gt;&gt;&gt; len(passage) == len(motif) * 3  # each technique produces motif-length output
 </pre>
 <p>True</p></div>
@@ -3236,7 +3382,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="generation">
-<h2>Generation <span class="count">(64)</span></h2>
+<h2>Generation <span class="count">(68)</span></h2>
 <div class="func" id="SongTemplate">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">SongTemplate</span><span class="sig">(form_name: &#x27;str&#x27; = &#x27;pop&#x27;)</span></div>
 <div class="source">from code_music.theory.generation</div>
@@ -3276,6 +3422,37 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </ul>
 <h4 class="doc-section">Returns</h4>
 <p>4-element list of (root, shape) tuples.</p></div>
+</div>
+<div class="func" id="auto_accompany">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">auto_accompany</span><span class="sig">(melody: &#x27;list&#x27;, key: &#x27;str | None&#x27; = None, genre: &#x27;str&#x27; = &#x27;pop&#x27;, bpm: &#x27;int&#x27; = 120, title: &#x27;str | None&#x27; = None, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span></div>
+<div class="source">from code_music.theory.generation</div>
+<div class="doc"><p>Generate a full accompaniment around a melody.</p>
+<p>Takes a melody (list of Notes) and builds bass, chords, and drums</p>
+<p>around it. Detects key if not provided, picks chord progressions</p>
+<p>that fit the melody, generates style-appropriate bass lines and</p>
+<p>drum patterns.</p>
+<p>The inverse of compose() - instead of starting from a prompt, you</p>
+<p>start from a musical idea and get the rest filled in.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>melody</code>: List of Note objects (the lead melody).</li>
+<li><code>key</code>: Key center. Auto-detected from melody if None.</li>
+<li><code>genre</code>: Style for accompaniment: pop, jazz, rock, blues,</li>
+<p>classical, electronic, ambient.</p>
+<li><code>bpm</code>: Tempo.</li>
+<li><code>title</code>: Song title. Defaults to &quot;Accompanied in {key}&quot;.</li>
+<li><code>seed</code>: Random seed for reproducibility.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>A Song with melody, chords, bass, and drums tracks.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Note
+    &gt;&gt;&gt; mel = [Note(&quot;C&quot;,5,1.0), Note(&quot;E&quot;,5,1.0), Note(&quot;G&quot;,5,1.0), Note(&quot;C&quot;,6,2.0)]
+    &gt;&gt;&gt; song = auto_accompany(mel, key=&quot;C&quot;, genre=&quot;pop&quot;, seed=42)
+    &gt;&gt;&gt; len(song.tracks) &gt;= 3
+</pre>
+<p>True</p></div>
 </div>
 <div class="func" id="auto_arrange">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">auto_arrange</span><span class="sig">(progression: &#x27;list[tuple[str, str]]&#x27;, key: &#x27;str&#x27; = &#x27;C&#x27;, bpm: &#x27;int&#x27; = 120, style: &#x27;str&#x27; = &#x27;rock_band&#x27;, bars_per_chord: &#x27;int&#x27; = 1, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span></div>
@@ -3486,6 +3663,42 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </ul>
 <h4 class="doc-section">Returns</h4>
 <p>List of Notes forming the comping pattern.</p></div>
+</div>
+<div class="func" id="compare_songs">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">compare_songs</span><span class="sig">(song_a, song_b) -&gt; &#x27;dict&#x27;</span></div>
+<div class="source">from code_music.theory.generation</div>
+<div class="doc"><p>Compare two Songs across multiple dimensions.</p>
+<p>Side-by-side analysis of harmonic, melodic, rhythmic, timbral, and</p>
+<p>structural characteristics. Returns similarity scores and per-dimension</p>
+<p>breakdowns. Useful for A/B comparison, style matching, and plagiarism</p>
+<p>detection.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song_a</code>: First Song.</li>
+<li><code>song_b</code>: Second Song.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<ul>
+<li><code>Dict with</code>: </li>
+<p>overall_similarity:  0.0-1.0 composite score.</p>
+<p>dimensions:          Per-dimension scores:</p>
+<p>harmonic:        Root/quality overlap, key match.</p>
+<p>melodic:         Pitch range, interval, contour.</p>
+<p>rhythmic:        Duration, density, tempo.</p>
+<p>timbral:         Instrument overlap.</p>
+<p>structural:      Track count, length ratio.</p>
+<p>metadata:            Title, BPM, key, track count per song.</p>
+<p>differences:         List of notable differences.</p>
+</ul>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note
+    &gt;&gt;&gt; a = Song(title=&quot;A&quot;, bpm=120); a.add_track(Track()).add(Note(&quot;C&quot;,4,1.0))
+    &gt;&gt;&gt; b = Song(title=&quot;B&quot;, bpm=120); b.add_track(Track()).add(Note(&quot;C&quot;,4,1.0))
+    &gt;&gt;&gt; result = compare_songs(a, b)
+    &gt;&gt;&gt; result[&quot;overall_similarity&quot;] &gt; 0.0
+</pre>
+<p>True</p></div>
 </div>
 <div class="func" id="compose">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">compose</span><span class="sig">(prompt: &#x27;str&#x27;, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span></div>
@@ -4048,6 +4261,30 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </pre>
 <p>&#x27;Theme and Variations in C&#x27;</p></div>
 </div>
+<div class="func" id="grade_lesson">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">grade_lesson</span><span class="sig">(lesson_id: &#x27;int&#x27;, answers: &#x27;list[str]&#x27;) -&gt; &#x27;dict&#x27;</span></div>
+<div class="source">from code_music.theory.generation</div>
+<div class="doc"><p>Grade answers for a theory course lesson.</p>
+<p>Compares user answers against the lesson&#x27;s exercise answers.</p>
+<p>Returns score, percentage, letter grade, and per-question feedback.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>lesson_id</code>: Lesson number (1-12).</li>
+<li><code>answers</code>: List of user answers (one per exercise).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Dict with score, total, percentage, grade, and feedback list.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; result = grade_lesson(1, [&quot;12&quot;, &quot;G&quot;, &quot;Db&quot;])
+    &gt;&gt;&gt; result[&quot;percentage&quot;]
+</pre>
+<p>100.0</p>
+<pre class="example">
+    &gt;&gt;&gt; result[&quot;grade&quot;]
+</pre>
+<p>&#x27;A&#x27;</p></div>
+</div>
 <div class="func" id="grade_quiz">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">grade_quiz</span><span class="sig">(answers: &#x27;list[str]&#x27;, correct: &#x27;list[str]&#x27;) -&gt; &#x27;dict&#x27;</span></div>
 <div class="source">from code_music.theory.generation</div>
@@ -4417,6 +4654,35 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <ul>
 <li><code>List of dicts</code>: {bpm, click, bars}.</li>
 </ul></div>
+</div>
+<div class="func" id="theory_course">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">theory_course</span><span class="sig">(lesson_id: &#x27;int | None&#x27; = None, topic: &#x27;str | None&#x27; = None) -&gt; &#x27;dict | list[dict]&#x27;</span></div>
+<div class="source">from code_music.theory.generation</div>
+<div class="doc"><p>Interactive music theory course with structured lessons.</p>
+<p>12 lessons covering notes, scales, intervals, chords, progressions,</p>
+<p>cadences, voice leading, modes, rhythm, and form. Each lesson has</p>
+<p>a topic, description, concepts, and graded exercises.</p>
+<p>Call with no args to get the full syllabus. Call with a lesson_id</p>
+<p>to get a specific lesson. Call with a topic to filter by category.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>lesson_id</code>: Specific lesson number (1-12).</li>
+<li><code>topic</code>: Filter by topic: basics, scales, intervals, chords,</li>
+<p>harmony, rhythm, form.</p>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Single lesson dict (if lesson_id given), or list of lessons.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; syllabus = theory_course()
+    &gt;&gt;&gt; len(syllabus)
+</pre>
+<p>12</p>
+<pre class="example">
+    &gt;&gt;&gt; lesson = theory_course(lesson_id=1)
+    &gt;&gt;&gt; lesson[&quot;title&quot;]
+</pre>
+<p>&#x27;Notes and Octaves&#x27;</p></div>
 </div>
 <div class="func" id="train_style_from_corpus">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">train_style_from_corpus</span><span class="sig">(progressions: &#x27;list[list[tuple[str, str]]]&#x27;) -&gt; &#x27;dict&#x27;</span></div>
@@ -5697,7 +5963,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="composition">
-<h2>Composition <span class="count">(23)</span></h2>
+<h2>Composition <span class="count">(25)</span></h2>
 <div class="func" id="Bridge">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Bridge</span><span class="sig">(bars: &#x27;int&#x27; = 4, **kwargs)</span></div>
 <div class="source">from code_music.composition</div>
@@ -5869,6 +6135,60 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="source">from code_music.composition</div>
 <div class="doc"><p>Generate an ascending chromatic riser for building tension.</p></div>
 </div>
+<div class="func" id="parse_song_dsl">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">parse_song_dsl</span><span class="sig">(text: &#x27;str&#x27;) -&gt; &#x27;dict&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Parse Song Builder DSL v2 into a complete song specification.</p>
+<p>The DSL allows defining full songs with BPM, time signature, key,</p>
+<p>multiple tracks with instruments, and effects — all in a compact</p>
+<p>mini-language.</p>
+<p>Syntax::</p>
+<ul>
+<li><code>bpm</code>: 120</li>
+<li><code>time</code>: 4/4</li>
+<li><code>key</code>: C</li>
+</ul>
+<ul>
+<li><code>track lead piano</code>: </li>
+<p>| C4 E4 G4 C5 | - - - - |</p>
+</ul>
+<ul>
+<li><code>track bass bass</code>: </li>
+<p>| C3 - - - | G2 - - - |</p>
+</ul>
+<ul>
+<li><code>effects</code>: </li>
+<li><code>lead</code>: reverb(room_size=0.7, wet=0.3)</li>
+<li><code>master</code>: delay(delay_ms=375, feedback=0.3)</li>
+</ul>
+<p>Track lines use mini-notation:</p>
+<ul>
+<li><code>- Notes</code>: C4, E4, G#5, Bb3</li>
+<li><code>- Rests</code>: - or ~</li>
+<li><code>- Chords</code>: [C4 E4 G4]</li>
+<li><code>- Bar lines</code>: |</li>
+</ul>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>text</code>: DSL source text.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<ul>
+<li><code>Dict with</code>: bpm, time_sig, key_sig, title, tracks, effects.</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<p>spec = parse_song_dsl(&#x27;&#x27;&#x27;</p>
+<p>title: My Song</p>
+<p>bpm: 128</p>
+<p>time: 4/4</p>
+<p>key: Am</p>
+<p>track pad synth:</p>
+<p>| [A3 C4 E4] - - - | [G3 B3 D4] - - - |</p>
+<p>track lead sawtooth:</p>
+<p>| A4 - C5 - | B4 - G4 - |</p>
+<p>&#x27;&#x27;&#x27;)</p>
+<p># Returns dict with parsed specification</p></div>
+</div>
 <div class="func" id="quantize_track">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">quantize_track</span><span class="sig">(notes: &#x27;list[Note]&#x27;, grid: &#x27;float&#x27; = 0.5) -&gt; &#x27;list[Note]&#x27;</span></div>
 <div class="source">from code_music.composition</div>
@@ -5894,6 +6214,32 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </ul>
 <h4 class="doc-section">Returns</h4>
 <p>Mono float64 numpy array at 11025Hz.</p></div>
+</div>
+<div class="func" id="song_from_dsl_v2">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">song_from_dsl_v2</span><span class="sig">(text: &#x27;str&#x27;) -&gt; &#x27;Song&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Create a complete Song from DSL v2 text.</p>
+<p>This is the full-song constructor from DSL. It parses the DSL and</p>
+<p>builds a complete Song object with tracks, instruments, notes, and</p>
+<p>effects.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>text</code>: DSL source defining the song.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Fully constructed Song object.</p>
+<h4 class="doc-section">Example</h4>
+<p>song = song_from_dsl_v2(&#x27;&#x27;&#x27;</p>
+<p>title: Jazz Lounge</p>
+<p>bpm: 110</p>
+<p>key: Bb</p>
+<p>track chords piano:</p>
+<p>| [Bb3 D4 F4] - - - | [Eb3 G3 Bb3] - - - |</p>
+<p>| [F3 A3 C4] - - - | [Bb3 D4 F4] - - - |</p>
+<p>track bass bass:</p>
+<p>| Bb2 - - - | Eb2 - - - | F2 - - - | Bb2 - - - |</p>
+<p>&#x27;&#x27;&#x27;)</p>
+<p>song.render()  # Ready to play</p></div>
 </div>
 <div class="func" id="song_map">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">song_map</span><span class="sig">(song: &#x27;Song&#x27;, beats_per_bar: &#x27;int&#x27; = 4) -&gt; &#x27;str&#x27;</span></div>
@@ -6525,6 +6871,9 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="method"><span class="method-name">.to_wav</span><span class="sig">(self, path: &#x27;str&#x27;, freq: &#x27;float&#x27; = 440.0, duration: &#x27;float&#x27; = 2.0, sr: &#x27;int&#x27; = 44100) -&gt; &#x27;str&#x27;</span>
 <p class="method-doc">Render and save as a WAV file.</p>
 </div>
+<div class="method"><span class="method-name">.wavetable_scan</span><span class="sig">(self, tables: &quot;list[&#x27;Wavetable&#x27;]&quot;, scan_rate: &#x27;float&#x27; = 0.5, volume: &#x27;float&#x27; = 1.0, detune_cents: &#x27;float&#x27; = 0.0) -&gt; &quot;&#x27;SoundDesigner&#x27;&quot;</span>
+<p class="method-doc">Add a scanning wavetable oscillator that morphs between tables.</p>
+</div>
 </div>
 </div>
 <div class="func" id="Timbre">
@@ -6751,35 +7100,41 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <section id="export">
 <h2>Export <span class="count">(4)</span></h2>
 <div class="func" id="export_flac">
-<div class="func-header"><span class="kind">def</span> <span class="func-name">export_flac</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100) -&gt; &#x27;Path&#x27;</span></div>
+<div class="func-header"><span class="kind">def</span> <span class="func-name">export_flac</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100, metadata: &#x27;dict[str, str] | None&#x27; = None) -&gt; &#x27;Path&#x27;</span></div>
 <div class="source">from code_music.export</div>
 <div class="doc"><p>Write stereo float64 samples to a FLAC file (lossless) via pydub + ffmpeg.</p>
 <p>FLAC is lossless and the best option for archival / DAW round-tripping.</p>
-<p>Spotify accepts FLAC for upload via Spotify for Artists.</p></div>
+<p>Spotify accepts FLAC for upload via Spotify for Artists.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>metadata</code>: Optional dict of Vorbis comment tags (artist, title, album, year).</li>
+</ul></div>
 </div>
 <div class="func" id="export_mp3">
-<div class="func-header"><span class="kind">def</span> <span class="func-name">export_mp3</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100, bitrate: &#x27;str&#x27; = &#x27;320k&#x27;) -&gt; &#x27;Path&#x27;</span></div>
+<div class="func-header"><span class="kind">def</span> <span class="func-name">export_mp3</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100, bitrate: &#x27;str&#x27; = &#x27;320k&#x27;, metadata: &#x27;dict[str, str] | None&#x27; = None) -&gt; &#x27;Path&#x27;</span></div>
 <div class="source">from code_music.export</div>
 <div class="doc"><p>Write stereo float64 samples to an MP3 file via pydub + ffmpeg.</p>
 <p>Requires pydub and ffmpeg on PATH. 320kbps is Spotify&#x27;s maximum ingest</p>
-<p>quality — use it.</p>
+<p>quality - use it.</p>
 <h4 class="doc-section">Args</h4>
 <ul>
 <li><code>samples</code>: Shape (N, 2) float64 array in range [-1, 1].</li>
 <li><code>path</code>: Output file path.</li>
 <li><code>sample_rate</code>: Sample rate in Hz.</li>
 <li><code>bitrate</code>: MP3 bitrate string (default &#x27;320k&#x27;).</li>
+<li><code>metadata</code>: Optional dict of ID3 tags (artist, title, album, year).</li>
 </ul>
 <h4 class="doc-section">Returns</h4>
 <p>Resolved Path of the written file.</p></div>
 </div>
 <div class="func" id="export_ogg">
-<div class="func-header"><span class="kind">def</span> <span class="func-name">export_ogg</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100, quality: &#x27;float&#x27; = 8.0) -&gt; &#x27;Path&#x27;</span></div>
+<div class="func-header"><span class="kind">def</span> <span class="func-name">export_ogg</span><span class="sig">(samples: &#x27;FloatArray&#x27;, path: &#x27;str | Path&#x27;, sample_rate: &#x27;int&#x27; = 44100, quality: &#x27;float&#x27; = 8.0, metadata: &#x27;dict[str, str] | None&#x27; = None) -&gt; &#x27;Path&#x27;</span></div>
 <div class="source">from code_music.export</div>
 <div class="doc"><p>Write stereo float64 samples to an OGG Vorbis file via pydub + ffmpeg.</p>
 <h4 class="doc-section">Args</h4>
 <ul>
-<li><code>quality</code>: Vorbis quality 0–10 (default 8 ≈ ~256kbps). Spotify accepts OGG.</li>
+<li><code>quality</code>: Vorbis quality 0-10 (default 8, about 256kbps). Spotify accepts OGG.</li>
+<li><code>metadata</code>: Optional dict of Vorbis comment tags (artist, title, album, year).</li>
 </ul></div>
 </div>
 <div class="func" id="export_wav">
@@ -6883,7 +7238,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="automation">
-<h2>Automation <span class="count">(5)</span></h2>
+<h2>Automation <span class="count">(6)</span></h2>
 <div class="func" id="Automation">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Automation</span><span class="sig">(keyframes: &#x27;list[tuple[float, float]]&#x27;, mode: &#x27;str&#x27; = &#x27;linear&#x27;) -&gt; &#x27;None&#x27;</span></div>
 <div class="source">from code_music.automation</div>
@@ -6910,24 +7265,64 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </div>
 </div>
+<div class="func" id="EnvFollower">
+<div class="func-header"><span class="kind">class</span> <span class="func-name">EnvFollower</span><span class="sig">(attack_ms: &#x27;float&#x27; = 5.0, release_ms: &#x27;float&#x27; = 100.0) -&gt; &#x27;None&#x27;</span></div>
+<div class="source">from code_music.automation</div>
+<div class="doc"><p>Extract an amplitude envelope from an audio signal.</p>
+<p>Follows the loudness contour of audio using rectification + smoothing.</p>
+<p>The classic sidechain pump: feed a kick drum into EnvFollower, then</p>
+<p>invert the output to duck a pad. Works at mix level without needing</p>
+<p>the sidechain() effect.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>attack_ms</code>: Attack time in milliseconds (how fast envelope rises).</li>
+<li><code>release_ms</code>: Release time in milliseconds (how fast envelope falls).</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<p>env = EnvFollower(attack_ms=5, release_ms=100)</p>
+<p># Extract envelope from kick audio</p>
+<p>kick_env = env.follow(kick_audio, sample_rate=44100)</p>
+<p># Apply as sidechain duck to pad</p>
+<p>ducked_pad = env.duck(pad_audio, kick_audio, sample_rate=44100, amount=0.8)</p></div>
+<div class="methods">
+<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, attack_ms: &#x27;float&#x27; = 5.0, release_ms: &#x27;float&#x27; = 100.0) -&gt; &#x27;None&#x27;</span>
+<p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
+</div>
+<div class="method"><span class="method-name">.duck</span><span class="sig">(self, target: &#x27;FloatArray&#x27;, sidechain: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, amount: &#x27;float&#x27; = 0.8, invert: &#x27;bool&#x27; = True) -&gt; &#x27;FloatArray&#x27;</span>
+<p class="method-doc">Apply sidechain ducking to target using sidechain signal.</p>
+</div>
+<div class="method"><span class="method-name">.follow</span><span class="sig">(self, audio: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100) -&gt; &#x27;FloatArray&#x27;</span>
+<p class="method-doc">Extract the amplitude envelope from audio.</p>
+</div>
+<div class="method"><span class="method-name">.gate</span><span class="sig">(self, target: &#x27;FloatArray&#x27;, sidechain: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, threshold: &#x27;float&#x27; = 0.3, amount: &#x27;float&#x27; = 0.9) -&gt; &#x27;FloatArray&#x27;</span>
+<p class="method-doc">Gate target audio using sidechain envelope.</p>
+</div>
+</div>
+</div>
 <div class="func" id="ModMatrix">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">ModMatrix</span><span class="sig">() -&gt; &#x27;None&#x27;</span></div>
 <div class="source">from code_music.automation</div>
-<div class="doc"><p>Modulation routing matrix — connect sources to destinations.</p>
-<p>Sources: &#x27;lfo1&#x27;, &#x27;lfo2&#x27;, &#x27;random&#x27;, &#x27;envelope&#x27;</p>
+<div class="doc"><p>Modulation routing matrix - connect sources to destinations.</p>
+<p>Sources: &#x27;lfo1&#x27;, &#x27;lfo2&#x27;, &#x27;random&#x27;, &#x27;envelope&#x27;, &#x27;env_follower&#x27;</p>
 <p>Destinations: &#x27;&lt;track&gt;.volume&#x27;, &#x27;&lt;track&gt;.pan&#x27;, &#x27;&lt;track&gt;.filter_cutoff&#x27;</p>
 <h4 class="doc-section">Example</h4>
 <p>mm = ModMatrix()</p>
 <p>mm.connect(&quot;lfo1&quot;, &quot;pad.volume&quot;, amount=0.3, rate=2.0)</p>
 <p>mm.connect(&quot;random&quot;, &quot;lead.pan&quot;, amount=0.2)</p>
-<p># Apply to rendered audio</p>
-<p>modulated = mm.apply(audio, sr=44100, bpm=120)</p></div>
+<p># Sidechain pump via envelope follower</p>
+<p>mm.connect_env_follower(&quot;pad.volume&quot;, kick_audio, amount=-0.8)</p></div>
 <div class="methods">
 <div class="method"><span class="method-name">.__init__</span><span class="sig">(self) -&gt; &#x27;None&#x27;</span>
 <p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
 </div>
 <div class="method"><span class="method-name">.connect</span><span class="sig">(self, source: &#x27;str&#x27;, dest: &#x27;str&#x27;, amount: &#x27;float&#x27; = 0.5, rate: &#x27;float&#x27; = 1.0) -&gt; &quot;&#x27;ModMatrix&#x27;&quot;</span>
 <p class="method-doc">Add a modulation route.</p>
+</div>
+<div class="method"><span class="method-name">.connect_env_follower</span><span class="sig">(self, dest: &#x27;str&#x27;, sidechain_audio: &#x27;FloatArray&#x27;, amount: &#x27;float&#x27; = -0.8, attack_ms: &#x27;float&#x27; = 5.0, release_ms: &#x27;float&#x27; = 100.0) -&gt; &quot;&#x27;ModMatrix&#x27;&quot;</span>
+<p class="method-doc">Connect an envelope follower as a modulation source.</p>
+</div>
+<div class="method"><span class="method-name">.generate_env_follower_signals</span><span class="sig">(self, n: &#x27;int&#x27;, sr: &#x27;int&#x27;) -&gt; &#x27;list[tuple[str, float, FloatArray]]&#x27;</span>
+<p class="method-doc">Generate envelope follower modulation signals.</p>
 </div>
 <div class="method"><span class="method-name">.generate_mod_signal</span><span class="sig">(self, source: &#x27;str&#x27;, n: &#x27;int&#x27;, sr: &#x27;int&#x27;, rate: &#x27;float&#x27; = 1.0, seed: &#x27;int | None&#x27; = None) -&gt; &#x27;FloatArray&#x27;</span>
 <p class="method-doc">Generate a modulation signal for a given source type.</p>
@@ -7083,7 +7478,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>Reconstructed Song object.</p></div>
 </div>
 <div class="func" id="song_to_json">
-<div class="func-header"><span class="kind">def</span> <span class="func-name">song_to_json</span><span class="sig">(song, path: &#x27;str | Path | None&#x27; = None, as_string: &#x27;bool&#x27; = False) -&gt; &#x27;dict | str&#x27;</span></div>
+<div class="func-header"><span class="kind">def</span> <span class="func-name">song_to_json</span><span class="sig">(song, path: &#x27;str | Path | None&#x27; = None, as_string: &#x27;bool&#x27; = False, sort_keys: &#x27;bool&#x27; = False) -&gt; &#x27;dict | str&#x27;</span></div>
 <div class="source">from code_music.serialization</div>
 <div class="doc"><p>Serialize a Song to a JSON-compatible dict.</p>
 <h4 class="doc-section">Args</h4>
@@ -7091,6 +7486,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <li><code>song</code>: Song object.</li>
 <li><code>path</code>: If provided, write JSON to this file path.</li>
 <li><code>as_string</code>: If True, return a JSON string instead of a dict.</li>
+<li><code>sort_keys</code>: If True, sort dict keys for git-friendly diffs.</li>
 </ul>
 <h4 class="doc-section">Returns</h4>
 <p>Dict (default), JSON string (if as_string=True), or dict (if path provided).</p></div>

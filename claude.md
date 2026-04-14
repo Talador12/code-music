@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v148.0.0 — 333 songs, 2935 tests, 475+ theory functions, 44 scales
+## Status: v149.0.0 — 338 songs, 2956 tests, 480+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2577,3 +2577,31 @@ command to prepare a shared folder for collaborative remix work.
 - [x] 14 tests (9 quantize, 4 JSON, 1 Makefile)
 
 **Stats:** 475+ public functions. 2935 tests. 333 songs. 44 scales.
+
+## v149.0 — Piano Roll Visualizer + API Docs Refresh + 5 New Songs
+
+**to_piano_roll(song, width, height, bg, grid_color, path):**
+DAW-style piano roll SVG visualization. X-axis = time (beats), Y-axis =
+pitch (MIDI). Each note is a colored rectangle: width = duration, color =
+per-track (12 distinct hues). Chords are expanded into individual note
+rects. Includes octave gridlines (C labels), beat markers, title bar, and
+track color legend. Handles empty songs gracefully. Optionally writes to
+file.
+
+**API docs refresh:**
+Regenerated docs/api.html - now 440 documented functions across 19 modules
+(was 430 at v138). Reflects all features through v148.
+
+**5 new songs (333 -> 338):**
+- jazz_waltz: 3/4 time, walking bass, brushes, dorian melody
+- ambient_drone: 60 BPM, no drums, layered pads + sub bass
+- funk_groove: syncopated kick/bass, 16th hats, wah lead
+- rondo_in_g: complete rondo form via generate_form
+- theme_vars: theme and variations in Eb via generate_form
+
+- [x] `to_piano_roll()` — SVG piano roll with grid, legend, per-track colors
+- [x] docs/api.html regenerated (440 functions)
+- [x] 5 new songs across jazz, ambient, funk, classical
+- [x] 16 tests (11 piano roll, 5 song smoke tests)
+
+**Stats:** 480+ public functions. 2956 tests. 338 songs. 44 scales.
