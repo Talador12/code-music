@@ -526,6 +526,7 @@ class SoundDesigner:
         self._fm_layers: list[_FMLayer] = []
         self._wavetable_layers: list[_WavetableLayer] = []
         self._wavetable_scans: list[_WavetableScanSpec] = []
+        self._formant_layers: list[dict] = []
         self._granular_layers: list[_GranularSpec] = []
         self._physical_layers: list[_PhysicalModelSpec] = []
         self._spectral_procs: list = []  # list of callables (audio, sr) -> audio
@@ -682,6 +683,53 @@ class SoundDesigner:
                 raw_tables.append(np.asarray(wt, dtype=np.float64))
         self._wavetable_scans.append(
             _WavetableScanSpec(raw_tables, scan_rate, volume, detune_cents)
+        )
+        return self
+
+    # -- Formant / Vocal synthesis -----------------------------------------
+
+    def formant(
+        self,
+        vowel: str = "ah",
+        breathiness: float = 0.3,
+        vibrato_rate: float = 5.5,
+        vibrato_depth: float = 0.02,
+        volume: float = 1.0,
+    ) -> "SoundDesigner":
+        """Add a formant vocal synthesis layer.
+
+        Simulates vowel sounds by passing a glottal pulse through resonant
+        filters tuned to human vocal formant frequencies. Not speech - but
+        musically useful vocal textures like choir pads, ethereal voices,
+        and vocal drones.
+
+        Vowels: 'ah' (open, like "father"), 'ee' (closed, like "see"),
+        'oh' (round, like "go"), 'oo' (closed round, like "who"),
+        'eh' (mid, like "bed"), 'ih' (near-close, like "sit").
+
+        Args:
+            vowel:         Vowel shape: ah, ee, oh, oo, eh, ih.
+            breathiness:   Mix of noise in the source (0=pure, 1=whisper).
+            vibrato_rate:  Vibrato speed in Hz (natural singing ~5-6 Hz).
+            vibrato_depth: Vibrato pitch deviation (fraction, 0.02 = subtle).
+            volume:        Layer volume.
+
+        Returns:
+            self (for chaining).
+
+        Example::
+
+            choir = SoundDesigner("choir").formant("ah", breathiness=0.2)
+            voice = SoundDesigner("voice").formant("oo", vibrato_depth=0.03)
+        """
+        self._formant_layers.append(
+            {
+                "vowel": vowel,
+                "breathiness": breathiness,
+                "vibrato_rate": vibrato_rate,
+                "vibrato_depth": vibrato_depth,
+                "volume": volume,
+            }
         )
         return self
 
@@ -1041,6 +1089,82 @@ class SoundDesigner:
                 layer[mask] += table_val * weight
 
             mix += layer * scan.volume
+
+        # -- Formant vocal synthesis layers --------------------------------
+        # Formant frequencies for vowels (F1, F2, F3 in Hz + bandwidths)
+        _FORMANTS = {
+            "ah": [(730, 90), (1090, 110), (2440, 170)],
+            "ee": [(270, 60), (2290, 100), (3010, 120)],
+            "oh": [(570, 80), (840, 90), (2410, 150)],
+            "oo": [(300, 50), (870, 80), (2240, 130)],
+            "eh": [(530, 80), (1840, 100), (2480, 140)],
+            "ih": [(390, 60), (1990, 100), (2550, 130)],
+        }
+        for fl in self._formant_layers:
+            formants = _FORMANTS.get(fl["vowel"], _FORMANTS["ah"])
+            breath = fl["breathiness"]
+            vib_rate = fl["vibrato_rate"]
+            vib_depth = fl["vibrato_depth"]
+
+            # Glottal source: pulse train + noise for breathiness
+            t_arr = np.arange(n) / sr
+            vibrato = 1.0 + vib_depth * np.sin(2 * np.pi * vib_rate * t_arr)
+
+            if freq_env is not None:
+                source_freq = freq_env * pitch_mod * vibrato
+            else:
+                source_freq = freq * pitch_mod * vibrato
+
+            # Glottal pulse: narrow sawtooth (models vocal fold vibration)
+            phase = np.cumsum(source_freq / sr)
+            glottal = 2.0 * (phase % 1.0) - 1.0
+            # Shape the pulse (make it more impulse-like)
+            glottal = np.tanh(glottal * 3.0)
+
+            # Breathy noise component
+            rng_vocal = np.random.default_rng(42)
+            noise = rng_vocal.standard_normal(n) * breath
+            source = glottal * (1.0 - breath * 0.5) + noise
+
+            # Apply formant resonances (2nd-order IIR bandpass per formant)
+            vocal = np.zeros(n, dtype=np.float64)
+            for center_hz, bw_hz in formants:
+                # Biquad bandpass coefficients
+                w0 = 2.0 * np.pi * center_hz / sr
+                alpha = (
+                    np.sin(w0) * np.sinh(np.log(2) / 2 * (bw_hz / center_hz) * w0 / np.sin(w0))
+                    if np.sin(w0) > 0.001
+                    else 0.1
+                )
+                b0 = alpha
+                b1 = 0.0
+                b2 = -alpha
+                a0 = 1.0 + alpha
+                a1 = -2.0 * np.cos(w0)
+                a2 = 1.0 - alpha
+                # Normalize
+                b0 /= a0
+                b1 /= a0
+                b2 /= a0
+                a1 /= a0
+                a2 /= a0
+                # Direct form II
+                filtered = np.zeros(n, dtype=np.float64)
+                x1 = x2 = y1 = y2 = 0.0
+                for i in range(n):
+                    x0 = source[i]
+                    y0 = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2
+                    filtered[i] = y0
+                    x2, x1 = x1, x0
+                    y2, y1 = y1, y0
+                vocal += filtered
+
+            # Normalize vocal output
+            peak = np.max(np.abs(vocal))
+            if peak > 0:
+                vocal /= peak
+
+            mix += vocal * fl["volume"]
 
         # -- Granular synthesis layers -------------------------------------
         for gran in self._granular_layers:
@@ -1728,7 +1852,190 @@ pm_violin = (
     .filter("lowpass", cutoff=5000, resonance=0.4)
 )
 
+# ---------------------------------------------------------------------------
+# Vocal / Formant presets (v165.0)
+# ---------------------------------------------------------------------------
+
+choir_ah = (
+    SoundDesigner("choir_ah")
+    .formant("ah", breathiness=0.2, vibrato_rate=5.5, vibrato_depth=0.02, volume=0.7)
+    .envelope(attack=0.2, decay=0.1, sustain=0.8, release=0.5)
+    .filter("lowpass", cutoff=4000, resonance=0.3)
+)
+
+choir_oo = (
+    SoundDesigner("choir_oo")
+    .formant("oo", breathiness=0.15, vibrato_rate=5.0, vibrato_depth=0.025, volume=0.7)
+    .envelope(attack=0.25, decay=0.1, sustain=0.8, release=0.6)
+    .filter("lowpass", cutoff=3000, resonance=0.3)
+)
+
+ethereal_voice = (
+    SoundDesigner("ethereal_voice")
+    .formant("oh", breathiness=0.4, vibrato_rate=4.0, vibrato_depth=0.03, volume=0.5)
+    .formant("ee", breathiness=0.5, vibrato_rate=4.5, vibrato_depth=0.02, volume=0.3)
+    .envelope(attack=0.4, decay=0.2, sustain=0.7, release=0.8)
+    .filter("lowpass", cutoff=3500, resonance=0.4)
+)
+
+whisper_pad = (
+    SoundDesigner("whisper_pad")
+    .formant("eh", breathiness=0.8, vibrato_rate=3.0, vibrato_depth=0.01, volume=0.6)
+    .envelope(attack=0.5, decay=0.15, sustain=0.6, release=1.0)
+    .filter("lowpass", cutoff=2500, resonance=0.5)
+)
+
+vocal_lead = (
+    SoundDesigner("vocal_lead")
+    .formant("ah", breathiness=0.15, vibrato_rate=6.0, vibrato_depth=0.03, volume=0.8)
+    .envelope(attack=0.05, decay=0.15, sustain=0.7, release=0.3)
+    .filter("lowpass", cutoff=5000, resonance=0.4)
+)
+
+# ---------------------------------------------------------------------------
+# Synth presets (v165.0)
+# ---------------------------------------------------------------------------
+
+acid_bass = (
+    SoundDesigner("acid_bass")
+    .add_osc("sawtooth", volume=0.7)
+    .envelope(attack=0.005, decay=0.2, sustain=0.3, release=0.1)
+    .filter("lowpass", cutoff=800, resonance=0.85)
+    .lfo("filter_cutoff", rate=0.3, depth=0.6)
+)
+
+detuned_pad = (
+    SoundDesigner("detuned_pad")
+    .add_osc("sawtooth", volume=0.2)
+    .add_osc("sawtooth", detune_cents=15, volume=0.2)
+    .add_osc("sawtooth", detune_cents=-15, volume=0.2)
+    .add_osc("square", detune_cents=7, volume=0.1)
+    .envelope(attack=0.5, decay=0.2, sustain=0.8, release=1.0)
+    .filter("lowpass", cutoff=2000, resonance=0.5)
+    .lfo("filter_cutoff", rate=0.1, depth=0.4)
+)
+
+reese_bass = (
+    SoundDesigner("reese_bass")
+    .add_osc("sawtooth", volume=0.5)
+    .add_osc("sawtooth", detune_cents=3, volume=0.5)
+    .envelope(attack=0.005, decay=0.1, sustain=0.8, release=0.15)
+    .filter("lowpass", cutoff=600, resonance=0.6)
+    .lfo("filter_cutoff", rate=0.2, depth=0.5)
+)
+
+hoover = (
+    SoundDesigner("hoover")
+    .add_osc("sawtooth", volume=0.35)
+    .add_osc("sawtooth", detune_cents=20, volume=0.3)
+    .add_osc("sawtooth", detune_cents=-20, volume=0.3)
+    .add_osc("square", detune_cents=-1200, volume=0.2)
+    .envelope(attack=0.01, decay=0.3, sustain=0.5, release=0.3)
+    .filter("lowpass", cutoff=3000, resonance=0.7)
+    .lfo("pitch", rate=4.0, depth=0.1)
+)
+
+pluck_synth = (
+    SoundDesigner("pluck_synth")
+    .add_osc("sawtooth", volume=0.6)
+    .add_osc("square", detune_cents=5, volume=0.3)
+    .envelope(attack=0.002, decay=0.15, sustain=0.0, release=0.1)
+    .filter("lowpass", cutoff=5000, resonance=0.4)
+)
+
+ice_pad = (
+    SoundDesigner("ice_pad")
+    .add_osc("triangle", volume=0.3)
+    .add_osc("sine", detune_cents=1200, volume=0.15)
+    .add_osc("sine", detune_cents=1900, volume=0.1)
+    .envelope(attack=0.8, decay=0.3, sustain=0.6, release=1.5)
+    .filter("lowpass", cutoff=3000, resonance=0.3)
+)
+
+dark_drone = (
+    SoundDesigner("dark_drone")
+    .add_osc("sawtooth", volume=0.3)
+    .add_osc("square", detune_cents=-2400, volume=0.4)
+    .envelope(attack=1.0, decay=0.5, sustain=0.9, release=2.0)
+    .filter("lowpass", cutoff=500, resonance=0.7)
+    .lfo("filter_cutoff", rate=0.05, depth=0.3)
+)
+
+# ---------------------------------------------------------------------------
+# Orchestral / acoustic presets (v165.0)
+# ---------------------------------------------------------------------------
+
+pm_cello = (
+    SoundDesigner("pm_cello")
+    .physical_model("bowed_string", volume=0.85, bow_pressure=0.55, brightness=0.5)
+    .envelope(attack=0.1, decay=0.2, sustain=0.8, release=0.5)
+    .filter("lowpass", cutoff=3500, resonance=0.3)
+)
+
+pm_viola = (
+    SoundDesigner("pm_viola")
+    .physical_model("bowed_string", volume=0.8, bow_pressure=0.45, brightness=0.55)
+    .envelope(attack=0.09, decay=0.15, sustain=0.8, release=0.45)
+    .filter("lowpass", cutoff=4200, resonance=0.35)
+)
+
+pm_bass_guitar = (
+    SoundDesigner("pm_bass_guitar")
+    .physical_model("karplus_strong", volume=0.9, decay=0.995, brightness=0.3)
+    .envelope(attack=0.002, decay=0.3, sustain=0.2, release=0.2)
+    .filter("lowpass", cutoff=2000, resonance=0.4)
+)
+
+fm_clarinet = (
+    SoundDesigner("fm_clarinet")
+    .fm("square", mod_ratio=3.0, mod_index=1.5, volume=0.7)
+    .envelope(attack=0.03, decay=0.1, sustain=0.7, release=0.2)
+    .filter("lowpass", cutoff=3000, resonance=0.4)
+)
+
+fm_marimba = (
+    SoundDesigner("fm_marimba")
+    .fm("sine", mod_ratio=4.0, mod_index=2.0, volume=0.8)
+    .envelope(attack=0.001, decay=0.4, sustain=0.0, release=0.3)
+    .filter("lowpass", cutoff=6000, resonance=0.2)
+)
+
+pm_kalimba = (
+    SoundDesigner("pm_kalimba")
+    .physical_model("modal", volume=0.8)
+    .envelope(attack=0.001, decay=0.6, sustain=0.05, release=0.4)
+    .filter("lowpass", cutoff=4000, resonance=0.5)
+)
+
+# ---------------------------------------------------------------------------
+# Drum / percussion presets (v165.0)
+# ---------------------------------------------------------------------------
+
+trap_808 = (
+    SoundDesigner("trap_808")
+    .add_osc("sine", volume=0.9)
+    .envelope(attack=0.001, decay=0.8, sustain=0.0, release=0.3)
+    .filter("lowpass", cutoff=200, resonance=0.3)
+    .lfo("pitch", rate=0.5, depth=0.8)
+)
+
+clap = (
+    SoundDesigner("clap")
+    .granular(grain_size=0.002, density=200, scatter=1.0, seed=77)
+    .envelope(attack=0.001, decay=0.08, sustain=0.0, release=0.05)
+    .filter("bandpass", cutoff=1500, resonance=0.8)
+)
+
+rimshot = (
+    SoundDesigner("rimshot")
+    .add_osc("sine", volume=0.5)
+    .granular(grain_size=0.001, density=300, scatter=1.0, seed=88)
+    .envelope(attack=0.001, decay=0.03, sustain=0.0, release=0.02)
+    .filter("highpass", cutoff=2000, resonance=0.5)
+)
+
 PRESETS = {
+    # Original 18
     "supersaw": supersaw,
     "sub_808": sub_808,
     "metallic_hit": metallic_hit,
@@ -1747,4 +2054,29 @@ PRESETS = {
     "pm_flute": pm_flute,
     "pm_gong": pm_gong,
     "pm_violin": pm_violin,
+    # Vocal (v165)
+    "choir_ah": choir_ah,
+    "choir_oo": choir_oo,
+    "ethereal_voice": ethereal_voice,
+    "whisper_pad": whisper_pad,
+    "vocal_lead": vocal_lead,
+    # Synth (v165)
+    "acid_bass": acid_bass,
+    "detuned_pad": detuned_pad,
+    "reese_bass": reese_bass,
+    "hoover": hoover,
+    "pluck_synth": pluck_synth,
+    "ice_pad": ice_pad,
+    "dark_drone": dark_drone,
+    # Orchestral (v165)
+    "pm_cello": pm_cello,
+    "pm_viola": pm_viola,
+    "pm_bass_guitar": pm_bass_guitar,
+    "fm_clarinet": fm_clarinet,
+    "fm_marimba": fm_marimba,
+    "pm_kalimba": pm_kalimba,
+    # Drums (v165)
+    "trap_808": trap_808,
+    "clap": clap,
+    "rimshot": rimshot,
 }

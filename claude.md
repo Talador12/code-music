@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v164.0.0 — 405 songs, 3247 tests, 545+ theory functions, 44 scales
+## Status: v165.0.0 — 410 songs, 3272 tests, 560+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3096,3 +3096,51 @@ to examples that do not exist in the repo.
 - [x] 9 tests (2 examples, 2 README, 5 songs)
 
 **Stats:** 545+ public functions. 3247 tests. 405 songs. 44 scales.
+
+## v165.0 — Formant Vocal Synthesis + 21 New Presets + Album Builder
+
+**Formant vocal synthesis (SoundDesigner.formant()):**
+New synthesis type that simulates vowel sounds by passing a glottal pulse
+through resonant filters tuned to human vocal formant frequencies. 6 vowels:
+ah (open), ee (closed), oh (round), oo (closed round), eh (mid), ih (near-close).
+Each vowel has 3 formant resonances (F1, F2, F3) with center frequency and
+bandwidth, implemented as biquad bandpass IIR filters. Glottal source is a
+shaped sawtooth (vocal fold simulation) mixed with breath noise. Vibrato via
+sinusoidal pitch modulation (natural singing ~5-6 Hz). Chainable with
+envelope, filter, LFO.
+
+**21 new presets (18 -> 39 total):**
+
+Vocal (5): choir_ah, choir_oo, ethereal_voice, whisper_pad, vocal_lead
+- Formant-based vowel synthesis with vibrato + breathiness control
+
+Synth (7): acid_bass, detuned_pad, reese_bass, hoover, pluck_synth, ice_pad, dark_drone
+- From 303-acid to dark ambient drones, production-ready synth sounds
+
+Orchestral (6): pm_cello, pm_viola, pm_bass_guitar, fm_clarinet, fm_marimba, pm_kalimba
+- Bowed strings (cello, viola), plucked bass, FM woodwind + mallet
+
+Drums (3): trap_808, clap, rimshot
+- 808 sub kick, granular clap, granular rimshot
+
+**make album ALBUM=name SONGS="song1 song2":**
+Album builder: renders selected songs to WAV, masters each at -14 LUFS,
+outputs to dist/albums/{name}/. One command from songs to Spotify-ready.
+
+**5 new songs (405 -> 410):**
+- choir_processional: 3 formant choir voices in a cathedral room reverb
+- ethereal_drift: whisper pads + vocal drones with orbit effect
+- acid_303: acid bass preset with resonant filter sweep
+- string_quartet_v2: full quartet (violin, viola, cello) with new bowed presets
+- dark_cathedral: dark_drone + whisper_pad in a cavernous room
+
+**Total presets: 39 core + 6 vintage = 45.**
+
+- [x] `SoundDesigner.formant()` — vowel synthesis with glottal pulse + formant filters
+- [x] 21 new presets across vocal, synth, orchestral, drums
+- [x] `make album` — album builder with mastering pipeline
+- [x] 5 new songs showcasing vocal + new presets
+- [x] AGENTS.md updated with 45 total presets
+- [x] 20 tests (9 formant, 5 presets, 1 Makefile, 5 songs)
+
+**Stats:** 560+ public functions. 3272 tests. 410 songs. 45 presets. 44 scales.

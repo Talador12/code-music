@@ -444,6 +444,23 @@ master: songs-wav ## [Dev] Master all rendered WAVs → dist/mastered/ (LUFS-nor
 	@echo "Done. Mastered files in dist/mastered/"
 
 
+album: ## [Dev] Build an album from songs. Usage: make album ALBUM=ambient SONGS="space_ambient_v2 ambient_drone ambient_space"
+	@if [ -z "$(ALBUM)" ]; then echo "Usage: make album ALBUM=name SONGS='song1 song2 ...'"; exit 1; fi
+	@mkdir -p dist/albums/$(ALBUM)
+	@echo "Building album: $(ALBUM)"
+	@for song in $(SONGS); do \
+		echo "  Rendering $$song..."; \
+		$(CM) "songs/$${song}.py" -o "dist/albums/$(ALBUM)/$${song}.wav" 2>/dev/null || echo "    FAILED"; \
+	done
+	@echo "  Mastering..."
+	@for wav in dist/albums/$(ALBUM)/*.wav; do \
+		name=$$(basename "$$wav" .wav); \
+		$(CM) --master "$$wav" --target-lufs=-14 -o "dist/albums/$(ALBUM)/$${name}_mastered.wav" 2>/dev/null \
+			&& rm "$$wav" && mv "dist/albums/$(ALBUM)/$${name}_mastered.wav" "$$wav" \
+			|| true; \
+	done
+	@echo "Album '$(ALBUM)' built: $$(ls dist/albums/$(ALBUM)/*.wav 2>/dev/null | wc -l | tr -d ' ') tracks in dist/albums/$(ALBUM)/"
+
 collab: songs-wav ## [Dev] Render all songs + export stems to dist/collab/
 	@mkdir -p dist/collab/stems
 	@echo "Exporting stems for all songs..."
