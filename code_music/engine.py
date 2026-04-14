@@ -1421,6 +1421,221 @@ class Clip:
 
 
 @dataclass
+class ClipSlot:
+    """A slot that holds a Clip with play/stop state.
+
+    Part of the Session grid. Each slot can be playing, stopped, or queued.
+    When playing, the clip loops continuously. Quantize to bar boundaries
+    for tight transitions.
+
+    Attributes:
+        clip:     The Clip in this slot (None = empty slot).
+        state:    'stopped', 'playing', 'queued'.
+        loop:     Whether the clip loops when it reaches the end.
+
+    Example::
+
+        slot = ClipSlot(clip=my_clip)
+        slot.play()
+        slot.stop()
+    """
+
+    clip: Clip | None = None
+    state: str = "stopped"
+    loop: bool = True
+
+    def play(self) -> "ClipSlot":
+        """Start playing the clip."""
+        if self.clip is not None:
+            self.state = "playing"
+        return self
+
+    def stop(self) -> "ClipSlot":
+        """Stop the clip."""
+        self.state = "stopped"
+        return self
+
+    def queue(self) -> "ClipSlot":
+        """Queue the clip to start on the next bar boundary."""
+        if self.clip is not None:
+            self.state = "queued"
+        return self
+
+    @property
+    def is_playing(self) -> bool:
+        return self.state == "playing"
+
+    @property
+    def is_empty(self) -> bool:
+        return self.clip is None
+
+    def __repr__(self) -> str:
+        if self.clip is None:
+            return "ClipSlot(empty)"
+        return f"ClipSlot({self.clip.name!r}, {self.state})"
+
+
+@dataclass
+class Session:
+    """Ableton-style session view: a grid of ClipSlots (tracks x scenes).
+
+    Organize clips into a grid where rows are tracks and columns are scenes.
+    Launch entire scenes at once (all clips in a column start together) or
+    trigger individual slots. Render to a Song by playing scenes in sequence.
+
+    Attributes:
+        bpm:          Tempo.
+        track_names:  List of track names (rows).
+        scene_count:  Number of scenes (columns).
+        grid:         2D dict: grid[track_name][scene_index] = ClipSlot.
+
+    Example::
+
+        session = Session(bpm=120)
+        session.add_track("drums", instrument="drums_kick")
+        session.add_track("bass", instrument="bass")
+
+        session.set_clip("drums", 0, kick_clip)
+        session.set_clip("bass", 0, bass_clip)
+
+        song = session.render(scene_order=[0, 0, 1, 1, 0])
+    """
+
+    bpm: float = 120
+    sample_rate: int = 44100
+    track_names: list[str] = field(default_factory=list)
+    _instruments: dict[str, str] = field(default_factory=dict)
+    _volumes: dict[str, float] = field(default_factory=dict)
+    grid: dict[str, list[ClipSlot]] = field(default_factory=dict)
+    scene_count: int = 0
+
+    def add_track(
+        self,
+        name: str,
+        instrument: str = "sine",
+        volume: float = 0.8,
+    ) -> "Session":
+        """Add a track (row) to the session grid.
+
+        Args:
+            name:       Track name.
+            instrument: Synth preset for this track.
+            volume:     Track volume.
+        """
+        if name not in self.track_names:
+            self.track_names.append(name)
+            self._instruments[name] = instrument
+            self._volumes[name] = volume
+            self.grid[name] = [ClipSlot() for _ in range(max(1, self.scene_count))]
+        return self
+
+    def add_scene(self) -> int:
+        """Add a new scene (column) to the grid. Returns the scene index."""
+        idx = self.scene_count
+        self.scene_count += 1
+        for name in self.track_names:
+            self.grid[name].append(ClipSlot())
+        return idx
+
+    def set_clip(self, track_name: str, scene_index: int, clip: Clip) -> "Session":
+        """Place a clip into a slot.
+
+        Args:
+            track_name:  Track row.
+            scene_index: Scene column.
+            clip:        The Clip to place.
+        """
+        if track_name not in self.grid:
+            raise ValueError(f"Unknown track: {track_name!r}")
+        # Auto-expand scenes if needed
+        while scene_index >= len(self.grid[track_name]):
+            self.add_scene()
+        self.grid[track_name][scene_index] = ClipSlot(clip=clip)
+        self.scene_count = max(self.scene_count, scene_index + 1)
+        return self
+
+    def launch_scene(self, scene_index: int) -> "Session":
+        """Start all clips in a scene (column)."""
+        for name in self.track_names:
+            if scene_index < len(self.grid[name]):
+                slot = self.grid[name][scene_index]
+                if not slot.is_empty:
+                    slot.play()
+        return self
+
+    def stop_all(self) -> "Session":
+        """Stop all playing clips."""
+        for name in self.track_names:
+            for slot in self.grid[name]:
+                slot.stop()
+        return self
+
+    def render(
+        self,
+        scene_order: list[int] | None = None,
+        loops_per_scene: int = 1,
+    ) -> "Song":
+        """Render the session to a Song by playing scenes in sequence.
+
+        Args:
+            scene_order:     List of scene indices to play in order.
+                             None = play all scenes 0..N in order.
+            loops_per_scene: How many times each scene's clips loop.
+
+        Returns:
+            A Song with one Track per session track, containing the
+            concatenated clip events for the scene sequence.
+        """
+        if scene_order is None:
+            scene_order = list(range(self.scene_count))
+
+        song = Song(title="Session Render", bpm=self.bpm, sample_rate=self.sample_rate)
+
+        for name in self.track_names:
+            track = Track(
+                name=name,
+                instrument=self._instruments.get(name, "sine"),
+                volume=self._volumes.get(name, 0.8),
+            )
+
+            for scene_idx in scene_order:
+                if scene_idx < len(self.grid[name]):
+                    slot = self.grid[name][scene_idx]
+                    if slot.clip is not None:
+                        looped = slot.clip.loop(loops_per_scene)
+                        track.extend(looped.to_events())
+                    else:
+                        # Empty slot: add silence for the duration of the longest
+                        # clip in this scene
+                        max_dur = self._scene_duration(scene_idx)
+                        if max_dur > 0:
+                            track.add(Note.rest(max_dur * loops_per_scene))
+
+            song.add_track(track)
+
+        return song
+
+    def _scene_duration(self, scene_index: int) -> float:
+        """Duration of the longest clip in a scene."""
+        max_dur = 0.0
+        for name in self.track_names:
+            if scene_index < len(self.grid[name]):
+                slot = self.grid[name][scene_index]
+                if slot.clip is not None:
+                    max_dur = max(max_dur, slot.clip.duration)
+        return max_dur
+
+    def __repr__(self) -> str:
+        filled = sum(
+            1 for name in self.track_names for slot in self.grid.get(name, []) if not slot.is_empty
+        )
+        return (
+            f"Session({len(self.track_names)} tracks, "
+            f"{self.scene_count} scenes, {filled} clips, {self.bpm} BPM)"
+        )
+
+
+@dataclass
 class Track:
     """A sequence of Beats with instrument/synth metadata.
 
@@ -2325,15 +2540,24 @@ class Song:
         }
         return self
 
-    def export_stems(self, out_dir: str, fmt: str = "wav") -> list:
+    def export_stems(
+        self,
+        out_dir: str,
+        fmt: str = "wav",
+        include_effects: bool = False,
+        use_title_prefix: bool = False,
+    ) -> list:
         """Render each track as a separate audio file (stem export).
 
-        Creates one file per track, named ``<track_name>.<fmt>``.
-        Useful for mixing in a DAW, sharing individual parts, or remix work.
+        Creates one file per track. Naming convention:
+        - Default: ``<track_name>.<fmt>``
+        - With use_title_prefix: ``<song_title>_<track_name>.<fmt>``
 
         Args:
-            out_dir: Output directory (created if missing).
-            fmt:     Audio format — "wav" (default), "flac", or "mp3".
+            out_dir:          Output directory (created if missing).
+            fmt:              Audio format - "wav" (default), "flac", or "mp3".
+            include_effects:  Apply per-track effects from song.effects dict.
+            use_title_prefix: Prefix filenames with song title.
 
         Returns:
             List of Path objects for the written files.
@@ -2341,7 +2565,7 @@ class Song:
         Example::
 
             song.export_stems("dist/stems/my_song/")
-            # → dist/stems/my_song/kick.wav, bass.wav, lead.wav, ...
+            song.export_stems("dist/stems/", include_effects=True, use_title_prefix=True)
         """
         from pathlib import Path as _Path
 
@@ -2358,6 +2582,8 @@ class Song:
 
         import numpy as np
 
+        effects_dict = getattr(self, "effects", {}) or {}
+
         for track in self.tracks:
             mono = synth.render_track(track, self.bpm, total_beats)
             total_samples = len(mono)
@@ -2372,8 +2598,25 @@ class Song:
                 stereo /= peak
             stereo = np.tanh(stereo * 0.95)
 
+            # Apply per-track effects if requested
+            if include_effects and track.name in effects_dict:
+                fx = effects_dict[track.name]
+                try:
+                    if callable(fx):
+                        stereo = fx(stereo, self.sample_rate)
+                    elif hasattr(fx, "apply"):
+                        stereo = fx.apply(stereo, self.sample_rate)
+                except Exception:
+                    pass  # skip broken effects, do not lose the stem
+
             safe_name = track.name.replace(" ", "_").replace("/", "_")
-            path = out / f"{safe_name}.{fmt}"
+            if use_title_prefix:
+                safe_title = self.title.lower().replace(" ", "_").replace("/", "_")
+                filename = f"{safe_title}_{safe_name}.{fmt}"
+            else:
+                filename = f"{safe_name}.{fmt}"
+
+            path = out / filename
             if fmt == "flac":
                 export_flac(stereo, path, self.sample_rate)
             elif fmt == "mp3":

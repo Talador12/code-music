@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v144.0.0 — 323 songs, 2860 tests, 460+ theory functions, 44 scales
+## Status: v145.0.0 — 323 songs, 2886 tests, 465+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2471,3 +2471,33 @@ trim). Demonstrates the full modulation/composition toolchain.
       2 duration, 1 repr, 1 CLI, 1 example, 1 import)
 
 **Stats:** 460+ public functions. 2860 tests. 323 songs. 44 scales.
+
+## v145.0 — Session View + ClipSlot + export_stems Improvements
+
+**ClipSlot:**
+Holds a Clip with play/stop/queue state. play() starts, stop() halts,
+queue() stages for next bar boundary. is_playing and is_empty properties.
+Empty slots safely ignore play/queue calls.
+
+**Session (Ableton-style session view):**
+Grid of ClipSlots (tracks x scenes). add_track() creates rows with
+instrument/volume. set_clip() places clips, auto-expanding scenes.
+launch_scene() starts all clips in a column. stop_all() halts everything.
+render(scene_order, loops_per_scene) flattens the grid to a Song by playing
+scenes in sequence - empty slots get silence for the scene duration.
+
+The composition workflow: build clips from small patterns, arrange them in
+a Session grid, render to a Song. Same mental model as Ableton Live but
+in code.
+
+**export_stems improvements:**
+- include_effects=True applies per-track effects from song.effects dict
+- use_title_prefix=True names files as {song_title}_{track_name}.{fmt}
+- Broken effects are skipped (no stem data lost)
+
+- [x] `ClipSlot` — play/stop/queue state machine
+- [x] `Session` — grid of ClipSlots, scene launcher, render to Song
+- [x] `export_stems` — include_effects + use_title_prefix flags
+- [x] 26 tests (7 ClipSlot, 12 Session, 3 export_stems, 4 imports)
+
+**Stats:** 465+ public functions. 2886 tests. 323 songs. 44 scales.
