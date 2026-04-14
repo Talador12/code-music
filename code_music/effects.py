@@ -2167,6 +2167,96 @@ def decode_bformat(
     raise ValueError(f"Unknown layout: {layout!r}. Use binaural/stereo/quad/5.1")
 
 
+def doppler(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    speed: float = 10.0,
+    direction: str = "pass_by",
+    closest_distance: float = 2.0,
+) -> FloatArray:
+    """Apply Doppler pitch shift to simulate a moving sound source.
+
+    Models the frequency shift caused by relative motion between source
+    and listener. An approaching source is pitched up, a receding source
+    is pitched down. The classic ambulance siren effect.
+
+    Args:
+        samples:           Mono or stereo audio.
+        sample_rate:       Sample rate.
+        speed:             Source speed in m/s (10 = walking, 30 = car, 340 = Mach 1).
+        direction:         Movement pattern:
+                           'pass_by' - approaches then recedes (full flyby)
+                           'approaching' - constant approach (pitch up)
+                           'receding' - constant recession (pitch down)
+        closest_distance:  Minimum distance at closest point (meters).
+
+    Returns:
+        Doppler-shifted audio (same shape as input).
+
+    Example::
+
+        >>> import numpy as np
+        >>> tone = np.sin(np.linspace(0, 440*2*np.pi, 22050)) * 0.3
+        >>> shifted = doppler(tone, 22050, speed=30, direction="pass_by")
+        >>> shifted.shape == tone.shape
+        True
+    """
+    speed_of_sound = 343.0  # m/s
+
+    if samples.ndim == 2:
+        mono = np.mean(samples, axis=1)
+    else:
+        mono = samples.copy()
+
+    n = len(mono)
+    t = np.arange(n) / sample_rate
+
+    # Calculate source position over time
+    if direction == "pass_by":
+        # Source moves from far left to far right, closest at midpoint
+        total_time = n / sample_rate
+        # Position along the travel axis (meters)
+        x_pos = speed * (t - total_time / 2)
+        # Distance from listener (Pythagorean)
+        distance = np.sqrt(x_pos**2 + closest_distance**2)
+        # Radial velocity (rate of change of distance)
+        radial_velocity = speed * x_pos / distance
+    elif direction == "approaching":
+        # Constant approach from far away
+        start_dist = speed * (n / sample_rate) + closest_distance
+        distance = start_dist - speed * t
+        distance = np.maximum(distance, closest_distance)
+        radial_velocity = np.full(n, -speed)
+    elif direction == "receding":
+        distance = closest_distance + speed * t
+        radial_velocity = np.full(n, speed)
+    else:
+        return mono if samples.ndim == 1 else samples.copy()
+
+    # Doppler ratio: f_observed = f_source * c / (c + v_radial)
+    doppler_ratio = speed_of_sound / (speed_of_sound + radial_velocity)
+
+    # Distance attenuation
+    dist_gain = closest_distance / np.maximum(distance, 0.1)
+
+    # Apply pitch shift via variable-rate resampling
+    # Build a time-warped read position
+    phase = np.cumsum(doppler_ratio) / sample_rate * sample_rate
+    # Interpolate the source at the warped positions
+    indices = np.clip(phase, 0, n - 1)
+    i0 = np.floor(indices).astype(np.intp)
+    i1 = np.minimum(i0 + 1, n - 1)
+    frac = indices - i0
+    resampled = mono[i0] * (1.0 - frac) + mono[i1] * frac
+
+    # Apply distance attenuation
+    result = resampled * dist_gain
+
+    if samples.ndim == 2:
+        return np.column_stack([result, result])
+    return result
+
+
 def spatial_mix(
     song,
     sample_rate: int = 44100,

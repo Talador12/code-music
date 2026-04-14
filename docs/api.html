@@ -176,7 +176,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <nav class="sidebar">
   <h1>code-music</h1>
   <div class="version">v5.0.0</div>
-  <div class="stats">440 functions, 19 modules</div>
+  <div class="stats">448 functions, 19 modules</div>
   <input type="text" id="search" placeholder="Search functions..." autocomplete="off">
     <a href="#engine" class="nav-link">Engine (52)</a>
   <a href="#harmony" class="nav-link">Harmony (65)</a>
@@ -184,8 +184,8 @@ h2 .count { color: var(--fg2); font-size: 13px; }
   <a href="#rhythm" class="nav-link">Rhythm (30)</a>
   <a href="#generation" class="nav-link">Generation (68)</a>
   <a href="#analysis" class="nav-link">Analysis (75)</a>
-  <a href="#composition" class="nav-link">Composition (25)</a>
-  <a href="#effects" class="nav-link">Effects (31)</a>
+  <a href="#composition" class="nav-link">Composition (27)</a>
+  <a href="#effects" class="nav-link">Effects (37)</a>
   <a href="#sound-design" class="nav-link">Sound Design (3)</a>
   <a href="#synth" class="nav-link">Synth (1)</a>
   <a href="#pattern" class="nav-link">Pattern (1)</a>
@@ -201,7 +201,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <main class="main">
   <h1 style="color:var(--accent);margin-bottom:8px;">API Reference</h1>
   <p style="color:var(--fg2);margin-bottom:30px;">
-    440 public functions and classes across 19 modules.
+    448 public functions and classes across 19 modules.
     Auto-generated from docstrings.
   </p>
   <section id="engine">
@@ -533,6 +533,9 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="method"><span class="method-name">.add_voice_track</span><span class="sig">(self, track) -&gt; &#x27;object&#x27;</span>
 <p class="method-doc">Add a VoiceTrack to the song. Returns the track.</p>
 </div>
+<div class="method"><span class="method-name">.analyze</span><span class="sig">(self) -&gt; &#x27;dict&#x27;</span>
+<p class="method-doc">Return a comprehensive musical analysis of this song.</p>
+</div>
 <div class="method"><span class="method-name">.arrange</span><span class="sig">(self, sections: &#x27;Sequence[Section]&#x27;, instruments: &#x27;dict[str, str] | None&#x27; = None, volumes: &#x27;dict[str, float] | None&#x27; = None, pans: &#x27;dict[str, float] | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span>
 <p class="method-doc">Compose a song from an ordered list of Sections.</p>
 </div>
@@ -575,7 +578,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </div>
 <div class="func" id="Track">
-<div class="func-header"><span class="kind">class</span> <span class="func-name">Track</span><span class="sig">(name: &#x27;str&#x27; = &#x27;track&#x27;, beats: &#x27;list[Beat]&#x27; = &lt;factory&gt;, instrument: &#x27;str&#x27; = &#x27;sine&#x27;, volume: &#x27;float&#x27; = 0.8, pan: &#x27;float&#x27; = 0.0, swing: &#x27;float&#x27; = 0.0, density: &#x27;float&#x27; = 1.0, density_seed: &#x27;int | None&#x27; = None) -&gt; None</span></div>
+<div class="func-header"><span class="kind">class</span> <span class="func-name">Track</span><span class="sig">(name: &#x27;str&#x27; = &#x27;track&#x27;, beats: &#x27;list[Beat]&#x27; = &lt;factory&gt;, instrument: &#x27;str&#x27; = &#x27;sine&#x27;, volume: &#x27;float&#x27; = 0.8, pan: &#x27;float&#x27; = 0.0, swing: &#x27;float&#x27; = 0.0, density: &#x27;float&#x27; = 1.0, density_seed: &#x27;int | None&#x27; = None, spatial_azimuth: &#x27;float | None&#x27; = None, spatial_elevation: &#x27;float&#x27; = 0.0, spatial_distance: &#x27;float&#x27; = 1.0, spatial_orbit_rate: &#x27;float | None&#x27; = None) -&gt; None</span></div>
 <div class="source">from code_music.engine</div>
 <div class="doc"><p>A sequence of Beats with instrument/synth metadata.</p>
 <p>Attributes:</p>
@@ -589,7 +592,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>2nd 8th note by this fraction of one 8th note duration.</p>
 </ul></div>
 <div class="methods">
-<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, name: &#x27;str&#x27; = &#x27;track&#x27;, beats: &#x27;list[Beat]&#x27; = &lt;factory&gt;, instrument: &#x27;str&#x27; = &#x27;sine&#x27;, volume: &#x27;float&#x27; = 0.8, pan: &#x27;float&#x27; = 0.0, swing: &#x27;float&#x27; = 0.0, density: &#x27;float&#x27; = 1.0, density_seed: &#x27;int | None&#x27; = None) -&gt; None</span>
+<div class="method"><span class="method-name">.__init__</span><span class="sig">(self, name: &#x27;str&#x27; = &#x27;track&#x27;, beats: &#x27;list[Beat]&#x27; = &lt;factory&gt;, instrument: &#x27;str&#x27; = &#x27;sine&#x27;, volume: &#x27;float&#x27; = 0.8, pan: &#x27;float&#x27; = 0.0, swing: &#x27;float&#x27; = 0.0, density: &#x27;float&#x27; = 1.0, density_seed: &#x27;int | None&#x27; = None, spatial_azimuth: &#x27;float | None&#x27; = None, spatial_elevation: &#x27;float&#x27; = 0.0, spatial_distance: &#x27;float&#x27; = 1.0, spatial_orbit_rate: &#x27;float | None&#x27; = None) -&gt; None</span>
 <p class="method-doc">Initialize self.  See help(type(self)) for accurate signature.</p>
 </div>
 <div class="method"><span class="method-name">.add</span><span class="sig">(self, event: &#x27;Note | Chord | None&#x27;) -&gt; &quot;&#x27;Track&#x27;&quot;</span>
@@ -4041,20 +4044,24 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>&#x27;Fugue in C major&#x27;</p></div>
 </div>
 <div class="func" id="generate_full_song">
-<div class="func-header"><span class="kind">def</span> <span class="func-name">generate_full_song</span><span class="sig">(genre: &#x27;str&#x27; = &#x27;pop&#x27;, key: &#x27;str&#x27; = &#x27;C&#x27;, bpm: &#x27;int&#x27; = 120, sections: &#x27;list[str] | None&#x27; = None, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span></div>
+<div class="func-header"><span class="kind">def</span> <span class="func-name">generate_full_song</span><span class="sig">(genre: &#x27;str&#x27; = &#x27;pop&#x27;, key: &#x27;str&#x27; = &#x27;C&#x27;, bpm: &#x27;int&#x27; = 120, sections: &#x27;list[str] | None&#x27; = None, modulate_bridge: &#x27;bool&#x27; = True, seed: &#x27;int | None&#x27; = None) -&gt; &quot;&#x27;Song&#x27;&quot;</span></div>
 <div class="source">from code_music.theory.generation</div>
 <div class="doc"><p>Generate a complete multi-track Song with drums, bass, chords, and melody.</p>
 <p>Glues together ~15 existing functions: generate_progression, song_form,</p>
 <p>generate_bass_line, generate_drums, generate_scale_melody,</p>
 <p>harmonize_melody, comp_pattern, density_plan, crescendo/decrescendo,</p>
 <p>groove_template, humanize_velocity, and more.</p>
+<p>When modulate_bridge is True, bridge sections modulate to a related key</p>
+<p>(perfect 4th or 5th above) for harmonic contrast - the same trick every</p>
+<p>pop hit from &quot;Hey Jude&quot; to &quot;Blinding Lights&quot; uses.</p>
 <h4 class="doc-section">Args</h4>
 <ul>
-<li><code>genre</code>: Target genre: &#x27;jazz&#x27;, &#x27;pop&#x27;, &#x27;rock&#x27;, &#x27;blues&#x27;, &#x27;classical&#x27;,</li>
-<p>&#x27;electronic&#x27;, &#x27;ambient&#x27;.</p>
+<li><code>genre</code>: Target genre: &#x27;jazz&#x27;, &#x27;pop&#x27;, &#x27;rock&#x27;, &#x27;blues&#x27;,</li>
+<p>&#x27;classical&#x27;, &#x27;electronic&#x27;, &#x27;ambient&#x27;.</p>
 <li><code>key</code>: Key root note.</li>
 <li><code>bpm</code>: Tempo in BPM.</li>
 <li><code>sections</code>: Custom section list. If None, uses genre default form.</li>
+<li><code>modulate_bridge</code>: If True, bridge sections modulate to a related key.</li>
 <li><code>seed</code>: Random seed for reproducibility.</li>
 </ul>
 <h4 class="doc-section">Returns</h4>
@@ -5963,7 +5970,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="composition">
-<h2>Composition <span class="count">(25)</span></h2>
+<h2>Composition <span class="count">(27)</span></h2>
 <div class="func" id="Bridge">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">Bridge</span><span class="sig">(bars: &#x27;int&#x27; = 4, **kwargs)</span></div>
 <div class="source">from code_music.composition</div>
@@ -6317,6 +6324,34 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <h4 class="doc-section">Returns</h4>
 <p>ABC notation string (parseable by abc2midi, EasyABC, etc).</p></div>
 </div>
+<div class="func" id="to_harmonic_rhythm">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">to_harmonic_rhythm</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 800, height: &#x27;int&#x27; = 120, bg: &#x27;str&#x27; = &#x27;#0a0a10&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Visualize harmonic rhythm as an SVG timeline.</p>
+<p>Shows chord changes over time: each chord gets a colored block.</p>
+<p>Width = duration, label = chord name. Reveals harmonic rhythm at a</p>
+<p>glance - are changes fast (every beat) or slow (every 4 bars)?</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song to visualize.</li>
+<li><code>width</code>: SVG width.</li>
+<li><code>height</code>: SVG height.</li>
+<li><code>bg</code>: Background color.</li>
+<li><code>path</code>: Optional file path to write SVG.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>SVG string.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Chord
+    &gt;&gt;&gt; song = Song(title=&quot;Test&quot;, bpm=120)
+    &gt;&gt;&gt; tr = song.add_track(Track())
+    &gt;&gt;&gt; tr.add(Chord(&quot;C&quot;, &quot;maj&quot;, 4, duration=4.0))
+    &gt;&gt;&gt; svg = to_harmonic_rhythm(song)
+    &gt;&gt;&gt; &quot;&lt;svg&quot; in svg
+</pre>
+<p>True</p></div>
+</div>
 <div class="func" id="to_html">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">to_html</span><span class="sig">(song: &#x27;Song&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
 <div class="source">from code_music.composition</div>
@@ -6351,6 +6386,36 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>| Cmin7          | Gmaj7          |</p>
 <p>| C  Eb G  Bb    | G  B  D  F#    |</p>
 </ul></div>
+</div>
+<div class="func" id="to_piano_roll">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">to_piano_roll</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 1200, height: &#x27;int&#x27; = 500, bg: &#x27;str&#x27; = &#x27;#0a0a10&#x27;, grid_color: &#x27;str&#x27; = &#x27;#1a1a25&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
+<div class="source">from code_music.composition</div>
+<div class="doc"><p>Render a Song as a piano roll SVG visualization.</p>
+<p>Each note becomes a colored rectangle: x-axis is time (beats),</p>
+<p>y-axis is pitch (MIDI note number), width is duration, color is</p>
+<p>per-track. Chords are expanded into individual note rectangles.</p>
+<p>Includes a grid, track legend, and pitch labels.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song to visualize.</li>
+<li><code>width</code>: SVG width in pixels.</li>
+<li><code>height</code>: SVG height in pixels.</li>
+<li><code>bg</code>: Background color.</li>
+<li><code>grid_color</code>: Grid line color.</li>
+<li><code>path</code>: If provided, write SVG to this file path.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>SVG string.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note
+    &gt;&gt;&gt; song = Song(title=&quot;Test&quot;, bpm=120)
+    &gt;&gt;&gt; tr = song.add_track(Track())
+    &gt;&gt;&gt; tr.add(Note(&quot;C&quot;, 4, 1.0))
+    &gt;&gt;&gt; svg = to_piano_roll(song)
+    &gt;&gt;&gt; &quot;&lt;svg&quot; in svg
+</pre>
+<p>True</p></div>
 </div>
 <div class="func" id="to_svg_waveform">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">to_svg_waveform</span><span class="sig">(song: &#x27;Song&#x27;, width: &#x27;int&#x27; = 800, height: &#x27;int&#x27; = 200, color: &#x27;str&#x27; = &#x27;#7c3aed&#x27;, bg: &#x27;str&#x27; = &#x27;#1a1a2e&#x27;, path: &#x27;str | None&#x27; = None) -&gt; &#x27;str&#x27;</span></div>
@@ -6396,7 +6461,7 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 </div>
 </section>
 <section id="effects">
-<h2>Effects <span class="count">(31)</span></h2>
+<h2>Effects <span class="count">(37)</span></h2>
 <div class="func" id="EffectsChain">
 <div class="func-header"><span class="kind">class</span> <span class="func-name">EffectsChain</span><span class="sig">() -&gt; &#x27;None&#x27;</span></div>
 <div class="source">from code_music.effects</div>
@@ -6507,6 +6572,37 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p># Real IR file</p>
 <p>conv_reverb(guitar, sr, ir_file=&quot;irs/church.wav&quot;, wet=0.4)</p></div>
 </div>
+<div class="func" id="decode_bformat">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">decode_bformat</span><span class="sig">(bformat: &#x27;FloatArray&#x27;, layout: &#x27;str&#x27; = &#x27;binaural&#x27;, sample_rate: &#x27;int&#x27; = 44100) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Decode B-format to a specific speaker layout or binaural.</p>
+<p>Supported layouts:</p>
+<ul>
+<li><code>&#x27;binaural&#x27;</code>: 2-channel headphone output (virtual speakers at +/-30)</li>
+<li><code>&#x27;stereo&#x27;</code>: 2-channel standard stereo (L/R at +/-30)</li>
+<li><code>&#x27;quad&#x27;</code>: 4-channel quadraphonic (FL, FR, RL, RR)</li>
+<li><code>&#x27;5.1&#x27;</code>: 6-channel surround (L, R, C, LFE, LS, RS)</li>
+</ul>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>bformat</code>: B-format array (N, 4) with [W, X, Y, Z].</li>
+<li><code>layout</code>: Target speaker layout.</li>
+<li><code>sample_rate</code>: Sample rate (used for binaural ITD).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Multi-channel audio. Shape depends on layout:</p>
+<ul>
+<li><code>binaural/stereo</code>: (N, 2), quad: (N, 4), 5.1: (N, 6).</li>
+</ul>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; bf = np.random.randn(22050, 4) * 0.1
+    &gt;&gt;&gt; stereo = decode_bformat(bf, &quot;stereo&quot;)
+    &gt;&gt;&gt; stereo.shape
+</pre>
+<p>(22050, 2)</p></div>
+</div>
 <div class="func" id="delay">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">delay</span><span class="sig">(samples: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, delay_ms: &#x27;float&#x27; = 375.0, feedback: &#x27;float&#x27; = 0.4, wet: &#x27;float&#x27; = 0.3, ping_pong: &#x27;bool&#x27; = True) -&gt; &#x27;FloatArray&#x27;</span></div>
 <div class="source">from code_music.effects</div>
@@ -6517,6 +6613,34 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <div class="func-header"><span class="kind">def</span> <span class="func-name">distortion</span><span class="sig">(samples: &#x27;FloatArray&#x27;, drive: &#x27;float&#x27; = 3.0, tone: &#x27;float&#x27; = 0.5, wet: &#x27;float&#x27; = 0.6) -&gt; &#x27;FloatArray&#x27;</span></div>
 <div class="source">from code_music.effects</div>
 <div class="doc"><p>Soft-clip overdrive with 1-pole tone control via scipy lfilter.</p></div>
+</div>
+<div class="func" id="encode_bformat">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">encode_bformat</span><span class="sig">(mono: &#x27;FloatArray&#x27;, azimuth: &#x27;float&#x27; = 0.0, elevation: &#x27;float&#x27; = 0.0, distance: &#x27;float&#x27; = 1.0) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Encode a mono signal into first-order Ambisonics B-format.</p>
+<p>B-format uses 4 channels (W, X, Y, Z) to represent a complete 3D</p>
+<p>sound field. W is the omnidirectional (pressure) component. X, Y, Z</p>
+<p>are the figure-of-eight (velocity) components along the three axes.</p>
+<p>This is the standard interchange format for spatial audio. Encode</p>
+<p>each source separately, sum the B-format signals, then decode to</p>
+<p>any speaker layout or binaural.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>mono</code>: Mono audio signal (N,).</li>
+<li><code>azimuth</code>: Horizontal angle in degrees (-180..180). 0 = front.</li>
+<li><code>elevation</code>: Vertical angle in degrees (-90..90). 0 = ear level.</li>
+<li><code>distance</code>: Source distance (1.0 = nominal, &gt;1 = farther).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>B-format array (N, 4) with channels [W, X, Y, Z].</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; mono = np.random.randn(22050) * 0.1
+    &gt;&gt;&gt; bformat = encode_bformat(mono, azimuth=45, elevation=0)
+    &gt;&gt;&gt; bformat.shape
+</pre>
+<p>(22050, 4)</p></div>
 </div>
 <div class="func" id="eq">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">eq</span><span class="sig">(samples: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, bands: &#x27;list[tuple[float, float, float]] | None&#x27; = None) -&gt; &#x27;FloatArray&#x27;</span></div>
@@ -6663,6 +6787,32 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <li><code>pan</code>: Stereo position (-1..1).</li>
 </ul></div>
 </div>
+<div class="func" id="orbit">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">orbit</span><span class="sig">(samples: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, rate: &#x27;float&#x27; = 0.5, radius: &#x27;float&#x27; = 2.0, elevation: &#x27;float&#x27; = 0.0) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Make a sound orbit around the listener&#x27;s head.</p>
+<p>Applies spatial_pan with a continuously rotating azimuth. The sound</p>
+<p>traces a circle at the given rate and radius. Classic spatial effect</p>
+<p>for pads, drones, and ambient textures.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>samples</code>: Mono or stereo audio.</li>
+<li><code>sample_rate</code>: Sample rate.</li>
+<li><code>rate</code>: Orbits per second (Hz). 0.5 = one full circle every 2s.</li>
+<li><code>radius</code>: Distance from listener.</li>
+<li><code>elevation</code>: Vertical angle (fixed during orbit).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Stereo binaural audio with orbiting spatial position.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; mono = np.random.randn(44100) * 0.1
+    &gt;&gt;&gt; orbiting = orbit(mono, 44100, rate=0.25, radius=2.0)
+    &gt;&gt;&gt; orbiting.shape[1]
+</pre>
+<p>2</p></div>
+</div>
 <div class="func" id="pan">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">pan</span><span class="sig">(samples: &#x27;FloatArray&#x27;, position: &#x27;float&#x27; = 0.0) -&gt; &#x27;FloatArray&#x27;</span></div>
 <div class="source">from code_music.effects</div>
@@ -6739,6 +6889,62 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <p>slapback(vocal, sr, delay_ms=120.0, level=0.6)</p>
 <p>slapback(guitar, sr, delay_ms=90.0, level=0.5)</p></div>
 </div>
+<div class="func" id="spatial_mix">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">spatial_mix</span><span class="sig">(song, sample_rate: &#x27;int&#x27; = 44100, layout: &#x27;str&#x27; = &#x27;binaural&#x27;) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Render a Song with spatial positioning applied to all tracks.</p>
+<p>Tracks with spatial_azimuth set are encoded to B-format at their</p>
+<p>position, summed into a combined sound field, then decoded to the</p>
+<p>target layout. Tracks without spatial attributes use standard</p>
+<p>stereo panning.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>song</code>: Song object.</li>
+<li><code>sample_rate</code>: Sample rate.</li>
+<li><code>layout</code>: Output layout: &#x27;binaural&#x27;, &#x27;stereo&#x27;, &#x27;quad&#x27;, &#x27;5.1&#x27;.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Multi-channel audio array.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; from code_music import Song, Track, Note
+    &gt;&gt;&gt; song = Song(title=&quot;3D&quot;, bpm=120, sample_rate=22050)
+    &gt;&gt;&gt; tr = song.add_track(Track(spatial_azimuth=45))
+    &gt;&gt;&gt; tr.add(Note(&quot;C&quot;, 4, 2.0))
+    &gt;&gt;&gt; audio = spatial_mix(song, 22050)
+    &gt;&gt;&gt; audio.shape[1]
+</pre>
+<p>2</p></div>
+</div>
+<div class="func" id="spatial_pan">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">spatial_pan</span><span class="sig">(samples: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, azimuth: &#x27;float&#x27; = 0.0, elevation: &#x27;float&#x27; = 0.0, distance: &#x27;float&#x27; = 1.0) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Position a mono or stereo signal in 3D space using binaural cues.</p>
+<p>Uses interaural time difference (ITD), interaural level difference (ILD),</p>
+<p>and distance attenuation to create a convincing spatial impression on</p>
+<p>headphones. No HRTF dataset needed - pure physics model.</p>
+<p>Azimuth 0 = center, +90 = hard right, -90 = hard left, 180 = behind.</p>
+<p>Elevation 0 = ear level, +90 = above, -90 = below.</p>
+<p>Distance 1.0 = close, higher = farther (attenuated + more reverb).</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>samples</code>: Mono (N,) or stereo (N,2) audio.</li>
+<li><code>sample_rate</code>: Sample rate in Hz.</li>
+<li><code>azimuth</code>: Horizontal angle in degrees (-180 to 180).</li>
+<li><code>elevation</code>: Vertical angle in degrees (-90 to 90).</li>
+<li><code>distance</code>: Distance from listener (1.0 = nominal).</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Stereo (N,2) binaural audio.</p>
+<h4 class="doc-section">Example</h4>
+<pre class="example">
+    &gt;&gt;&gt; import numpy as np
+    &gt;&gt;&gt; mono = np.random.randn(22050) * 0.1
+    &gt;&gt;&gt; binaural = spatial_pan(mono, 22050, azimuth=45)
+    &gt;&gt;&gt; binaural.shape
+</pre>
+<p>(22050, 2)</p></div>
+</div>
 <div class="func" id="stereo_width">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">stereo_width</span><span class="sig">(samples: &#x27;FloatArray&#x27;, width: &#x27;float&#x27; = 1.5) -&gt; &#x27;FloatArray&#x27;</span></div>
 <div class="source">from code_music.effects</div>
@@ -6748,6 +6954,19 @@ h2 .count { color: var(--fg2); font-size: 13px; }
 <li><code>width</code>: 0.0 = mono, 1.0 = unchanged, 2.0 = double width, &gt;2.0 = very wide.</li>
 <p>Values &gt; 1.5 can cause phase issues on mono systems.</p>
 </ul></div>
+</div>
+<div class="func" id="sum_bformat">
+<div class="func-header"><span class="kind">def</span> <span class="func-name">sum_bformat</span><span class="sig">(*signals: &#x27;FloatArray&#x27;) -&gt; &#x27;FloatArray&#x27;</span></div>
+<div class="source">from code_music.effects</div>
+<div class="doc"><p>Sum multiple B-format signals into a combined sound field.</p>
+<p>All inputs must be (N, 4) B-format arrays of the same length.</p>
+<p>The result is a single B-format representing all sources together.</p>
+<h4 class="doc-section">Args</h4>
+<ul>
+<li><code>*signals</code>: B-format arrays to sum.</li>
+</ul>
+<h4 class="doc-section">Returns</h4>
+<p>Combined B-format (N, 4).</p></div>
 </div>
 <div class="func" id="tape_sat">
 <div class="func-header"><span class="kind">def</span> <span class="func-name">tape_sat</span><span class="sig">(samples: &#x27;FloatArray&#x27;, sample_rate: &#x27;int&#x27; = 44100, drive: &#x27;float&#x27; = 2.0, warmth: &#x27;float&#x27; = 0.5, wet: &#x27;float&#x27; = 0.6) -&gt; &#x27;FloatArray&#x27;</span></div>

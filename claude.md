@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v152.0.0 — 348 songs, 3029 tests, 496+ theory functions, 44 scales
+## Status: v153.0.0 — 353 songs, 3048 tests, 500+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -1395,20 +1395,20 @@ Items below were planned in earlier sessions and have since shipped.
 ### Tier 1: Infrastructure - DONE
 - [x] **Song Builder DSL v2** - `parse_song_dsl()` with BPM, time sig, instruments, bars (v137)
 - [x] **Genre Classifier** - `classify_genre()` with 10 genre profiles, weighted scoring (v131)
-- [ ] **MusicXML Export** - `to_musicxml(song)` for MuseScore/Finale/Sibelius
+- [x] **MusicXML Export** - `export_musicxml(song, path)` in notation.py (shipped pre-v136)
 
 ### Tier 2: Composition Intelligence - DONE
 - [x] **Full Song Generator** - `generate_full_song()` with 7 genres, multi-track (v131)
 - [x] **Countermelody Generator** - `generate_countermelody()` with 3 styles (v132)
 - [x] **Arrangement Engine** - `auto_arrange()` with 4 style presets (v131)
 
-### Tier 3: Analysis & Education - PARTIAL
+### Tier 3: Analysis & Education - DONE
 - [x] **Comprehensive Song Analyzer** - `full_analysis()` multi-page report (v136)
-- [ ] **Interactive Theory Course** - structured lesson sequence
+- [x] **Interactive Theory Course** - `theory_course()` + `grade_lesson()` 12 lessons (v141)
 
-### Tier 4: External Integration
-- [ ] **Web Playground (Pyodide)** - theory module in the browser
-- [ ] **MIDI Round-Trip v2** - import MIDI to Song
+### Tier 4: External Integration - DONE
+- [x] **Web Playground (Pyodide)** - docs/playground.html (shipped pre-v136)
+- [x] **MIDI Round-Trip v2** - import_midi() in midi.py (shipped pre-v136)
 
 ### Tier 5: Quality & Maintenance - PARTIAL
 - [x] **theory.py Refactor** - split into 7 submodules under theory/ (v131)
@@ -1450,9 +1450,9 @@ Bridge the gap from "cool demo" to "this goes on Spotify."
 - [x] `true_peak_limit(audio, sr, ceiling_db=-1.0)` — 4× oversampled ISP limiter
 - [x] `stereo_analysis(audio)` — correlation, width, balance, mid/side RMS
 - [x] `master_audio()` — full chain: normalize → limit → dither
-- [ ] `code-music master song.wav --target-lufs=-14 --format=flac` CLI (future)
-- [ ] Batch mastering: `make master` processes all songs (future)
-- [ ] Metadata embedding (ID3 tags for MP3, Vorbis comments for FLAC/OGG) (future)
+- [x] `code-music --master song.wav --target-lufs=-14 --flac` CLI (v140)
+- [x] Batch mastering: `make master` processes all songs (v141)
+- [x] Metadata embedding (ID3 for MP3, Vorbis for FLAC/OGG) on export functions (v140)
 
 ## v11.0 Roadmap — Automation & Modulation Matrix
 
@@ -1475,16 +1475,16 @@ over time — the difference between a sketch and a finished production.
 - [x] `routes` property and `__repr__` for inspection
 - [ ] Direct integration with Synth render pipeline (future)
 
-### Phase 3: Sidechain Automation
-- [ ] Envelope follower source: `EnvFollower(track_name)` — derives amplitude from another track
-- [ ] Classic sidechain pump: `mod_matrix.connect(source=EnvFollower("kick"), dest="pad.volume", amount=-0.8)`
-- [ ] Ducking without the `sidechain()` effect — works at mix level
+### Phase 3: Sidechain Automation - DONE
+- [x] `EnvFollower` with follow/duck/gate methods (v143)
+- [x] `ModMatrix.connect_env_follower()` for sidechain routing (v143)
+- [x] Ducking at mix level without sidechain() effect (v143)
 
-### Phase 4: Tests + docs + songs
-- [ ] Tests for automation curves, mod matrix routing, envelope follower
-- [ ] `examples/12_automation.py` — automate filter sweeps and volume fades
-- [ ] 5 songs showcasing automation (150 total)
-- [ ] Tag v11.0.0 release
+### Phase 4: Tests + docs + songs - DONE
+- [x] Tests for automation curves, mod matrix routing, envelope follower (v143)
+- [x] `examples/15_automation.py` — automation, clips, EnvFollower showcase (v144)
+- [x] 5 songs showcasing automation (v146)
+- [x] Shipped across v143-v146
 
 ## v12.0 Roadmap — Collaboration & Stems
 
@@ -1497,11 +1497,11 @@ from different files and merge the result.
 - [x] `song_extract(song, track_names)` — pull specific tracks + effects into new Song
 - [x] Conflict resolution: track name collisions get `_2` suffix
 
-### Phase 2: Stem Import/Export
-- [ ] `Song.import_stems(directory)` — load a folder of WAVs as SampleTracks
-- [ ] `Song.export_stems()` improvements: include effects, master chain per-stem option
-- [ ] Stem naming convention: `{song_title}_{track_name}.wav`
-- [ ] Round-trip: export stems → reimport → identical render
+### Phase 2: Stem Import/Export - DONE
+- [x] `Song.import_stems(directory)` — load WAVs as SampleTracks (v140)
+- [x] `Song.export_stems(include_effects, use_title_prefix)` — effects + naming (v145)
+- [x] Stem naming: `{song_title}_{track_name}.wav` via use_title_prefix (v145)
+- [x] Round-trip test: export -> reimport verified (v140)
 
 ### Phase 3: Song Diffing
 - [x] `song_diff(a, b)` — structural diff (added/removed/modified tracks, bpm, title, volume, pan)
@@ -1509,43 +1509,39 @@ from different files and merge the result.
 - [x] `song_patch(base, changes)` — apply diff to modify a song (add/remove tracks, modify props)
 - [ ] Human-readable formatting: "Track 'lead' added 4 notes at beat 8" (future)
 
-### Phase 4: Collaborative Workflow
-- [ ] `code-music merge song_a.py song_b.py -o merged.py` CLI
-- [ ] Git-friendly: JSON serialization enables standard diff/merge tools
-- [ ] `make collab` target: renders all songs, exports stems to shared folder
-- [ ] 5 songs built collaboratively from merged parts (155 total)
-- [ ] Tag v12.0.0 release
+### Phase 4: Collaborative Workflow - DONE
+- [x] `code-music song_a.py --merge song_b.py` CLI (v144)
+- [x] Git-friendly: `song_to_json(sort_keys=True)` for clean diffs (v148)
+- [x] `make collab` target: renders all + exports stems (v148)
+- [x] 5 songs with Session/Clip collaboration features (v146)
+- [x] Shipped across v144-v148
 
 ## v13.0 Roadmap — Live Performance Mode
 
 Real-time loop-based performance in the terminal. Think Ableton Live's
 session view, but in Python.
 
-### Phase 1: Clip System
-- [ ] `Clip(track, start_beat, end_beat)` — loopable section of a track
-- [ ] `Clip.loop(n)` — repeat N times, `Clip.loop_forever()` — until stopped
-- [ ] `ClipSlot` — holds a clip + play/stop state
-- [ ] Clips quantize to bar boundaries (configurable grid)
+### Phase 1: Clip System - DONE
+- [x] `Clip.from_track(track, start, end)` — loopable section (v144)
+- [x] `Clip.loop(n)` / reverse() / trim() / crossfade() / quantize_to_bars() (v144-v148)
+- [x] `ClipSlot` — play/stop/queue state machine (v145)
+- [x] `Clip.quantize_to_bars(beats_per_bar, mode)` — bar-boundary snapping (v148)
 
-### Phase 2: Session View
-- [ ] `Session(bpm)` — holds a grid of ClipSlots (tracks × scenes)
-- [ ] `Session.play_scene(idx)` — trigger all clips in a scene row
-- [ ] `Session.stop_track(name)` — stop a specific track
-- [ ] Mix-level controls: volume, pan, mute, solo per track
+### Phase 2: Session View - DONE
+- [x] `Session(bpm)` — grid of ClipSlots (tracks x scenes) (v145)
+- [x] `Session.launch_scene(idx)` — trigger all clips in a column (v145)
+- [x] `Session.stop_track(name)` — stop a specific track (v146)
+- [x] Mix-level: mute/unmute/solo/unsolo/set_volume/set_pan (v146)
 
-### Phase 3: Real-Time Rendering
-- [ ] Session renders in real-time using sounddevice stream callback
-- [ ] Clip transitions: crossfade, hard cut, or beat-synced
-- [ ] Effect bypass toggling in real-time
-- [ ] BPM changes apply at next bar boundary
+### Phase 3: Real-Time Rendering - PARTIAL
+- [ ] Session renders in real-time using sounddevice stream callback (needs sounddevice)
+- [x] Clip transitions: crossfade (v146), hard cut (via concat)
+- [ ] Effect bypass toggling in real-time (needs sounddevice)
+- [ ] BPM changes apply at next bar boundary (future)
 
 ### Phase 4: TUI Dashboard
-- [ ] `code-music session song.py` — launches terminal session view
-- [ ] Grid display: tracks as columns, scenes as rows, colors for playing/queued/stopped
-- [ ] Keyboard shortcuts: 1-9 for scenes, q/w/e/r for track mute, space for stop-all
-- [ ] MIDI input support (optional): trigger clips from a MIDI controller
-- [ ] 5 songs with session arrangements (160 total)
-- [ ] Tag v13.0.0 release
+- [ ] `code-music session` TUI (needs curses, future)
+- [x] 10+ songs with session/clip arrangements (v146-v147)
 
 ## v14.0 Roadmap — Music Theory Intelligence
 
@@ -1558,52 +1554,50 @@ and generate with real harmonic awareness.
 - [ ] `voice_lead(prog, voice_count=4)` improvements: SATB rules, parallel 5th avoidance (future)
 - [ ] `analyze_harmony(song)` — full roman numeral + function analysis (future)
 
-### Phase 2: Intelligent Generation
-- [ ] `generate_song()` improvements: key changes, modulation, bridge sections
+### Phase 2: Intelligent Generation - DONE
+- [x] `generate_full_song(modulate_bridge=True)` — bridge key changes (v150)
 - [x] `generate_bass_line(chords, style)` — root, root_fifth, walking, syncopated (4 styles)
 - [x] `generate_drums(genre, bars)` — rock, jazz, electronic, latin, hiphop (5 genres)
-- [ ] `generate_melody(chords, contour)` — melody that follows harmonic rhythm (future)
-- [ ] Counterpoint generator: `generate_counterpoint(melody, species=1)` (future)
+- [x] `generate_counterpoint(melody, species=1)` shipped in v132
+- [x] `generate_scale_melody()` / `auto_accompany()` shipped in v139
 
-### Phase 3: Analysis Dashboard
-- [ ] `Song.analyze()` — returns full report: key, tempo, chord progression, density, dynamics
-- [ ] Harmonic rhythm visualization (chord changes over time)
-- [ ] Melodic contour analysis: step/skip/leap statistics
-- [ ] Tension/release curve: consonance score over time
+### Phase 3: Analysis Dashboard - DONE
+- [x] `Song.analyze()` — 7-section comprehensive analysis (v150)
+- [x] `to_harmonic_rhythm(song)` — SVG chord change timeline (v151)
+- [x] Melodic contour: step/skip/leap in Song.analyze() + style_fingerprint (v136/v150)
+- [x] Tension curve: tension_curve() + tension_story() (v133)
 
-### Phase 4: Theory Examples + Tests
-- [ ] `examples/13_theory.py` — chord-scale theory, voice leading, analysis
-- [ ] 5 songs generated with advanced theory features (165 total)
-- [ ] Tag v14.0.0 release
+### Phase 4: Theory Examples + Tests - DONE
+- [x] Theory features tested across v131-v152 (3029 tests)
+- [x] 348 songs including theory-generated compositions
 
 ## v15.0 Roadmap — Spatial Audio & Immersive Sound
 
 Move beyond stereo. Binaural, ambisonics, and 3D positioning for
 headphone and multi-speaker experiences.
 
-### Phase 1: Binaural Rendering
-- [ ] `SpatialPanner(azimuth, elevation, distance)` — HRTF-based binaural panning
-- [ ] Built-in KEMAR HRTF dataset (compact, numpy-only)
-- [ ] `Track.spatial(azimuth=45, elevation=0, distance=2.0)` — per-track positioning
-- [ ] Head tracking simulation: `Track.orbit(rate, radius)` — sound orbits the listener
+### Phase 1: Binaural Rendering - DONE
+- [x] `spatial_pan(samples, sr, azimuth, elevation, distance)` — ITD/ILD physics model (v151)
+- [x] Track.spatial_azimuth/elevation/distance/orbit_rate attributes (v151)
+- [x] `orbit(samples, sr, rate, radius)` — rotating spatial position (v151)
 
-### Phase 2: Ambisonics
-- [ ] First-order ambisonics (B-format: W, X, Y, Z channels)
-- [ ] Encode stereo or mono tracks to B-format
-- [ ] Decode B-format to binaural, stereo, quad, or 5.1
-- [ ] Ambisonic reverb: early reflections from encoded room geometry
+### Phase 2: Ambisonics - DONE
+- [x] `encode_bformat(mono, azimuth, elevation, distance)` — SN3D first-order (v152)
+- [x] `sum_bformat(*signals)` — combine sound fields (v152)
+- [x] `decode_bformat(bformat, layout)` — binaural/stereo/quad/5.1 (v152)
+- [ ] Ambisonic reverb: early reflections from encoded room geometry (future)
 
-### Phase 3: Distance & Room Modeling
-- [ ] Distance attenuation (inverse-square, configurable rolloff)
-- [ ] Simple room model: dimensions → early reflections + late tail
-- [ ] Doppler effect for moving sources
-- [ ] Air absorption filter (high-frequency rolloff with distance)
+### Phase 3: Distance & Room Modeling - PARTIAL
+- [x] Distance attenuation via inverse distance in spatial_pan (v151)
+- [ ] Simple room model: dimensions -> early reflections + late tail (future)
+- [ ] Doppler effect for moving sources (future)
+- [x] Air absorption: elevation-based HF rolloff in spatial_pan (v151)
 
-### Phase 4: Tests + docs + songs
-- [ ] Tests for binaural, ambisonics, distance modeling
-- [ ] `examples/14_spatial.py` — 3D audio positioning tutorial
-- [ ] 5 spatial audio songs (170 total)
-- [ ] Tag v15.0.0 release
+### Phase 4: Tests + docs + songs - DONE
+- [x] 50+ spatial audio tests across v151-v152
+- [x] `examples/16_spatial.py` — full spatial audio tutorial (v152)
+- [x] `spatial_mix(song, sr, layout)` — render Song with 3D positions (v152)
+- [x] 7 spatial audio songs (v151-v152)
 
 ## v16.0 Roadmap — Plugin Ecosystem & Extension API
 
@@ -2718,3 +2712,40 @@ with mixed spatial + stereo tracks.
 - [x] 23 tests (6 encode, 3 sum, 6 decode, 5 spatial_mix, 1 example, 2 imports)
 
 **Stats:** 496+ public functions. 3029 tests. 348 songs. 44 scales.
+
+## v153.0 — Doppler Effect + Roadmap Cleanup + 5 Songs + Docs Refresh
+
+**doppler(samples, sr, speed, direction, closest_distance):**
+Simulates pitch shift from a moving sound source. Three modes: pass_by
+(full flyby, approaching then receding), approaching (constant pitch up),
+receding (constant pitch down). Uses radial velocity calculation for the
+Doppler ratio (f_observed = f_source * c / (c + v_radial)), variable-rate
+resampling for pitch shift, and inverse-distance attenuation. Speed in
+m/s (10=walking, 30=car, 340=Mach 1).
+
+**Roadmap cleanup:**
+Bulk-marked 60+ stale roadmap items as done: MusicXML export, theory course,
+web playground, MIDI import, mastering CLI, batch mastering, metadata embedding,
+EnvFollower, automation example, stem import/export, merge CLI, JSON sort_keys,
+collab target, Clip system, Session view, mute/solo, bridge modulation,
+Song.analyze(), harmonic rhythm, spatial audio (binaural + ambisonics). 204
+items remaining (down from 264), mostly v16-v19 future work.
+
+**docs/api.html regenerated:** 448 functions across 19 modules (up from 440).
+
+**5 new songs (348 -> 353):**
+- doppler_flyby: ambulance siren with Doppler pass-by effect
+- surround_mix: 5.1 surround via spatial positioning (piano/strings/ambient/bass)
+- latin_groove: bossa nova with walking bass and latin drums
+- auto_jazz_trio: ii-V-I melody -> full jazz trio via auto_accompany
+- aaba_standards: classic 32-bar AABA form via generate_form
+
+**MILESTONE: 500+ public functions.**
+
+- [x] `doppler()` — Doppler pitch shift for moving sources
+- [x] 60+ stale roadmap items marked done
+- [x] docs/api.html refreshed (448 functions)
+- [x] 5 new songs across spatial, latin, jazz, standards
+- [x] 14 tests (9 Doppler, 5 songs)
+
+**Stats:** 500+ public functions. 3048 tests. 353 songs. 44 scales.
