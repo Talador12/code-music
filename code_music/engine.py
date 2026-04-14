@@ -2787,6 +2787,195 @@ class Song:
 
         return result
 
+    def fill_tracks(
+        self,
+        roles: list[str] | None = None,
+        genre: str = "pop",
+        seed: int | None = None,
+    ) -> "Song":
+        """Auto-fill missing instrument roles in the song.
+
+        Analyzes which roles (melody, bass, chords, drums) are present
+        and generates tracks for the missing ones. Turn a melody sketch
+        into a full arrangement in one call.
+
+        Args:
+            roles:  Roles to fill. None = auto-detect what is missing and
+                    fill all gaps. Options: 'bass', 'chords', 'drums', 'melody'.
+            genre:  Style for generated tracks (pop, jazz, rock, blues,
+                    classical, electronic, ambient).
+            seed:   Random seed.
+
+        Returns:
+            self (mutated with new tracks added).
+
+        Example::
+
+            >>> song = Song(title="Sketch", bpm=120, key_sig="C")
+            >>> lead = song.add_track(Track(name="lead", instrument="piano"))
+            >>> lead.extend(scale("C", "major", octave=5, length=16))
+            >>> song.fill_tracks(genre="jazz")  # adds bass, chords, drums
+        """
+        import random as _rng
+
+        rng = _rng.Random(seed)
+        key = self.key_sig or "C"
+
+        # Detect existing roles by instrument name
+        existing_instruments = set(t.instrument for t in self.tracks)
+        existing_names = set(t.name.lower() for t in self.tracks)
+
+        _bass_instr = {"bass", "sub_bass", "sub_808", "fm_bass", "vintage_bass"}
+        _drum_instr = {"drums_kick", "drums_snare", "drums_hat", "percussion"}
+        _chord_instr = {
+            "pad",
+            "piano",
+            "organ",
+            "pluck",
+            "vintage_epiano",
+            "vintage_organ",
+            "vintage_pad",
+            "vintage_strings",
+        }
+        _melody_instr = {"sawtooth", "sine", "square", "triangle", "vintage_lead", "fm_bell"}
+
+        has_bass = bool(existing_instruments & _bass_instr) or "bass" in existing_names
+        has_drums = bool(existing_instruments & _drum_instr) or any(
+            "drum" in n or "kick" in n or "hat" in n for n in existing_names
+        )
+        has_chords = bool(existing_instruments & _chord_instr) or "chords" in existing_names
+        has_melody = (
+            bool(existing_instruments & _melody_instr)
+            or "melody" in existing_names
+            or "lead" in existing_names
+        )
+
+        if roles is None:
+            roles_to_fill = []
+            if not has_bass:
+                roles_to_fill.append("bass")
+            if not has_chords:
+                roles_to_fill.append("chords")
+            if not has_drums:
+                roles_to_fill.append("drums")
+            if not has_melody:
+                roles_to_fill.append("melody")
+        else:
+            roles_to_fill = list(roles)
+
+        if not roles_to_fill:
+            return self  # nothing to fill
+
+        # Calculate target length from existing tracks
+        total_beats = self.total_beats
+        bars = max(4, int(total_beats / 4))
+        chords_needed = max(4, bars)
+
+        # Generate a chord progression for the song
+        try:
+            from .theory.generation import generate_progression
+
+            prog = generate_progression(
+                key=key,
+                length=chords_needed,
+                genre=genre,
+                seed=rng.randint(0, 2**31),
+            )
+        except Exception:
+            prog = [(key, "maj"), ("F", "maj"), ("G", "maj"), (key, "maj")]
+            while len(prog) < chords_needed:
+                prog = prog + prog
+            prog = prog[:chords_needed]
+
+        chord_dur = max(1.0, total_beats / max(len(prog), 1))
+
+        if "chords" in roles_to_fill:
+            chord_track = self.add_track(
+                Track(name="chords", instrument="pad", volume=0.35, pan=-0.1)
+            )
+            for root, shape in prog:
+                chord_track.add(Chord(root, shape, 3, duration=chord_dur, velocity=50))
+
+        if "bass" in roles_to_fill:
+            try:
+                from .theory.generation import generate_bass_line
+
+                bass_style = {
+                    "jazz": "walking",
+                    "blues": "walking",
+                    "electronic": "syncopated",
+                }.get(genre, "root_fifth")
+                bass_notes = generate_bass_line(
+                    prog,
+                    style=bass_style,
+                    seed=rng.randint(0, 2**31),
+                )
+                bass_track = self.add_track(Track(name="bass", instrument="bass", volume=0.5))
+                bass_track.extend(bass_notes)
+            except Exception:
+                bass_track = self.add_track(Track(name="bass", instrument="bass", volume=0.5))
+                for root, _ in prog:
+                    bass_track.add(Note(root, 2, chord_dur, velocity=65))
+
+        if "drums" in roles_to_fill and genre not in ("ambient", "classical"):
+            drum_genres = {
+                "pop": "rock",
+                "rock": "rock",
+                "jazz": "jazz",
+                "blues": "jazz",
+                "electronic": "electronic",
+            }
+            drum_genre = drum_genres.get(genre, "rock")
+            try:
+                from .theory.generation import generate_drums
+
+                drum_data = generate_drums(
+                    drum_genre,
+                    bars=bars,
+                    seed=rng.randint(0, 2**31),
+                )
+                for drum_name, drum_notes in drum_data.items():
+                    instr = f"drums_{drum_name}"
+                    if instr not in ("drums_kick", "drums_snare", "drums_hat"):
+                        instr = "drums_kick"
+                    dr = self.add_track(Track(name=drum_name, instrument=instr, volume=0.5))
+                    dr.extend(drum_notes)
+            except Exception:
+                kick = self.add_track(Track(name="kick", instrument="drums_kick", volume=0.7))
+                for _ in range(bars * 4):
+                    kick.add(Note("C", 4, 1.0, velocity=75))
+
+        if "melody" in roles_to_fill:
+            try:
+                from .theory.generation import generate_scale_melody
+
+                _scale_map = {
+                    "jazz": "dorian",
+                    "blues": "blues",
+                    "classical": "major",
+                    "ambient": "pentatonic",
+                }
+                scale_name = _scale_map.get(genre, "pentatonic")
+                mel = generate_scale_melody(
+                    key=key,
+                    scale_name=scale_name,
+                    length=bars * 4,
+                    octave=5,
+                    duration=1.0,
+                    seed=rng.randint(0, 2**31),
+                )
+                mel_track = self.add_track(
+                    Track(name="melody", instrument="sawtooth", volume=0.5, pan=0.15)
+                )
+                mel_track.extend(mel)
+            except Exception:
+                mel_track = self.add_track(
+                    Track(name="melody", instrument="sawtooth", volume=0.5, pan=0.15)
+                )
+                mel_track.extend(scale(key, "pentatonic", octave=5, length=bars * 4))
+
+        return self
+
     def master(
         self,
         eq_bands: list | None = None,

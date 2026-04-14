@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v159.0.0 — 377 songs, 3148 tests, 530+ theory functions, 44 scales
+## Status: v160.0.0 — 387 songs, 3176 tests, 535+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2950,3 +2950,34 @@ to_spectrogram. All SVG, all dark-themed. make visualize-all for batch.
 - [x] 14 tests (8 waveforms, 1 Makefile, 5 songs)
 
 **Stats:** 530+ public functions. 3148 tests. 377 songs. 44 scales.
+
+## v160.0 — Song.fill_tracks() + 10 New Songs
+
+**Song.fill_tracks(roles, genre, seed):**
+Auto-fill missing instrument roles. Analyzes which of melody/bass/chords/drums
+are present (by instrument name and track name heuristics), generates tracks
+for the gaps. Uses generate_progression for chords, generate_bass_line with
+genre-appropriate style (walking for jazz, root_fifth for pop, syncopated for
+electronic), generate_drums for rhythm, generate_scale_melody for lead.
+Ambient/classical skip drums. Returns self for chaining.
+
+The "make my sketch into a full song" button. Write a melody, call
+fill_tracks(), get a complete arrangement.
+
+**10 new songs (377 -> 387):**
+- mixolydian_blues: Mixolydian mode over bluesy changes
+- ambient_space: slow ambient with long reverb tails
+- celtic_reel: fast 6/8 time Celtic dance tune
+- hip_hop_beat: 90 BPM trap-style with 808 bass
+- bossa_sunset: bossa nova with gentle guitar
+- film_score: cinematic orchestral feel
+- lo_fi_study: lo-fi chill beats with swing
+- progressive_rock: 7/8 time prog rock
+- minimal_techno: repetitive minimal techno at 128 BPM
+- country_roads: country with acoustic guitar feel
+
+- [x] `Song.fill_tracks()` — auto-fill missing roles (melody/bass/chords/drums)
+- [x] 10 new songs across 10 genres
+- [x] 18 tests (8 fill_tracks, 10 songs)
+
+**Stats:** 535+ public functions. 3176 tests. 387 songs. 44 scales.
