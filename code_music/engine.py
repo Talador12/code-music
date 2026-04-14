@@ -2637,6 +2637,151 @@ class Song:
             "track_names": [t.name for t in self.tracks],
         }
 
+    def analyze(self) -> dict:
+        """Return a comprehensive musical analysis of this song.
+
+        Combines metadata, harmonic analysis, melodic analysis, rhythmic
+        analysis, arrangement analysis, and style fingerprint into a
+        single dict. Everything you want to know about a song in one call.
+
+        Returns:
+            Dict with sections: info, harmonic, melodic, rhythmic,
+            arrangement, fingerprint, critique, suggestions.
+
+        Example::
+
+            >>> from code_music import Song, Track, Note
+            >>> song = Song(title="Test", bpm=120, key_sig="C")
+            >>> tr = song.add_track(Track(instrument="piano"))
+            >>> tr.add(Note("C", 4, 1.0))
+            >>> result = song.analyze()
+            >>> "info" in result and "arrangement" in result
+            True
+        """
+        result = {"info": self.info()}
+
+        # Harmonic analysis: extract chords and analyze
+        chords = []
+        for track in self.tracks:
+            for beat in track.beats:
+                if beat.event is not None and hasattr(beat.event, "root"):
+                    shape = beat.event.shape if isinstance(beat.event.shape, str) else "maj"
+                    chords.append((beat.event.root, shape))
+
+        key = self.key_sig or "C"
+
+        if chords:
+            try:
+                from .theory.harmony import (
+                    detect_cadences,
+                    detect_key,
+                    functional_analysis,
+                    tension_curve,
+                )
+
+                detected_key, _, key_conf = detect_key(chords)
+                cadences = detect_cadences(chords, key)
+                functions = functional_analysis(chords, key)
+                tensions = tension_curve(chords, key=key)
+
+                result["harmonic"] = {
+                    "detected_key": detected_key,
+                    "key_confidence": round(key_conf, 3),
+                    "chord_count": len(chords),
+                    "unique_roots": len(set(r for r, _ in chords)),
+                    "unique_qualities": len(set(s for _, s in chords)),
+                    "cadences": len(cadences),
+                    "tension_mean": round(sum(tensions) / max(len(tensions), 1), 3),
+                    "tension_range": round((max(tensions) - min(tensions)) if tensions else 0, 3),
+                    "functions": [f.get("roman", "?") for f in functions[:8]],
+                }
+            except Exception:
+                result["harmonic"] = {"chord_count": len(chords)}
+        else:
+            result["harmonic"] = {"chord_count": 0}
+
+        # Melodic analysis: extract notes
+        all_notes = []
+        for track in self.tracks:
+            for beat in track.beats:
+                if (
+                    beat.event is not None
+                    and hasattr(beat.event, "pitch")
+                    and beat.event.pitch is not None
+                ):
+                    all_notes.append(beat.event)
+
+        if all_notes:
+            pitches = []
+            for n in all_notes:
+                try:
+                    from .theory._core import _semi
+
+                    midi = _semi(str(n.pitch)) + n.octave * 12
+                    pitches.append(midi)
+                except Exception:
+                    pass
+
+            intervals = [abs(pitches[i] - pitches[i - 1]) for i in range(1, len(pitches))]
+            steps = sum(1 for iv in intervals if iv <= 2)
+            leaps = sum(1 for iv in intervals if iv > 4)
+            total_iv = max(len(intervals), 1)
+
+            result["melodic"] = {
+                "note_count": len(all_notes),
+                "pitch_range": (max(pitches) - min(pitches)) if pitches else 0,
+                "avg_interval": round(sum(intervals) / total_iv, 2),
+                "step_ratio": round(steps / total_iv, 3),
+                "leap_ratio": round(leaps / total_iv, 3),
+                "avg_duration": round(sum(n.duration for n in all_notes) / len(all_notes), 3),
+            }
+        else:
+            result["melodic"] = {"note_count": 0}
+
+        # Rhythmic analysis
+        all_durations = []
+        rest_count = 0
+        for track in self.tracks:
+            for beat in track.beats:
+                all_durations.append(beat.duration)
+                if beat.event is None:
+                    rest_count += 1
+
+        total_events = max(len(all_durations), 1)
+        result["rhythmic"] = {
+            "total_events": total_events,
+            "rest_ratio": round(rest_count / total_events, 3),
+            "avg_duration": round(sum(all_durations) / total_events, 3),
+            "duration_variety": len(set(round(d, 3) for d in all_durations)),
+        }
+
+        # Arrangement analysis
+        try:
+            from .theory.analysis import analyze_arrangement
+
+            result["arrangement"] = analyze_arrangement(self)
+        except Exception:
+            result["arrangement"] = {"track_count": len(self.tracks)}
+
+        # Style fingerprint
+        try:
+            from .theory.analysis import style_fingerprint
+
+            result["fingerprint"] = style_fingerprint(self)
+        except Exception:
+            result["fingerprint"] = {}
+
+        # Critique
+        if chords:
+            try:
+                from .theory.analysis import critique_song
+
+                result["critique"] = critique_song(self, key)
+            except Exception:
+                result["critique"] = {}
+
+        return result
+
     def master(
         self,
         eq_bands: list | None = None,

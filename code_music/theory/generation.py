@@ -2737,6 +2737,7 @@ def generate_full_song(
     key: str = "C",
     bpm: int = 120,
     sections: list[str] | None = None,
+    modulate_bridge: bool = True,
     seed: int | None = None,
 ) -> "Song":
     """Generate a complete multi-track Song with drums, bass, chords, and melody.
@@ -2746,13 +2747,18 @@ def generate_full_song(
     harmonize_melody, comp_pattern, density_plan, crescendo/decrescendo,
     groove_template, humanize_velocity, and more.
 
+    When modulate_bridge is True, bridge sections modulate to a related key
+    (perfect 4th or 5th above) for harmonic contrast - the same trick every
+    pop hit from "Hey Jude" to "Blinding Lights" uses.
+
     Args:
-        genre:    Target genre: 'jazz', 'pop', 'rock', 'blues', 'classical',
-                  'electronic', 'ambient'.
-        key:      Key root note.
-        bpm:      Tempo in BPM.
-        sections: Custom section list. If None, uses genre default form.
-        seed:     Random seed for reproducibility.
+        genre:           Target genre: 'jazz', 'pop', 'rock', 'blues',
+                         'classical', 'electronic', 'ambient'.
+        key:             Key root note.
+        bpm:             Tempo in BPM.
+        sections:        Custom section list. If None, uses genre default form.
+        modulate_bridge: If True, bridge sections modulate to a related key.
+        seed:            Random seed for reproducibility.
 
     Returns:
         A fully constructed Song object with named tracks and section structure.
@@ -2788,13 +2794,34 @@ def generate_full_song(
     # Build song
     song = Song(title=f"{genre.title()} in {key}", bpm=bpm)
 
+    # Related keys for bridge modulation
+    _related = {
+        "C": "F",
+        "G": "C",
+        "D": "G",
+        "A": "D",
+        "E": "A",
+        "B": "E",
+        "F#": "B",
+        "F": "Bb",
+        "Bb": "Eb",
+        "Eb": "Ab",
+        "Ab": "Db",
+        "Db": "Gb",
+    }
+    bridge_key = _related.get(key, key) if modulate_bridge else key
+
     # Generate a chord progression per section type (cache same sections)
     section_progs: dict[str, list[tuple[str, str]]] = {}
+    section_keys: dict[str, str] = {}
     for section_name in set(sections):
         length = bars_per_section
         if genre == "blues" and section_name in ("head", "solo"):
             length = 12
-        prog = generate_progression(key=key, length=length, genre=genre, seed=child_seed())
+        # Bridge modulates to related key
+        sect_key = bridge_key if section_name in ("bridge", "breakdown") else key
+        section_keys[section_name] = sect_key
+        prog = generate_progression(key=sect_key, length=length, genre=genre, seed=child_seed())
         section_progs[section_name] = prog
 
     # Build full chord sequence
@@ -2841,8 +2868,9 @@ def generate_full_song(
     for i, section_name in enumerate(sections):
         prog = section_progs[section_name]
         contour = contours[i % len(contours)]
+        sect_key = section_keys.get(section_name, key)
         section_melody = generate_scale_melody(
-            key=key,
+            key=sect_key,
             scale_name=scale_name,
             length=len(prog) * 4,
             octave=5,

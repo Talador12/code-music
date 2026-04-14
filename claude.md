@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v149.0.0 — 338 songs, 2956 tests, 480+ theory functions, 44 scales
+## Status: v150.0.0 — 343 songs, 2978 tests, 485+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2605,3 +2605,34 @@ Regenerated docs/api.html - now 440 documented functions across 19 modules
 - [x] 16 tests (11 piano roll, 5 song smoke tests)
 
 **Stats:** 480+ public functions. 2956 tests. 338 songs. 44 scales.
+
+## v150.0 — Song.analyze() + Bridge Modulation + 5 New Songs
+
+**Song.analyze():**
+One-call comprehensive analysis. Returns dict with 7 sections: info
+(metadata), harmonic (detected key, confidence, cadences, tension, Roman
+numerals), melodic (note count, pitch range, step/leap ratios, avg duration),
+rhythmic (event count, rest ratio, duration variety), arrangement (roles,
+crossings, violations, balance, score), fingerprint (8-dimension feature
+vector), and critique (score, grade, issues, suggestions). Combines 6
+analysis modules into a single API.
+
+**generate_full_song(modulate_bridge=True):**
+Bridge sections now modulate to a related key (subdominant - e.g. C->F,
+G->C, A->D). Both chord progressions and melodies use the bridge key.
+The same trick used in "Hey Jude", "Blinding Lights", and most pop/rock
+hits for emotional lift before the final chorus.
+
+**5 new songs (338 -> 343):**
+- modulating_pop: verse/chorus/bridge with key change to subdominant
+- piano_roll_demo: generates song + exports piano roll SVG
+- electronic_build: EDM build/drop/breakdown at 138 BPM
+- blues_shuffle: 12-bar blues head/solo structure
+- analyzed_jazz_v2: generates jazz and prints Song.analyze() results
+
+- [x] `Song.analyze()` — 7-section comprehensive analysis in one call
+- [x] `generate_full_song(modulate_bridge=True)` — bridge key changes
+- [x] 5 new songs across pop, electronic, blues, jazz
+- [x] 17 tests (9 analyze, 3 modulation, 5 songs)
+
+**Stats:** 485+ public functions. 2978 tests. 343 songs. 44 scales.
