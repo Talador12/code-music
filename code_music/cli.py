@@ -257,6 +257,24 @@ examples:
         metavar="FILE",
         help="Merge another song script into this one (overlay tracks at beat 0)",
     )
+    parser.add_argument(
+        "--piano-roll",
+        type=str,
+        default=None,
+        nargs="?",
+        const="auto",
+        metavar="PATH",
+        help="Export piano roll SVG (default: <song>_piano_roll.svg)",
+    )
+    parser.add_argument(
+        "--spectrogram",
+        type=str,
+        default=None,
+        nargs="?",
+        const="auto",
+        metavar="PATH",
+        help="Export spectrogram SVG (default: <song>_spectrogram.svg)",
+    )
     parser.add_argument("--bpm", type=float, default=None, help="Override song BPM")
     parser.add_argument(
         "--benchmark",
@@ -493,6 +511,36 @@ examples:
         ratio = song.duration_sec / elapsed if elapsed > 0 else float("inf")
         print(f"  Rendered in {elapsed:.2f}s ({ratio:.1f}x realtime)")
         print(f"  {samples.shape[0]} samples, {samples.shape[1]} channels")
+        return 0
+    elif args.piano_roll is not None:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        from .composition import to_piano_roll
+
+        out_path = args.piano_roll if args.piano_roll != "auto" else f"{script.stem}_piano_roll.svg"
+        svg = to_piano_roll(song, path=out_path)
+        print(f"  Piano roll: {out_path} ({len(svg)} chars)")
+        return 0
+    elif args.spectrogram is not None:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"error loading {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        from .composition import to_spectrogram
+
+        out_path = (
+            args.spectrogram if args.spectrogram != "auto" else f"{script.stem}_spectrogram.svg"
+        )
+        svg = to_spectrogram(song, path=out_path)
+        print(f"  Spectrogram: {out_path} ({len(svg)} chars)")
         return 0
     elif args.analyze:
         try:

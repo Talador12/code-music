@@ -1599,6 +1599,214 @@ def to_harmonic_rhythm(
     return svg
 
 
+def to_spectrogram(
+    song: Song,
+    width: int = 900,
+    height: int = 400,
+    bg: str = "#0a0a10",
+    fft_size: int = 2048,
+    log_freq: bool = True,
+    path: str | None = None,
+) -> str:
+    """Render a Song's audio as a spectrogram SVG.
+
+    STFT-based frequency x time visualization. Each time-frequency bin
+    is colored by magnitude (dark = quiet, bright = loud). Log-frequency
+    axis by default for musical analysis (octaves are equally spaced).
+
+    Args:
+        song:      Song to visualize.
+        width:     SVG width in pixels.
+        height:    SVG height in pixels.
+        bg:        Background color.
+        fft_size:  FFT window size.
+        log_freq:  If True, use log frequency axis (musical). If False, linear.
+        path:      Optional file path to write SVG.
+
+    Returns:
+        SVG string.
+
+    Example::
+
+        >>> from code_music import Song, Track, Note
+        >>> song = Song(title="Test", bpm=120, sample_rate=22050)
+        >>> tr = song.add_track(Track(instrument="sine"))
+        >>> tr.add(Note("C", 4, 2.0))
+        >>> svg = to_spectrogram(song)
+        >>> "<svg" in svg
+        True
+    """
+    import numpy as np
+
+    from .synth import Synth
+
+    # Render to mono
+    synth = Synth(sample_rate=song.sample_rate)
+    try:
+        stereo = synth.render_song(song)
+        if stereo.ndim == 2:
+            mono = np.mean(stereo, axis=1)
+        else:
+            mono = stereo
+    except Exception:
+        mono = np.zeros(song.sample_rate)
+
+    sr = song.sample_rate
+    n = len(mono)
+
+    if n < fft_size:
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">'
+            f'<rect width="{width}" height="{height}" fill="{bg}"/>'
+            f'<text x="{width // 2}" y="{height // 2}" fill="#555" text-anchor="middle" '
+            f'font-size="14" font-family="monospace">Audio too short</text></svg>'
+        )
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    # Compute STFT
+    hop = fft_size // 4
+    window = np.hanning(fft_size)
+    num_frames = (n - fft_size) // hop + 1
+    num_bins = fft_size // 2 + 1
+
+    # Limit resolution for SVG (too many rects = huge file)
+    max_time_bins = min(num_frames, width)
+    max_freq_bins = min(num_bins, height)
+
+    time_step = max(1, num_frames // max_time_bins)
+    freq_step = max(1, num_bins // max_freq_bins)
+
+    # Compute magnitude spectrogram (decimated)
+    magnitudes = []
+    for t_idx in range(0, num_frames, time_step):
+        start = t_idx * hop
+        frame = mono[start : start + fft_size] * window
+        spectrum = np.abs(np.fft.rfft(frame))
+        # Decimate frequency bins
+        decimated = spectrum[::freq_step]
+        magnitudes.append(decimated)
+
+    if not magnitudes:
+        svg = (
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">'
+            f'<rect width="{width}" height="{height}" fill="{bg}"/></svg>'
+        )
+        if path:
+            from pathlib import Path as _Path
+
+            _Path(path).write_text(svg)
+        return svg
+
+    mag_array = np.array(magnitudes)  # shape: (time_bins, freq_bins)
+
+    # Convert to dB
+    mag_db = 20 * np.log10(mag_array + 1e-10)
+    # Normalize to 0-1
+    db_min = np.percentile(mag_db, 5)
+    db_max = np.max(mag_db)
+    db_range = max(db_max - db_min, 1)
+    mag_norm = np.clip((mag_db - db_min) / db_range, 0, 1)
+
+    # Layout
+    margin_left = 50
+    margin_top = 30
+    margin_bottom = 30
+    margin_right = 10
+    plot_w = width - margin_left - margin_right
+    plot_h = height - margin_top - margin_bottom
+
+    time_bins, freq_bins = mag_norm.shape
+    cell_w = max(1, plot_w / time_bins)
+    cell_h = max(1, plot_h / freq_bins)
+
+    # Color map: dark blue -> purple -> orange -> white
+    def _color(val):
+        if val < 0.25:
+            r = int(val * 4 * 40)
+            g = 0
+            b = int(val * 4 * 100 + 20)
+        elif val < 0.5:
+            t2 = (val - 0.25) * 4
+            r = int(40 + t2 * 80)
+            g = 0
+            b = int(100 - t2 * 30)
+        elif val < 0.75:
+            t2 = (val - 0.5) * 4
+            r = int(120 + t2 * 135)
+            g = int(t2 * 100)
+            b = int(70 - t2 * 70)
+        else:
+            t2 = (val - 0.75) * 4
+            r = 255
+            g = int(100 + t2 * 155)
+            b = int(t2 * 200)
+        return f"#{min(r, 255):02x}{min(g, 255):02x}{min(b, 255):02x}"
+
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+        f'font-family="monospace">',
+        f'<rect width="{width}" height="{height}" fill="{bg}"/>',
+        f'<text x="{margin_left}" y="18" fill="#888" font-size="11">'
+        f"{song.title} - Spectrogram ({sr} Hz)</text>",
+    ]
+
+    # Draw spectrogram cells
+    for ti in range(time_bins):
+        x = margin_left + ti * cell_w
+        for fi in range(freq_bins):
+            # Flip y: low frequencies at bottom
+            y = margin_top + plot_h - (fi + 1) * cell_h
+            color = _color(mag_norm[ti, fi])
+            parts.append(
+                f'<rect x="{x:.1f}" y="{y:.1f}" '
+                f'width="{cell_w + 0.5:.1f}" height="{cell_h + 0.5:.1f}" '
+                f'fill="{color}"/>'
+            )
+
+    # Frequency axis labels
+    max_freq = sr / 2
+    freq_labels = [100, 500, 1000, 2000, 5000, 10000]
+    for freq in freq_labels:
+        if freq > max_freq:
+            continue
+        if log_freq:
+            import math
+
+            y_frac = math.log2(max(freq, 20)) / math.log2(max_freq)
+        else:
+            y_frac = freq / max_freq
+        y = margin_top + plot_h - y_frac * plot_h
+        if margin_top <= y <= margin_top + plot_h:
+            label = f"{freq}" if freq < 1000 else f"{freq // 1000}k"
+            parts.append(
+                f'<text x="{margin_left - 5}" y="{y + 3:.1f}" fill="#555" '
+                f'font-size="9" text-anchor="end">{label}</text>'
+            )
+
+    # Time axis labels
+    total_sec = n / sr
+    for sec in range(0, int(total_sec) + 1, max(1, int(total_sec) // 6)):
+        x = margin_left + (sec / total_sec) * plot_w
+        parts.append(
+            f'<text x="{x:.1f}" y="{height - 8}" fill="#555" '
+            f'font-size="9" text-anchor="middle">{sec}s</text>'
+        )
+
+    parts.append("</svg>")
+    svg = "\n".join(parts)
+
+    if path:
+        from pathlib import Path as _Path
+
+        _Path(path).write_text(svg)
+
+    return svg
+
+
 def full_analysis(song: Song) -> str:
     """Generate a comprehensive multi-page markdown analysis report.
 

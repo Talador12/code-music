@@ -34,6 +34,7 @@ from .composition import (
     to_html,
     to_lead_sheet,
     to_piano_roll,
+    to_spectrogram,
     to_svg_waveform,
     to_tab,
 )
@@ -985,6 +986,7 @@ __all__ = [
     "render_preview",
     "to_svg_waveform",
     "to_piano_roll",
+    "to_spectrogram",
     "to_harmonic_rhythm",
     # v151-152 spatial audio
     "spatial_pan",

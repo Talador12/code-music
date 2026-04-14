@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v157.0.0 — 368 songs, 3110 tests, 520+ theory functions, 44 scales
+## Status: v158.0.0 — 372 songs, 3129 tests, 525+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2886,3 +2886,36 @@ Direct access via `from code_music.packs.vintage import vintage_epiano`.
 - [x] 15 tests (3 discovery, 7 pack, 5 songs)
 
 **Stats:** 520+ public functions. 3110 tests. 368 songs. 44 scales.
+
+## v158.0 — Spectrogram SVG + CLI Viz Flags + Plugin Example + 4 Songs
+
+**to_spectrogram(song, width, height, fft_size, log_freq, path):**
+STFT-based spectrogram rendered as SVG. Magnitude spectrum colored with
+a dark blue -> purple -> orange -> white heat map. Log-frequency axis by
+default (octaves equally spaced). Decimated for reasonable SVG file size.
+Frequency and time axis labels. Completes the visualization trifecta:
+piano roll + waveform + spectrogram.
+
+**CLI --piano-roll and --spectrogram flags:**
+`code-music song.py --piano-roll` exports piano roll SVG.
+`code-music song.py --spectrogram` exports spectrogram SVG.
+Both accept optional path argument or default to `<song>_<type>.svg`.
+
+**examples/17_plugins.py:**
+Full tutorial: register custom instrument (chiptune square wave), custom
+effect (bitcrush), custom generator. Inspect with plugin_summary().
+Auto-discovery demo. Load vintage pack. Build song mixing custom + vintage.
+
+**4 new songs (368 -> 372):**
+- chiptune_adventure: 8-bit square wave retro game music
+- lydian_dreams: dreamy raised-4th modal piece
+- diminished_tension: suspenseful half-whole diminished scale
+- bebop_run: fast bebop dominant scale over ii-V-I at 200 BPM
+
+- [x] `to_spectrogram()` — STFT spectrogram as SVG with heat map coloring
+- [x] CLI `--piano-roll` and `--spectrogram` flags
+- [x] `examples/17_plugins.py` — plugin system tutorial
+- [x] 4 new songs across chiptune, modal, diminished, bebop
+- [x] 14 tests (7 spectrogram, 2 CLI, 1 example, 4 songs)
+
+**Stats:** 525+ public functions. 3129 tests. 372 songs. 44 scales.
