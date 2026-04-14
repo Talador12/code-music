@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v154.0.0 — 353 songs, 3060 tests, 510+ theory functions, 44 scales
+## Status: v155.0.0 — 358 songs, 3075 tests, 510+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -2777,3 +2777,35 @@ it auto-discovers on import.
 - [x] 12 tests (4 instrument, 2 effect, 2 generator, 2 summary, 1 clear, 1 imports)
 
 **Stats:** 510+ public functions. 3060 tests. 353 songs. 44 scales.
+
+## v155.0 — Synthesis Technique Gallery + Scale Atlas + 5 Songs
+
+**docs/techniques.html:**
+Same C major melody rendered through 7 synthesis techniques side by side:
+subtractive, FM, wavetable, wavetable scanning, granular, Karplus-Strong,
+bowed string. Inline audio players + waveform SVGs. One page, hear the
+difference between every synthesis method in the library.
+
+**docs/scales.html:**
+All 38 scales from the atlas rendered as ascending runs on plucked guitar.
+Grouped by category: diatonic (4), modal (7), pentatonic (3), blues/jazz (3),
+exotic (21+). Each card shows scale name, interval pattern, and audio player.
+
+**Makefile targets:**
+`make gallery-techniques`, `make gallery-scales`, `make gallery-all` (builds
+all gallery pages in one command).
+
+**5 new songs (353 -> 358):**
+- fm_bells: metallic FM bell tones with dual-operator stack
+- granular_clouds: ambient granular texture with cloud + shimmer presets
+- rock_anthem: power chords, distorted lead, full drum kit
+- modal_exploration: same phrase through all 7 church modes
+- plugin_demo: custom instrument registered via @register_instrument
+
+- [x] `scripts/build_technique_gallery.py` — 7 synthesis techniques compared
+- [x] `scripts/build_scale_gallery.py` — 38 scales with audio
+- [x] `make gallery-techniques/scales/all` targets
+- [x] 5 new songs across FM, granular, rock, modal, plugins
+- [x] 10 tests (5 gallery validation, 5 songs)
+
+**Stats:** 510+ public functions. 3075 tests. 358 songs. 44 scales.

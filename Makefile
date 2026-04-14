@@ -397,6 +397,15 @@ gallery: ## [Dev] Generate preset gallery → docs/gallery.html (renders all pre
 	$(BIN)/python scripts/build_gallery.py
 	@echo "  Open docs/gallery.html or visit $$(make -s pages-url)gallery.html"
 
+gallery-techniques: ## [Dev] Generate synthesis technique comparison → docs/techniques.html
+	$(BIN)/python scripts/build_technique_gallery.py
+
+gallery-scales: ## [Dev] Generate scale atlas gallery → docs/scales.html
+	$(BIN)/python scripts/build_scale_gallery.py
+
+gallery-all: gallery gallery-techniques gallery-scales gallery-instruments ## [Dev] Build all galleries
+	@echo "All galleries built in docs/"
+
 gallery-instruments: ## [Dev] Render all presets to individual WAVs → dist/gallery/instruments/
 	@mkdir -p dist/gallery/instruments
 	$(BIN)/python -c "\
