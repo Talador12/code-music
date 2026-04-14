@@ -1,6 +1,6 @@
 # code-music — project state
 
-## Status: v163.0.0 — 400 songs, 3231 tests, 545+ theory functions, 44 scales
+## Status: v164.0.0 — 405 songs, 3247 tests, 545+ theory functions, 44 scales
 
 ## Current state (for new conversations)
 
@@ -3063,3 +3063,36 @@ RT60 estimated from Sabine equation (room volume / surface absorption).
 - [x] 17 tests (11 sheet music, 6 room reverb)
 
 **Stats:** 545+ public functions. 3231 tests. 400 songs. 44 scales.
+
+## v164.0 — Examples 18-19 + README Refresh + 5 Songs
+
+**examples/18_structure.py:**
+Full tutorial of the composition toolchain: generate_form() (sonata),
+suggest_arrangement() (section boundaries), Session (clip grid with scenes),
+Clip operations (loop/reverse/crossfade/quantize), Song.fill_tracks()
+(auto-arrangement from sketch), Song.analyze() (comprehensive analysis).
+
+**examples/19_visualization.py:**
+All 6 SVG visualization types in one tutorial: to_piano_roll(),
+to_svg_waveform(), to_track_waveforms(), to_harmonic_rhythm(),
+to_spectrogram(), to_sheet_music(). Each rendered and reported.
+
+**README.md refresh:**
+Updated examples table to match reality (19 examples, not 21). Fixed
+song count (400+), example names, and descriptions. Removed references
+to examples that do not exist in the repo.
+
+**5 new songs (400 -> 405):**
+- west_african_kora: pentatonic plucked kora with djembe rhythm
+- nordic_folk: Dorian fiddle melody with drone bass
+- carnival_samba: surdo + tamborim rhythms with brass stabs
+- space_ambient_v2: evolving pads with room_reverb + orbit effects
+- klezmer_dance: harmonic minor with accordion and fast 2-beat
+
+- [x] `examples/18_structure.py` — composition toolchain tutorial
+- [x] `examples/19_visualization.py` — all 6 SVG viz types
+- [x] README.md refreshed with current stats + examples
+- [x] 5 new songs across African, Nordic, Brazilian, ambient, Klezmer
+- [x] 9 tests (2 examples, 2 README, 5 songs)
+
+**Stats:** 545+ public functions. 3247 tests. 405 songs. 44 scales.

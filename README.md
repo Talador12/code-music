@@ -65,8 +65,8 @@ Requires **Python 3.11+**. For MP3/FLAC/OGG export: `brew install ffmpeg`.
 
 | Directory | What's there |
 |---|---|
-| `examples/` | 21 step-by-step tutorials: hello world → analysis tools |
-| `songs/` | 266 full songs across 55+ genres |
+| `examples/` | 19 step-by-step tutorials: hello world → spatial audio → visualization |
+| `songs/` | 400+ songs across 30+ genres |
 | `samples/` | 100+ short instrument and technique demos |
 | `scales/` | 31 guided scale demos (all 12 keys), plus arpeggio mode |
 | `styles/` | Theory profiles for 7 genres (deadmau5, Zedd, bebop, cinematic…) |
@@ -142,22 +142,20 @@ The `examples/` directory walks through the entire API step by step:
 | 03 | `effects_chain.py` | EffectsChain, reverb, delay, compress |
 | 04 | `arrangement.py` | Section, repeat, Song.arrange |
 | 05 | `track_transforms.py` | transpose, loop, split, merge, stretch, filter |
-| 06 | `midi_roundtrip.py` | Export to MIDI, import back, remix |
-| 07 | `json_save_load.py` | Song.export_json / Song.load_json |
+| 06 | `midi_roundtrip.py` | Export to MIDI, import back |
+| 07 | `json_save_load.py` | Song JSON serialization round-trip |
 | 08 | `live_coding.py` | --watch --play for instant feedback |
-| 09 | `generative.py` | generate_song() — full AI-composed songs |
-| 10 | `analysis.py` | detect_key() — Krumhansl-Kessler key analysis |
-| 11 | `sound_design.py` | SoundDesigner — build instruments from scratch |
+| 09 | `generative.py` | generate_full_song() multi-track generation |
+| 10 | `analysis.py` | detect_key(), Song.analyze() |
+| 11 | `sound_design.py` | SoundDesigner - instruments from scratch |
 | 12 | `fm_and_wavetables.py` | FM synthesis, wavetables, euclidean rhythms |
-| 13 | `granular_and_physical.py` | Granular clouds, Karplus-Strong, waveguide, modal |
+| 13 | `granular_and_physical.py` | Granular clouds, Karplus-Strong, bowed string |
 | 14 | `patterns.py` | Pattern mini-notation, transforms, polymeter |
-| 15 | `spectral_and_timbre.py` | FFT freeze/shift/smear, timbre analysis |
-| 16 | `mastering.py` | LUFS normalization, true peak limiting, stereo analysis |
-| 17 | `automation.py` | Parameter automation, mod matrix, song composition |
-| 18 | `theory.py` | Chord-scale theory, bass/drum generators, song diffing |
-| 19 | `json_export.py` | Song JSON serialization, round-trip save/load |
-| 20 | `melody_and_structure.py` | Markov melody, Verse/Chorus, ASCII lead sheet |
-| 21 | `analysis.py` | Guitar tab, Roman numeral harmony, song structure map |
+| 15 | `automation.py` | Automation curves, EnvFollower, Clip loops |
+| 16 | `spatial.py` | 3D panning, orbit, ambisonics, spatial_mix |
+| 17 | `plugins.py` | Plugin registry, custom instruments/effects |
+| 18 | `structure.py` | Form generation, Session view, fill_tracks |
+| 19 | `visualization.py` | Piano roll, spectrogram, sheet music (6 types) |
 
 ```bash
 code-music examples/01_hello_world.py --play    # start here
