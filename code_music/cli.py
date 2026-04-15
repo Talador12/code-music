@@ -216,6 +216,11 @@ examples:
         help="List all quality presets (platform-specific export settings) and exit",
     )
     parser.add_argument(
+        "--list-integrations",
+        action="store_true",
+        help="Show available integrations (Python libs + CLI tools from other languages)",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=Path,
@@ -385,6 +390,23 @@ examples:
         print(f"{len(genres)} genres available for --genre-transform:\n")
         for g in genres:
             print(f"  {g}")
+        return 0
+
+    if getattr(args, "list_integrations", False):
+        from .integrations import list_integrations
+
+        integrations = list_integrations()
+        installed = {k: v for k, v in integrations.items() if v}
+        missing = {k: v for k, v in integrations.items() if not v}
+        print(f"Integrations ({len(installed)} available, {len(missing)} not installed):\n")
+        if installed:
+            print("  Available:")
+            for k in sorted(installed):
+                print(f"    {k}")
+        if missing:
+            print("\n  Not installed:")
+            for k in sorted(missing):
+                print(f"    {k}")
         return 0
 
     if args.list_quality:

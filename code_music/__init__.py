@@ -214,6 +214,18 @@ from .mastering import (
 )
 from .midi import export_midi, import_midi
 from .effects import noise_gate, sidechain, stereo_width
+from .integrations import (
+    ai_generate_melody,
+    ai_generate_sound,
+    analyze_audio,
+    from_music21,
+    from_pretty_midi,
+    import_audio,
+    list_integrations,
+    register_ai_backend,
+    register_synth_plugin,
+    to_music21,
+)
 from .export import QUALITY_PRESETS, export_with_preset, list_quality_presets
 from .notation import export_abc, export_lilypond, export_musicxml
 from .rhythm_game import export_clone_hero, export_stepmania

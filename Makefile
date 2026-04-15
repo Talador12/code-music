@@ -273,6 +273,19 @@ ci: ## [Dev] Full CI pipeline: format check + lint + test (mirrors what CI runs)
 	$(BIN)/ruff check code_music tests songs examples
 	$(BIN)/pytest tests/ -q --tb=short
 
+release: ## [Dev] Tag + push a release (CI-only — fails if not in GitHub Actions)
+	@if [ -z "$$GITHUB_ACTIONS" ]; then \
+		echo "ERROR: 'make release' runs in CI only. To trigger a release:"; \
+		echo "  git tag v$$(python3 -c 'import tomllib; print(tomllib.load(open(\"pyproject.toml\",\"rb\"))[\"project\"][\"version\"])')"; \
+		echo "  git push origin --tags"; \
+		echo ""; \
+		echo "GitHub Actions will then build, test, render, and publish to PyPI."; \
+		exit 1; \
+	fi
+	pip install build
+	python -m build
+	@echo "Built: $$(ls dist/*.whl dist/*.tar.gz)"
+
 examples: ## [Explore] Render all 8 tutorial examples → dist/examples/
 	@mkdir -p dist/examples
 	@count=0; for f in examples/0*.py; do \
