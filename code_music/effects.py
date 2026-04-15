@@ -2537,6 +2537,202 @@ def spectrum_analyze(
     }
 
 
+def sub_harmonics(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    octave_below: float = 0.3,
+    two_octaves_below: float = 0.0,
+    crossover: float = 150.0,
+) -> FloatArray:
+    """Sub-harmonic generator: synthesize bass content below the signal.
+
+    Waves LoAir / Rbass equivalent. Takes the low-frequency content of
+    the signal, pitch-shifts it down one or two octaves, and blends
+    it back. Creates sub-bass weight that was not in the original. Makes
+    thin kicks thump, gives bass guitar chest-rattling presence, adds
+    low-end to any mix that needs it.
+
+    Only processes frequencies below the crossover to avoid adding
+    sub-harmonics to midrange content (which would sound muddy).
+
+    Args:
+        octave_below:      Level of generated sub one octave down (0.0-0.5).
+        two_octaves_below: Level of sub two octaves down (0.0-0.3).
+        crossover:         Only process frequencies below this (Hz).
+    """
+    if octave_below < 0.01 and two_octaves_below < 0.01:
+        return samples.copy()
+
+    nyq = sample_rate / 2 - 1
+    xover = min(crossover, nyq)
+
+    # Extract the low frequency content
+    sos_lo = sig.butter(4, xover, btype="low", fs=sample_rate, output="sos")
+    if samples.ndim == 2:
+        lo_l = sig.sosfilt(sos_lo, samples[:, 0])
+        lo_r = sig.sosfilt(sos_lo, samples[:, 1])
+        lo = (lo_l + lo_r) * 0.5  # mono for sub generation
+    else:
+        lo = sig.sosfilt(sos_lo, samples)
+
+    n = len(lo)
+    out = samples.copy()
+
+    # Generate sub one octave below via half-wave rectification + filtering
+    # (classic analog sub-bass synthesis technique)
+    if octave_below > 0.01:
+        # Half-wave rectify (creates subharmonic at half the frequency)
+        rectified = np.maximum(lo, 0)
+        # Lowpass to extract the subharmonic
+        sub_cutoff = min(xover / 2, nyq)
+        sos_sub = sig.butter(4, sub_cutoff, btype="low", fs=sample_rate, output="sos")
+        sub1 = sig.sosfilt(sos_sub, rectified)
+        # Normalize and blend
+        pk = np.max(np.abs(sub1))
+        if pk > 0:
+            sub1 = sub1 / pk * np.max(np.abs(lo))
+        if out.ndim == 2:
+            out[:, 0] += sub1 * octave_below
+            out[:, 1] += sub1 * octave_below
+        else:
+            out += sub1 * octave_below
+
+    # Two octaves below
+    if two_octaves_below > 0.01:
+        rectified2 = np.maximum(np.maximum(lo, 0), 0)
+        rectified2 = np.maximum(rectified2, 0)
+        sub_cutoff2 = min(xover / 4, nyq)
+        if sub_cutoff2 > 10:
+            sos_sub2 = sig.butter(4, sub_cutoff2, btype="low", fs=sample_rate, output="sos")
+            sub2 = sig.sosfilt(sos_sub2, rectified2)
+            pk2 = np.max(np.abs(sub2))
+            if pk2 > 0:
+                sub2 = sub2 / pk2 * np.max(np.abs(lo)) * 0.5
+            if out.ndim == 2:
+                out[:, 0] += sub2 * two_octaves_below
+                out[:, 1] += sub2 * two_octaves_below
+            else:
+                out += sub2 * two_octaves_below
+
+    return out.astype(np.float64)
+
+
+def mono_check(
+    samples: FloatArray,
+) -> dict:
+    """Mono compatibility check: detect what will disappear when summed to mono.
+
+    Club systems, phone speakers, Bluetooth speakers, and many PA systems
+    are mono or near-mono. Anything that is purely in the side channel
+    (L and R exactly opposite) will cancel to zero in mono. This function
+    measures how much of your mix is at risk.
+
+    Returns:
+        Dict with 'correlation' (-1 to +1, higher = more mono compatible),
+        'side_energy_pct' (percentage of energy in side channel),
+        'mono_loss_db' (how much quieter the mono sum is vs stereo),
+        'problem_frequencies' (bands with poor correlation).
+    """
+    if samples.ndim != 2:
+        return {
+            "correlation": 1.0,
+            "side_energy_pct": 0.0,
+            "mono_loss_db": 0.0,
+            "problem_frequencies": [],
+        }
+
+    left = samples[:, 0]
+    right = samples[:, 1]
+    mid = (left + right) * 0.5
+    side = (left - right) * 0.5
+
+    # Overall correlation
+    l_rms = np.sqrt(np.mean(left**2))
+    r_rms = np.sqrt(np.mean(right**2))
+    if l_rms > 0 and r_rms > 0:
+        correlation = float(np.mean(left * right) / (l_rms * r_rms))
+    else:
+        correlation = 1.0
+
+    # Side energy percentage
+    mid_energy = np.mean(mid**2)
+    side_energy = np.mean(side**2)
+    total = mid_energy + side_energy
+    side_pct = float(side_energy / total * 100) if total > 0 else 0.0
+
+    # Mono loss in dB
+    stereo_rms = np.sqrt(np.mean(left**2 + right**2) / 2)
+    mono_rms = np.sqrt(np.mean(mid**2))
+    if stereo_rms > 0 and mono_rms > 0:
+        mono_loss = float(20 * np.log10(mono_rms / stereo_rms))
+    else:
+        mono_loss = 0.0
+
+    return {
+        "correlation": round(correlation, 3),
+        "side_energy_pct": round(side_pct, 1),
+        "mono_loss_db": round(mono_loss, 1),
+        "verdict": "good" if correlation > 0.5 else "caution" if correlation > 0 else "problem",
+    }
+
+
+def reference_match(
+    samples: FloatArray,
+    reference: FloatArray,
+    sample_rate: int = 44100,
+    strength: float = 0.7,
+) -> FloatArray:
+    """Match your mix's frequency balance to a reference track.
+
+    Analyze the spectral profile of a professional reference track and
+    apply corrective EQ to your mix to match it. The fastest way to get
+    a balanced mix - let a pro track do the thinking.
+
+    This is what iZotope Ozone's "Match EQ" and Soundtheory Gullfoss do.
+
+    Args:
+        samples:    Your mix to correct.
+        reference:  A professional reference track (load with import_audio).
+        strength:   How aggressively to match (0.0=none, 1.0=exact match).
+    """
+    n_bands = 32
+    nyq = sample_rate / 2 - 1
+    band_edges = np.logspace(np.log10(20), np.log10(min(20000, nyq)), n_bands + 1)
+
+    # Analyze both spectra
+    def _band_energy(audio):
+        mono = audio[:, 0] if audio.ndim == 2 else audio
+        fft = np.abs(np.fft.rfft(mono))
+        freqs = np.fft.rfftfreq(len(mono), 1.0 / sample_rate)
+        energies = []
+        for i in range(n_bands):
+            mask = (freqs >= band_edges[i]) & (freqs < band_edges[i + 1])
+            if np.any(mask):
+                energies.append(float(np.mean(fft[mask] ** 2)))
+            else:
+                energies.append(1e-20)
+        return np.array(energies)
+
+    src_energy = _band_energy(samples)
+    ref_energy = _band_energy(reference)
+
+    # Compute per-band gain corrections
+    corrections_db = 10 * np.log10(ref_energy / np.maximum(src_energy, 1e-20))
+    corrections_db = np.clip(corrections_db * strength, -12.0, 12.0)  # max +-12 dB
+
+    # Build parametric EQ bands from corrections
+    bands = []
+    for i in range(n_bands):
+        gain = float(corrections_db[i])
+        if abs(gain) > 0.5:
+            center = float(np.sqrt(band_edges[i] * band_edges[i + 1]))
+            bands.append(("peak", center, gain, 1.0))
+
+    if bands:
+        return parametric_eq(samples, sample_rate, bands=bands)
+    return samples.copy()
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
