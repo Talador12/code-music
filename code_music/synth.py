@@ -288,6 +288,8 @@ class Synth:
         "sync_lead": {
             "wave": "sawtooth",
             "harmonics": 16,
+            "unison": 3,
+            "detune_cents": 8,
             "A": 0.005,
             "D": 0.05,
             "S": 0.9,
@@ -296,6 +298,8 @@ class Synth:
         "trance_lead": {
             "wave": "sawtooth",
             "harmonics": 12,
+            "unison": 5,
+            "detune_cents": 15,
             "A": 0.005,
             "D": 0.08,
             "S": 0.85,
@@ -305,7 +309,16 @@ class Synth:
         "ambient_pad": {"wave": "sine", "harmonics": 4, "A": 0.5, "D": 0.0, "S": 1.0, "R": 1.5},
         "dark_pad": {"wave": "sawtooth", "harmonics": 6, "A": 0.4, "D": 0.1, "S": 0.9, "R": 1.2},
         "glass_pad": {"wave": "triangle", "harmonics": 8, "A": 0.3, "D": 0.15, "S": 0.7, "R": 1.0},
-        "warm_pad": {"wave": "sawtooth", "harmonics": 4, "A": 0.4, "D": 0.05, "S": 0.95, "R": 1.0},
+        "warm_pad": {
+            "wave": "sawtooth",
+            "harmonics": 4,
+            "unison": 4,
+            "detune_cents": 6,
+            "A": 0.4,
+            "D": 0.05,
+            "S": 0.95,
+            "R": 1.0,
+        },
         "poly_synth": {
             "wave": "sawtooth",
             "harmonics": 8,
@@ -462,7 +475,16 @@ class Synth:
         "tabla": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.15, "S": 0.0, "R": 0.2},
         "djembe": {"wave": "triangle", "harmonics": 4, "A": 0.001, "D": 0.2, "S": 0.0, "R": 0.3},
         # synth bass variants
-        "moog_bass": {"wave": "moog", "harmonics": 10, "A": 0.01, "D": 0.15, "S": 0.7, "R": 0.2},
+        "moog_bass": {
+            "wave": "moog",
+            "harmonics": 10,
+            "sub_osc": True,
+            "sub_level": 0.25,
+            "A": 0.01,
+            "D": 0.15,
+            "S": 0.7,
+            "R": 0.2,
+        },
         "sub_bass": {"wave": "sine", "harmonics": 1, "A": 0.02, "D": 0.05, "S": 1.0, "R": 0.3},
         "lead_edm": {
             "wave": "sawtooth",
@@ -634,9 +656,50 @@ class Synth:
             return result / len(detune)
 
         elif wave == "noise":
-            # White noise — for sweeps, snare body, cymbals
+            # White noise — flat spectrum, equal energy per Hz
             rng = np.random.default_rng(int(freq * 1000) % (2**31))
             return rng.standard_normal(n_samples)
+
+        elif wave == "pink_noise":
+            # Pink noise (1/f) — equal energy per octave. Warmer, more natural.
+            # Sounds like rain, waterfall, wind. Better for snares and cymbals
+            # than white noise. Uses the Voss-McCartney algorithm.
+            rng = np.random.default_rng(int(freq * 1000) % (2**31))
+            white = rng.standard_normal(n_samples)
+            # Approximate 1/f filter: cumulative sum of rows in a binary counter
+            n_rows = 16
+            rows = np.zeros(n_rows)
+            pink = np.zeros(n_samples)
+            for i in range(n_samples):
+                # Find the lowest set bit position
+                bit = 0
+                n = i
+                while n > 0 and n % 2 == 0:
+                    bit += 1
+                    n //= 2
+                if bit < n_rows:
+                    rows[bit] = rng.standard_normal()
+                pink[i] = np.sum(rows) + white[i]
+            # Normalize
+            pk = np.max(np.abs(pink))
+            if pk > 0:
+                pink /= pk
+            return pink
+
+        elif wave == "brown_noise":
+            # Brown noise (1/f^2) — deep, rumbling, like thunder.
+            # Brownian motion: each sample is previous + random step.
+            # Strongest in low frequencies. Great for sub-bass rumble
+            # and thunder effects.
+            rng = np.random.default_rng(int(freq * 1000) % (2**31))
+            white = rng.standard_normal(n_samples)
+            brown = np.cumsum(white)
+            # Normalize and remove DC offset
+            brown -= np.mean(brown)
+            pk = np.max(np.abs(brown))
+            if pk > 0:
+                brown /= pk
+            return brown
 
         elif wave == "moog":
             # Moog-style: sawtooth with cascaded LP character (2nd-order rolloff baked in)
@@ -786,6 +849,29 @@ class Synth:
             self._fm_ratio_hint = preset.get("mod_ratio", None)
             raw = self._wave(wave_type, freq, n_samples)
             self._fm_ratio_hint = None
+
+        # ── Unison/detune: stack multiple detuned copies for fat sounds ──
+        unison_voices = preset.get("unison", 0)
+        if unison_voices > 1:
+            detune_cents = preset.get("detune_cents", 10)
+            stack = raw.copy()
+            for v in range(1, unison_voices):
+                # Spread detune evenly: -detune to +detune
+                frac = (v / (unison_voices - 1)) * 2 - 1  # -1 to +1
+                cents = frac * detune_cents
+                f_det = freq * (2 ** (cents / 1200.0))
+                self._fm_ratio_hint = preset.get("mod_ratio", None)
+                voice = self._wave(wave_type, f_det, n_samples)
+                self._fm_ratio_hint = None
+                stack += voice
+            raw = stack / unison_voices
+
+        # ── Sub-oscillator: sine one octave below for bass weight ────────
+        if preset.get("sub_osc", False):
+            sub_level = preset.get("sub_level", 0.3)
+            t_sub = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+            sub = np.sin(2 * np.pi * (freq / 2) * t_sub) * sub_level
+            raw = raw + sub
 
         # Noise layer for snare / clap / cymbals / crash / ride
         noise_presets = {"snare", "clap", "cymbals", "crash", "ride"}

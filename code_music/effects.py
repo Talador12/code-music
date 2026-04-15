@@ -541,19 +541,112 @@ def compress(
 # ---------------------------------------------------------------------------
 
 
+def noise_gate(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    threshold: float = 0.02,
+    attack_ms: float = 1.0,
+    hold_ms: float = 50.0,
+    release_ms: float = 100.0,
+) -> FloatArray:
+    """Noise gate: silence audio below a threshold.
+
+    Essential for cleaning up drum tracks (no bleed between hits),
+    guitar tracks (no hum between notes), and any recording with
+    background noise. The gate opens when the signal exceeds the
+    threshold and closes when it drops below.
+
+    Args:
+        threshold:   Level below which audio is gated (0.0-1.0).
+        attack_ms:   How fast the gate opens (1-10ms).
+        hold_ms:     Minimum time gate stays open after signal drops.
+        release_ms:  How fast the gate closes (50-500ms).
+    """
+    peak = np.max(np.abs(samples), axis=1)
+
+    gate = np.zeros(len(peak))
+    hold_samples = int(hold_ms * sample_rate / 1000)
+    a_coef = math.exp(-1.0 / max(1, attack_ms * sample_rate / 1000))
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+
+    hold_counter = 0
+    gate_state = 0.0
+    for i in range(len(peak)):
+        if peak[i] >= threshold:
+            gate_state = 1.0 - a_coef * (1.0 - gate_state)
+            hold_counter = hold_samples
+        elif hold_counter > 0:
+            hold_counter -= 1
+            gate_state = 1.0
+        else:
+            gate_state = r_coef * gate_state
+        gate[i] = gate_state
+
+    return (samples * gate[:, np.newaxis]).astype(np.float64)
+
+
+def sidechain(
+    samples: FloatArray,
+    trigger: FloatArray,
+    sample_rate: int = 44100,
+    threshold: float = 0.3,
+    ratio: float = 8.0,
+    attack_ms: float = 1.0,
+    release_ms: float = 150.0,
+) -> FloatArray:
+    """Sidechain compression: duck one signal when another hits.
+
+    THE EDM effect. The kick triggers compression on the pad/bass,
+    creating the pumping rhythm that defines modern electronic music.
+
+    Args:
+        samples:     Signal to compress (pad, bass).
+        trigger:     Signal that controls compression (kick).
+        threshold:   Trigger level that activates ducking.
+        ratio:       How much to duck (4-20).
+        attack_ms:   How fast the duck starts.
+        release_ms:  How fast it recovers (50-300ms for audible pump).
+    """
+    if trigger.ndim == 2:
+        trig_peak = np.max(np.abs(trigger), axis=1)
+    else:
+        trig_peak = np.abs(trigger)
+
+    n = min(len(samples), len(trig_peak))
+    trig_peak = trig_peak[:n]
+
+    a_coef = math.exp(-1.0 / max(1, attack_ms * sample_rate / 1000))
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+
+    env = np.zeros(n)
+    env[0] = trig_peak[0]
+    for i in range(1, n):
+        if trig_peak[i] > env[i - 1]:
+            env[i] = a_coef * env[i - 1] + (1 - a_coef) * trig_peak[i]
+        else:
+            env[i] = r_coef * env[i - 1] + (1 - r_coef) * trig_peak[i]
+
+    gain = np.where(
+        env > threshold,
+        (threshold + (env - threshold) / ratio) / np.maximum(env, 1e-9),
+        1.0,
+    )
+
+    out = samples[:n].copy()
+    out *= gain[:, np.newaxis]
+    if len(samples) > n:
+        out = np.vstack([out, samples[n:]])
+    return out.astype(np.float64)
+
+
 def stereo_width(
     samples: FloatArray,
     width: float = 1.0,
 ) -> FloatArray:
     """Adjust stereo width via mid-side processing.
 
-    Mid-side is the secret weapon of mastering. Convert L/R to M/S,
-    scale the side channel, convert back. Width=0 = mono. Width=1 =
-    unchanged. Width=2 = exaggerated stereo (sides doubled). Width=0.5
-    = narrowed (more focused center image).
-
-    Used in mastering to widen a mix that sounds too narrow, or narrow
-    one that sounds too wide on headphones.
+    Mid-side is the secret weapon of mastering. Width=0 = mono.
+    Width=1 = unchanged. Width=2 = exaggerated stereo.
 
     Args:
         width: Stereo width multiplier (0.0=mono, 1.0=normal, 2.0=wide).
