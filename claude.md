@@ -1,6 +1,47 @@
 # code-music — project state
 
-## Status: v169.0.0 — 415 songs, 3338 tests, 595+ theory functions, 53 scales
+## Status: v170.0.0 — 415 songs, 3705 tests, 595+ theory functions, 53 scales
+
+## WHERE WE LEFT OFF (2026-04-14)
+
+Package is built, tested, and ready to publish to PyPI. Next steps in order:
+
+### Immediate (do these first)
+1. **Publish to PyPI** — Package builds clean (`python -m build`, twine check passes).
+   CI already has the publish job in `.github/workflows/ci.yml` (trusted publishing, OIDC).
+   Three things needed before tagging:
+   - Configure PyPI trusted publisher at https://pypi.org/manage/account/publishing/
+     (project: code-music, owner: Talador12, repo: code-music, workflow: ci.yml, env: pypi)
+   - Create GitHub environment "pypi" at repo settings/environments (no secrets needed)
+   - Then: `git tag v170.0.0 && git push origin --tags` triggers build+test+publish
+2. **Finish periodic table element enrichment** — 27 of 118 elements have full
+   origin/stability/binding_energy fields. Remaining ~91 need the pass. The mapping
+   system and narrative arc are done. Just need to add the physics to each entry.
+
+### Sound quality (continue from where we stopped)
+- Reverb IR was rebuilt (early reflections + allpass diffusion) but not A/B tested
+- Should add a proper A/B comparison test that renders old vs new reverb
+- The backlog in "Backlog: Music Theory Expressiveness" below has 38 items
+  (falls, doits, bends, arbitrary tuplets, voice leading rules, etc.)
+- Consider adding a `--hires` flag that renders at 96kHz internally and
+  downsamples for the target format (true hi-res, not just upsampled)
+
+### Market position
+- Integration layer shipped (integrations.py): music21, pretty_midi, librosa,
+  pyo, csound, supercollider, sox, fluidsynth, AI generation hooks
+- Need to actually TEST the integrations with real libraries installed
+- README needs updating for PyPI (install instructions, feature matrix,
+  quick examples, badges)
+- Should benchmark against music21, pyo, midiutil on feature coverage
+- Consider writing "migration guides" for users of other libraries
+
+### Albums waiting on better foundation
+- 8 albums stubbed (Rasputin, RUSH-ABC, Planets, Constellations, Elements,
+  Fibonacci, Time Periods, Periodic Table)
+- Do not start generating audio for these until the sound quality is where
+  we want it. The foundation improvements (dynamic harmonics, exponential ADSR,
+  oversampled distortion, 24-bit export) are done. Still need to verify they
+  sound good by actually listening to rendered output.
 
 ## Current state (for new conversations)
 
