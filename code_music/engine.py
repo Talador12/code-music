@@ -1133,16 +1133,19 @@ def grace_note(
 
 
 def doit(
-    note: Note, semitones: int = 2, steps: int = 4, speed: float = THIRTY_SECOND
+    note: Note, semitones: int = 2, steps: int = 12, speed: float = SIXTY_FOURTH
 ) -> list[Note]:
-    """Jazz doit: note bends upward after the attack.
+    """Jazz doit: smooth upward pitch bend after the attack.
 
-    Common in jazz brass. The pitch rises through chromatic steps after
-    the initial attack.
+    The pitch rises through many micro-steps for a continuous bend feel.
+    More steps = smoother curve. 12 steps with 64th note duration gives
+    a fast, smooth scoop that sounds like a real brass player lifting.
 
-    Example::
-
-        tr.extend(doit(Note('Bb', 4, QUARTER)))
+    Args:
+        note:       Source note.
+        semitones:  Total pitch rise in semitones.
+        steps:      Number of micro-steps (12+ for smooth, 4 for choppy).
+        speed:      Duration per micro-step.
     """
     if note.pitch is None:
         return [Note.rest(note.duration)]
@@ -1150,26 +1153,30 @@ def doit(
     main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
     result = [Note(pitch=base, duration=main_dur, velocity=note.velocity)]
     for i in range(1, steps + 1):
-        result.append(
-            Note(
-                pitch=base + round(semitones * i / steps),
-                duration=speed,
-                velocity=note.velocity * max(0.2, 1.0 - i / steps),
-            )
-        )
+        # Smooth fractional MIDI pitch (the synth rounds, but small steps = smooth)
+        frac = i / steps
+        # Exponential curve: starts slow, accelerates (more natural than linear)
+        curved_frac = frac**1.5
+        pitch = base + round(semitones * curved_frac)
+        vel = note.velocity * max(0.15, 1.0 - frac * 0.8)
+        result.append(Note(pitch=pitch, duration=speed, velocity=vel))
     return result
 
 
 def fall(
-    note: Note, semitones: int = 3, steps: int = 4, speed: float = THIRTY_SECOND
+    note: Note, semitones: int = 3, steps: int = 12, speed: float = SIXTY_FOURTH
 ) -> list[Note]:
-    """Jazz fall: note bends downward after the attack.
+    """Jazz fall: smooth downward pitch bend after the attack.
 
-    Opposite of doit — the pitch drops after the initial attack.
+    The pitch drops through many micro-steps. The velocity fades out
+    naturally. More steps = smoother. An exponential curve makes it
+    start slow and accelerate, like a real brass fall.
 
-    Example::
-
-        tr.extend(fall(Note('G', 5, QUARTER)))
+    Args:
+        note:       Source note.
+        semitones:  Total pitch drop in semitones.
+        steps:      Number of micro-steps.
+        speed:      Duration per micro-step.
     """
     if note.pitch is None:
         return [Note.rest(note.duration)]
@@ -1177,30 +1184,91 @@ def fall(
     main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
     result = [Note(pitch=base, duration=main_dur, velocity=note.velocity)]
     for i in range(1, steps + 1):
-        result.append(
-            Note(
-                pitch=base - round(semitones * i / steps),
-                duration=speed,
-                velocity=note.velocity * max(0.2, 1.0 - i / steps),
-            )
-        )
+        frac = i / steps
+        curved_frac = frac**1.5
+        pitch = base - round(semitones * curved_frac)
+        vel = note.velocity * max(0.1, 1.0 - frac * 0.85)
+        result.append(Note(pitch=pitch, duration=speed, velocity=vel))
     return result
 
 
-def flip(note: Note, semitones: int = 2, speed: float = THIRTY_SECOND) -> list[Note]:
-    """Jazz flip: quick upward scoop into the note from below.
+def flip(note: Note, semitones: int = 2, steps: int = 6, speed: float = SIXTY_FOURTH) -> list[Note]:
+    """Jazz flip / scoop: smooth upward approach into the note from below.
 
-    Example::
+    The pitch starts below and curves up to the target. More steps than
+    the old 2-step version for a continuous scoop feel.
 
-        tr.extend(flip(Note('D', 5, QUARTER)))
+    Args:
+        note:       Target note.
+        semitones:  How far below to start the scoop.
+        steps:      Number of micro-steps (6+ for smooth).
+        speed:      Duration per micro-step.
     """
     if note.pitch is None:
         return [Note.rest(note.duration)]
     base = note.midi or 0
-    main_dur = max(SIXTY_FOURTH, note.duration - speed * 2)
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
+    result = []
+    for i in range(steps):
+        frac = i / steps
+        # Starts at base - semitones, curves up to base
+        pitch = base - round(semitones * (1.0 - frac**0.7))
+        vel = note.velocity * (0.5 + 0.5 * frac)
+        result.append(Note(pitch=pitch, duration=speed, velocity=vel))
+    result.append(Note(pitch=base, duration=main_dur, velocity=note.velocity))
+    return result
+
+
+def glissando(
+    start: Note,
+    end_pitch: str | int,
+    end_octave: int = 4,
+    speed: float = THIRTY_SECOND,
+) -> list[Note]:
+    """Chromatic glissando: slide through every semitone between two pitches.
+
+    The classic piano glissando (dragging a finger across the keys) or
+    trombone slide. Every chromatic note between start and end is sounded.
+
+    Args:
+        start:      Starting note (uses its duration for the last note).
+        end_pitch:  Target pitch name or MIDI number.
+        end_octave: Target octave (if end_pitch is a name).
+        speed:      Duration per intermediate note.
+    """
+    if start.pitch is None:
+        return [Note.rest(start.duration)]
+    start_midi = start.midi or 0
+    end_midi = note_name_to_midi(end_pitch, end_octave) if isinstance(end_pitch, str) else end_pitch
+    direction = 1 if end_midi > start_midi else -1
+    result = []
+    for midi in range(start_midi, end_midi, direction):
+        result.append(Note(pitch=midi, duration=speed, velocity=start.velocity * 0.8))
+    # Final note gets the remaining duration
+    result.append(Note(pitch=end_midi, duration=start.duration, velocity=start.velocity))
+    return result
+
+
+def appoggiatura(note: Note, approach_from: int = 1) -> list[Note]:
+    """Appoggiatura: accented non-chord tone that resolves to the main note.
+
+    Unlike the acciaccatura (grace note, as fast as possible), the
+    appoggiatura is ON the beat and takes half the main note's duration.
+    It leans into the resolution. Beethoven used these constantly.
+
+    Args:
+        note:          Main note (the resolution).
+        approach_from: Semitones above (+) or below (-) to approach from.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    app_dur = note.duration / 2
+    main_dur = note.duration / 2
     return [
-        Note(pitch=base - semitones, duration=speed, velocity=note.velocity * 0.7),
-        Note(pitch=base - 1, duration=speed, velocity=note.velocity * 0.85),
+        Note(
+            pitch=base + approach_from, duration=app_dur, velocity=note.velocity * 1.1
+        ),  # accented
         Note(pitch=base, duration=main_dur, velocity=note.velocity),
     ]
 

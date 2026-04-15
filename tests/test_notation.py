@@ -179,9 +179,10 @@ class TestOrnaments:
     def test_flip_scoops_up(self):
         n = Note("D", 5, QUARTER)
         result = flip(n, semitones=2)
-        assert len(result) == 3
-        # Third note is the target pitch
-        assert result[2].midi == n.midi
+        # v170: flip now uses 6 micro-steps + final note for smooth scoop
+        assert len(result) >= 3
+        # Last note is the target pitch
+        assert result[-1].midi == n.midi
 
     def test_shake_is_trill(self):
         n = Note("Bb", 4, HALF)

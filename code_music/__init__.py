@@ -179,6 +179,9 @@ from .engine import (
     turn,
     upper_mordent,
     voice_lead,
+    # v170 ornaments
+    appoggiatura,
+    glissando,
     # v170 articulations
     col_legno,
     con_sordino,
