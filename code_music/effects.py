@@ -2141,6 +2141,402 @@ def convolver(
     return (samples * (1 - wet) + conv * wet).astype(np.float64)
 
 
+def parametric_eq(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bands: list | None = None,
+) -> FloatArray:
+    """Parametric EQ: fully configurable multi-band equalizer.
+
+    The workhorse of every mix. Each band has a type (peak, lowshelf,
+    highshelf, lowpass, highpass), frequency, gain in dB, and Q. This
+    is FabFilter Pro-Q in a function call.
+
+    Args:
+        bands: List of (type, freq_hz, gain_db, q) tuples.
+            Types: "peak", "lowshelf", "highshelf", "lowpass", "highpass"
+            Default: flat (no bands).
+
+    Example::
+
+        parametric_eq(audio, bands=[
+            ("highshelf", 10000, 2.0, 0.7),  # air boost
+            ("peak", 3000, -3.0, 2.0),       # cut harshness
+            ("lowshelf", 100, 3.0, 0.7),     # bass warmth
+            ("highpass", 30, 0, 0.7),         # rumble filter
+        ])
+    """
+    if not bands:
+        return samples.copy()
+
+    nyq = sample_rate / 2 - 1
+    out = samples.copy()
+
+    for band in bands:
+        btype, freq, gain_db, q = band
+        freq = max(20.0, min(freq, nyq))
+        q = max(0.1, q)
+
+        if btype == "highpass":
+            sos = sig.butter(2, freq, btype="high", fs=sample_rate, output="sos")
+            out = _biquad_sos(out, sos)
+
+        elif btype == "lowpass":
+            sos = sig.butter(2, freq, btype="low", fs=sample_rate, output="sos")
+            out = _biquad_sos(out, sos)
+
+        elif btype == "peak" and abs(gain_db) > 0.1:
+            # Peak/bell filter via biquad
+            A = 10 ** (gain_db / 40.0)
+            w0 = 2 * np.pi * freq / sample_rate
+            alpha = np.sin(w0) / (2 * q)
+            b0 = 1 + alpha * A
+            b1 = -2 * np.cos(w0)
+            b2 = 1 - alpha * A
+            a0 = 1 + alpha / A
+            a1 = -2 * np.cos(w0)
+            a2 = 1 - alpha / A
+            b = [b0 / a0, b1 / a0, b2 / a0]
+            a = [1.0, a1 / a0, a2 / a0]
+            if out.ndim == 2:
+                out[:, 0] = sig.lfilter(b, a, out[:, 0])
+                out[:, 1] = sig.lfilter(b, a, out[:, 1])
+            else:
+                out = sig.lfilter(b, a, out)
+
+        elif btype == "lowshelf" and abs(gain_db) > 0.1:
+            A = 10 ** (gain_db / 40.0)
+            w0 = 2 * np.pi * freq / sample_rate
+            alpha = np.sin(w0) / (2 * q)
+            cos_w0 = np.cos(w0)
+            sq_A = np.sqrt(A)
+            b0 = A * ((A + 1) - (A - 1) * cos_w0 + 2 * sq_A * alpha)
+            b1 = 2 * A * ((A - 1) - (A + 1) * cos_w0)
+            b2 = A * ((A + 1) - (A - 1) * cos_w0 - 2 * sq_A * alpha)
+            a0 = (A + 1) + (A - 1) * cos_w0 + 2 * sq_A * alpha
+            a1 = -2 * ((A - 1) + (A + 1) * cos_w0)
+            a2 = (A + 1) + (A - 1) * cos_w0 - 2 * sq_A * alpha
+            b = [b0 / a0, b1 / a0, b2 / a0]
+            a = [1.0, a1 / a0, a2 / a0]
+            if out.ndim == 2:
+                out[:, 0] = sig.lfilter(b, a, out[:, 0])
+                out[:, 1] = sig.lfilter(b, a, out[:, 1])
+            else:
+                out = sig.lfilter(b, a, out)
+
+        elif btype == "highshelf" and abs(gain_db) > 0.1:
+            A = 10 ** (gain_db / 40.0)
+            w0 = 2 * np.pi * freq / sample_rate
+            alpha = np.sin(w0) / (2 * q)
+            cos_w0 = np.cos(w0)
+            sq_A = np.sqrt(A)
+            b0 = A * ((A + 1) + (A - 1) * cos_w0 + 2 * sq_A * alpha)
+            b1 = -2 * A * ((A - 1) + (A + 1) * cos_w0)
+            b2 = A * ((A + 1) + (A - 1) * cos_w0 - 2 * sq_A * alpha)
+            a0 = (A + 1) - (A - 1) * cos_w0 + 2 * sq_A * alpha
+            a1 = 2 * ((A - 1) - (A + 1) * cos_w0)
+            a2 = (A + 1) - (A - 1) * cos_w0 - 2 * sq_A * alpha
+            b = [b0 / a0, b1 / a0, b2 / a0]
+            a = [1.0, a1 / a0, a2 / a0]
+            if out.ndim == 2:
+                out[:, 0] = sig.lfilter(b, a, out[:, 0])
+                out[:, 1] = sig.lfilter(b, a, out[:, 1])
+            else:
+                out = sig.lfilter(b, a, out)
+
+    return out.astype(np.float64)
+
+
+def dynamic_eq(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    freq_hz: float = 3000.0,
+    threshold: float = 0.4,
+    gain_db: float = -6.0,
+    q: float = 2.0,
+    attack_ms: float = 5.0,
+    release_ms: float = 50.0,
+) -> FloatArray:
+    """Dynamic EQ: EQ that reacts to signal level.
+
+    A peak EQ band that only activates when the signal exceeds a
+    threshold. Below the threshold, the audio passes through flat.
+    Above it, the EQ engages. Use it to tame resonances that only
+    appear on loud notes, or boost frequencies only when the signal
+    is quiet. More surgical than broadband compression, more musical
+    than static EQ. FabFilter Pro-Q3's dynamic mode.
+
+    Args:
+        freq_hz:     Center frequency of the dynamic band.
+        threshold:   Signal level that activates the EQ.
+        gain_db:     EQ gain when fully active (negative = cut, positive = boost).
+        q:           Band Q / width.
+        attack_ms:   How fast the EQ engages.
+        release_ms:  How fast the EQ disengages.
+    """
+    n = len(samples)
+    peak = np.max(np.abs(samples), axis=1) if samples.ndim == 2 else np.abs(samples)
+
+    a_coef = math.exp(-1.0 / max(1, attack_ms * sample_rate / 1000))
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+
+    env = np.zeros(n)
+    for i in range(1, n):
+        if peak[i] > env[i - 1]:
+            env[i] = a_coef * env[i - 1] + (1 - a_coef) * peak[i]
+        else:
+            env[i] = r_coef * env[i - 1] + (1 - r_coef) * peak[i]
+
+    # EQ gain scales from 0 (below threshold) to full gain_db (above threshold)
+    gain_curve = np.clip((env - threshold) / max(1.0 - threshold, 0.01), 0.0, 1.0)
+
+    # Apply EQ in blocks with varying gain
+    block = 512
+    out = samples.copy()
+    flat = samples.copy()
+
+    # Pre-compute the full-gain EQ version
+    eqd = parametric_eq(samples, sample_rate, bands=[("peak", freq_hz, gain_db, q)])
+
+    # Blend between flat and EQ based on the dynamic gain curve
+    for s in range(0, n, block):
+        e = min(s + block, n)
+        blend = float(np.mean(gain_curve[s:e]))
+        if samples.ndim == 2:
+            out[s:e] = flat[s:e] * (1 - blend) + eqd[s:e] * blend
+        else:
+            out[s:e] = flat[s:e] * (1 - blend) + eqd[s:e] * blend
+
+    return out.astype(np.float64)
+
+
+def multiband_stereo(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bass_width: float = 0.0,
+    mid_width: float = 1.0,
+    high_width: float = 1.5,
+    crossover_low: float = 250.0,
+    crossover_high: float = 4000.0,
+) -> FloatArray:
+    """Multiband stereo imager: independent width per frequency band.
+
+    The mastering standard: bass in mono (tight center), mids at normal
+    width, highs wider than the speakers (shimmer and air). iZotope Ozone
+    Imager does exactly this. Mono bass prevents phase issues on club
+    systems. Wide highs create an impression of space.
+
+    Args:
+        bass_width:     Width for low band (0.0=mono, 1.0=stereo).
+        mid_width:      Width for mid band.
+        high_width:     Width for high band (>1.0 = wider than original).
+        crossover_low:  Bass/mid split frequency.
+        crossover_high: Mid/high split frequency.
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    nyq = sample_rate / 2 - 1
+    xlo = min(crossover_low, nyq)
+    xhi = min(crossover_high, nyq)
+
+    sos_lo = sig.butter(4, xlo, btype="low", fs=sample_rate, output="sos")
+    sos_hi = sig.butter(4, xhi, btype="high", fs=sample_rate, output="sos")
+    if xlo < xhi:
+        sos_mid = sig.butter(4, [xlo, xhi], btype="band", fs=sample_rate, output="sos")
+    else:
+        sos_mid = sos_lo
+
+    def _width(band, w):
+        mid = (band[:, 0] + band[:, 1]) * 0.5
+        side = (band[:, 0] - band[:, 1]) * 0.5
+        side *= w
+        return np.column_stack([mid + side, mid - side])
+
+    lo = np.column_stack([sig.sosfilt(sos_lo, samples[:, 0]), sig.sosfilt(sos_lo, samples[:, 1])])
+    mid = np.column_stack(
+        [sig.sosfilt(sos_mid, samples[:, 0]), sig.sosfilt(sos_mid, samples[:, 1])]
+    )
+    hi = np.column_stack([sig.sosfilt(sos_hi, samples[:, 0]), sig.sosfilt(sos_hi, samples[:, 1])])
+
+    return (_width(lo, bass_width) + _width(mid, mid_width) + _width(hi, high_width)).astype(
+        np.float64
+    )
+
+
+def saturator(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    model: str = "tube",
+    drive: float = 2.0,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Analog circuit saturator with different hardware models.
+
+    Each model emulates the saturation character of a specific analog
+    circuit. They all add harmonics but the harmonic distribution is
+    different. Tube = warm even harmonics. Tape = compressed density.
+    Transistor = crispy odd harmonics. Transformer = subtle density.
+
+    Models:
+        tube:         Vacuum tube (12AX7). Warm, even harmonics dominant.
+                      The Marshall, Vox, Fender sound.
+        tape:         Magnetic tape (Studer A800). Compressed, dense, warm.
+                      Soft knee, frequency-dependent saturation.
+        transistor:   Solid state (discrete transistor). Crispy, aggressive,
+                      odd harmonics. The Neve 1073 preamp character.
+        transformer:  Output transformer. Subtle, thickening, low-end warmth.
+                      The console summing bus character.
+
+    Args:
+        model:  Hardware model name.
+        drive:  Saturation amount (1.0=subtle, 5.0=heavy).
+        wet:    Wet/dry mix.
+    """
+    x = samples * drive
+
+    if model == "tube":
+        # Asymmetric soft clip: positive clips softer (even harmonics)
+        pos = np.maximum(x, 0)
+        neg = np.minimum(x, 0)
+        shaped = np.tanh(pos * 0.8) * 1.1 + np.tanh(neg * 1.0)
+    elif model == "tape":
+        # Tape: soft compression + frequency-dependent saturation
+        shaped = x / (1.0 + np.abs(x) * 0.3)
+        # Tape compresses highs more
+        if samples.ndim == 2 and sample_rate > 100:
+            nyq = sample_rate / 2 - 1
+            cutoff = min(8000.0 / max(drive, 1), nyq)
+            sos = sig.butter(1, cutoff, btype="low", fs=sample_rate, output="sos")
+            shaped[:, 0] = sig.sosfilt(sos, shaped[:, 0])
+            shaped[:, 1] = sig.sosfilt(sos, shaped[:, 1])
+    elif model == "transistor":
+        # Hard-ish clip with odd harmonic emphasis
+        shaped = np.clip(x, -1.0, 1.0)
+        # Add back some softness
+        shaped = shaped * 0.7 + np.tanh(x) * 0.3
+    elif model == "transformer":
+        # Very subtle saturation + low-end thickening
+        shaped = np.tanh(x * 0.5) * 2.0
+        if samples.ndim == 2 and sample_rate > 100:
+            nyq = sample_rate / 2 - 1
+            cutoff = min(200.0, nyq)
+            sos = sig.butter(1, cutoff, btype="low", fs=sample_rate, output="sos")
+            lo_l = sig.sosfilt(sos, shaped[:, 0])
+            lo_r = sig.sosfilt(sos, shaped[:, 1])
+            shaped[:, 0] += lo_l * 0.1 * drive
+            shaped[:, 1] += lo_r * 0.1 * drive
+    else:
+        shaped = np.tanh(x)
+
+    # Normalize to match input level
+    pk_in = np.max(np.abs(samples))
+    pk_out = np.max(np.abs(shaped))
+    if pk_out > 0 and pk_in > 0:
+        shaped *= pk_in / pk_out
+
+    return (samples * (1 - wet) + shaped * wet).astype(np.float64)
+
+
+def crossfeed(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    amount: float = 0.3,
+) -> FloatArray:
+    """Headphone crossfeed: reduces extreme stereo for comfortable listening.
+
+    With speakers, both ears hear both channels (with timing differences).
+    With headphones, each ear only hears its channel - extreme stereo
+    can be fatiguing and unnatural. Crossfeed blends a filtered portion
+    of each channel into the other, simulating speaker listening on
+    headphones. Every audiophile headphone amp has this.
+
+    Args:
+        amount: Crossfeed strength (0.0=none, 0.3=subtle, 0.7=strong).
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    nyq = sample_rate / 2 - 1
+    # Crossfed signal is lowpass filtered (real crossfeed is frequency-dependent)
+    cutoff = min(1500.0, nyq)
+    sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+
+    xfeed_l = sig.sosfilt(sos, samples[:, 1]) * amount
+    xfeed_r = sig.sosfilt(sos, samples[:, 0]) * amount
+
+    out = samples.copy()
+    out[:, 0] += xfeed_l
+    out[:, 1] += xfeed_r
+
+    return out.astype(np.float64)
+
+
+def spectrum_analyze(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    n_bands: int = 32,
+) -> dict:
+    """Spectrum analyzer: return frequency band energy levels.
+
+    Not an effect - a measurement tool. Returns the energy in each
+    frequency band so you can visualize the spectrum, detect problems,
+    or make data-driven EQ decisions.
+
+    Returns:
+        Dict with 'frequencies' (band center Hz), 'magnitudes' (dB),
+        'peak_freq' (Hz), 'spectral_centroid' (Hz), 'crest_factor' (dB).
+    """
+    mono = samples[:, 0] if samples.ndim == 2 else samples
+    n = len(mono)
+
+    fft = np.abs(np.fft.rfft(mono))
+    freqs = np.fft.rfftfreq(n, 1.0 / sample_rate)
+
+    # Logarithmic bands
+    min_freq = 20.0
+    max_freq = min(20000.0, sample_rate / 2)
+    band_edges = np.logspace(np.log10(min_freq), np.log10(max_freq), n_bands + 1)
+
+    magnitudes = []
+    centers = []
+    for i in range(n_bands):
+        lo = band_edges[i]
+        hi = band_edges[i + 1]
+        mask = (freqs >= lo) & (freqs < hi)
+        if np.any(mask):
+            energy = np.mean(fft[mask] ** 2)
+            mag_db = 10 * np.log10(max(energy, 1e-20))
+        else:
+            mag_db = -100.0
+        magnitudes.append(mag_db)
+        centers.append(np.sqrt(lo * hi))
+
+    # Spectral centroid
+    total_energy = np.sum(fft**2)
+    if total_energy > 0:
+        centroid = np.sum(freqs * fft**2) / total_energy
+    else:
+        centroid = 0.0
+
+    # Peak frequency
+    peak_idx = np.argmax(fft[1:]) + 1
+    peak_freq = freqs[peak_idx] if peak_idx < len(freqs) else 0.0
+
+    # Crest factor (peak-to-RMS ratio in dB)
+    rms = np.sqrt(np.mean(mono**2))
+    peak = np.max(np.abs(mono))
+    crest = 20 * np.log10(peak / max(rms, 1e-10)) if rms > 0 else 0.0
+
+    return {
+        "frequencies": centers,
+        "magnitudes": magnitudes,
+        "peak_freq": float(peak_freq),
+        "spectral_centroid": float(centroid),
+        "crest_factor": float(crest),
+    }
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
