@@ -268,6 +268,15 @@ from .integrations import (
     to_music21,
 )
 from .export import QUALITY_PRESETS, export_with_preset, list_quality_presets
+from .auto_mix import (
+    auto_mix,
+    auto_level,
+    auto_pan_placement,
+    auto_eq_carve,
+    fade_in,
+    fade_out,
+    swell,
+)
 from .notation import export_abc, export_lilypond, export_musicxml
 from .rhythm_game import export_clone_hero, export_stepmania
 from .transform import (
