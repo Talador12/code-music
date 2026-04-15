@@ -302,6 +302,11 @@ class Synth:
         "string_section": {
             "wave": "sawtooth",
             "harmonics": 10,
+            "unison": 6,
+            "detune_cents": 10,
+            "vibrato_rate": 4.8,
+            "vibrato_depth": 15,
+            "vibrato_delay": 0.3,
             "A": 0.14,
             "D": 0.05,
             "S": 0.88,
@@ -644,7 +649,15 @@ class Synth:
             "S": 0.05,
             "R": 2.0,
         },
-        "drums_808": {"wave": "sine", "harmonics": 1, "A": 0.001, "D": 0.6, "S": 0.0, "R": 0.5},
+        "drums_808": {
+            "wave": "sine",
+            "harmonics": 1,
+            "A": 0.001,
+            "D": 0.8,
+            "S": 0.05,
+            "R": 0.6,
+            "_808_saturate": True,
+        },
     }
 
     def __init__(self, sample_rate: int = 44100):
@@ -981,6 +994,9 @@ class Synth:
                 click = rng.standard_normal(click_len) * 0.3
                 click *= np.linspace(1.0, 0.0, click_len)
                 raw[:click_len] += click
+            # 808 saturation: gentle overdrive for that warm, fuzzy sub-bass character
+            if preset.get("_808_saturate"):
+                raw = np.tanh(raw * 1.8) * 0.8  # soft clip at mild drive
         # Snare pitch-drop: tone body drops slightly in pitch (like real snare head)
         if preset.get("_snare_pitch_drop") and not is_pitch_drop:
             t_sn = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
@@ -1113,8 +1129,109 @@ class Synth:
             else:
                 raw = raw * 0.5 + noise * 0.5
 
-        # ── Per-note LFO filter (wobble bass + formant) ──────────────────
+        # ── Acoustic realism noise layers ─────────────────────────────────
+        # Real instruments have non-pitched noise components that make them
+        # sound alive: breath in a flute, rosin on a bow, hammer thump on a
+        # piano, fret buzz on a bass. Without these, synthesis sounds sterile.
         from scipy import signal as _sig
+
+        inst = instrument_name.lower()
+
+        # Breath noise for woodwinds (highpass filtered noise blended at attack)
+        _BREATH_INSTRUMENTS = {
+            "flute",
+            "alto_flute",
+            "oboe",
+            "clarinet",
+            "bass_clarinet",
+            "bassoon",
+            "contrabassoon",
+            "cor_anglais",
+            "english_horn",
+            "saxophone",
+            "soprano_sax",
+            "tenor_sax",
+            "bari_sax",
+            "harmonica",
+            "accordion",
+            "bandoneon",
+            "bagpipe",
+        }
+        if inst in _BREATH_INSTRUMENTS and n_samples > 100:
+            rng_b = np.random.default_rng(int(freq * 200) % (2**31))
+            breath = rng_b.standard_normal(n_samples) * 0.06
+            # Shape: louder at attack, fades to sustain level
+            breath_env = np.ones(n_samples) * 0.3
+            attack_len = min(int(0.04 * self.sample_rate), n_samples)
+            if attack_len > 0:
+                breath_env[:attack_len] = np.linspace(1.0, 0.3, attack_len)
+            breath *= breath_env
+            # Highpass to keep only airy component
+            hp = min(2000.0, self.sample_rate / 2 - 1)
+            sos_hp = _sig.butter(2, hp, btype="high", fs=self.sample_rate, output="sos")
+            breath = _sig.sosfilt(sos_hp, breath)
+            raw = raw + breath
+
+        # Bow rosin noise for strings (friction texture, strongest at attack)
+        _BOW_INSTRUMENTS = {
+            "violin",
+            "viola",
+            "cello",
+            "contrabass",
+            "erhu",
+            "string_section",
+            "strings",
+        }
+        if inst in _BOW_INSTRUMENTS and n_samples > 100:
+            art = getattr(note, "articulation", None)
+            if art not in ("pizzicato", "col_legno", "harmonics"):
+                rng_r = np.random.default_rng(int(freq * 300) % (2**31))
+                rosin = rng_r.standard_normal(n_samples) * 0.04
+                # Strongest at attack, fades quickly
+                rosin_env = np.exp(-np.linspace(0, 8, n_samples))
+                rosin_env = np.maximum(rosin_env, 0.15)  # maintain subtle floor
+                rosin *= rosin_env
+                # Bandpass around 2-6 kHz (rosin friction character)
+                bp_lo = min(2000.0, self.sample_rate / 2 - 1)
+                bp_hi = min(6000.0, self.sample_rate / 2 - 1)
+                if bp_lo < bp_hi:
+                    sos_bp = _sig.butter(
+                        2, [bp_lo, bp_hi], btype="band", fs=self.sample_rate, output="sos"
+                    )
+                    rosin = _sig.sosfilt(sos_bp, rosin)
+                raw = raw + rosin
+
+        # Piano hammer thump (short low-frequency bump at attack)
+        if inst in ("piano", "rhodes", "wurlitzer") and n_samples > 100:
+            thump_len = min(int(0.008 * self.sample_rate), n_samples)
+            if thump_len > 0:
+                rng_t = np.random.default_rng(int(freq * 400) % (2**31))
+                thump = rng_t.standard_normal(thump_len) * 0.12
+                thump *= np.linspace(1.0, 0.0, thump_len)
+                # Lowpass to keep only the thump (below 500 Hz)
+                lp = min(500.0, self.sample_rate / 2 - 1)
+                sos_lp = _sig.butter(2, lp, btype="low", fs=self.sample_rate, output="sos")
+                thump = _sig.sosfilt(sos_lp, np.pad(thump, (0, n_samples - thump_len)))[:thump_len]
+                raw[:thump_len] += thump
+
+        # Velocity-sensitive filter for pads and synths (filter opens with velocity)
+        _PAD_INSTRUMENTS = {
+            "pad",
+            "warm_pad",
+            "dark_pad",
+            "glass_pad",
+            "ambient_pad",
+            "poly_synth",
+            "fm_pad",
+        }
+        if inst in _PAD_INSTRUMENTS and n_samples > 100:
+            # Map velocity 0.0-1.0 to cutoff 800-12000 Hz
+            vel_cutoff = 800.0 + note.velocity * 11200.0
+            vel_cutoff = min(vel_cutoff, self.sample_rate / 2 - 1)
+            sos_vf = _sig.butter(2, vel_cutoff, btype="low", fs=self.sample_rate, output="sos")
+            raw = _sig.sosfilt(sos_vf, raw)
+
+        # ── Per-note LFO filter (wobble bass + formant) ──────────────────
 
         if "lfo_rate" in preset:
             # Dubstep wobble: LFO sweeps a lowpass filter over the note
@@ -1191,6 +1308,20 @@ class Synth:
             )
 
         env = self._adsr(n_samples, A, D, S, R)
+
+        # Piano damper release noise (subtle thump when key releases)
+        if inst in ("piano",) and R > 0.05 and n_samples > 500:
+            r_start = n_samples - int(R * self.sample_rate)
+            r_start = max(0, r_start)
+            release_len = n_samples - r_start
+            if release_len > 50:
+                rng_d = np.random.default_rng(int(freq * 500) % (2**31))
+                damper = rng_d.standard_normal(release_len) * 0.02
+                damper *= np.linspace(1.0, 0.0, release_len)
+                lp_d = min(300.0, self.sample_rate / 2 - 1)
+                sos_d = _sig.butter(1, lp_d, btype="low", fs=self.sample_rate, output="sos")
+                damper = _sig.sosfilt(sos_d, damper)
+                raw[r_start : r_start + release_len] += damper[:release_len]
 
         # ── Velocity-to-timbre: every instrument family responds differently ──
         # Real instruments change spectral content with dynamics, not just volume.
