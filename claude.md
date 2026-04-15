@@ -1,10 +1,30 @@
 # code-music — project state
 
-## Status: v170.0.0 — 415 songs, 3705 tests, 595+ theory functions, 53 scales
+## Status: v170.0.0 — 415 songs, 3705 tests, 88 effects, 155+ presets, 595+ theory functions
 
-## WHERE WE LEFT OFF (2026-04-14)
+## WHERE WE LEFT OFF (2026-04-14, late session)
 
-Package is built, tested, and ready to publish to PyPI. Next steps in order:
+Massive quality push complete. 18 commits of sound quality improvements
+today. Package is built, tested, and ready to publish to PyPI.
+
+### What shipped in today's quality session (18 commits)
+- 88 effects (was ~30 at start of session)
+- 155+ instrument presets (was ~120)
+- 27-stage per-note processing pipeline
+- Professional mastering chain on master bus
+- Dynamic band-limited oscillators (fill to Nyquist per frequency)
+- Exponential ADSR, 2ms micro-fades, DC offset removal
+- 6 acoustic realism noise layers (breath, rosin, hammer, damper, lip buzz, reed, keyclick)
+- Per-note vibrato, pitch drift, register tilt, velocity-attack coupling
+- Humanization engine, legato crossfade, string release noise
+- Karplus-Strong body resonance, piano sympathetic strings
+- 22 quality export presets for every streaming platform
+- 32-bit float WAV, 24-bit default, TPDF dithering
+- Integration layer (music21, pretty_midi, librosa, csound, supercollider, AI hooks)
+- Genre transform engine (52 profiles, 28 rhythm patterns)
+- Ska + metal + EDM producer toolkits
+
+### Next steps in order:
 
 ### Immediate (do these first)
 1. **Publish to PyPI** — Package builds clean (`python -m build`, twine check passes).
