@@ -218,18 +218,25 @@ from .mastering import (
 from .midi import export_midi, import_midi
 from .effects import (
     amp_cabinet,
+    comb_filter,
     console_warmth,
     filter_envelope,
+    flanger,
     impact,
+    laser_zap,
     multiband_compress,
     noise_gate,
     noise_riser,
+    phaser,
+    reverse_reverb,
+    ring_mod,
     sidechain,
     stereo_width,
     stutter,
     tape_emulation,
     transient_shaper,
     volume_shaper,
+    waveshaper,
 )
 from .integrations import (
     ai_generate_melody,

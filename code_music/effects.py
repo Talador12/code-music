@@ -1167,6 +1167,345 @@ def impact(
     return np.column_stack([out, out]).astype(np.float64)
 
 
+def phaser(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 0.3,
+    depth: float = 0.7,
+    stages: int = 6,
+    feedback: float = 0.5,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Phaser: cascaded allpass filters with LFO-swept cutoff.
+
+    The classic synth sweep. Van Halen "Eruption," Tame Impala everything.
+    A chain of allpass filters creates notches in the frequency spectrum.
+    An LFO sweeps those notches up and down. The feedback path creates
+    resonant peaks between the notches. More stages = more notches =
+    deeper, more complex phasing.
+
+    Args:
+        rate_hz:   LFO speed (0.1-2.0 Hz typical).
+        depth:     LFO depth (0.0-1.0).
+        stages:    Number of allpass stages (2-12, more = deeper).
+        feedback:  Feedback amount (0.0-0.9, higher = more resonant).
+        wet:       Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rate_hz * t)
+
+    # LFO modulates the allpass center frequency
+    min_freq = 200.0
+    max_freq = min(5000.0, sample_rate / 2 - 100)
+    center_freqs = min_freq + lfo * depth * (max_freq - min_freq)
+
+    # Process in blocks for time-varying allpass
+    block = 256
+    dry = samples.copy()
+    wet_signal = samples.copy()
+    fb_buf = np.zeros_like(samples[0]) if samples.ndim == 2 else 0.0
+
+    for s in range(0, n, block):
+        e = min(s + block, n)
+        freq = float(np.mean(center_freqs[s:e]))
+        freq = max(100.0, min(freq, sample_rate / 2 - 100))
+
+        # Build allpass cascade
+        for _ in range(stages):
+            w0 = 2 * np.pi * freq / sample_rate
+            alpha = np.sin(w0) / 2.0
+            # Allpass coefficients
+            b = [1.0 - alpha, -2.0 * np.cos(w0), 1.0 + alpha]
+            a = [1.0 + alpha, -2.0 * np.cos(w0), 1.0 - alpha]
+            if samples.ndim == 2:
+                wet_signal[s:e, 0] = sig.lfilter(b, a, wet_signal[s:e, 0])
+                wet_signal[s:e, 1] = sig.lfilter(b, a, wet_signal[s:e, 1])
+            else:
+                wet_signal[s:e] = sig.lfilter(b, a, wet_signal[s:e])
+
+        # Apply feedback
+        if feedback > 0 and s + block < n:
+            if samples.ndim == 2:
+                wet_signal[s:e] += fb_buf * feedback
+                fb_buf = wet_signal[e - 1 : e].copy().flatten()
+            else:
+                wet_signal[s:e] += fb_buf * feedback
+                fb_buf = wet_signal[e - 1]
+
+    return (dry * (1 - wet) + wet_signal * wet).astype(np.float64)
+
+
+def flanger(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 0.2,
+    depth_ms: float = 3.0,
+    feedback: float = 0.6,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Flanger: short modulated delay with feedback.
+
+    Like chorus but the delay is shorter (0.5-5ms vs 15-30ms for chorus)
+    and the feedback creates a resonant comb filter effect. The result is
+    the jet-engine whoosh, metallic sweep, and through-zero cancellation
+    that defines the flanger sound. Hendrix, The Cure, every synthwave
+    track ever.
+
+    Args:
+        rate_hz:   LFO speed.
+        depth_ms:  Maximum delay depth in ms (1-5 typical).
+        feedback:  Feedback amount (0.0-0.95). High = metallic resonance.
+        wet:       Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    depth_samples = depth_ms * sample_rate / 1000.0
+
+    lfo = 0.5 + 0.5 * np.sin(2 * np.pi * rate_hz * t)
+    delays = (lfo * depth_samples).astype(np.float64)
+
+    out = np.zeros_like(samples)
+    fb = np.zeros_like(samples[0]) if samples.ndim == 2 else 0.0
+
+    for i in range(n):
+        d = delays[i]
+        read_pos = i - d
+        if read_pos < 0:
+            delayed = np.zeros_like(samples[0]) if samples.ndim == 2 else 0.0
+        else:
+            lo_idx = int(read_pos)
+            hi_idx = min(lo_idx + 1, n - 1)
+            frac = read_pos - lo_idx
+            delayed = samples[lo_idx] * (1 - frac) + samples[hi_idx] * frac
+
+        out[i] = samples[i] + (delayed + fb * feedback)
+        fb = delayed
+
+    result = samples * (1 - wet) + out * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+def ring_mod(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    freq_hz: float = 300.0,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Ring modulator: multiply the signal with a carrier oscillator.
+
+    Creates sum and difference frequencies (sidebands) that are
+    inharmonic and metallic. Low carrier = tremolo. Mid carrier =
+    alien/robotic. High carrier = metallic clang. The Daleks from
+    Doctor Who use ring mod on voice. Skrillex uses it on bass for
+    that aggressive, alien quality.
+
+    Args:
+        freq_hz:  Carrier frequency (20-2000 Hz).
+        wet:      Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    carrier = np.sin(2 * np.pi * freq_hz * t)
+
+    if samples.ndim == 2:
+        modulated = np.column_stack(
+            [
+                samples[:, 0] * carrier,
+                samples[:, 1] * carrier,
+            ]
+        )
+    else:
+        modulated = samples * carrier
+
+    return (samples * (1 - wet) + modulated * wet).astype(np.float64)
+
+
+def reverse_reverb(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    room_size: float = 0.7,
+    damping: float = 0.3,
+    wet: float = 0.4,
+) -> FloatArray:
+    """Reverse reverb: the reverb tail builds UP to the note.
+
+    Normal reverb: note -> reverb tail after. Reverse reverb: ghostly
+    swell -> note arrives. Creates an eerie, pulling sensation like
+    the sound is being sucked into the note from the future. Shoegaze,
+    ambient, Skrillex transitions, horror soundtracks.
+
+    How it works: reverse the audio, apply reverb, reverse again.
+    The reverb tail is now a pre-tail that crescendos into each note.
+
+    Args:
+        room_size:  Reverb size (bigger = longer pre-swell).
+        damping:    High frequency damping.
+        wet:        Wet/dry mix.
+    """
+    # Reverse
+    reversed_samples = samples[::-1].copy()
+
+    # Apply normal reverb to the reversed audio
+    ir = _make_reverb_ir(sample_rate, room_size, damping)
+    if reversed_samples.ndim == 2:
+        rev_l = sig.fftconvolve(reversed_samples[:, 0], ir, mode="full")[: len(samples)]
+        rev_r = sig.fftconvolve(reversed_samples[:, 1], np.roll(ir, 1), mode="full")[: len(samples)]
+        for ch in (rev_l, rev_r):
+            pk = np.max(np.abs(ch))
+            if pk > 0:
+                ch /= pk
+        reverbed = np.column_stack([rev_l, rev_r])
+    else:
+        reverbed = sig.fftconvolve(reversed_samples, ir, mode="full")[: len(samples)]
+        pk = np.max(np.abs(reverbed))
+        if pk > 0:
+            reverbed /= pk
+
+    # Reverse back (the reverb tail is now a pre-tail)
+    reversed_reverb = reverbed[::-1]
+
+    return (samples * (1 - wet) + reversed_reverb * wet).astype(np.float64)
+
+
+def comb_filter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    freq_hz: float = 500.0,
+    feedback: float = 0.8,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Comb filter: tuned delay that creates pitched resonance from any input.
+
+    Feed noise through a comb filter tuned to 440 Hz and you get a pitched
+    A note. The Karplus-Strong algorithm is literally a comb filter with
+    a lowpass in the loop. Standalone, comb filters create metallic,
+    resonant, pitched textures. Used in Ableton's Resonator and in
+    physical modeling synthesis.
+
+    Args:
+        freq_hz:   Resonant frequency (the comb is tuned to this pitch).
+        feedback:  Feedback (0.0-0.99). Higher = longer resonance, more pitched.
+        wet:       Wet/dry mix.
+    """
+    delay_samples = max(1, int(sample_rate / max(freq_hz, 20.0)))
+    n = len(samples)
+
+    if samples.ndim == 2:
+        out_l = np.zeros(n)
+        out_r = np.zeros(n)
+        for i in range(n):
+            d = i - delay_samples
+            fb_l = out_l[d] * feedback if d >= 0 else 0.0
+            fb_r = out_r[d] * feedback if d >= 0 else 0.0
+            out_l[i] = samples[i, 0] + fb_l
+            out_r[i] = samples[i, 1] + fb_r
+        out = np.column_stack([out_l, out_r])
+    else:
+        out = np.zeros(n)
+        for i in range(n):
+            d = i - delay_samples
+            fb = out[d] * feedback if d >= 0 else 0.0
+            out[i] = samples[i] + fb
+
+    result = samples * (1 - wet) + out * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+def waveshaper(
+    samples: FloatArray,
+    curve: str = "soft",
+    drive: float = 2.0,
+    wet: float = 0.7,
+) -> FloatArray:
+    """Waveshaper: custom transfer function distortion.
+
+    Different curves produce different harmonic content. Soft clip adds
+    mostly 3rd harmonics. Hard clip adds odd harmonics. Fold-back adds
+    even harmonics and aliasing artifacts (the Buchla/Serge sound).
+    Sine shaping produces dense harmonics. Each curve has its own
+    character that is distinct from standard tanh distortion.
+
+    Curves:
+        soft:     Cubic soft clip (warm, transparent)
+        hard:     Hard clip (harsh, buzzy, lo-fi)
+        foldback: Wavefolding (Buchla/Serge, rich even harmonics)
+        sine:     Sine waveshaping (dense, complex harmonics)
+        asym:     Asymmetric (tube-like, even + odd harmonics)
+
+    Args:
+        curve:  Shaping curve name.
+        drive:  Input gain before shaping (1-10).
+        wet:    Wet/dry mix.
+    """
+    driven = samples * drive
+
+    if curve == "hard":
+        shaped = np.clip(driven, -1.0, 1.0)
+    elif curve == "foldback":
+        # Wavefolding: signal folds back when it exceeds +-1
+        shaped = np.abs(np.abs(np.fmod(driven + 1, 4) - 2) - 1) * 2 - 1
+    elif curve == "sine":
+        shaped = np.sin(driven * np.pi / 2)
+    elif curve == "asym":
+        # Asymmetric: positive side clips softer (even harmonics)
+        pos = np.maximum(driven, 0)
+        neg = np.minimum(driven, 0)
+        shaped = np.tanh(pos * 0.7) + np.tanh(neg * 1.3)
+    else:
+        # Soft (cubic)
+        shaped = np.where(
+            np.abs(driven) < 1.0, driven - (driven**3) / 3.0, np.sign(driven) * 2.0 / 3.0
+        )
+
+    # Normalize
+    pk = np.max(np.abs(shaped))
+    if pk > 0:
+        shaped *= np.max(np.abs(samples)) / pk
+
+    return (samples * (1 - wet) + shaped * wet).astype(np.float64)
+
+
+def laser_zap(
+    sample_rate: int = 44100,
+    duration_sec: float = 0.3,
+    start_freq: float = 8000.0,
+    end_freq: float = 100.0,
+    waveform: str = "square",
+) -> FloatArray:
+    """Generate a laser/zap sound effect.
+
+    Fast downward pitch sweep. Sci-fi, video game, Skrillex transitions.
+    The sound of a laser gun, a coin pickup, or a bass drop compressed
+    into a quarter second.
+
+    Args:
+        duration_sec:  Length of the zap.
+        start_freq:    Starting frequency (high = laser, low = boing).
+        end_freq:      Ending frequency.
+        waveform:      "sine", "square", "sawtooth".
+    """
+    n = int(duration_sec * sample_rate)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+
+    # Exponential frequency sweep
+    freq_env = start_freq * np.exp(-np.log(start_freq / max(end_freq, 1)) * t / duration_sec)
+    phase = 2 * np.pi * np.cumsum(freq_env) / sample_rate
+
+    if waveform == "square":
+        out = np.sign(np.sin(phase))
+    elif waveform == "sawtooth":
+        out = 2.0 * (phase / (2 * np.pi) - np.floor(phase / (2 * np.pi) + 0.5))
+    else:
+        out = np.sin(phase)
+
+    # Amplitude envelope: quick attack, exponential decay
+    env = np.exp(-4.0 * t / duration_sec)
+    out *= env * 0.8
+
+    return np.column_stack([out, out]).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
