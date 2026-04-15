@@ -45,9 +45,8 @@ Package is built, tested, and ready to publish to PyPI.
      (project: code-music, owner: Talador12, repo: code-music, workflow: ci.yml, env: pypi)
    - Create GitHub environment "pypi" at repo settings/environments (no secrets needed)
    - Then: `git tag v170.0.0 && git push origin --tags` triggers build+test+publish
-2. **Finish periodic table element enrichment** — 27 of 118 elements have full
-   origin/stability/binding_energy fields. Remaining ~91 need the pass. The mapping
-   system and narrative arc are done. Just need to add the physics to each entry.
+2. ~~Finish periodic table element enrichment~~ — **DONE. 118/118 elements enriched.**
+   All elements have origin, stability, and binding_energy fields with real physics.
 
 ### Sound quality (continue from where we stopped)
 - Reverb IR was rebuilt (early reflections + allpass diffusion) but not A/B tested
