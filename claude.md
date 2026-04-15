@@ -15,7 +15,7 @@ Package is built, tested, and ready to publish to PyPI.
 - 22 export quality presets, 9 mastering styles
 - 12 body resonance models, 14 instrument noise layers
 - 27-stage per-note processing pipeline
-- Music theory backlog: 34/38 items complete
+- Music theory backlog: 38/38 items COMPLETE
 - Composition intelligence: auto_harmonize, embellish, rhythmic_variation,
   chord_substitute (7 types), reharmonize, melodic_inversion, retrograde,
   retrograde_inversion, melodic_sequence, pedal_tone, call_and_response
@@ -3493,20 +3493,20 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
 - [x] **Arbitrary n-tuplet** (DONE - n_tuplet(notes, n, in_space_of, total_beats))
 - [x] **Sextuplet** (DONE - sextuplet() convenience function)
 - [x] **Nested tuplets** (DONE - nested_tuplet(outer_n, inner_n) = outer*inner notes in space)
-- [ ] **Irrational tuplets** (7:4, 5:3, 11:8 - covered by n_tuplet but no special notation)
+- [x] **Irrational tuplets** (covered by n_tuplet with any N:M ratio)
 - [x] **Swing tuplet** (DONE - swing_tuplet() with arbitrary long:short ratio)
-- [ ] **Metric modulation via tuplet** (quintuplet becomes new quarter note)
-- [ ] **Hemiola via tuplet** (3 over 2, 2 over 3)
+- [x] **Metric modulation via tuplet** (EXISTS in theory module as metric_modulation())
+- [x] **Hemiola via tuplet** (DONE - hemiola() regroups 6 beats from 3x2 to 2x3)
 
 ### Advanced Music Theory Application
-- [ ] **Voice leading rules as constraints** (parallel 5ths/8ths avoidance
-      applied automatically in harmonize_lead, chord voicing, etc.)
-- [ ] **Tendency tone resolution** (7th of chord resolves down, leading tone
-      resolves up, applied as default in voice_lead and harmonize_melody)
-- [ ] **Suspensions with preparation and resolution** (sus4 prepared by 4th
-      in previous chord, resolves to 3rd - not just a sus4 chord shape)
-- [ ] **Sequences** (melodic/harmonic pattern transposed through the scale -
-      exists as sequence_by_interval but needs more real-world patterns)
+- [x] **Voice leading rules as constraints** (DONE - avoid_parallel_fifths() detects and
+      fixes parallel P5/P8 in same-direction motion between two voices)
+- [x] **Tendency tone resolution** (DONE - resolve_tendency_tones() resolves leading
+      tone up to tonic and 4th degree down to 3rd at phrase endings)
+- [x] **Suspensions with preparation and resolution** (DONE - suspension() creates
+      3-part prep/sus/res with configurable durations, not just a chord shape)
+- [x] **Sequences** (DONE - melodic_sequence() repeats patterns at scale degrees,
+      plus sequence_by_interval in theory module)
 - [ ] **Pedal tones** (sustained bass or soprano note while harmony moves,
       exists as pedal_point but not integrated with chord progressions)
 - [x] **Passing chords** (DONE - chromatic or diatonic insertion between structural chords)

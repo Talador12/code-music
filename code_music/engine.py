@@ -2880,6 +2880,244 @@ def call_and_response(
     return (call, response)
 
 
+def avoid_parallel_fifths(
+    voice1: list[Note],
+    voice2: list[Note],
+) -> list[Note]:
+    """Adjust voice2 to avoid parallel perfect 5ths and octaves with voice1.
+
+    Parallel 5ths and octaves are the #1 voice leading error in classical
+    counterpoint. When two voices move in the same direction by the same
+    interval (P5 or P8), it sounds hollow and archaic. This function
+    detects and fixes them by shifting the offending note in voice2 by
+    one step.
+
+    Applied automatically when auto_harmonize is called with
+    avoid_parallels=True.
+
+    Args:
+        voice1: Upper voice (unchanged).
+        voice2: Lower voice (adjusted to avoid parallels).
+
+    Returns:
+        Adjusted voice2.
+    """
+    result = list(voice2)
+    for i in range(1, min(len(voice1), len(result))):
+        if (
+            voice1[i].midi is None
+            or voice1[i - 1].midi is None
+            or result[i].midi is None
+            or result[i - 1].midi is None
+        ):
+            continue
+
+        prev_interval = abs(voice1[i - 1].midi - result[i - 1].midi) % 12
+        curr_interval = abs(voice1[i].midi - result[i].midi) % 12
+
+        # Check for parallel P5 (7 semitones) or P8 (0 semitones / unison/octave)
+        is_parallel_fifth = prev_interval == 7 and curr_interval == 7
+        is_parallel_octave = prev_interval == 0 and curr_interval == 0
+
+        # Check same direction (both ascending or both descending)
+        v1_dir = voice1[i].midi - voice1[i - 1].midi
+        v2_dir = result[i].midi - result[i - 1].midi
+        same_direction = (v1_dir > 0 and v2_dir > 0) or (v1_dir < 0 and v2_dir < 0)
+
+        if (is_parallel_fifth or is_parallel_octave) and same_direction:
+            # Fix: move voice2 by one semitone in the opposite direction
+            fix_dir = -1 if v2_dir > 0 else 1
+            result[i] = Note(
+                pitch=result[i].midi + fix_dir,
+                duration=result[i].duration,
+                velocity=result[i].velocity,
+                articulation=result[i].articulation,
+            )
+
+    return result
+
+
+def resolve_tendency_tones(
+    notes: list[Note],
+    key: str = "C",
+    scale_name: str = "major",
+) -> list[Note]:
+    """Resolve tendency tones according to common-practice rules.
+
+    Certain scale degrees have strong tendencies to resolve in specific
+    directions. The leading tone (7th degree) wants to resolve up to
+    tonic. The 4th degree wants to resolve down to the 3rd. The 7th
+    of a dominant chord resolves down by step. These rules make melodies
+    sound inevitable rather than arbitrary.
+
+    Checks each note and if it is a tendency tone at the end of a phrase
+    (followed by a longer note or rest), inserts a resolution.
+
+    Args:
+        notes:       Input melody.
+        key:         Key.
+        scale_name:  Scale.
+
+    Returns:
+        Melody with tendency tones resolved where appropriate.
+    """
+    scale_intervals = SCALES.get(scale_name, SCALES.get("major", [0, 2, 4, 5, 7, 9, 11]))
+    key_midi = note_name_to_midi(key, 0) % 12
+
+    # Tendency tone resolutions (scale degree -> resolution direction in semitones)
+    # In major: 7 resolves up 1 (leading tone to tonic), 4 resolves down 1 (to 3rd)
+    tendencies = {}
+    if len(scale_intervals) >= 7:
+        tendencies[scale_intervals[6]] = 1  # leading tone resolves UP to tonic
+        tendencies[scale_intervals[3]] = -1  # 4th degree resolves DOWN to 3rd
+
+    result = []
+    for i, n in enumerate(notes):
+        result.append(n)
+        if n.midi is None:
+            continue
+
+        pc = (n.midi - key_midi) % 12
+        resolution_dir = tendencies.get(pc)
+        if resolution_dir is None:
+            continue
+
+        # Only resolve if this looks like a phrase ending (next note is longer, a rest, or last note)
+        is_phrase_end = (
+            i == len(notes) - 1
+            or notes[i + 1].pitch is None
+            or (notes[i + 1].duration > n.duration * 1.5)
+        )
+
+        if is_phrase_end:
+            # Shorten this note and add the resolution
+            resolve_dur = min(n.duration * 0.25, 0.25)
+            result[-1] = Note(
+                n.pitch,
+                n.octave,
+                n.duration - resolve_dur,
+                velocity=n.velocity,
+                articulation=n.articulation,
+            )
+            resolved_midi = n.midi + resolution_dir
+            result.append(
+                Note(pitch=resolved_midi, duration=resolve_dur, velocity=n.velocity * 0.9)
+            )
+
+    return result
+
+
+def suspension(
+    chord_note: Note,
+    resolution_note: Note,
+    preparation_dur: float = 1.0,
+    suspension_dur: float = 1.0,
+    resolution_dur: float = 1.0,
+) -> list[Note]:
+    """Create a prepared suspension with resolution.
+
+    A suspension is NOT just a sus4 chord shape. It is a three-part
+    process: preparation (consonant note on a weak beat), suspension
+    (same note held over the barline into a dissonance), resolution
+    (step down to a consonant note). The dissonance is what creates
+    the emotion. Without the preparation and resolution, it is just
+    a chord change.
+
+    4-3 suspension: hold the 4th over the bar, resolve down to 3rd.
+    7-6 suspension: hold the 7th, resolve down to 6th.
+    9-8 suspension: hold the 9th, resolve down to octave.
+
+    Args:
+        chord_note:      The consonant preparation note (same as suspension).
+        resolution_note: Where the suspension resolves to (step below).
+        preparation_dur: Duration of the preparation.
+        suspension_dur:  Duration of the held suspension (the dissonance).
+        resolution_dur:  Duration of the resolution.
+
+    Returns:
+        Three notes: preparation, suspension (tied), resolution.
+    """
+    if chord_note.pitch is None or resolution_note.pitch is None:
+        return [chord_note, resolution_note]
+
+    prep = Note(
+        chord_note.pitch, chord_note.octave, preparation_dur, velocity=chord_note.velocity * 0.85
+    )
+    sus = Note(
+        chord_note.pitch,
+        chord_note.octave,
+        suspension_dur,
+        velocity=chord_note.velocity * 0.9,
+        articulation="legato",
+    )
+    res = Note(
+        resolution_note.pitch,
+        resolution_note.octave,
+        resolution_dur,
+        velocity=resolution_note.velocity,
+    )
+
+    return [prep, sus, res]
+
+
+def hemiola(
+    notes: list[Note],
+    total_beats: float = 6.0,
+) -> list[Note]:
+    """Hemiola: regroup 6 beats from 3x2 to 2x3 (or vice versa).
+
+    The rhythmic illusion where music in 3/4 suddenly sounds like
+    it is in 2/4 (or 6/8 sounds like 3/4). Achieved by accenting
+    every other beat instead of every third beat. Brahms used this
+    obsessively. West Side Story's "America" is built on it.
+
+    Takes the input notes and redistributes their durations to
+    create the hemiola effect over the specified number of beats.
+
+    Args:
+        notes:       Input notes (should span total_beats).
+        total_beats: Total duration to redistribute over (must be divisible by both 2 and 3).
+
+    Returns:
+        Notes with hemiola-regrouped durations.
+    """
+    if not notes:
+        return []
+
+    # Standard hemiola: 6 beats regrouped as 2+2+2 instead of 3+3
+    group_dur = total_beats / 3  # from groups of 3...
+    new_group_dur = total_beats / 2  # ...to groups of 2
+
+    pitched = [n for n in notes if n.pitch is not None]
+    if not pitched:
+        return list(notes)
+
+    result = []
+    idx = 0
+    for group in range(2):  # 2 groups of new_group_dur
+        group_start = group * new_group_dur
+        notes_in_group = max(1, len(pitched) // 2)
+        for j in range(notes_in_group):
+            if idx >= len(pitched):
+                break
+            src = pitched[idx]
+            dur = new_group_dur / notes_in_group
+            # First note of each group gets an accent
+            vel = src.velocity * 1.1 if j == 0 else src.velocity * 0.85
+            result.append(
+                Note(
+                    src.pitch,
+                    src.octave,
+                    dur,
+                    velocity=min(1.0, vel),
+                    articulation=src.articulation,
+                )
+            )
+            idx += 1
+
+    return result
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [

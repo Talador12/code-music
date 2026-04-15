@@ -179,6 +179,11 @@ from .engine import (
     turn,
     upper_mordent,
     voice_lead,
+    # v170 counterpoint and voice leading
+    avoid_parallel_fifths,
+    hemiola,
+    resolve_tendency_tones,
+    suspension,
     # v170 composition intelligence
     auto_harmonize,
     call_and_response,
