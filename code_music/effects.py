@@ -1506,6 +1506,331 @@ def laser_zap(
     return np.column_stack([out, out]).astype(np.float64)
 
 
+def auto_pan(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 1.0,
+    depth: float = 0.8,
+    shape: str = "sine",
+    bpm: float = 0.0,
+) -> FloatArray:
+    """Auto-panner: LFO-modulated stereo position.
+
+    Sound moves left to right and back rhythmically. Tempo-synced or
+    free-running. Creates width and movement. Hendrix used it on
+    everything. Tame Impala still does.
+
+    Args:
+        rate_hz:  LFO speed in Hz (ignored if bpm > 0).
+        depth:    Pan width (0.0=none, 1.0=hard L to hard R).
+        shape:    "sine" (smooth), "square" (hard switch), "triangle" (linear).
+        bpm:      If > 0, sync to tempo (rate_hz becomes beats per cycle).
+    """
+    n = len(samples)
+    if bpm > 0:
+        cycle_sec = 60.0 / bpm * 4.0 / max(rate_hz, 0.1)
+        actual_rate = 1.0 / cycle_sec
+    else:
+        actual_rate = rate_hz
+
+    t = np.arange(n) / sample_rate
+    phase = 2 * np.pi * actual_rate * t
+
+    if shape == "square":
+        lfo = np.sign(np.sin(phase))
+    elif shape == "triangle":
+        lfo = 2.0 * np.abs(2.0 * (phase / (2 * np.pi) - np.floor(phase / (2 * np.pi) + 0.5))) - 1.0
+    else:
+        lfo = np.sin(phase)
+
+    pan_pos = lfo * depth
+    angle = (pan_pos + 1) / 2 * np.pi / 2
+    l_gain = np.cos(angle)
+    r_gain = np.sin(angle)
+
+    if samples.ndim == 2:
+        mono = (samples[:, 0] + samples[:, 1]) * 0.5
+        return np.column_stack([mono * l_gain, mono * r_gain]).astype(np.float64)
+    return np.column_stack([samples * l_gain, samples * r_gain]).astype(np.float64)
+
+
+def granular_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 375.0,
+    feedback: float = 0.4,
+    grain_size_ms: float = 50.0,
+    pitch_shift: float = 0.0,
+    scatter: float = 0.0,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Granular delay: delay line that chops echoes into grains.
+
+    Normal delay repeats the signal exactly. Granular delay breaks
+    each echo into tiny grains that can be pitch-shifted, scattered
+    in time, and overlapped. Creates textures from shimmer to chaos.
+    Ableton's Grain Delay, Soundtoys Crystallizer, Portal.
+
+    Args:
+        delay_ms:       Base delay time.
+        feedback:       Feedback amount (0.0-0.9).
+        grain_size_ms:  Size of each grain (10-200ms).
+        pitch_shift:    Pitch shift per grain in semitones (-12 to +12).
+        scatter:        Temporal randomization (0.0=exact, 1.0=chaotic).
+        wet:            Wet/dry mix.
+    """
+    n = len(samples)
+    delay_samples = int(delay_ms * sample_rate / 1000)
+    grain_samples = max(10, int(grain_size_ms * sample_rate / 1000))
+
+    out = np.zeros_like(samples)
+    buf = np.zeros_like(samples)
+    rng = np.random.default_rng(42)
+
+    # Build the delay line with granular processing
+    for i in range(0, n, grain_samples):
+        end = min(i + grain_samples, n)
+        read_start = i - delay_samples
+
+        # Scatter: randomize the read position
+        if scatter > 0:
+            scatter_offset = int(rng.uniform(-scatter * grain_samples, scatter * grain_samples))
+            read_start += scatter_offset
+
+        read_start = max(0, min(read_start, n - grain_samples))
+        read_end = min(read_start + (end - i), n)
+        grain_len = read_end - read_start
+
+        if grain_len > 0 and read_start >= 0:
+            grain = buf[read_start:read_end].copy()
+
+            # Pitch shift the grain via resampling
+            if abs(pitch_shift) > 0.01:
+                ratio = 2 ** (pitch_shift / 12.0)
+                target_len = max(1, int(grain_len / ratio))
+                if samples.ndim == 2:
+                    grain_l = sig.resample(grain[:, 0], target_len)
+                    grain_r = sig.resample(grain[:, 1], target_len)
+                    grain = np.column_stack([grain_l, grain_r])
+                else:
+                    grain = sig.resample(grain, target_len)
+
+                # Pad or trim to original grain length
+                if len(grain) < grain_len:
+                    if samples.ndim == 2:
+                        grain = np.vstack([grain, np.zeros((grain_len - len(grain), 2))])
+                    else:
+                        grain = np.concatenate([grain, np.zeros(grain_len - len(grain))])
+                else:
+                    grain = grain[:grain_len]
+
+            # Hanning window to avoid clicks
+            window = np.hanning(grain_len)
+            if samples.ndim == 2:
+                grain *= window[:, np.newaxis]
+            else:
+                grain *= window
+
+            actual_len = min(grain_len, end - i)
+            out[i : i + actual_len] += grain[:actual_len]
+
+        # Feed back into the buffer
+        actual_len = end - i
+        buf[i:end] = samples[i:end] + out[i:end] * feedback
+
+    return (samples * (1 - wet) + out * wet).astype(np.float64)
+
+
+def freq_shift(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    shift_hz: float = 50.0,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Frequency shifter (Bode shifter): shift all frequencies by a fixed amount.
+
+    Different from pitch shift. Pitch shift multiplies all frequencies
+    (preserving harmonic ratios). Frequency shift ADDS a fixed amount
+    to every frequency (breaking harmonic ratios). A 100 Hz + 200 Hz +
+    300 Hz signal shifted by 50 Hz becomes 150 + 250 + 350 Hz - no
+    longer harmonic. Creates metallic, alien, bell-like tones.
+
+    Small shifts (1-5 Hz) = subtle thickening (barberpole phaser).
+    Medium shifts (20-100 Hz) = metallic, robotic.
+    Large shifts (200+ Hz) = alien, unrecognizable.
+
+    Args:
+        shift_hz:  Frequency shift in Hz (positive = up, negative = down).
+        wet:       Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    # Single-sideband modulation via Hilbert transform
+    carrier = np.exp(1j * 2 * np.pi * shift_hz * t)
+
+    if samples.ndim == 2:
+        analytic_l = sig.hilbert(samples[:, 0])
+        analytic_r = sig.hilbert(samples[:, 1])
+        shifted_l = np.real(analytic_l * carrier)
+        shifted_r = np.real(analytic_r * carrier)
+        shifted = np.column_stack([shifted_l, shifted_r])
+    else:
+        analytic = sig.hilbert(samples)
+        shifted = np.real(analytic * carrier)
+
+    return (samples * (1 - wet) + shifted * wet).astype(np.float64)
+
+
+def ducking_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 375.0,
+    feedback: float = 0.4,
+    duck_threshold: float = 0.1,
+    duck_amount: float = 0.8,
+    release_ms: float = 200.0,
+    wet: float = 0.4,
+) -> FloatArray:
+    """Ducking delay: delay that ducks when the dry signal is playing.
+
+    Normal delay: you play, echo plays on top, it gets muddy.
+    Ducking delay: you play, echo ducks down. You stop, echo swells up.
+    Clean during playing, lush echoes in the gaps. How The Edge (U2)
+    gets that spacious delay sound without drowning in reverb.
+
+    Args:
+        delay_ms:        Delay time.
+        feedback:        Feedback amount.
+        duck_threshold:  Dry signal level that triggers ducking.
+        duck_amount:     How much to duck (0.0=none, 1.0=full silence).
+        release_ms:      How fast the delay comes back after ducking.
+        wet:             Wet/dry mix.
+    """
+    n = len(samples)
+    delay_samp = int(delay_ms * sample_rate / 1000)
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+
+    # Build delay line
+    delayed = np.zeros_like(samples)
+    buf = np.zeros_like(samples)
+    for i in range(n):
+        read = i - delay_samp
+        if read >= 0:
+            delayed[i] = buf[read]
+        buf[i] = samples[i] + delayed[i] * feedback
+
+    # Duck envelope: tracks the dry signal level
+    peak = np.max(np.abs(samples), axis=1) if samples.ndim == 2 else np.abs(samples)
+    duck_env = np.zeros(n)
+    for i in range(n):
+        if peak[i] > duck_threshold:
+            duck_env[i] = 1.0  # ducking ON
+        else:
+            duck_env[i] = duck_env[i - 1] * r_coef if i > 0 else 0.0
+
+    # Invert: 1.0 when dry is quiet (delay audible), 0.0 when dry is loud (delay ducked)
+    delay_gain = 1.0 - duck_env * duck_amount
+
+    if delayed.ndim == 2:
+        delayed *= delay_gain[:, np.newaxis]
+    else:
+        delayed *= delay_gain
+
+    return (samples + delayed * wet).astype(np.float64)
+
+
+def parallel_compress(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    threshold: float = 0.3,
+    ratio: float = 8.0,
+    blend: float = 0.4,
+) -> FloatArray:
+    """Parallel compression (New York compression).
+
+    Blend heavily compressed signal with the uncompressed dry. You get
+    the punch and density of compression while keeping the dynamics
+    and transients of the original. The best of both worlds. Every
+    professional mix uses this on the drum bus.
+
+    The trick that made NYC mixing engineers famous in the 80s. Compress
+    the life out of a copy, then sneak it in underneath the original.
+
+    Args:
+        threshold:  Compression threshold (aggressive, e.g. 0.2-0.4).
+        ratio:      Compression ratio (heavy, e.g. 8-20).
+        blend:      How much compressed signal to add (0.0-1.0).
+    """
+    compressed = compress(
+        samples,
+        sample_rate,
+        threshold=threshold,
+        ratio=ratio,
+        attack_ms=1.0,
+        release_ms=50.0,
+        knee_db=3.0,
+    )
+    result = samples + compressed * blend
+    peak = np.max(np.abs(result))
+    if peak > 1.0:
+        result /= peak
+    return result.astype(np.float64)
+
+
+def midside_eq(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    mid_low_cut: float = 0.0,
+    mid_high_cut: float = 0.0,
+    side_low_cut: float = 200.0,
+    side_high_boost: float = 0.0,
+) -> FloatArray:
+    """Mid-side EQ: independently EQ the center and sides of a stereo mix.
+
+    The mastering secret weapon. Cut low end from the sides (mono bass =
+    tight low end). Boost high end on the sides (wider, more air).
+    Cut mud frequencies from the center (cleaner vocals). Each adjustment
+    is independent. M/S processing gives surgical control that L/R EQ
+    cannot achieve.
+
+    Args:
+        mid_low_cut:     Highpass frequency on the mid channel (0=off).
+        mid_high_cut:    Lowpass frequency on the mid channel (0=off).
+        side_low_cut:    Highpass on sides (200Hz = mono bass below 200Hz).
+        side_high_boost: High shelf boost on sides in dB (3=wider air).
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    nyq = sample_rate / 2 - 1
+    mid = (samples[:, 0] + samples[:, 1]) * 0.5
+    side = (samples[:, 0] - samples[:, 1]) * 0.5
+
+    # Mid channel processing
+    if mid_low_cut > 20:
+        freq = min(mid_low_cut, nyq)
+        sos = sig.butter(2, freq, btype="high", fs=sample_rate, output="sos")
+        mid = sig.sosfilt(sos, mid)
+    if mid_high_cut > 20:
+        freq = min(mid_high_cut, nyq)
+        sos = sig.butter(2, freq, btype="low", fs=sample_rate, output="sos")
+        mid = sig.sosfilt(sos, mid)
+
+    # Side channel processing
+    if side_low_cut > 20:
+        freq = min(side_low_cut, nyq)
+        sos = sig.butter(2, freq, btype="high", fs=sample_rate, output="sos")
+        side = sig.sosfilt(sos, side)
+    if side_high_boost > 0:
+        freq = min(8000.0, nyq)
+        sos = sig.butter(1, freq, btype="high", fs=sample_rate, output="sos")
+        hi_side = sig.sosfilt(sos, side)
+        boost = 10 ** (side_high_boost / 20.0) - 1.0
+        side = side + hi_side * boost
+
+    return np.column_stack([mid + side, mid - side]).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
