@@ -1,15 +1,15 @@
 # code-music — project state
 
-## Status: v170.0.0 — 415 songs, 3705 tests, 88 effects, 155+ presets, 595+ theory functions
+## Status: v170.0.0 — 415 songs, 3705 tests, 98 effects, 171 presets, 595+ theory functions
 
-## WHERE WE LEFT OFF (2026-04-14, late session)
+## WHERE WE LEFT OFF (2026-04-15)
 
-Massive quality push complete. 18 commits of sound quality improvements
-today. Package is built, tested, and ready to publish to PyPI.
+Massive quality push across two sessions (28+ commits). Package is built,
+tested, and ready to publish to PyPI.
 
-### What shipped in today's quality session (18 commits)
-- 88 effects (was ~30 at start of session)
-- 155+ instrument presets (was ~120)
+### Actual current stats
+- 98 effect functions (was ~30 before quality push)
+- 171 instrument presets (was ~120)
 - 27-stage per-note processing pipeline
 - Professional mastering chain on master bus
 - Dynamic band-limited oscillators (fill to Nyquist per frequency)
@@ -3460,26 +3460,27 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
 ## Backlog: Music Theory Expressiveness
 
 ### Ornaments and Turns of Phrase
-- [ ] **Fall** (pitch bend down at end of note, jazz/blues brass staple)
-- [ ] **Doit** (upward pitch scoop, jazz trumpet going "bweeee" up)
-- [ ] **Bend** (guitar-style pitch bend, half step to full step, with rate control)
-- [ ] **Scoop** (approach from below, slide into the note)
-- [ ] **Plop** (approach from above, fall into the note)
-- [ ] **Glissando** (smooth pitch slide between two notes, distinct from portamento)
-- [ ] **Portamento** (continuous pitch glide, synth-style)
-- [ ] **Turn / Gruppetto** (upper-note-main-lower-main ornament, classical)
-- [ ] **Inverted turn** (lower-note-main-upper-main)
-- [ ] **Mordent** (rapid alternation with adjacent note, exists but could be better)
-- [ ] **Double mordent** (extended alternation)
-- [ ] **Appoggiatura** (accented non-chord tone that resolves, "leaning" note)
-- [ ] **Acciaccatura** (crushed grace note, as fast as possible)
-- [ ] **Shake** (brass lip trill between harmonics, big band lead trumpet move)
-- [ ] **Rip** (brass glissando up to a note, big band shout chorus energy)
-- [ ] **Smear** (slow brass glissando between notes)
-- [ ] **Ghost bend** (guitar: bend up before picking, release to pitch)
+- [x] **Fall** (DONE - smooth exponential 12-step pitch bend, v170)
+- [x] **Doit** (DONE - smooth exponential 12-step pitch bend, v170)
+- [x] **Bend** (DONE - guitar-style with rate control, 8-step smooth curve)
+- [x] **Scoop / Flip** (DONE - smooth 6-step approach from below, v170)
+- [x] **Plop** (DONE - approach from above, fall into the note)
+- [x] **Glissando** (DONE - chromatic slide between two pitches, v170)
+- [x] **Portamento** (DONE - log-space freq glide in synth, v170)
+- [x] **Turn / Gruppetto** (EXISTS - in engine.py)
+- [x] **Inverted turn** (DONE - lower-main-upper-main)
+- [x] **Mordent** (EXISTS - in engine.py)
+- [x] **Double mordent** (DONE - 4 alternations)
+- [x] **Appoggiatura** (DONE - accented on-beat approach, half duration, v170)
+- [x] **Acciaccatura** (DONE - crushed grace note, minimal duration)
+- [x] **Shake** (EXISTS - in engine.py)
+- [x] **Rip** (DONE - fast glissando up, big band energy)
+- [x] **Smear** (DONE - slow brass glissando between notes)
+- [x] **Ghost bend** (DONE - pre-bend release, descending wail)
 
 ### Tuplets and Rhythmic Subdivisions
-- [ ] **Arbitrary n-tuplet** (quintuplet=5, sextuplet=6, septuplet=7, etc.)
+- [x] **Arbitrary n-tuplet** (DONE - n_tuplet(notes, n, in_space_of, total_beats))
+- [x] **Sextuplet** (DONE - sextuplet() convenience function)
 - [ ] **Nested tuplets** (triplet of quintuplets, etc.)
 - [ ] **Irrational tuplets** (7:4, 5:3, 11:8 - Ligeti territory)
 - [ ] **Swing tuplet** (long-short with arbitrary ratio, not just triplet swing)
@@ -3508,7 +3509,7 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
 ### Dynamics and Expression
 - [ ] **Hairpin dynamics** (crescendo/decrescendo with beat-level granularity,
       not just start/end velocity)
-- [ ] **Subito dynamics** (sudden change, subito piano, subito forte)
-- [ ] **Messa di voce** (pp -> ff -> pp on a single sustained note)
+- [x] **Subito dynamics** (DONE - sudden velocity change at any index)
+- [x] **Messa di voce** (DONE - pp -> ff -> pp parabolic curve on sustained note)
 - [ ] **Accent patterns** (marcato, tenuto, staccatissimo as articulations)
 - [ ] **Breath marks** (natural phrasing pauses for wind/vocal lines)

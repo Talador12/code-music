@@ -1514,6 +1514,338 @@ def repeat(events: list, n: int) -> list:
 # ---------------------------------------------------------------------------
 
 
+def bend(
+    note: Note,
+    semitones: float = 2.0,
+    speed: float = EIGHTH,
+    direction: str = "up",
+) -> list[Note]:
+    """Guitar-style pitch bend with controllable rate.
+
+    Starts at the written pitch and bends up (or down) to the target
+    interval over the bend duration. Then holds. The bread and butter
+    of blues and rock guitar. Slow bend = BB King. Fast bend = Hendrix.
+
+    Args:
+        note:       Starting note.
+        semitones:  How far to bend (0.5=quarter tone, 1=half step, 2=whole step).
+        speed:      Duration of the bend portion.
+        direction:  "up" (default, standard bend) or "down" (pre-bend release).
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    bend_dur = min(speed, note.duration * 0.5)
+    hold_dur = note.duration - bend_dur
+    steps = 8
+    step_dur = bend_dur / steps
+    result = []
+    for i in range(steps):
+        frac = (i + 1) / steps
+        if direction == "down":
+            pitch = base + round(semitones * (1.0 - frac))
+        else:
+            pitch = base + round(semitones * frac)
+        result.append(Note(pitch=pitch, duration=step_dur, velocity=note.velocity))
+    target = base + round(semitones) if direction == "up" else base
+    result.append(Note(pitch=target, duration=hold_dur, velocity=note.velocity))
+    return result
+
+
+def plop(note: Note, semitones: int = 3, steps: int = 6, speed: float = SIXTY_FOURTH) -> list[Note]:
+    """Plop: approach from above and fall into the target note.
+
+    The opposite of a scoop/flip. Pitch starts above and drops down to
+    the target. Jazz trombone and bass clarinet use this constantly.
+
+    Args:
+        note:       Target note.
+        semitones:  How far above to start.
+        steps:      Number of micro-steps.
+        speed:      Duration per step.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed * steps)
+    result = []
+    for i in range(steps):
+        frac = i / steps
+        pitch = base + round(semitones * (1.0 - frac**0.7))
+        vel = note.velocity * (0.6 + 0.4 * frac)
+        result.append(Note(pitch=pitch, duration=speed, velocity=vel))
+    result.append(Note(pitch=base, duration=main_dur, velocity=note.velocity))
+    return result
+
+
+def inverted_turn(note: Note, semitones: int = 1) -> list[Note]:
+    """Inverted turn (lower neighbor first): lower-main-upper-main.
+
+    The opposite of a regular turn. Starts below the main note.
+
+    Args:
+        note:       Main note.
+        semitones:  Interval for neighbor notes.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    dur = note.duration / 4
+    return [
+        Note(pitch=base - semitones, duration=dur, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=dur, velocity=note.velocity),
+        Note(pitch=base + semitones, duration=dur, velocity=note.velocity * 0.85),
+        Note(pitch=base, duration=dur, velocity=note.velocity),
+    ]
+
+
+def double_mordent(note: Note, semitones: int = 1, speed: float = THIRTY_SECOND) -> list[Note]:
+    """Double mordent: extended rapid alternation (4 alternations instead of 2).
+
+    Args:
+        note:       Main note.
+        semitones:  Interval to alternate with (1=half step, 2=whole step).
+        speed:      Duration of each alternation.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    n_alts = 4
+    alt_dur = speed
+    main_dur = max(SIXTY_FOURTH, note.duration - alt_dur * n_alts * 2)
+    result = []
+    for _ in range(n_alts):
+        result.append(Note(pitch=base, duration=alt_dur, velocity=note.velocity))
+        result.append(Note(pitch=base + semitones, duration=alt_dur, velocity=note.velocity * 0.85))
+    result.append(Note(pitch=base, duration=main_dur, velocity=note.velocity))
+    return result
+
+
+def acciaccatura(note: Note, approach_from: int = -1) -> list[Note]:
+    """Acciaccatura: crushed grace note, as fast as possible.
+
+    Unlike appoggiatura (on the beat, takes time), the acciaccatura is
+    BEFORE the beat and as short as physically possible. It "crushes"
+    into the main note. The grace note that steals no time from the
+    main note - it steals from the silence before.
+
+    Args:
+        note:          Main note.
+        approach_from: Semitones below (-) or above (+) for the grace note.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    grace_dur = SIXTY_FOURTH * 0.5  # as short as possible
+    return [
+        Note(pitch=base + approach_from, duration=grace_dur, velocity=note.velocity * 0.7),
+        Note(pitch=base, duration=note.duration, velocity=note.velocity),
+    ]
+
+
+def rip(note: Note, semitones: int = 12, speed: float = SIXTEENTH) -> list[Note]:
+    """Brass rip: fast glissando up to a note. Big band shout chorus energy.
+
+    The lead trumpet hits a high note by ripping up from below. Fast,
+    aggressive, show-off. The sound of Maynard Ferguson, Cat Anderson,
+    and every big band finale.
+
+    Args:
+        note:       Target note (the one you rip up to).
+        semitones:  How far below to start the rip.
+        speed:      Total duration of the rip.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    steps = min(semitones, 16)
+    step_dur = speed / steps
+    main_dur = max(SIXTY_FOURTH, note.duration - speed)
+    result = []
+    for i in range(steps):
+        frac = i / steps
+        pitch = base - semitones + round(semitones * frac)
+        vel = note.velocity * (0.5 + 0.5 * frac)
+        result.append(Note(pitch=pitch, duration=step_dur, velocity=vel))
+    result.append(Note(pitch=base, duration=main_dur, velocity=note.velocity))
+    return result
+
+
+def smear(
+    start: Note, end_pitch: str | int, end_octave: int = 4, speed: float = EIGHTH
+) -> list[Note]:
+    """Brass smear: slow glissando between two notes.
+
+    Slower and more deliberate than a rip. The trombone slide. Used for
+    expressive transitions, not flashy arrivals. Duke Ellington brass
+    section territory.
+
+    Args:
+        start:      Starting note.
+        end_pitch:  Target pitch.
+        end_octave: Target octave.
+        speed:      Duration per step.
+    """
+    if start.pitch is None:
+        return [Note.rest(start.duration)]
+    start_midi = start.midi or 0
+    end_midi = note_name_to_midi(end_pitch, end_octave) if isinstance(end_pitch, str) else end_pitch
+    direction = 1 if end_midi > start_midi else -1
+    steps = abs(end_midi - start_midi)
+    step_dur = min(speed, start.duration / max(steps, 1))
+    result = []
+    for i in range(steps):
+        midi = start_midi + direction * i
+        result.append(Note(pitch=midi, duration=step_dur, velocity=start.velocity))
+    result.append(
+        Note(
+            pitch=end_midi,
+            duration=max(SIXTY_FOURTH, start.duration - step_dur * steps),
+            velocity=start.velocity,
+        )
+    )
+    return result
+
+
+def ghost_bend(note: Note, semitones: float = 2.0) -> list[Note]:
+    """Ghost bend: bend up before picking, release to written pitch.
+
+    The guitarist bends the string up silently, then picks and releases
+    the bend down to the target pitch. Creates a descending wail effect.
+    The note STARTS at the bent pitch and falls to the written pitch.
+
+    Args:
+        note:       Target note (where the bend releases to).
+        semitones:  How far above the bend starts.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    steps = 8
+    bend_dur = min(note.duration * 0.3, 0.5)
+    step_dur = bend_dur / steps
+    hold_dur = note.duration - bend_dur
+    result = []
+    for i in range(steps):
+        frac = i / steps
+        pitch = base + round(semitones * (1.0 - frac))
+        result.append(Note(pitch=pitch, duration=step_dur, velocity=note.velocity))
+    result.append(Note(pitch=base, duration=hold_dur, velocity=note.velocity))
+    return result
+
+
+def messa_di_voce(note: Note, peak_velocity: float = 1.0) -> list[Note]:
+    """Messa di voce: pp -> ff -> pp on a single sustained note.
+
+    The ultimate vocal/wind control exercise. Start soft, swell to full
+    volume at the midpoint, decay back to soft. A single note that
+    demonstrates complete dynamic control. Opera singers train years
+    for this. We do it with velocity curves.
+
+    Args:
+        note:           The sustained note.
+        peak_velocity:  Maximum velocity at the midpoint.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    segments = 8
+    seg_dur = note.duration / segments
+    base = note.midi or 0
+    start_vel = note.velocity * 0.2
+    result = []
+    for i in range(segments):
+        frac = i / (segments - 1)
+        # Parabolic curve: peaks at 0.5
+        vel = start_vel + (peak_velocity - start_vel) * (1.0 - (2.0 * frac - 1.0) ** 2)
+        result.append(Note(pitch=base, duration=seg_dur, velocity=vel))
+    return result
+
+
+def subito(notes: list[Note], dynamic: float, at_index: int = 0) -> list[Note]:
+    """Subito dynamic change: sudden shift to a new velocity.
+
+    Subito piano (sudden soft), subito forte (sudden loud). No
+    gradual transition - the dynamic changes instantly. Used for
+    dramatic contrast. Beethoven's favorite trick.
+
+    Args:
+        notes:     Input notes.
+        dynamic:   New velocity to apply from at_index onward.
+        at_index:  Which note the subito occurs at.
+    """
+    result = []
+    for i, n in enumerate(notes):
+        if n.pitch is None:
+            result.append(n)
+        elif i >= at_index:
+            result.append(
+                Note(n.pitch, n.octave, n.duration, velocity=dynamic, articulation=n.articulation)
+            )
+        else:
+            result.append(n)
+    return result
+
+
+def sextuplet(notes: list[Note], total_beats: float = 1.0) -> list[Note]:
+    """Fit 6 notes into the space of 4 (sextuplet).
+
+    Args:
+        notes:        Up to 6 notes (extras are trimmed).
+        total_beats:  Total duration to fit them into.
+    """
+    n = min(len(notes), 6)
+    dur = total_beats / 6
+    result = []
+    for i in range(n):
+        src = notes[i]
+        if src.pitch is None:
+            result.append(Note.rest(dur))
+        else:
+            result.append(
+                Note(
+                    src.pitch, src.octave, dur, velocity=src.velocity, articulation=src.articulation
+                )
+            )
+    # Fill remaining with rests
+    for _ in range(6 - n):
+        result.append(Note.rest(dur))
+    return result
+
+
+def n_tuplet(
+    notes: list[Note], n: int = 5, in_space_of: int = 4, total_beats: float = 1.0
+) -> list[Note]:
+    """Arbitrary n-tuplet: fit N notes in the space of M.
+
+    Quintuplet (5:4), sextuplet (6:4), septuplet (7:4), or any ratio.
+    The general-purpose tuplet function that covers everything from
+    duplets to undecuplets.
+
+    Args:
+        notes:        Input notes (up to n, extras trimmed).
+        n:            Number of notes to fit.
+        in_space_of:  Number of notes that would normally fill the space.
+        total_beats:  Total duration of the space.
+    """
+    dur = total_beats * in_space_of / (n * in_space_of)  # = total_beats / n
+    dur = total_beats / n
+    count = min(len(notes), n)
+    result = []
+    for i in range(count):
+        src = notes[i]
+        if src.pitch is None:
+            result.append(Note.rest(dur))
+        else:
+            result.append(
+                Note(
+                    src.pitch, src.octave, dur, velocity=src.velocity, articulation=src.articulation
+                )
+            )
+    for _ in range(n - count):
+        result.append(Note.rest(dur))
+    return result
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [
