@@ -981,7 +981,12 @@ ALBUM = {
             "bpm": 95,
             "group": 1,
             "genre": "blues",
-            "notes": "Alkali metal. Melts at 39C (hot day). Atomic clocks. GPS timing. "
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. Rb-85 (72.2%). Rb-87 is radioactive (t1/2=4.92x10^10 years, "
+            "used for Rb-Sr radiometric dating). 2 isotopes total (1 stable, 1 long-lived).",
+            "binding_energy": "8.68 MeV/nucleon",
+            "notes": "Alkali metal. Melts at 39.3C (a hot day liquefies it). Atomic clocks "
+            "(Rb oscillators in GPS satellites). Rb-87 decay to Sr-87 dates the oldest rocks. "
             "Blues with impeccable time. The most precisely timed blues ever played.",
         },
         {
@@ -991,8 +996,14 @@ ALBUM = {
             "bpm": 110,
             "group": 2,
             "genre": "country",
-            "notes": "Red flame test. Fireworks (red ones). Bones accumulate it. "
-            "Country with red fireworks. The celebratory element.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Sr-88 (82.6%). 4 stable isotopes. Sr-90 (radioactive, t1/2=28.8 yr) "
+            "is a dangerous nuclear fallout product that accumulates in bones.",
+            "binding_energy": "8.73 MeV/nucleon",
+            "notes": "Red flame test (brilliant crimson, used in fireworks). Bones accumulate strontium "
+            "(chemically similar to calcium). Sr-90 from nuclear fallout is hazardous because it "
+            "replaces calcium in bones and irradiates bone marrow. "
+            "4 stable isotopes = 4 verses. Country with red fireworks.",
         },
         {
             "n": 39,
@@ -1001,8 +1012,12 @@ ALBUM = {
             "bpm": 140,
             "group": 3,
             "genre": "prog_metal",
-            "notes": "Named for Ytterby, Sweden (4 elements named for one village). "
-            "Superconductors. LED phosphors. Red in TVs. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Y-89 (100%). Only one stable isotope.",
+            "binding_energy": "8.71 MeV/nucleon",
+            "notes": "Named for Ytterby, Sweden (4 elements from one village: Y, Tb, Er, Yb). "
+            "Superconductors (YBCO). LED phosphors (Y2O3:Eu for red). CRT TV red phosphor. "
+            "One stable isotope = one unwavering rhythmic pulse. "
             "Prog metal. Scandinavian. Technical. Precise.",
         },
         {
@@ -1012,8 +1027,13 @@ ALBUM = {
             "bpm": 155,
             "group": 4,
             "genre": "metal",
-            "notes": "Nuclear reactor cladding. Cubic zirconia (fake diamonds). "
-            "Extreme heat resistance. Metal that survives the reactor core.",
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. Zr-90 (51.5%). 5 stable isotopes. Zr-90 has magic N=50.",
+            "binding_energy": "8.71 MeV/nucleon",
+            "notes": "Nuclear reactor cladding (transparent to neutrons, corrosion resistant). "
+            "Cubic zirconia (ZrO2, diamond simulant). Extreme heat resistance (MP 1855C). "
+            "Zr-90 has magic neutron number 50 = extra nuclear stability. "
+            "5 stable isotopes = 5-part arrangement. Metal that survives the reactor core.",
         },
         {
             "n": 41,
@@ -1022,7 +1042,12 @@ ALBUM = {
             "bpm": 150,
             "group": 5,
             "genre": "metal",
-            "notes": "Superconducting magnets (LHC, MRI). Named for Niobe (Greek myth). "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Nb-93 (100%). Only one stable isotope.",
+            "binding_energy": "8.72 MeV/nucleon",
+            "notes": "Superconducting magnets (LHC, MRI machines use Nb-Ti alloy wire). "
+            "Named for Niobe (daughter of Tantalus in Greek myth). "
+            "One stable isotope = one key signature. "
             "Metal with superconducting sustain. Notes that never decay.",
         },
         {
@@ -1032,7 +1057,12 @@ ALBUM = {
             "bpm": 162,
             "group": 6,
             "genre": "metal",
-            "notes": "Highest melting point of commonly used metals. Alloy steel. Enzymes. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Mo-98 (24.1%). 7 stable isotopes (most of any element in Period 5).",
+            "binding_energy": "8.66 MeV/nucleon",
+            "notes": "Highest melting point of commonly used metals (2623C). Alloy steel. "
+            "Essential cofactor in nitrogenase (biological nitrogen fixation). "
+            "7 stable isotopes = 7 modulations (matches its neighbor Mn's restlessness). "
             "Metal that refuses to melt. Relentless. The endurance element.",
         },
         {
@@ -1042,9 +1072,17 @@ ALBUM = {
             "bpm": 135,
             "group": 7,
             "genre": "electronic",
-            "notes": "First artificially produced element. No stable isotopes. Radioactive. "
-            "Medical imaging tracer. Electronic. Synthetic. Does not exist in nature. "
-            "The element that humanity had to build.",
+            "origin": "Artificial: first made in 1937 by bombarding Mo with deuterons in a cyclotron. "
+            "Trace amounts from spontaneous U-238 fission in nature.",
+            "stability": "NO stable isotopes. Tc-98 has longest half-life (4.2 million years). "
+            "Tc-99m (t1/2=6 hours) is the most widely used medical radioisotope.",
+            "binding_energy": "8.67 MeV/nucleon",
+            "notes": "First artificially produced element (1937, Perrier and Segre). "
+            "Named from Greek technetos (artificial). No stable isotopes at all. "
+            "Tc-99m is used in 80% of nuclear medicine imaging (30 million scans/year). "
+            "Electronic. Synthetic. Does not exist in meaningful amounts in nature. "
+            "The element that humanity had to build. The audio has subtle decay artifacts "
+            "because no isotope is stable.",
         },
         {
             "n": 44,
@@ -1053,7 +1091,11 @@ ALBUM = {
             "bpm": 148,
             "group": 8,
             "genre": "metal",
-            "notes": "Platinum group. Hard. Catalysts. Electronics contacts. "
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Ru-102 (31.6%). 7 stable isotopes.",
+            "binding_energy": "8.62 MeV/nucleon",
+            "notes": "Platinum group metal. Hard (6.5 Mohs). Catalysts. Electronics contacts. "
+            "Fountain pen nib tipping. 7 stable isotopes = 7 rhythmic layers. "
             "Rare, precise, industrial metal. Tight, machined riffs.",
         },
         {
@@ -1063,7 +1105,12 @@ ALBUM = {
             "bpm": 145,
             "group": 9,
             "genre": "smooth_jazz",
-            "notes": "Most expensive precious metal per gram. Catalytic converters. Mirrors. "
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Rh-103 (100%). Only one stable isotope.",
+            "binding_energy": "8.59 MeV/nucleon",
+            "notes": "Most expensive precious metal per gram (~$15,000/oz, fluctuates wildly). "
+            "Catalytic converters (80% of demand). Mirrors (best optical reflector). "
+            "One stable isotope = one pure tone, no variation. "
             "Smooth jazz. Expensive, reflective, rare. The luxury element.",
         },
         {
@@ -1073,8 +1120,13 @@ ALBUM = {
             "bpm": 130,
             "group": 10,
             "genre": "fusion",
-            "notes": "Catalytic converters. Hydrogen absorption (holds 900x its volume). "
-            "Fusion. Absorbs everything. Genre sponge. Named for asteroid Pallas.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Pd-106 (27.3%). 6 stable isotopes.",
+            "binding_energy": "8.58 MeV/nucleon",
+            "notes": "Catalytic converters. Hydrogen absorption (holds 900x its volume in gas - "
+            "the metal acts like a sponge for H2). Named for asteroid Pallas. "
+            "6 stable isotopes = 6 genre-blending sections. "
+            "Fusion. Absorbs everything. Genre sponge.",
         },
         {
             "n": 47,
@@ -1101,7 +1153,12 @@ ALBUM = {
             "bpm": 115,
             "group": 12,
             "genre": "blues",
-            "notes": "Toxic heavy metal. Yellow pigment (cadmium yellow). NiCd batteries. "
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. Cd-114 (28.7%). 8 stable isotopes.",
+            "binding_energy": "8.54 MeV/nucleon (declining from the peak)",
+            "notes": "Toxic heavy metal (causes itai-itai disease). Yellow pigment (cadmium yellow, "
+            "used by Monet and Van Gogh). NiCd batteries. "
+            "8 stable isotopes = 8 blues bar phrase. "
             "Heavy blues. Toxic beauty. The paint that poisons the painter.",
         },
         {
@@ -1111,9 +1168,14 @@ ALBUM = {
             "bpm": 85,
             "group": 13,
             "genre": "lofi",
-            "notes": "Soft, malleable. Touchscreens (ITO). Low melting point. "
-            "Lofi. Your phone screen is made of this. Digital intimacy. "
-            "Cries when bent (tin cry). The emotional metal.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. In-115 (95.7%, weakly radioactive t1/2=4.4x10^14 years). "
+            "In-113 (4.3%) is truly stable.",
+            "binding_energy": "8.51 MeV/nucleon",
+            "notes": "Soft, malleable. Touchscreens (ITO: indium tin oxide, transparent conductor). "
+            "Low melting point (156.6C). In-115 is technically radioactive but with a half-life "
+            "30,000x the age of the universe. Cries when bent (tin cry sound). "
+            "Lofi. Your phone screen is made of this. Digital intimacy. The emotional metal.",
         },
         {
             "n": 50,
@@ -1122,7 +1184,12 @@ ALBUM = {
             "bpm": 120,
             "group": 14,
             "genre": "ska",
-            "notes": "Tin cans. Solder. Bronze (tin + copper). Tin whistle. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. 10 stable isotopes (the MOST of any element). Sn-120 (32.6%) is most abundant.",
+            "binding_energy": "8.51 MeV/nucleon",
+            "notes": "Tin cans (steel coated with tin). Solder. Bronze (tin + copper). Tin whistle. "
+            "TEN stable isotopes - more than any other element in the entire periodic table. "
+            "10 isotopes = 10 instruments in the ska arrangement, the biggest ensemble on the album. "
             "Ska. The tin whistle is literally a ska instrument. "
             "Bronze age energy. The alloy that started civilization.",
         },
@@ -1133,7 +1200,12 @@ ALBUM = {
             "bpm": 125,
             "group": 15,
             "genre": "jazz",
-            "notes": "Metalloid. Ancient eye makeup (kohl). Flame retardant. Alloys. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Sb-121 (57.2%) and Sb-123 (42.8%). 2 stable isotopes.",
+            "binding_energy": "8.49 MeV/nucleon",
+            "notes": "Metalloid. Ancient eye makeup (kohl, stibnite Sb2S3 - used for 5000 years). "
+            "Flame retardant (Sb2O3). Type metal (Gutenberg's printing press used Sb alloys). "
+            "2 stable isotopes = call-and-response jazz phrasing. "
             "Dark jazz. Smoky eyes. The cosmetic element with a dangerous past.",
         },
         {
@@ -1143,8 +1215,13 @@ ALBUM = {
             "bpm": 88,
             "group": 16,
             "genre": "neo_soul",
-            "notes": "Named for Earth (Tellus). Rare. Thermoelectric. Solar panels. "
-            "Makes your breath smell like garlic for weeks if you handle it. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Te-130 (34.1%). 8 stable isotopes (second most of any element after Sn).",
+            "binding_energy": "8.47 MeV/nucleon",
+            "notes": "Named for Earth (Tellus). Rare in Earth's crust but common in the universe. "
+            "Thermoelectric devices (Bi2Te3). CdTe solar panels. "
+            "Makes your breath smell like garlic for WEEKS if you handle it (dimethyl telluride). "
+            "8 stable isotopes = 8 sections. "
             "Neo-soul with earthy warmth. The planet's namesake.",
         },
         {
@@ -1154,8 +1231,14 @@ ALBUM = {
             "bpm": 165,
             "group": 17,
             "genre": "punk",
-            "notes": "Purple vapor. Antiseptic. Thyroid essential. Sublimes directly to gas. "
-            "Punk with purple lighting. Skips liquid phase entirely (like punk "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. I-127 (100%). Only one stable isotope. I-131 (radioactive, t1/2=8 days) "
+            "is a major nuclear fallout concern (concentrates in thyroid).",
+            "binding_energy": "8.45 MeV/nucleon",
+            "notes": "Purple vapor (Greek ioeides = violet-colored). Antiseptic. Thyroid essential "
+            "(T3 and T4 hormones). Sublimes directly from solid to gas at room temperature. "
+            "I-131 from nuclear accidents concentrates in the thyroid - KI pills block uptake. "
+            "One stable isotope = one-key punk. Skips liquid phase entirely (like punk "
             "skipped the rules). Necessary medicine delivered aggressively.",
         },
         {
@@ -1165,9 +1248,14 @@ ALBUM = {
             "bpm": 72,
             "group": 18,
             "genre": "ambient",
-            "notes": "Noble gas but CAN form compounds (xenon fluorides). Blue glow. "
-            "Anesthetic. Spacecraft ion propulsion. Ambient that occasionally "
-            "reacts. The noble gas that broke the rules. Spacefaring.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Xe-132 (26.9%). 9 stable isotopes.",
+            "binding_energy": "8.43 MeV/nucleon",
+            "notes": "Noble gas but CAN form compounds (XeF2, XeF4, XeF6 - Neil Bartlett 1962, "
+            "shattered the belief that noble gases were completely inert). Blue glow. "
+            "Anesthetic. Spacecraft ion propulsion (Dawn, Starlink). "
+            "9 stable isotopes = 9 ambient layers. "
+            "Ambient that occasionally reacts. The noble gas that broke the rules. Spacefaring.",
         },
         # ══════════════════════════════════════════════════════════════
         # PERIOD 6 — Maximum Complexity (Cs through Rn)
