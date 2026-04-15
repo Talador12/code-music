@@ -286,10 +286,31 @@ def master_audio(
     sr: int,
     target_lufs: float = -14.0,
     ceiling_db: float = -1.0,
-    dither_bits: int = 16,
+    dither_bits: int = 24,
     dither_seed: int | None = None,
+    style: str = "balanced",
 ) -> FloatArray:
-    """Full mastering chain: normalize LUFS → true peak limit → dither.
+    """Full professional mastering chain.
+
+    A complete mastering pipeline that takes a mixed stereo signal and
+    makes it release-ready. 7 stages, executed in the correct order.
+    This is what a mastering engineer charges $200/track for.
+
+    Styles control the character:
+        balanced:    Transparent, preserves the mix (streaming default)
+        loud:        Competitive loudness for pop/EDM (-10 LUFS, pushed)
+        warm:        Analog warmth and density (rock/soul/jazz)
+        clean:       Minimal processing, maximum dynamics (classical/acoustic)
+        aggressive:  Maximum loudness and impact (metal/trap/EDM)
+
+    The chain:
+        1. Console warmth (subtle analog saturation)
+        2. Multiband stereo imaging (mono bass, wide highs)
+        3. Multiband compression (per-band dynamics control)
+        4. Parametric EQ (tonal balance correction)
+        5. LUFS normalization (target loudness)
+        6. True peak limiting (prevent clipping)
+        7. Dithering (bit depth reduction)
 
     Args:
         audio:       Stereo float64 (N, 2).
@@ -298,18 +319,125 @@ def master_audio(
         ceiling_db:  True peak ceiling (-1.0 dBFS default).
         dither_bits: Dithering bit depth (16 or 24).
         dither_seed: Random seed for reproducible dithering.
+        style:       Mastering style preset.
 
     Returns:
         Mastered audio ready for export.
     """
-    # Step 1: Normalize to target LUFS
-    audio = normalize_lufs(audio, sr, target_lufs)
+    from .effects import (
+        console_warmth as _warmth,
+        multiband_stereo as _mb_stereo,
+        multiband_compress as _mb_comp,
+        parametric_eq as _peq,
+    )
 
-    # Step 2: True peak limiting
+    # Style presets
+    styles = {
+        "balanced": {
+            "warmth_drive": 1.1,
+            "warmth_hf": 0.15,
+            "bass_width": 0.0,
+            "mid_width": 1.0,
+            "high_width": 1.3,
+            "comp_low_thresh": 0.5,
+            "comp_mid_thresh": 0.45,
+            "comp_high_thresh": 0.4,
+            "eq_bands": [("highpass", 25, 0, 0.7), ("highshelf", 12000, 1.0, 0.7)],
+            "target_lufs": target_lufs,
+        },
+        "loud": {
+            "warmth_drive": 1.3,
+            "warmth_hf": 0.1,
+            "bass_width": 0.0,
+            "mid_width": 1.0,
+            "high_width": 1.4,
+            "comp_low_thresh": 0.35,
+            "comp_mid_thresh": 0.3,
+            "comp_high_thresh": 0.3,
+            "eq_bands": [
+                ("highpass", 30, 0, 0.7),
+                ("peak", 3000, 1.5, 1.0),
+                ("highshelf", 10000, 2.0, 0.7),
+            ],
+            "target_lufs": max(target_lufs, -10.0),
+        },
+        "warm": {
+            "warmth_drive": 1.5,
+            "warmth_hf": 0.3,
+            "bass_width": 0.0,
+            "mid_width": 1.0,
+            "high_width": 1.1,
+            "comp_low_thresh": 0.45,
+            "comp_mid_thresh": 0.4,
+            "comp_high_thresh": 0.45,
+            "eq_bands": [
+                ("highpass", 30, 0, 0.7),
+                ("lowshelf", 100, 2.0, 0.7),
+                ("highshelf", 8000, -1.0, 0.7),
+            ],
+            "target_lufs": target_lufs,
+        },
+        "clean": {
+            "warmth_drive": 1.0,
+            "warmth_hf": 0.0,
+            "bass_width": 0.2,
+            "mid_width": 1.0,
+            "high_width": 1.0,
+            "comp_low_thresh": 0.6,
+            "comp_mid_thresh": 0.55,
+            "comp_high_thresh": 0.5,
+            "eq_bands": [("highpass", 20, 0, 0.7)],
+            "target_lufs": target_lufs,
+        },
+        "aggressive": {
+            "warmth_drive": 1.4,
+            "warmth_hf": 0.1,
+            "bass_width": 0.0,
+            "mid_width": 1.0,
+            "high_width": 1.5,
+            "comp_low_thresh": 0.3,
+            "comp_mid_thresh": 0.25,
+            "comp_high_thresh": 0.25,
+            "eq_bands": [
+                ("highpass", 35, 0, 0.7),
+                ("peak", 80, 2.0, 1.0),
+                ("peak", 3500, 2.0, 1.5),
+                ("highshelf", 10000, 2.5, 0.7),
+            ],
+            "target_lufs": max(target_lufs, -8.0),
+        },
+    }
+    s = styles.get(style, styles["balanced"])
+
+    # Step 1: Analog console warmth (subtle saturation + HF rolloff)
+    if s["warmth_drive"] > 1.0:
+        audio = _warmth(audio, sr, drive=s["warmth_drive"], hf_rolloff=s["warmth_hf"])
+
+    # Step 2: Multiband stereo imaging (mono bass, wide highs)
+    audio = _mb_stereo(
+        audio, sr, bass_width=s["bass_width"], mid_width=s["mid_width"], high_width=s["high_width"]
+    )
+
+    # Step 3: Multiband compression
+    audio = _mb_comp(
+        audio,
+        sr,
+        low_threshold=s["comp_low_thresh"],
+        mid_threshold=s["comp_mid_thresh"],
+        high_threshold=s["comp_high_thresh"],
+    )
+
+    # Step 4: Parametric EQ (tonal balance)
+    if s["eq_bands"]:
+        audio = _peq(audio, sr, bands=s["eq_bands"])
+
+    # Step 5: LUFS normalization
+    audio = normalize_lufs(audio, sr, s["target_lufs"])
+
+    # Step 6: True peak limiting
     audio = true_peak_limit(audio, sr, ceiling_db)
 
-    # Step 3: Dithering
+    # Step 7: Dithering
     audio = dither(audio, dither_bits, dither_seed)
 
-    # Final clip
     return np.clip(audio, -1.0, 1.0)
