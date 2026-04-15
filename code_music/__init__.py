@@ -181,7 +181,15 @@ from .engine import (
     voice_lead,
     # v170 composition intelligence
     auto_harmonize,
+    call_and_response,
+    chord_substitute,
     embellish,
+    melodic_inversion,
+    melodic_sequence,
+    pedal_tone,
+    reharmonize,
+    retrograde,
+    retrograde_inversion,
     rhythmic_variation,
     # v170 ornaments, theory, and advanced rhythm
     acciaccatura,

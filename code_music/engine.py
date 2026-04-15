@@ -2522,6 +2522,364 @@ def rhythmic_variation(
     return result
 
 
+def chord_substitute(
+    root: str,
+    quality: str,
+    sub_type: str = "tritone",
+) -> tuple[str, str]:
+    """Chord substitution: replace a chord with a harmonically related alternative.
+
+    The foundation of jazz reharmonization. Every chord has multiple
+    substitutes that function similarly but sound different. Tritone
+    sub is the classic - replace V7 with bII7 (same tritone, different
+    root). Relative minor swaps major for its relative minor. These
+    make basic progressions sound sophisticated.
+
+    Sub types:
+        tritone:     Replace with chord a tritone (6 semitones) away. G7 -> Db7.
+                     Same guide tones (3rd and 7th swap roles).
+        relative:    Swap major for relative minor or vice versa. C -> Am, Am -> C.
+        parallel:    Swap major for parallel minor. C -> Cm, Cm -> C.
+        backdoor:    Replace V7 with bVII7. G7 -> Bb7 (backdoor dominant).
+        diminished:  Replace dom7 with dim7 a half step up. G7 -> Ab dim7.
+        secondary:   Turn into secondary dominant. Am -> A7 (V7/ii becomes V7/V).
+        neapolitan:  Replace with bII major. In C: Db major (Neapolitan chord).
+
+    Args:
+        root:      Original chord root.
+        quality:   Original chord quality.
+        sub_type:  Substitution type.
+
+    Returns:
+        (new_root, new_quality) tuple.
+    """
+    NOTE_NAMES_SUB = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+    root_idx = NOTE_NAMES_SUB.index(root) if root in NOTE_NAMES_SUB else 0
+
+    if sub_type == "tritone":
+        new_root = NOTE_NAMES_SUB[(root_idx + 6) % 12]
+        new_qual = quality  # preserve quality
+        return (new_root, new_qual)
+
+    elif sub_type == "relative":
+        if "min" in quality:
+            new_root = NOTE_NAMES_SUB[(root_idx + 3) % 12]  # minor -> relative major (up m3)
+            new_qual = quality.replace("min", "maj") if "min7" in quality else "maj"
+        else:
+            new_root = NOTE_NAMES_SUB[(root_idx - 3) % 12]  # major -> relative minor (down m3)
+            new_qual = quality.replace("maj", "min") if "maj7" in quality else "min"
+        return (new_root, new_qual)
+
+    elif sub_type == "parallel":
+        if "min" in quality:
+            new_qual = quality.replace("min", "maj")
+        else:
+            new_qual = quality.replace("maj", "min") if "maj" in quality else "min"
+        return (root, new_qual)
+
+    elif sub_type == "backdoor":
+        new_root = NOTE_NAMES_SUB[(root_idx - 2) % 12]  # bVII (whole step below)
+        return (new_root, "dom7")
+
+    elif sub_type == "diminished":
+        new_root = NOTE_NAMES_SUB[(root_idx + 1) % 12]
+        return (new_root, "dim7")
+
+    elif sub_type == "secondary":
+        return (root, "dom7")
+
+    elif sub_type == "neapolitan":
+        new_root = NOTE_NAMES_SUB[(root_idx + 1) % 12]
+        return (new_root, "maj")
+
+    return (root, quality)
+
+
+def reharmonize(
+    progression: list[tuple[str, str]],
+    substitutions: dict[int, str] | None = None,
+    style: str = "jazz",
+    seed: int | None = None,
+) -> list[tuple[str, str]]:
+    """Reharmonize a chord progression by applying substitutions.
+
+    Takes a plain progression and makes it more harmonically interesting
+    by substituting chords at specific positions. The style parameter
+    picks common substitution patterns for the genre.
+
+    Args:
+        progression:   Input chord progression.
+        substitutions: Dict mapping chord index to sub_type. None = auto.
+        style:         "jazz" (tritone subs on dominants), "neo_soul"
+                       (parallel minor subs), "classical" (neapolitan).
+        seed:          Random seed for auto mode.
+
+    Returns:
+        Reharmonized progression.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    result = list(progression)
+
+    if substitutions:
+        for idx, sub_type in substitutions.items():
+            if 0 <= idx < len(result):
+                root, qual = result[idx]
+                result[idx] = chord_substitute(root, qual, sub_type)
+        return result
+
+    # Auto-reharmonize based on style
+    for i, (root, qual) in enumerate(progression):
+        if style == "jazz":
+            if "dom7" in qual and rng.random() > 0.5:
+                result[i] = chord_substitute(root, qual, "tritone")
+            elif "min" not in qual and rng.random() > 0.7:
+                result[i] = chord_substitute(root, qual, "relative")
+        elif style == "neo_soul":
+            if rng.random() > 0.6:
+                result[i] = chord_substitute(root, qual, "parallel")
+        elif style == "classical":
+            if i == len(progression) - 2 and rng.random() > 0.5:
+                result[i] = chord_substitute(root, qual, "neapolitan")
+
+    return result
+
+
+def melodic_inversion(notes: list[Note], axis_pitch: int | None = None) -> list[Note]:
+    """Melodic inversion: flip intervals around an axis pitch.
+
+    Every ascending interval becomes descending by the same amount and
+    vice versa. If the melody goes up a third, the inversion goes down
+    a third. Used in counterpoint (Bach), serialism (Schoenberg), and
+    modern film scoring. Creates a mirror image of the melody.
+
+    Args:
+        notes:       Input melody.
+        axis_pitch:  MIDI note to invert around. None = first note.
+
+    Returns:
+        Inverted melody.
+    """
+    pitched = [n for n in notes if n.pitch is not None and n.midi is not None]
+    if not pitched:
+        return list(notes)
+    axis = axis_pitch if axis_pitch is not None else pitched[0].midi
+
+    result = []
+    for n in notes:
+        if n.pitch is None or n.midi is None:
+            result.append(n)
+        else:
+            inverted_midi = 2 * axis - n.midi
+            result.append(
+                Note(
+                    pitch=inverted_midi,
+                    duration=n.duration,
+                    velocity=n.velocity,
+                    articulation=n.articulation,
+                )
+            )
+    return result
+
+
+def retrograde(notes: list[Note]) -> list[Note]:
+    """Retrograde: play the melody backwards.
+
+    Reverse the pitch order while keeping the rhythm. Bach used this
+    in fugues (crab canon). Webern used it in serial composition.
+    Film composers use it for "unwinding" effects. Simple but powerful
+    transformation.
+
+    Returns:
+        Notes in reverse pitch order with original rhythm.
+    """
+    pitches = []
+    for n in notes:
+        pitches.append((n.pitch, n.octave, n.midi))
+
+    pitches.reverse()
+
+    result = []
+    for i, n in enumerate(notes):
+        p, o, m = pitches[i]
+        if p is None:
+            result.append(Note.rest(n.duration))
+        elif m is not None:
+            result.append(
+                Note(pitch=m, duration=n.duration, velocity=n.velocity, articulation=n.articulation)
+            )
+        else:
+            result.append(
+                Note(
+                    pitch=p,
+                    octave=o,
+                    duration=n.duration,
+                    velocity=n.velocity,
+                    articulation=n.articulation,
+                )
+            )
+    return result
+
+
+def retrograde_inversion(notes: list[Note], axis_pitch: int | None = None) -> list[Note]:
+    """Retrograde inversion: backwards AND flipped. The double transformation.
+
+    Apply both retrograde (reverse) and inversion (flip). Used in serial
+    composition to get maximum variation from a tone row. Four forms of
+    any melody: prime, inversion, retrograde, retrograde-inversion.
+
+    Args:
+        notes:       Input melody.
+        axis_pitch:  MIDI note to invert around.
+    """
+    return retrograde(melodic_inversion(notes, axis_pitch))
+
+
+def melodic_sequence(
+    pattern: list[Note],
+    steps: int = 4,
+    direction: int = 1,
+    key: str = "C",
+    scale_name: str = "major",
+) -> list[Note]:
+    """Melodic sequence: repeat a pattern at successive scale degrees.
+
+    A melodic pattern transposed through the scale. The most fundamental
+    compositional technique. Vivaldi built an entire career on sequences.
+    Bach used them in every fugue episode. Pop songs use them as hooks.
+
+    Args:
+        pattern:    The melodic cell to sequence.
+        steps:      How many times to repeat (at different degrees).
+        direction:  1 = ascending sequence, -1 = descending.
+        key:        Key.
+        scale_name: Scale.
+
+    Returns:
+        The pattern repeated at successive scale degrees.
+    """
+    scale_intervals = SCALES.get(scale_name, SCALES.get("major", [0, 2, 4, 5, 7, 9, 11]))
+    result = list(pattern)
+
+    for step in range(1, steps):
+        shift_degrees = step * direction
+        shifted = []
+        for n in pattern:
+            if n.pitch is None or n.midi is None:
+                shifted.append(n)
+                continue
+            # Shift by N scale degrees
+            key_midi = note_name_to_midi(key, 0)
+            pc = (n.midi - key_midi) % 12
+            # Find current degree
+            best_deg = 0
+            best_dist = 99
+            for i, s in enumerate(scale_intervals):
+                dist = min(abs(pc - s), 12 - abs(pc - s))
+                if dist < best_dist:
+                    best_dist = dist
+                    best_deg = i
+            # Shift
+            target_deg = best_deg + shift_degrees
+            oct_shift = 0
+            while target_deg < 0:
+                target_deg += len(scale_intervals)
+                oct_shift -= 12
+            while target_deg >= len(scale_intervals):
+                target_deg -= len(scale_intervals)
+                oct_shift += 12
+            base_oct = ((n.midi - key_midi) // 12) * 12
+            new_midi = key_midi + base_oct + scale_intervals[target_deg] + oct_shift
+            shifted.append(
+                Note(
+                    pitch=new_midi,
+                    duration=n.duration,
+                    velocity=n.velocity * (1.0 - step * 0.05),
+                    articulation=n.articulation,
+                )
+            )
+        result.extend(shifted)
+
+    return result
+
+
+def pedal_tone(
+    melody: list[Note],
+    pedal_pitch: str = "C",
+    pedal_octave: int = 2,
+    position: str = "bass",
+) -> tuple[list[Note], list[Note]]:
+    """Pedal tone: sustained note while the melody moves above or below.
+
+    A bass pedal holds a single low note while the harmony changes
+    above. A soprano pedal (inverted pedal) holds a high note while
+    harmony moves below. Creates tension when the pedal clashes with
+    passing chords, releases when it resolves.
+
+    Bach organ pedal points, Beethoven symphony buildups, EDM risers
+    with a sustained sub-bass - all pedal tones.
+
+    Args:
+        melody:       Moving melody/harmony.
+        pedal_pitch:  Pitch of the sustained note.
+        pedal_octave: Octave of the sustained note.
+        position:     "bass" (below melody) or "soprano" (above melody).
+
+    Returns:
+        (melody, pedal_voice) - two lists ready for two tracks.
+    """
+    total_dur = sum(n.duration for n in melody)
+    pedal_note = Note(pedal_pitch, pedal_octave, total_dur, velocity=0.6)
+    return (list(melody), [pedal_note])
+
+
+def call_and_response(
+    melody: list[Note],
+    response_interval: int = -3,
+    key: str = "C",
+    scale_name: str = "major",
+    gap_beats: float = 0.5,
+) -> tuple[list[Note], list[Note]]:
+    """Split a melody into call-and-response phrases.
+
+    The call plays a phrase, pauses, and the response answers with
+    a harmonized variation. Gospel, blues, jazz, and African music
+    are built on this. Two voices in conversation.
+
+    Args:
+        melody:             Full melody to split.
+        response_interval:  Diatonic interval for the response voice.
+        key:                Key.
+        scale_name:         Scale.
+        gap_beats:          Silence between call and response.
+
+    Returns:
+        (call_voice, response_voice) - two lists for two tracks.
+    """
+    # Split melody into phrases of ~4 notes each
+    phrase_len = 4
+    call = []
+    response = []
+
+    for i in range(0, len(melody), phrase_len):
+        phrase = melody[i : i + phrase_len]
+        phrase_dur = sum(n.duration for n in phrase)
+
+        # Call gets the phrase + rest
+        call.extend(phrase)
+        call.append(Note.rest(gap_beats + phrase_dur))
+
+        # Response gets rest + harmonized answer
+        response.append(Note.rest(phrase_dur + gap_beats))
+        resp_phrase = auto_harmonize(
+            phrase, key, scale_name, "thirds" if response_interval < 0 else "thirds_above"
+        )
+        response.extend(resp_phrase)
+
+    return (call, response)
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [
