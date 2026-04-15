@@ -53,8 +53,9 @@ Package is built, tested, and ready to publish to PyPI.
 - Should add a proper A/B comparison test that renders old vs new reverb
 - The backlog in "Backlog: Music Theory Expressiveness" below has 38 items
   (falls, doits, bends, arbitrary tuplets, voice leading rules, etc.)
-- Consider adding a `--hires` flag that renders at 96kHz internally and
-  downsamples for the target format (true hi-res, not just upsampled)
+- ~~`--hires` flag~~ — **DONE.** Renders at 96kHz, downsample handled by export.
+  Also added `--sample-rate HZ` for custom rates. `--quality` preset flag wired
+  into the render path (uses export_with_preset for auto-resampling).
 
 ### Market position
 - Integration layer shipped (integrations.py): music21, pretty_midi, librosa,

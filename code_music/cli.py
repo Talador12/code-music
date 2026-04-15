@@ -99,9 +99,21 @@ def _render_once(script: Path, args) -> int:
         song = _gt(song, args.genre_transform)
         print(f"  Transformed to {args.genre_transform}: '{song.title}'")
 
-    print(f"  Rendering '{song.title}' — {song.duration_sec:.1f}s @ {song.bpm} BPM ...")
+    # Hi-res rendering: render at 96kHz (or custom rate), downsample on export
+    render_sr = song.sample_rate
+    if getattr(args, "sample_rate", None):
+        render_sr = args.sample_rate
+        song.sample_rate = render_sr
+    elif getattr(args, "hires", False):
+        render_sr = 96000
+        song.sample_rate = render_sr
+
+    hires_label = f" @ {render_sr}Hz" if render_sr != 44100 else ""
+    print(
+        f"  Rendering '{song.title}' — {song.duration_sec:.1f}s @ {song.bpm} BPM{hires_label} ..."
+    )
     t0 = time.monotonic()
-    synth = Synth(sample_rate=song.sample_rate)
+    synth = Synth(sample_rate=render_sr)
     samples = synth.render_song(song)
     elapsed = time.monotonic() - t0
     print(f"  Rendered in {elapsed:.1f}s")
@@ -123,16 +135,24 @@ def _render_once(script: Path, args) -> int:
         safe = song.title.lower().replace(" ", "_")
         out_path = script.parent / f"{safe}{suffix}"
 
+    # Export with quality preset if specified
+    if getattr(args, "quality", None):
+        from .export import export_with_preset
+
+        result = export_with_preset(samples, out_path, args.quality, render_sr)
+        print(f"  Exported: {result}")
+        return 0
+
     if args.midi:
         result = export_midi(song, out_path)
     elif args.mp3:
-        result = export_mp3(samples, out_path, song.sample_rate)
+        result = export_mp3(samples, out_path, render_sr)
     elif args.ogg:
-        result = export_ogg(samples, out_path, song.sample_rate)
+        result = export_ogg(samples, out_path, render_sr)
     elif args.flac:
-        result = export_flac(samples, out_path, song.sample_rate)
+        result = export_flac(samples, out_path, render_sr)
     else:
-        result = export_wav(samples, out_path, song.sample_rate)
+        result = export_wav(samples, out_path, render_sr)
 
     print(f"  Exported: {result}")
     return 0
@@ -219,6 +239,20 @@ examples:
         "--list-integrations",
         action="store_true",
         help="Show available integrations (Python libs + CLI tools from other languages)",
+    )
+    parser.add_argument(
+        "--hires",
+        action="store_true",
+        help="Render at 96kHz internally for true hi-res audio, then downsample "
+        "to the target format's sample rate. Higher quality reverb tails, "
+        "smoother filter sweeps, and more headroom for effects processing.",
+    )
+    parser.add_argument(
+        "--sample-rate",
+        type=int,
+        default=None,
+        metavar="HZ",
+        help="Override render sample rate (default: 44100, or 96000 with --hires).",
     )
     parser.add_argument(
         "-o",
