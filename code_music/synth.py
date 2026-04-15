@@ -46,8 +46,28 @@ class Synth:
         "celesta": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.08, "S": 0.0, "R": 0.6},
         # ── Strings ───────────────────────────────────────────────────────────
         "strings": {"wave": "sawtooth", "harmonics": 10, "A": 0.12, "D": 0.05, "S": 0.9, "R": 0.4},
-        "violin": {"wave": "sawtooth", "harmonics": 14, "A": 0.08, "D": 0.02, "S": 0.95, "R": 0.3},
-        "cello": {"wave": "sawtooth", "harmonics": 10, "A": 0.1, "D": 0.03, "S": 0.9, "R": 0.5},
+        "violin": {
+            "wave": "sawtooth",
+            "harmonics": 14,
+            "vibrato_rate": 5.5,
+            "vibrato_depth": 20,
+            "vibrato_delay": 0.25,
+            "A": 0.08,
+            "D": 0.02,
+            "S": 0.95,
+            "R": 0.3,
+        },
+        "cello": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "vibrato_rate": 5.0,
+            "vibrato_depth": 18,
+            "vibrato_delay": 0.3,
+            "A": 0.1,
+            "D": 0.03,
+            "S": 0.9,
+            "R": 0.5,
+        },
         "contrabass": {
             "wave": "sawtooth",
             "harmonics": 8,
@@ -225,7 +245,17 @@ class Synth:
             "R": 0.2,
         },
         # ── Extended Strings (v170) ───────────────────────────────────────────
-        "viola": {"wave": "sawtooth", "harmonics": 12, "A": 0.09, "D": 0.03, "S": 0.92, "R": 0.35},
+        "viola": {
+            "wave": "sawtooth",
+            "harmonics": 12,
+            "vibrato_rate": 5.2,
+            "vibrato_depth": 18,
+            "vibrato_delay": 0.25,
+            "A": 0.09,
+            "D": 0.03,
+            "S": 0.92,
+            "R": 0.35,
+        },
         "string_section": {
             "wave": "sawtooth",
             "harmonics": 10,
@@ -251,7 +281,17 @@ class Synth:
             "R": 0.8,
         },
         # ── World Instruments (v170) ──────────────────────────────────────────
-        "erhu": {"wave": "sawtooth", "harmonics": 12, "A": 0.06, "D": 0.02, "S": 0.93, "R": 0.3},
+        "erhu": {
+            "wave": "sawtooth",
+            "harmonics": 12,
+            "vibrato_rate": 5.8,
+            "vibrato_depth": 30,
+            "vibrato_delay": 0.15,
+            "A": 0.06,
+            "D": 0.02,
+            "S": 0.93,
+            "R": 0.3,
+        },
         "shamisen": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.7},
         "oud": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.1},
         "bouzouki": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.8},
@@ -280,7 +320,17 @@ class Synth:
         "timbales": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.12, "S": 0.0, "R": 0.15},
         "surdo": {"wave": "sine", "harmonics": 1, "A": 0.002, "D": 0.3, "S": 0.05, "R": 0.4},
         # ── Choir / Vocal ─────────────────────────────────────────────────────
-        "choir_aah": {"wave": "sawtooth", "harmonics": 6, "A": 0.15, "D": 0.1, "S": 0.85, "R": 0.5},
+        "choir_aah": {
+            "wave": "sawtooth",
+            "harmonics": 6,
+            "vibrato_rate": 5.5,
+            "vibrato_depth": 25,
+            "vibrato_delay": 0.3,
+            "A": 0.15,
+            "D": 0.1,
+            "S": 0.85,
+            "R": 0.5,
+        },
         "choir_ooh": {"wave": "sine", "harmonics": 4, "A": 0.2, "D": 0.08, "S": 0.9, "R": 0.6},
         "vox_pad": {"wave": "triangle", "harmonics": 5, "A": 0.35, "D": 0.1, "S": 0.85, "R": 0.8},
         # ── Extended Synths (v170) ────────────────────────────────────────────
@@ -506,12 +556,13 @@ class Synth:
             "R": 0.08,
         },
         "drums_hat": {
-            "wave": "square",
-            "harmonics": 16,
+            "wave": "noise",
+            "harmonics": 1,
             "A": 0.001,
             "D": 0.04,
             "S": 0.0,
             "R": 0.03,
+            "_metallic": True,
         },
         "drums_clap": {"wave": "noise", "harmonics": 1, "A": 0.001, "D": 0.06, "S": 0.0, "R": 0.05},
         "drums_tom": {"wave": "sine", "harmonics": 2, "A": 0.003, "D": 0.2, "S": 0.0, "R": 0.3},
@@ -844,6 +895,13 @@ class Synth:
             drop_rate = 30.0 if "808" in str(preset) else 50.0
             freq_env = freq * np.exp(-drop_rate * t)
             raw = np.sin(2 * np.pi * np.cumsum(freq_env) / self.sample_rate)
+            # Add attack transient for punch (noise burst in first 5ms)
+            click_len = min(int(0.005 * self.sample_rate), n_samples)
+            if click_len > 0:
+                rng = np.random.default_rng(int(freq * 77) % (2**31))
+                click = rng.standard_normal(click_len) * 0.3
+                click *= np.linspace(1.0, 0.0, click_len)
+                raw[:click_len] += click
         else:
             # Pass FM ratio hint from preset (fm_keys uses 3.0, fm_bell uses 1.414, etc.)
             self._fm_ratio_hint = preset.get("mod_ratio", None)
@@ -873,12 +931,56 @@ class Synth:
             sub = np.sin(2 * np.pi * (freq / 2) * t_sub) * sub_level
             raw = raw + sub
 
-        # Noise layer for snare / clap / cymbals / crash / ride
-        noise_presets = {"snare", "clap", "cymbals", "crash", "ride"}
-        if any(k in str(preset) for k in noise_presets):
+        # Noise layer for snare / clap / cymbals / crash / ride / hat
+        from scipy import signal as _sig_drum
+
+        noise_presets = {"snare", "clap", "cymbals", "crash", "ride", "hat"}
+        instrument_str = str(instrument_name).lower()
+        if any(k in instrument_str for k in noise_presets):
             rng = np.random.default_rng(int(freq * 137) % (2**31))
             noise = rng.standard_normal(n_samples)
-            raw = raw * 0.5 + noise * 0.5
+
+            if "snare" in instrument_str:
+                # Bandpass filter noise for snare wire character (2-8 kHz)
+                bp_lo = min(2000.0, self.sample_rate / 2 - 1)
+                bp_hi = min(8000.0, self.sample_rate / 2 - 1)
+                if bp_lo < bp_hi:
+                    sos_bp = _sig_drum.butter(
+                        2, [bp_lo, bp_hi], btype="band", fs=self.sample_rate, output="sos"
+                    )
+                    noise = _sig_drum.sosfilt(sos_bp, noise)
+                raw = raw * 0.4 + noise * 0.6
+
+            elif "hat" in instrument_str or preset.get("_metallic"):
+                # Metallic hi-hat: ring-modulated noise for inharmonic character
+                # Real hi-hats are two cymbals vibrating against each other
+                t_hat = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+                # 6 inharmonic frequencies (non-integer ratios = metallic)
+                metal_freqs = [205.3, 304.4, 369.6, 522.7, 800.0, 1053.0]
+                ring = np.zeros(n_samples)
+                for mf in metal_freqs:
+                    ring += np.sin(2 * np.pi * mf * t_hat) * 0.15
+                raw = noise * 0.5 + (noise * ring) * 0.5
+                # Highpass to remove low rumble
+                hp_freq = min(4000.0, self.sample_rate / 2 - 1)
+                sos_hp = _sig_drum.butter(
+                    2, hp_freq, btype="high", fs=self.sample_rate, output="sos"
+                )
+                raw = _sig_drum.sosfilt(sos_hp, raw)
+
+            elif (
+                "cymbal" in instrument_str or "crash" in instrument_str or "ride" in instrument_str
+            ):
+                # Cymbals: noise + inharmonic ring mod (like hi-hat but lower, wider)
+                t_cym = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+                metal_freqs = [340.0, 467.0, 581.0, 728.0, 1043.0]
+                ring = np.zeros(n_samples)
+                for mf in metal_freqs:
+                    ring += np.sin(2 * np.pi * mf * t_cym) * 0.18
+                raw = raw * 0.3 + noise * 0.3 + (noise * ring) * 0.4
+
+            else:
+                raw = raw * 0.5 + noise * 0.5
 
         # ── Per-note LFO filter (wobble bass + formant) ──────────────────
         from scipy import signal as _sig
@@ -903,30 +1005,32 @@ class Synth:
             raw = filtered
 
         elif preset.get("formant"):
-            # Formant filter: vowel resonances via three bandpass peaks
+            # Formant filter: vowel resonances via bandpass peaks.
+            # Frequencies from Peterson & Barney (1952), adult male averages.
+            # Bandwidths from Fant (1960): F1~60-100Hz, F2~80-120Hz, F3~100-150Hz.
+            # F4 added for naturalness (Hillenbrand 1995).
             FORMANTS = {
-                #       F1     F2     F3   (Hz)
-                "a": [(800, 0.8), (1200, 0.5), (2600, 0.3)],
-                "e": [(400, 0.9), (2300, 0.7), (3000, 0.3)],
-                "i": [(300, 0.9), (2800, 0.8), (3400, 0.3)],
-                "o": [(550, 0.9), (1000, 0.6), (2500, 0.2)],
-                "u": [(350, 0.9), (700, 0.5), (2200, 0.2)],
+                #       (freq, gain, bandwidth) for F1, F2, F3, F4
+                "a": [(730, 0.9, 80), (1090, 0.6, 90), (2440, 0.3, 120), (3300, 0.15, 150)],
+                "e": [(530, 0.9, 70), (1840, 0.7, 100), (2480, 0.3, 120), (3300, 0.15, 150)],
+                "i": [(270, 0.9, 60), (2290, 0.8, 100), (3010, 0.3, 130), (3700, 0.15, 160)],
+                "o": [(570, 0.9, 70), (840, 0.6, 80), (2410, 0.2, 120), (3300, 0.1, 150)],
+                "u": [(300, 0.9, 60), (870, 0.5, 80), (2240, 0.2, 110), (3300, 0.1, 150)],
             }
             vowel = preset.get("formant", "a")
             fmts = FORMANTS.get(vowel, FORMANTS["a"])
             result = np.zeros(n_samples)
-            for f_center, gain in fmts:
-                f_center = min(f_center, self.sample_rate / 2 - 1)
-                bw = f_center * 0.25
+            nyq = self.sample_rate / 2 - 1
+            for f_center, gain, bw in fmts:
+                f_center = min(f_center, nyq)
                 low = max(20.0, f_center - bw / 2)
-                high = min(self.sample_rate / 2 - 1, f_center + bw / 2)
+                high = min(nyq, f_center + bw / 2)
                 if low < high:
                     sos = _sig.butter(
                         2, [low, high], btype="band", fs=self.sample_rate, output="sos"
                     )
                     result += _sig.sosfilt(sos, raw) * gain
-            # Blend with small amount of dry for body
-            raw = raw * 0.2 + result * 0.8
+            raw = raw * 0.15 + result * 0.85
 
         # ── Taiko / djembe: pitch drop with noise attack ─────────────────
         if wave_type in ("taiko", "djembe", "tabla"):
@@ -964,6 +1068,33 @@ class Synth:
         vel = note.velocity
         if vel > 0.01 and n_samples > 64:
             raw = self._apply_velocity_timbre(raw, vel, wave_type, preset, instrument_name, _sig)
+
+        # ── Per-note vibrato with delayed onset ──────────────────────────
+        # Presets can specify vibrato_rate (Hz) and vibrato_depth (cents).
+        # vibrato_delay (seconds) controls how long before vibrato fades in
+        # (standard for strings, voice - no vibrato at attack, ramps in).
+        vib_rate = preset.get("vibrato_rate", 0.0)
+        vib_depth = preset.get("vibrato_depth", 0.0)
+        if vib_rate > 0 and vib_depth > 0 and n_samples > 100:
+            vib_delay = preset.get("vibrato_delay", 0.2)
+            t_vib = np.arange(n_samples) / self.sample_rate
+            # Fade-in envelope: vibrato ramps in after delay
+            delay_samples = int(vib_delay * self.sample_rate)
+            vib_env = np.zeros(n_samples)
+            ramp_len = min(int(0.15 * self.sample_rate), n_samples - delay_samples)
+            if ramp_len > 0 and delay_samples < n_samples:
+                vib_env[delay_samples : delay_samples + ramp_len] = np.linspace(0, 1, ramp_len)
+                vib_env[delay_samples + ramp_len :] = 1.0
+            # Apply pitch vibrato via phase modulation
+            depth_ratio = 2 ** (vib_depth / 1200.0) - 1.0
+            phase_mod = depth_ratio * np.sin(2 * np.pi * vib_rate * t_vib) * vib_env
+            # Modulate the raw signal by time-warping
+            offsets = phase_mod * self.sample_rate / max(freq, 20.0)
+            indices = np.clip(np.arange(n_samples, dtype=np.float64) - offsets, 0, n_samples - 1)
+            lo = np.floor(indices).astype(int)
+            hi = np.minimum(lo + 1, n_samples - 1)
+            frac = indices - lo
+            raw = raw[lo] * (1 - frac) + raw[hi] * frac
 
         return raw * env * vel
 

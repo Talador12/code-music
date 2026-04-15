@@ -703,7 +703,12 @@ def vibrato(
     """
     n = len(samples)
     t = np.arange(n) / sample_rate
-    depth_samples = depth_cents / 100.0 * sample_rate / (rate_hz * 2 * np.pi)
+    # Correct formula: convert cents to a time-domain offset in samples.
+    # For a reference freq of ~440 Hz, depth_cents of 25 = ~0.33ms shift.
+    # The offset in samples = sr * (2^(cents/1200) - 1) / reference_freq.
+    # We use a fixed reference (the shift scales with actual signal content).
+    max_shift_ratio = 2 ** (depth_cents / 1200.0) - 1.0
+    depth_samples = max_shift_ratio * sample_rate / 440.0  # ~440Hz reference
     offsets = depth_samples * np.sin(2 * np.pi * rate_hz * t)
     indices = np.clip(np.arange(n, dtype=np.float64) - offsets, 0, n - 1)
 
