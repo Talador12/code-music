@@ -93,6 +93,12 @@ def _render_once(script: Path, args) -> int:
     if args.bpm is not None:
         song.bpm = args.bpm
 
+    if getattr(args, "genre_transform", None):
+        from .transform import genre_transform as _gt
+
+        song = _gt(song, args.genre_transform)
+        print(f"  Transformed to {args.genre_transform}: '{song.title}'")
+
     print(f"  Rendering '{song.title}' — {song.duration_sec:.1f}s @ {song.bpm} BPM ...")
     t0 = time.monotonic()
     synth = Synth(sample_rate=song.sample_rate)
@@ -163,7 +169,37 @@ examples:
         type=Path,
         nargs="?",
         default=None,
-        help="Python song script (must define `song`)",
+        help="Python song script (must define `song`), or subcommand: compose, analyze",
+    )
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="Suppress progress output (only show errors and final path)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Show detailed progress (track-level timing, effect chain info)",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate song script without rendering (check imports, song object, tracks)",
+    )
+    parser.add_argument(
+        "--genre-transform",
+        type=str,
+        default=None,
+        metavar="GENRE",
+        help="Transform the song into a different genre before rendering "
+        "(e.g. --genre-transform jazz). Use --list-genres to see all options.",
+    )
+    parser.add_argument(
+        "--list-genres",
+        action="store_true",
+        help="List all available genres for --genre-transform and exit",
     )
     parser.add_argument(
         "-o",
@@ -322,7 +358,21 @@ examples:
     )
     args = parser.parse_args(argv)
 
+    # Helper for quiet mode
+    def _print(msg: str) -> None:
+        if not args.quiet:
+            print(msg)
+
     # ── Standalone commands (no script required) ─────────────────────────
+    if args.list_genres:
+        from .transform import list_genres
+
+        genres = list_genres()
+        print(f"{len(genres)} genres available for --genre-transform:\n")
+        for g in genres:
+            print(f"  {g}")
+        return 0
+
     if args.list_instruments:
         from .synth import Synth
 
@@ -427,6 +477,31 @@ examples:
 
         print(f"  Exported: {result}")
         return 0
+
+    # ── Positional subcommands: "compose" and "analyze" ─────────────────
+    # Support: code-music compose "jazz in Bb" (in addition to --compose)
+    if args.script is not None and args.script.name == "compose" and args.compose is None:
+        # Treat remaining argv as the compose prompt
+        remaining = argv[argv.index("compose") + 1 :] if argv else sys.argv[2:]
+        if remaining:
+            args.compose = remaining
+            args.script = None
+        else:
+            print(
+                'error: compose requires a prompt, e.g. code-music compose "jazz in Bb"',
+                file=sys.stderr,
+            )
+            return 1
+
+    if args.script is not None and args.script.name == "analyze" and not args.analyze:
+        # Treat next arg as the script to analyze
+        remaining = argv[argv.index("analyze") + 1 :] if argv else sys.argv[2:]
+        if remaining:
+            args.script = Path(remaining[0])
+            args.analyze = True
+        else:
+            print("error: analyze requires a song script", file=sys.stderr)
+            return 1
 
     if args.random is not None:
         import random as _rng
@@ -546,6 +621,36 @@ examples:
     if not script.exists():
         print(f"error: {script} not found", file=sys.stderr)
         return 1
+
+    # ── Dry run: validate without rendering ─────────────────────────────
+    if args.dry_run:
+        try:
+            song = _load_song(script)
+        except Exception as e:
+            print(f"FAIL: {script.name}: {e}", file=sys.stderr)
+            return 1
+        if args.bpm:
+            song.bpm = args.bpm
+        info = song.info()
+        print(
+            f"OK: '{info.get('title', '?')}' - {info.get('tracks', 0)} tracks, "
+            f"{info.get('bpm', '?')} BPM, {info.get('duration', '?')}s"
+        )
+        return 0
+
+    # ── Genre transform: convert before rendering ────────────────────────
+    if args.genre_transform and args.script:
+        from .transform import genre_transform as _genre_transform, GENRE_PROFILES
+
+        if args.genre_transform not in GENRE_PROFILES:
+            from .transform import list_genres
+
+            print(
+                f"error: unknown genre {args.genre_transform!r}. "
+                f"Available: {', '.join(list_genres()[:10])}... (use --list-genres for all)",
+                file=sys.stderr,
+            )
+            return 1
 
     if args.benchmark:
         from .synth import Synth

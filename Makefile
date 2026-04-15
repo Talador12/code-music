@@ -9,7 +9,8 @@ PYTHON ?= python3
 VENV   := .venv
 BIN    := $(VENV)/bin
 CM     := $(BIN)/python -m code_music.cli
-PLAY   := afplay   # macOS. Linux: swap to `aplay`
+# Auto-detect playback command (macOS -> afplay, Linux -> aplay, fallback -> sounddevice)
+PLAY := $(shell command -v afplay 2>/dev/null || command -v aplay 2>/dev/null || echo "$(BIN)/python -c 'import sounddevice; import numpy; import scipy.io.wavfile; sr,d=scipy.io.wavfile.read(\"$$1\"); sounddevice.play(d,sr); sounddevice.wait()' --")
 
 ################################################################################
 #                               Auto-discovery                                 #
@@ -22,16 +23,17 @@ SCALES_PY    := $(filter-out scales/_%.py, $(wildcard scales/*.py))
 SCALE_NAMES  := $(notdir $(basename $(SCALES_PY)))
 
 SAMPLE_DIRS  := bass brass chords drums edm ensemble highs instruments \
-                jazz keyboards mood orchestral solo strings synths \
+                jazz keyboards mood orchestral solo strings symphony synths \
                 techniques voices waves woodwinds
 SAMPLE_PYS   := $(filter-out %/_%.py,$(foreach d,$(SAMPLE_DIRS),$(wildcard samples/$(d)/*.py)))
 SAMPLE_NAMES := $(notdir $(basename $(SAMPLE_PYS)))
 
-ALBUM_STEMS  := ambient_cinematic anthology classical_orchestral cosmic_electro \
-                country_americana drum_and_bass dubstep edm_festival edm_progressive \
-                folk_acoustic funk_disco hiphop_lofi indie_alternative jazz_neosoul \
-                latin metal parody pop rnb_soul rock_prog techno videogame_anime \
-                world_experimental
+ALBUM_STEMS  := ambient_cinematic anthology classical_orchestral constellations \
+                cosmic_electro country_americana drum_and_bass dubstep edm_festival \
+                edm_progressive elements fibonacci folk_acoustic funk_disco \
+                hiphop_lofi indie_alternative jazz_neosoul latin metal parody \
+                periodic_table pop rasputin_remixes rnb_soul rock_prog rush_abc \
+                techno the_planets time_periods videogame_anime world_experimental
 
 ################################################################################
 #                               Output paths                                   #
@@ -243,12 +245,33 @@ play-scale-circle_of_fifths: dist/scales/circle_of_fifths.wav ## [Explore] Play 
 lint: ## [Dev] Run ruff check on all Python files
 	$(BIN)/ruff check code_music tests songs samples scales scripts albums
 
-test: ## [Dev] Run pytest test suite
+format: ## [Dev] Auto-format all Python files with ruff
+	$(BIN)/ruff format code_music tests songs samples scales scripts albums
+	$(BIN)/ruff check --fix code_music tests songs samples scales scripts albums
+
+test: ## [Dev] Run full pytest suite
 	$(BIN)/pytest tests/ -v
+
+test-synth: ## [Dev] Run synth + sound design tests only
+	$(BIN)/pytest tests/ -v -k "synth or sound_design or preset or instrument"
+
+test-theory: ## [Dev] Run music theory tests only
+	$(BIN)/pytest tests/ -v -k "theory or harmony or rhythm or melody or scale or chord"
+
+test-v170: ## [Dev] Run v170 feature tests (articulations, genres, metal, ska, transform, rhythm_game)
+	$(BIN)/pytest tests/test_v170_*.py -v
+
+test-fast: ## [Dev] Run tests with no render (skip slow integration tests)
+	$(BIN)/pytest tests/ -v -k "not integration and not render and not full_song"
 
 check: ## [Dev] Lint + test in one command (run before every PR)
 	$(BIN)/ruff check code_music tests songs examples
 	$(BIN)/pytest tests/ -q
+
+ci: ## [Dev] Full CI pipeline: format check + lint + test (mirrors what CI runs)
+	$(BIN)/ruff format --check code_music tests
+	$(BIN)/ruff check code_music tests songs examples
+	$(BIN)/pytest tests/ -q --tb=short
 
 examples: ## [Explore] Render all 8 tutorial examples → dist/examples/
 	@mkdir -p dist/examples

@@ -314,8 +314,24 @@ class Synth:
             "S": 0.6,
             "R": 0.4,
         },
-        "fm_keys": {"wave": "fm", "harmonics": 3, "A": 0.005, "D": 0.2, "S": 0.4, "R": 0.8},
-        "fm_pad": {"wave": "fm", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 1.0},
+        "fm_keys": {
+            "wave": "fm",
+            "harmonics": 4,
+            "mod_ratio": 2.0,
+            "A": 0.005,
+            "D": 0.2,
+            "S": 0.4,
+            "R": 0.8,
+        },
+        "fm_pad": {
+            "wave": "fm",
+            "harmonics": 2,
+            "mod_ratio": 1.5,
+            "A": 0.3,
+            "D": 0.0,
+            "S": 1.0,
+            "R": 1.0,
+        },
         # ── Extended Drums (v170) ─────────────────────────────────────────────
         "drums_rimshot": {
             "wave": "square",
@@ -604,9 +620,13 @@ class Synth:
             )
 
         elif wave == "fm":
-            # Simple 2-operator FM synthesis: carrier modulated by a sine at ratio 2
-            mod_ratio = 2.0
-            mod_depth = freq * 0.8
+            # 2-operator FM: carrier modulated by a sine at configurable ratio/index
+            # Presets can specify mod_ratio and mod_index for different FM timbres.
+            # mod_ratio: integer = harmonic, non-integer = metallic/bell-like
+            # mod_index (harmonics field): 0 = pure sine, higher = more overtones
+            mod_ratio = self._fm_ratio_hint or 2.0
+            mod_index = max(0.1, harmonics * 0.3) if harmonics > 0 else 0.8
+            mod_depth = freq * mod_index
             mod = mod_depth * np.sin(2 * np.pi * freq * mod_ratio * t)
             return np.sin(2 * np.pi * freq * t + mod)
 
@@ -638,10 +658,13 @@ class Synth:
             # Seed: short burst of white noise at pitch frequency
             rng = np.random.default_rng(int(freq * 137) % (2**31))
             buf = rng.uniform(-1.0, 1.0, period)
+            # Frequency-dependent loss: high strings decay faster than low strings
+            # (physics: shorter wavelength = more energy dissipation per cycle)
+            base_loss = 0.998
+            freq_factor = min(freq / 4000.0, 0.01)  # higher freq = more loss
+            loss = max(0.98, base_loss - freq_factor)
             for i in range(n_samples):
                 out[i] = buf[i % period]
-                # Averaging filter with loss factor (0.996 ≈ very little damping)
-                loss = 0.996
                 buf[i % period] = loss * 0.5 * (buf[i % period] + buf[(i + 1) % period])
             return out
 
@@ -649,24 +672,56 @@ class Synth:
             return np.sin(2 * np.pi * freq * t)
 
     def _adsr(self, n_samples: int, A: float, D: float, S: float, R: float) -> FloatArray:
-        """Build ADSR amplitude envelope over n_samples."""
+        """Build ADSR amplitude envelope with exponential curves.
+
+        Real synths use exponential attack/decay/release, not linear ramps.
+        Linear envelopes sound mechanical - a straight line from 0 to 1 is
+        not how any acoustic instrument behaves. Exponential attack starts
+        fast then slows (like a struck string). Exponential decay and release
+        are the natural behavior of damped oscillators (everything in physics).
+
+        Also applies 2ms micro-fades at note start/end to prevent click
+        artifacts from non-zero-crossing boundaries.
+        """
         sr = self.sample_rate
         a_s = min(int(A * sr), n_samples)
         d_s = min(int(D * sr), n_samples - a_s)
-        # Reserve release at the tail; sustain fills the gap
         r_s = min(int(R * sr), n_samples - a_s - d_s)
         s_s = max(0, n_samples - a_s - d_s - r_s)
 
         env = np.zeros(n_samples)
+
+        # Attack: exponential rise (starts fast, slows near peak)
         if a_s > 0:
-            env[:a_s] = np.linspace(0, 1, a_s)
+            t = np.linspace(0, 1, a_s)
+            env[:a_s] = 1.0 - np.exp(-4.0 * t)  # ~98% at t=1
+            peak = env[a_s - 1] if a_s > 0 else 1.0
+            if peak > 0:
+                env[:a_s] /= peak  # normalize to reach exactly 1.0
+
+        # Decay: exponential fall from 1.0 to sustain level
         if d_s > 0:
-            env[a_s : a_s + d_s] = np.linspace(1, S, d_s)
+            t = np.linspace(0, 1, d_s)
+            env[a_s : a_s + d_s] = S + (1.0 - S) * np.exp(-5.0 * t)
+
+        # Sustain: flat at sustain level
         if s_s > 0:
             env[a_s + d_s : a_s + d_s + s_s] = S
+
+        # Release: exponential decay from sustain to zero
         if r_s > 0:
             start = a_s + d_s + s_s
-            env[start : start + r_s] = np.linspace(S, 0, r_s)
+            t = np.linspace(0, 1, r_s)
+            env[start : start + r_s] = S * np.exp(-5.0 * t)
+
+        # Micro-fade at boundaries to prevent clicks (2ms)
+        fade_samples = min(int(0.002 * sr), n_samples // 4, 88)
+        if fade_samples > 1:
+            # Fade in at the very start
+            env[:fade_samples] *= np.linspace(0, 1, fade_samples)
+            # Fade out at the very end
+            env[-fade_samples:] *= np.linspace(1, 0, fade_samples)
+
         return env
 
     # ------------------------------------------------------------------
@@ -699,7 +754,10 @@ class Synth:
             freq_env = freq * np.exp(-drop_rate * t)
             raw = np.sin(2 * np.pi * np.cumsum(freq_env) / self.sample_rate)
         else:
+            # Pass FM ratio hint from preset (fm_keys uses 3.0, fm_bell uses 1.414, etc.)
+            self._fm_ratio_hint = preset.get("mod_ratio", None)
             raw = self._wave(wave_type, freq, n_samples)
+            self._fm_ratio_hint = None
 
         # Noise layer for snare / clap / cymbals / crash / ride
         noise_presets = {"snare", "clap", "cymbals", "crash", "ride"}
@@ -1527,6 +1585,16 @@ class Synth:
                 stereo_mix[:n] += voice_stereo[:n]
             except Exception as e:
                 print(f"[voice] track '{getattr(vtrack, 'name', '?')}' failed: {e}")
+
+        # DC offset removal: highpass at 5 Hz removes accumulated DC from filter chains
+        try:
+            from scipy import signal as _dc_sig
+
+            sos_dc = _dc_sig.butter(1, 5.0, btype="high", fs=self.sample_rate, output="sos")
+            stereo_mix[:, 0] = _dc_sig.sosfilt(sos_dc, stereo_mix[:, 0])
+            stereo_mix[:, 1] = _dc_sig.sosfilt(sos_dc, stereo_mix[:, 1])
+        except Exception:
+            pass
 
         # Soft clip / normalize master bus
         peak = np.max(np.abs(stereo_mix))
