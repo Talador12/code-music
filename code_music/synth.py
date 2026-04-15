@@ -1221,6 +1221,90 @@ class Synth:
                     rosin = _sig.sosfilt(sos_bp, rosin)
                 raw = raw + rosin
 
+        # Brass lip buzz on attack (the 'brrt' that precedes the clean tone)
+        _BRASS_INSTRUMENTS = {
+            "trumpet",
+            "trombone",
+            "french_horn",
+            "tuba",
+            "euphonium",
+            "cornet",
+            "flugelhorn",
+            "piccolo_trumpet",
+            "bass_trombone",
+            "horn_section",
+        }
+        if inst in _BRASS_INSTRUMENTS and n_samples > 200:
+            art = getattr(note, "articulation", None)
+            if art not in ("muted", "harmon_mute", "cup_mute", "stopped"):
+                buzz_len = min(int(0.012 * self.sample_rate), n_samples)
+                if buzz_len > 0:
+                    rng_buzz = np.random.default_rng(int(freq * 250) % (2**31))
+                    buzz = rng_buzz.standard_normal(buzz_len) * 0.08
+                    # Bandpass the buzz to lip frequency range (100-400 Hz)
+                    bp_lo = min(100.0, self.sample_rate / 2 - 1)
+                    bp_hi = min(400.0, self.sample_rate / 2 - 1)
+                    if bp_lo < bp_hi:
+                        sos_bz = _sig.butter(
+                            2, [bp_lo, bp_hi], btype="band", fs=self.sample_rate, output="sos"
+                        )
+                        buzz = _sig.sosfilt(sos_bz, np.pad(buzz, (0, n_samples - buzz_len)))[
+                            :buzz_len
+                        ]
+                    buzz *= np.linspace(1.0, 0.0, buzz_len)
+                    raw[:buzz_len] += buzz
+
+        # Reed buzz for sax/clarinet (vibrating reed component, adds edge)
+        _REED_INSTRUMENTS = {
+            "saxophone",
+            "clarinet",
+            "bass_clarinet",
+            "oboe",
+            "soprano_sax",
+            "tenor_sax",
+            "bari_sax",
+            "cor_anglais",
+            "english_horn",
+            "bassoon",
+            "contrabassoon",
+        }
+        if inst in _REED_INSTRUMENTS and n_samples > 200:
+            rng_rd = np.random.default_rng(int(freq * 350) % (2**31))
+            reed = rng_rd.standard_normal(n_samples) * 0.03
+            # Reed buzz is at the fundamental + odd harmonics
+            t_reed = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+            reed_tone = np.sin(2 * np.pi * freq * 2.0 * t_reed) * 0.02
+            reed += reed_tone
+            reed_env = np.ones(n_samples) * 0.4
+            att = min(int(0.02 * self.sample_rate), n_samples)
+            if att > 0:
+                reed_env[:att] = np.linspace(1.0, 0.4, att)
+            reed *= reed_env
+            # Highpass to keep only the buzzy component
+            hp_rd = min(1500.0, self.sample_rate / 2 - 1)
+            sos_rd = _sig.butter(2, hp_rd, btype="high", fs=self.sample_rate, output="sos")
+            reed = _sig.sosfilt(sos_rd, reed)
+            raw = raw + reed
+
+        # Hammond B3 key click (percussive contact noise on attack)
+        if inst in ("organ",) and n_samples > 100:
+            click_len = min(int(0.003 * self.sample_rate), n_samples)
+            if click_len > 0:
+                rng_kc = np.random.default_rng(int(freq * 450) % (2**31))
+                keyclick = rng_kc.standard_normal(click_len) * 0.15
+                keyclick *= np.linspace(1.0, 0.0, click_len)
+                # Bandpass the click (1-4 kHz, the characteristic Hammond click)
+                kc_lo = min(1000.0, self.sample_rate / 2 - 1)
+                kc_hi = min(4000.0, self.sample_rate / 2 - 1)
+                if kc_lo < kc_hi:
+                    sos_kc = _sig.butter(
+                        2, [kc_lo, kc_hi], btype="band", fs=self.sample_rate, output="sos"
+                    )
+                    keyclick = _sig.sosfilt(sos_kc, np.pad(keyclick, (0, n_samples - click_len)))[
+                        :click_len
+                    ]
+                raw[:click_len] += keyclick
+
         # Piano hammer thump (short low-frequency bump at attack)
         if inst in ("piano", "rhodes", "wurlitzer") and n_samples > 100:
             thump_len = min(int(0.008 * self.sample_rate), n_samples)
@@ -2093,6 +2177,18 @@ class Synth:
 
         stereo_mix = np.zeros((total_samples, 2))
 
+        # ── Automatic gain staging ────────────────────────────────────────
+        # Scale headroom based on track count to prevent clipping from
+        # summing too many loud tracks. The more tracks, the more we
+        # need to attenuate each one before summing.
+        n_tracks = (
+            len(song.tracks)
+            + len(getattr(song, "poly_tracks", []))
+            + len(getattr(song, "sample_tracks", []))
+            + len(getattr(song, "voice_tracks", []))
+        )
+        headroom = 1.0 / max(n_tracks**0.4, 1.0)  # sqrt-ish scaling
+
         # ── Instrument tracks ──────────────────────────────────────────────
         for track in song.tracks:
             bmap = getattr(song, "bpm_map", None) or None
@@ -2109,7 +2205,7 @@ class Synth:
                     track_stereo = effects[track.name](track_stereo, self.sample_rate)
                 except Exception:
                     pass
-            stereo_mix += track_stereo
+            stereo_mix += track_stereo * headroom
 
         # ── Polyphonic tracks ──────────────────────────────────────────────
         for ptrack in getattr(song, "poly_tracks", []):
@@ -2160,6 +2256,17 @@ class Synth:
                 stereo_mix[:n] += voice_stereo[:n]
             except Exception as e:
                 print(f"[voice] track '{getattr(vtrack, 'name', '?')}' failed: {e}")
+
+        # Analog-style stereo crosstalk (console channel bleed)
+        # Real analog consoles have tiny amounts of signal bleeding between
+        # the L and R buses. This creates a subtle stereo coherence that
+        # makes the mix feel unified rather than two separate mono signals.
+        # Amount is very small (1-3%) but audibly glues the stereo image.
+        crosstalk = 0.02
+        left = stereo_mix[:, 0].copy()
+        right = stereo_mix[:, 1].copy()
+        stereo_mix[:, 0] = left + right * crosstalk
+        stereo_mix[:, 1] = right + left * crosstalk
 
         # DC offset removal: highpass at 5 Hz removes accumulated DC from filter chains
         try:
