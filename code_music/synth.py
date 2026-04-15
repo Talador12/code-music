@@ -1413,9 +1413,98 @@ class Synth:
             noise_env[:attack_end] = np.linspace(1, 0, attack_end)
             raw = raw * 0.75 + attack_noise * noise_env * 0.4
 
+        # ── Register-dependent tonal tilt ─────────────────────────────────
+        # Low notes are naturally warmer (more low-end energy relative to
+        # harmonics). High notes are naturally brighter. This applies a subtle
+        # shelving EQ based on where the note sits in its instrument range.
+        # Without this, every octave sounds the same. With it, the bass
+        # register is warm and the treble register sparkles.
+        if freq > 0 and n_samples > 200:
+            midi_val = note.midi or 60
+            # Center the tilt around middle C (MIDI 60)
+            tilt = (midi_val - 60) / 48.0  # -1 at MIDI 12, 0 at 60, +1 at 108
+            nyq_tilt = self.sample_rate / 2 - 1
+            if tilt < -0.1:
+                # Low register: gentle lowpass warmth
+                warm_cutoff = min(nyq_tilt, max(1000.0, 6000.0 + tilt * 4000.0))
+                sos_warm = _sig.butter(
+                    1, warm_cutoff, btype="low", fs=self.sample_rate, output="sos"
+                )
+                raw = raw * 0.7 + _sig.sosfilt(sos_warm, raw) * 0.3
+            elif tilt > 0.1:
+                # High register: subtle presence boost
+                bright_freq = min(nyq_tilt, max(2000.0, 3000.0 + tilt * 2000.0))
+                sos_bright = _sig.butter(
+                    1, bright_freq, btype="high", fs=self.sample_rate, output="sos"
+                )
+                raw = raw + _sig.sosfilt(sos_bright, raw) * tilt * 0.15
+
+        # ── Velocity-sensitive attack time ────────────────────────────────
+        # Real instruments respond faster when played harder. A piano key
+        # struck fortissimo has a ~2ms attack. The same key at pianissimo
+        # has ~15ms. This couples velocity to the ADSR attack time.
+        A, D, S, R = preset["A"], preset["D"], preset["S"], preset["R"]
+        vel = note.velocity
+        if vel > 0.01:
+            # Scale attack: pp = 150% of preset attack, ff = 70% of preset attack
+            attack_scale = 1.5 - vel * 0.8  # 1.5 at vel=0, 0.7 at vel=1.0
+            A = max(0.001, A * attack_scale)
+
+        # ── Pitch drift on sustained notes ────────────────────────────────
+        # Real instruments are not perfectly in tune. Strings drift slightly
+        # as the player's hand warms the neck. Wind instruments drift with
+        # breath pressure. Pianos stay put (they are tuned metal). This adds
+        # a very slow, random walk in pitch (max +-5 cents) that makes
+        # sustained notes sound alive instead of frozen.
+        _DRIFT_INSTRUMENTS = {
+            "violin",
+            "viola",
+            "cello",
+            "contrabass",
+            "erhu",
+            "strings",
+            "string_section",
+            "flute",
+            "oboe",
+            "clarinet",
+            "saxophone",
+            "trumpet",
+            "trombone",
+            "french_horn",
+            "choir_aah",
+            "choir_ooh",
+            "soprano_sax",
+            "tenor_sax",
+            "bari_sax",
+        }
+        if inst in _DRIFT_INSTRUMENTS and n_samples > 2000:
+            drift_rng = np.random.default_rng(int(freq * 600) % (2**31))
+            # Random walk: cumulative sum of tiny steps, scaled to max +-5 cents
+            n_steps = n_samples // 256 + 1
+            walk = np.cumsum(drift_rng.normal(0, 1, n_steps))
+            # Normalize to +-5 cents
+            walk_max = np.max(np.abs(walk))
+            if walk_max > 0:
+                walk = walk / walk_max * 5.0  # +-5 cents max
+            # Upsample to full note length
+            drift_cents = np.interp(
+                np.linspace(0, 1, n_samples),
+                np.linspace(0, 1, n_steps),
+                walk,
+            )
+            # Convert cents to frequency ratio and apply via phase modulation
+            drift_ratio = 2 ** (drift_cents / 1200.0) - 1.0
+            drift_offset = drift_ratio * self.sample_rate / max(freq, 20.0)
+            indices_d = np.clip(
+                np.arange(n_samples, dtype=np.float64) - drift_offset, 0, n_samples - 1
+            )
+            lo_d = np.floor(indices_d).astype(int)
+            hi_d = np.minimum(lo_d + 1, n_samples - 1)
+            frac_d = indices_d - lo_d
+            raw = raw[lo_d] * (1 - frac_d) + raw[hi_d] * frac_d
+
         # ── Articulation-aware envelope and timbre (v170) ─────────────────
         art = getattr(note, "articulation", None)
-        A, D, S, R = preset["A"], preset["D"], preset["S"], preset["R"]
 
         if art is not None:
             A, D, S, R, raw = self._apply_articulation(
@@ -1445,6 +1534,37 @@ class Synth:
                 sos_d = _sig.butter(1, lp_d, btype="low", fs=self.sample_rate, output="sos")
                 damper = _sig.sosfilt(sos_d, damper)
                 raw[r_start : r_start + release_len] += damper[:release_len]
+
+        # String release noise (finger lift, fret buzz, bow lift)
+        # When a guitarist lifts their finger, there is a brief squeak from
+        # the string sliding on the fret. When a bow lifts, there is a tiny
+        # scrape. These release noises are subliminal but their absence
+        # makes synthesized strings sound sterile.
+        _RELEASE_NOISE_INSTRUMENTS = {
+            "guitar_acoustic",
+            "guitar_electric",
+            "guitar_ks",
+            "bass",
+            "banjo_ks",
+            "ukulele",
+            "mandolin",
+        }
+        if inst in _RELEASE_NOISE_INSTRUMENTS and n_samples > 500:
+            r_samples = max(1, int(R * self.sample_rate))
+            r_start = max(0, n_samples - r_samples)
+            rel_len = n_samples - r_start
+            if rel_len > 50:
+                rng_rel = np.random.default_rng(int(freq * 700) % (2**31))
+                release_noise = rng_rel.standard_normal(rel_len) * 0.04
+                release_noise *= np.linspace(0.5, 0.0, rel_len)  # fade out
+                # Highpass for string squeak character (2-8 kHz)
+                nyq_rn = self.sample_rate / 2 - 1
+                hp_rn = min(2000.0, nyq_rn)
+                sos_rn = _sig.butter(2, hp_rn, btype="high", fs=self.sample_rate, output="sos")
+                padded_rn = np.zeros(n_samples)
+                padded_rn[r_start : r_start + rel_len] = release_noise
+                padded_rn = _sig.sosfilt(sos_rn, padded_rn)
+                raw = raw + padded_rn * env  # apply envelope so it fades naturally
 
         # ── Velocity-to-timbre: every instrument family responds differently ──
         # Real instruments change spectral content with dynamics, not just volume.
@@ -2090,6 +2210,18 @@ class Synth:
 
             write_pos = cursor + swing_offset + timing_offset
             write_pos = max(0, write_pos)
+
+            # Legato crossfade: when articulation is legato, overlap the start
+            # of this note with the tail of the previous by 10ms to create
+            # a smooth transition instead of a click at the boundary.
+            xfade_len = 0
+            if notes and hasattr(notes[0], "articulation") and notes[0].articulation == "legato":
+                xfade_len = min(int(0.01 * self.sample_rate), n_samples // 4)
+                if xfade_len > 1 and write_pos > xfade_len:
+                    # Fade in the start of this note
+                    fade_in = np.linspace(0.0, 1.0, xfade_len)
+                    mixed[:xfade_len] *= fade_in
+
             end = min(write_pos + n_samples, total_samples)
             if end > write_pos:
                 buf[write_pos:end] += mixed[: end - write_pos] * track.volume
