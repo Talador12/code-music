@@ -3481,9 +3481,9 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
 ### Tuplets and Rhythmic Subdivisions
 - [x] **Arbitrary n-tuplet** (DONE - n_tuplet(notes, n, in_space_of, total_beats))
 - [x] **Sextuplet** (DONE - sextuplet() convenience function)
-- [ ] **Nested tuplets** (triplet of quintuplets, etc.)
-- [ ] **Irrational tuplets** (7:4, 5:3, 11:8 - Ligeti territory)
-- [ ] **Swing tuplet** (long-short with arbitrary ratio, not just triplet swing)
+- [x] **Nested tuplets** (DONE - nested_tuplet(outer_n, inner_n) = outer*inner notes in space)
+- [ ] **Irrational tuplets** (7:4, 5:3, 11:8 - covered by n_tuplet but no special notation)
+- [x] **Swing tuplet** (DONE - swing_tuplet() with arbitrary long:short ratio)
 - [ ] **Metric modulation via tuplet** (quintuplet becomes new quarter note)
 - [ ] **Hemiola via tuplet** (3 over 2, 2 over 3)
 
@@ -3498,8 +3498,7 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
       exists as sequence_by_interval but needs more real-world patterns)
 - [ ] **Pedal tones** (sustained bass or soprano note while harmony moves,
       exists as pedal_point but not integrated with chord progressions)
-- [ ] **Passing chords** (chromatic or diatonic chords between structural chords,
-      automatic insertion based on voice leading rules)
+- [x] **Passing chords** (DONE - chromatic or diatonic insertion between structural chords)
 - [x] **Neighbor tones** (DONE - upper/lower neighbor with step size control)
 - [x] **Passing tones** (DONE - chromatic or diatonic stepwise fill between notes)
 - [x] **Escape tones** (DONE - step away, leap to next note)

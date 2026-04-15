@@ -2072,6 +2072,161 @@ def insert_breaths(
     return result
 
 
+def passing_chords(
+    progression: list[tuple[str, str]],
+    style: str = "chromatic",
+) -> list[tuple[str, str]]:
+    """Insert passing chords between structural chords.
+
+    Takes a chord progression and adds transitional chords between each
+    pair based on voice leading rules. Chromatic passing chords use
+    half-step root motion. Diatonic uses scale-degree steps.
+
+    Args:
+        progression: List of (root, quality) tuples.
+        style:       "chromatic" (half-step root motion) or "diatonic" (scale steps).
+
+    Returns:
+        Expanded progression with passing chords inserted.
+    """
+    if len(progression) < 2:
+        return list(progression)
+
+    NOTE_ORDER = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+
+    def _semi(name: str) -> int:
+        return (
+            NOTE_ORDER.index(
+                name.replace("b", "#")
+                .replace("Db", "C#")
+                .replace("Eb", "D#")
+                .replace("Gb", "F#")
+                .replace("Ab", "G#")
+                .replace("Bb", "A#")
+            )
+            if name in NOTE_ORDER
+            else 0
+        )
+
+    result = [progression[0]]
+    for i in range(1, len(progression)):
+        prev_root = _semi(progression[i - 1][0])
+        next_root = _semi(progression[i][0])
+        distance = (next_root - prev_root) % 12
+
+        if distance == 0 or distance == 1 or distance == 11:
+            # Already adjacent, no passing chord needed
+            result.append(progression[i])
+            continue
+
+        if style == "chromatic":
+            # Insert one chromatic passing chord at the midpoint
+            if distance <= 6:
+                mid = (prev_root + distance // 2) % 12
+            else:
+                mid = (prev_root - (12 - distance) // 2) % 12
+            result.append((NOTE_ORDER[mid], progression[i - 1][1]))
+        else:
+            # Diatonic: insert chord a third above or below
+            mid = (prev_root + 4) % 12  # major third above
+            result.append((NOTE_ORDER[mid], "min7" if "min" in progression[i - 1][1] else "dom7"))
+
+        result.append(progression[i])
+
+    return result
+
+
+def nested_tuplet(
+    notes: list[Note],
+    outer_n: int = 3,
+    inner_n: int = 5,
+    total_beats: float = 1.0,
+) -> list[Note]:
+    """Nested tuplet: a tuplet within a tuplet.
+
+    Ligeti, Ferneyhough, and other complexity-loving composers use nested
+    tuplets for rhythmic density that is humanly almost impossible to
+    play but mathematically precise. A triplet where each note of the
+    triplet is subdivided into quintuplets = 15 notes in the space of 1.
+
+    Args:
+        notes:        Input notes (up to outer_n * inner_n).
+        outer_n:      Outer tuplet divisions.
+        inner_n:      Inner tuplet divisions per outer note.
+        total_beats:  Total duration to fit everything into.
+    """
+    total_notes = outer_n * inner_n
+    dur = total_beats / total_notes
+    count = min(len(notes), total_notes)
+    result = []
+    for i in range(count):
+        src = notes[i]
+        if src.pitch is None:
+            result.append(Note.rest(dur))
+        else:
+            result.append(
+                Note(
+                    src.pitch, src.octave, dur, velocity=src.velocity, articulation=src.articulation
+                )
+            )
+    for _ in range(total_notes - count):
+        result.append(Note.rest(dur))
+    return result
+
+
+def swing_tuplet(
+    notes: list[Note],
+    ratio: float = 0.67,
+    total_beats: float = 1.0,
+) -> list[Note]:
+    """Swing tuplet: long-short pattern with arbitrary ratio.
+
+    Standard swing is 2:1 (triplet feel, ratio=0.67). But real swing
+    varies by genre and tempo. New Orleans swing is closer to 60:40.
+    Bebop at high tempos is nearly straight (52:48). This lets you
+    dial in the exact ratio.
+
+    Args:
+        notes:       Input notes (pairs will be swung).
+        ratio:       Long note fraction (0.5=straight, 0.67=triplet, 0.75=heavy).
+        total_beats: Total duration per pair.
+    """
+    result = []
+    pair_dur = total_beats
+    long_dur = pair_dur * ratio
+    short_dur = pair_dur * (1.0 - ratio)
+
+    for i in range(0, len(notes), 2):
+        n1 = notes[i]
+        if n1.pitch is None:
+            result.append(Note.rest(long_dur))
+        else:
+            result.append(
+                Note(
+                    n1.pitch,
+                    n1.octave,
+                    long_dur,
+                    velocity=n1.velocity,
+                    articulation=n1.articulation,
+                )
+            )
+        if i + 1 < len(notes):
+            n2 = notes[i + 1]
+            if n2.pitch is None:
+                result.append(Note.rest(short_dur))
+            else:
+                result.append(
+                    Note(
+                        n2.pitch,
+                        n2.octave,
+                        short_dur,
+                        velocity=n2.velocity,
+                        articulation=n2.articulation,
+                    )
+                )
+    return result
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [

@@ -179,7 +179,7 @@ from .engine import (
     turn,
     upper_mordent,
     voice_lead,
-    # v170 ornaments and theory
+    # v170 ornaments, theory, and advanced rhythm
     acciaccatura,
     anticipation,
     appoggiatura,
@@ -194,6 +194,8 @@ from .engine import (
     messa_di_voce,
     n_tuplet,
     neighbor_tone,
+    nested_tuplet,
+    passing_chords,
     passing_tone,
     plop,
     retardation,
@@ -201,6 +203,7 @@ from .engine import (
     sextuplet,
     smear,
     subito,
+    swing_tuplet,
     # v170 articulations
     col_legno,
     con_sordino,
