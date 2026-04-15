@@ -3206,6 +3206,281 @@ def dub_delay(
     return np.clip(samples * (1 - wet) + out * wet, -1.0, 1.0).astype(np.float64)
 
 
+def tape_stop(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    duration_sec: float = 1.0,
+    start_at: float = 1.0,
+) -> FloatArray:
+    """Tape stop: audio slows down and pitch-drops to silence.
+
+    The sound of pulling the power on a tape machine or lifting a vinyl
+    needle. The pitch drops, the speed decelerates, everything warps
+    into silence. DJ transition essential. Skrillex uses it between
+    drops. Every hip-hop producer uses it for effect.
+
+    Args:
+        duration_sec: How long the slowdown takes.
+        start_at:     Where in the signal the stop begins (0.0-1.0 fraction).
+    """
+    n = len(samples)
+    stop_start = int(start_at * n)
+    stop_start = max(0, min(stop_start, n - 100))
+    stop_samples = int(duration_sec * sample_rate)
+
+    out = samples.copy()
+
+    if stop_start + stop_samples > n:
+        stop_samples = n - stop_start
+
+    if stop_samples < 10:
+        return out
+
+    # Deceleration curve: speed goes from 1.0 to 0.0 exponentially
+    t = np.linspace(0, 1, stop_samples)
+    speed_curve = (1.0 - t) ** 2  # quadratic slowdown
+
+    # Build warped read positions (accumulate fractional speed)
+    read_pos = np.zeros(stop_samples)
+    pos = 0.0
+    for i in range(stop_samples):
+        read_pos[i] = stop_start + pos
+        pos += speed_curve[i]
+
+    read_pos = np.clip(read_pos, 0, n - 2)
+    lo = np.floor(read_pos).astype(int)
+    hi = np.minimum(lo + 1, n - 1)
+    frac = read_pos - lo
+
+    # Volume fades with the slowdown
+    vol_env = speed_curve**0.5
+
+    if samples.ndim == 2:
+        for ch in range(2):
+            warped = samples[lo, ch] * (1 - frac) + samples[hi, ch] * frac
+            out[stop_start : stop_start + stop_samples, ch] = warped * vol_env
+        # Silence after the stop
+        out[stop_start + stop_samples :] = 0.0
+    else:
+        warped = samples[lo] * (1 - frac) + samples[hi] * frac
+        out[stop_start : stop_start + stop_samples] = warped * vol_env
+        out[stop_start + stop_samples :] = 0.0
+
+    return out.astype(np.float64)
+
+
+def tape_start(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    duration_sec: float = 0.5,
+) -> FloatArray:
+    """Tape start: audio accelerates from silence to full speed.
+
+    The inverse of tape_stop. Pitch rises from nothing to normal as
+    the tape machine spins up. The beginning of a track or the return
+    after a tape stop. Creates anticipation.
+
+    Args:
+        duration_sec: How long the spin-up takes.
+    """
+    n = len(samples)
+    start_samples = min(int(duration_sec * sample_rate), n)
+
+    if start_samples < 10:
+        return samples.copy()
+
+    out = samples.copy()
+
+    t = np.linspace(0, 1, start_samples)
+    speed_curve = t**2  # quadratic acceleration
+
+    # Map warped positions
+    read_pos = np.zeros(start_samples)
+    pos = 0.0
+    for i in range(start_samples):
+        pos += speed_curve[i]
+        read_pos[i] = pos
+
+    # Scale read positions to span the startup region of the original
+    if read_pos[-1] > 0:
+        read_pos = read_pos / read_pos[-1] * start_samples
+    read_pos = np.clip(read_pos, 0, n - 2)
+
+    lo = np.floor(read_pos).astype(int)
+    hi = np.minimum(lo + 1, n - 1)
+    frac = read_pos - lo
+    vol_env = speed_curve**0.5
+
+    if samples.ndim == 2:
+        for ch in range(2):
+            warped = samples[lo, ch] * (1 - frac) + samples[hi, ch] * frac
+            out[:start_samples, ch] = warped * vol_env
+    else:
+        warped = samples[lo] * (1 - frac) + samples[hi] * frac
+        out[:start_samples] = warped * vol_env
+
+    return out.astype(np.float64)
+
+
+def beat_slicer(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bpm: float = 128.0,
+    slices: int = 16,
+    pattern: list | None = None,
+    seed: int | None = None,
+) -> FloatArray:
+    """Beat slicer: chop audio into beat-synced slices and rearrange.
+
+    Propellerhead ReCycle / Ableton Simpler slice mode. Takes the audio,
+    divides it into equal slices synced to the tempo, and rearranges
+    them according to a pattern. Random pattern = glitch/IDM. Reversed
+    pattern = backwards beat. Custom pattern = creative remixing.
+
+    Args:
+        bpm:      Tempo for slice sizing.
+        slices:   Number of slices per bar.
+        pattern:  List of slice indices (0 to slices-1) defining playback order.
+                  None = random shuffle. Each index picks which original slice
+                  plays at that position.
+        seed:     Random seed for shuffle mode.
+    """
+    n = len(samples)
+    beat_sec = 60.0 / bpm
+    bar_samples = int(beat_sec * 4 * sample_rate)
+    slice_len = max(1, bar_samples // slices)
+
+    # Chop into slices
+    slice_bank = []
+    for i in range(slices):
+        start = i * slice_len
+        end = min(start + slice_len, n)
+        if start < n:
+            sl = samples[start:end].copy()
+            if len(sl) < slice_len:
+                if samples.ndim == 2:
+                    sl = np.vstack([sl, np.zeros((slice_len - len(sl), 2))])
+                else:
+                    sl = np.concatenate([sl, np.zeros(slice_len - len(sl))])
+            slice_bank.append(sl)
+        else:
+            if samples.ndim == 2:
+                slice_bank.append(np.zeros((slice_len, 2)))
+            else:
+                slice_bank.append(np.zeros(slice_len))
+
+    # Build the pattern
+    if pattern is None:
+        rng = np.random.default_rng(seed or 42)
+        pattern = rng.permutation(len(slice_bank)).tolist()
+
+    # Reassemble
+    out_slices = []
+    for idx in pattern:
+        idx = idx % len(slice_bank)
+        out_slices.append(slice_bank[idx])
+
+    out = np.concatenate(out_slices)
+
+    # Trim or pad to original length
+    if len(out) > n:
+        out = out[:n]
+    elif len(out) < n:
+        if samples.ndim == 2:
+            out = np.vstack([out, np.zeros((n - len(out), 2))])
+        else:
+            out = np.concatenate([out, np.zeros(n - len(out))])
+
+    return out.astype(np.float64)
+
+
+def shimmer_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 500.0,
+    feedback: float = 0.5,
+    shift_semitones: float = 12.0,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Shimmer delay: pitch-shifted feedback delay.
+
+    Each echo is pitch-shifted (typically up an octave) before feeding
+    back. The result is a cascade of rising, crystalline echoes that
+    build into an ethereal cloud. The signature effect of ambient
+    guitar (Brian Eno, The Edge, Explosions in the Sky). The Strymon
+    BigSky and Eventide H9 sell millions for this one effect.
+
+    Args:
+        delay_ms:         Delay time.
+        feedback:         How much echo feeds back (0.0-0.8).
+        shift_semitones:  Pitch shift per echo (12=octave up, 7=fifth up).
+        wet:              Wet/dry mix.
+    """
+    n = len(samples)
+    d = int(delay_ms * sample_rate / 1000)
+    ratio = 2 ** (shift_semitones / 12.0)
+
+    out = np.zeros_like(samples)
+    buf = samples.copy()
+
+    # Generate echoes with pitch shift
+    for rep in range(8):
+        gain = feedback ** (rep + 1)
+        if gain < 0.01:
+            break
+
+        # Delay
+        delayed = np.zeros_like(buf)
+        offset = d * (rep + 1)
+        if offset < n:
+            remaining = n - offset
+            # Pitch shift the buffer
+            if abs(shift_semitones) > 0.01:
+                target_len = max(1, int(remaining / ratio))
+                if buf.ndim == 2:
+                    ps_l = sig.resample(buf[:remaining, 0], target_len)
+                    ps_r = sig.resample(buf[:remaining, 1], target_len)
+                    ps_l = sig.resample(ps_l, remaining)
+                    ps_r = sig.resample(ps_r, remaining)
+                    delayed[offset:] = np.column_stack([ps_l, ps_r])[: n - offset]
+                else:
+                    ps = sig.resample(sig.resample(buf[:remaining], target_len), remaining)
+                    delayed[offset:] = ps[: n - offset]
+            else:
+                delayed[offset:] = buf[: n - offset]
+
+            out += delayed * gain
+
+    return (samples * (1 - wet) + out * wet).astype(np.float64)
+
+
+def parallel_distortion(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    drive: float = 4.0,
+    tone: float = 0.5,
+    blend: float = 0.4,
+) -> FloatArray:
+    """Parallel distortion: blend clean with distorted for clarity + aggression.
+
+    Same concept as parallel compression but with distortion. The clean
+    signal keeps the clarity, attack, and dynamics. The distorted signal
+    adds harmonics, aggression, and density. Together they are more than
+    either alone. How bass players get that growly-but-clear tone.
+
+    Args:
+        drive:  Distortion drive.
+        tone:   Distortion tone (0=dark, 1=bright).
+        blend:  How much distorted signal to add (0.0-1.0).
+    """
+    dist = distortion(samples, sample_rate, drive=drive, tone=tone, wet=1.0)
+    result = samples + dist * blend
+    peak = np.max(np.abs(result))
+    if peak > 1.0:
+        result /= peak
+    return result.astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2

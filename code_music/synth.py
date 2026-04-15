@@ -1175,15 +1175,77 @@ class Synth:
                 out[i] = buf[i % period]
                 buf[i % period] = loss * 0.5 * (buf[i % period] + buf[(i + 1) % period])
 
-            # Body resonance: simulate the guitar body / piano soundboard.
-            # A guitar body has resonances around 100-200 Hz (air resonance),
-            # 400-600 Hz (top plate), and 1000-2000 Hz (bridge). These color
-            # the string's raw sound into something warm and wooden.
+            # Body resonance: simulate the instrument body's resonant cavity.
+            # Different instruments have different body shapes and materials
+            # that create characteristic resonance patterns.
             from scipy import signal as _ks_sig
 
             nyq_ks = self.sample_rate / 2 - 1
-            # Three body resonance peaks
-            body_freqs = [(180.0, 80.0, 0.15), (500.0, 120.0, 0.10), (1200.0, 200.0, 0.06)]
+
+            # Select body model based on instrument name
+            _BODY_MODELS = {
+                # Acoustic guitar: large body, spruce top, rosewood back
+                "guitar_acoustic": [
+                    (100.0, 60.0, 0.18),
+                    (250.0, 80.0, 0.12),
+                    (500.0, 120.0, 0.10),
+                    (1200.0, 200.0, 0.06),
+                ],
+                "guitar_ks": [
+                    (100.0, 60.0, 0.18),
+                    (250.0, 80.0, 0.12),
+                    (500.0, 120.0, 0.10),
+                    (1200.0, 200.0, 0.06),
+                ],
+                # Classical/nylon guitar: wider body, cedar top, warmer
+                "guitar_classical": [
+                    (90.0, 50.0, 0.20),
+                    (220.0, 70.0, 0.14),
+                    (450.0, 100.0, 0.10),
+                    (900.0, 160.0, 0.05),
+                ],
+                # Ukulele: tiny body, bright
+                "ukulele": [(350.0, 100.0, 0.15), (700.0, 120.0, 0.10), (1500.0, 200.0, 0.08)],
+                # Mandolin: small body, bright and cutting
+                "mandolin": [(300.0, 80.0, 0.14), (600.0, 100.0, 0.10), (1800.0, 200.0, 0.08)],
+                # Banjo: drum-head body, bright and punchy
+                "banjo_ks": [(400.0, 100.0, 0.16), (800.0, 150.0, 0.12), (2000.0, 250.0, 0.08)],
+                # Upright bass: huge body, deep resonance
+                "contrabass": [
+                    (60.0, 40.0, 0.20),
+                    (150.0, 60.0, 0.15),
+                    (350.0, 80.0, 0.08),
+                    (700.0, 120.0, 0.04),
+                ],
+                "bass": [(80.0, 50.0, 0.16), (200.0, 70.0, 0.12), (500.0, 100.0, 0.06)],
+                # Harp: tall soundboard, wide range
+                "harp": [
+                    (120.0, 60.0, 0.14),
+                    (300.0, 80.0, 0.10),
+                    (800.0, 150.0, 0.07),
+                    (1500.0, 200.0, 0.04),
+                ],
+                "harp_ks": [
+                    (120.0, 60.0, 0.14),
+                    (300.0, 80.0, 0.10),
+                    (800.0, 150.0, 0.07),
+                    (1500.0, 200.0, 0.04),
+                ],
+                # Sitar: long neck, gourd body, bright buzzing bridge
+                "sitar_ks": [
+                    (150.0, 50.0, 0.16),
+                    (400.0, 80.0, 0.12),
+                    (1000.0, 150.0, 0.10),
+                    (2500.0, 250.0, 0.08),
+                ],
+                # Koto: wooden body, silk strings
+                "koto_ks": [(200.0, 70.0, 0.14), (500.0, 100.0, 0.10), (1100.0, 180.0, 0.06)],
+            }
+            # Select model based on current instrument (set by _render_note)
+            inst_name = getattr(self, "_current_instrument", None) or ""
+            body_freqs = _BODY_MODELS.get(
+                inst_name, [(180.0, 80.0, 0.15), (500.0, 120.0, 0.10), (1200.0, 200.0, 0.06)]
+            )
             body = np.zeros(n_samples)
             for center, bw, gain in body_freqs:
                 lo = max(20.0, min(center - bw / 2, nyq_ks))
@@ -1349,10 +1411,12 @@ class Synth:
                 raw += ((-1) ** (k + 1) / k) * np.sin(k * phase)
             raw *= 2 / np.pi
         else:
-            # Pass FM ratio hint from preset (fm_keys uses 3.0, fm_bell uses 1.414, etc.)
+            # Pass FM ratio hint and instrument name to _wave
             self._fm_ratio_hint = preset.get("mod_ratio", None)
+            self._current_instrument = instrument_name
             raw = self._wave(wave_type, freq, n_samples)
             self._fm_ratio_hint = None
+            self._current_instrument = None
 
         # ── Unison/detune: stack multiple detuned copies for fat sounds ──
         unison_voices = preset.get("unison", 0)
