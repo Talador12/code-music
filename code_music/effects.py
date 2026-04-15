@@ -1831,6 +1831,316 @@ def midside_eq(
     return np.column_stack([mid + side, mid - side]).astype(np.float64)
 
 
+def pitch_correct(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    key: str = "C",
+    scale: str = "chromatic",
+    speed: float = 0.8,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Pitch correction / auto-tune: snap pitch to nearest scale degree.
+
+    The T-Pain / Cher effect when speed is high. Subtle pitch cleanup
+    when speed is low. Analyzes the dominant frequency in each block and
+    pitch-shifts it to the nearest note in the target scale.
+
+    speed=0.0 = transparent correction (slow, natural).
+    speed=1.0 = hard snap (the auto-tune effect).
+
+    Args:
+        key:    Root note of the scale.
+        scale:  "chromatic" (all semitones), "major", "minor", "pentatonic".
+        speed:  Correction speed (0.0=slow/natural, 1.0=hard/robotic).
+        wet:    Wet/dry mix.
+    """
+    from .engine import SCALES, note_name_to_midi
+
+    scale_intervals = SCALES.get(scale, list(range(12)))
+    key_midi = note_name_to_midi(key, 0) % 12
+    valid_pcs = set((key_midi + i) % 12 for i in scale_intervals)
+
+    n = len(samples)
+    block = 2048
+    out = samples.copy()
+
+    mono = samples[:, 0] if samples.ndim == 2 else samples
+
+    for s in range(0, n - block, block // 2):
+        e = s + block
+        chunk = mono[s:e]
+
+        # Estimate pitch via autocorrelation
+        corr = np.correlate(chunk, chunk, mode="full")
+        corr = corr[len(corr) // 2 :]
+        # Find first peak after the initial falloff
+        min_lag = int(sample_rate / 2000)  # max 2000 Hz
+        max_lag = int(sample_rate / 50)  # min 50 Hz
+        if max_lag >= len(corr):
+            continue
+        search = corr[min_lag:max_lag]
+        if len(search) == 0:
+            continue
+        peak_idx = np.argmax(search) + min_lag
+        if peak_idx == 0:
+            continue
+        detected_freq = sample_rate / peak_idx
+        if detected_freq < 50 or detected_freq > 2000:
+            continue
+
+        # Find nearest scale degree
+        detected_midi = 69 + 12 * np.log2(detected_freq / 440.0)
+        detected_pc = int(round(detected_midi)) % 12
+
+        # Find closest valid pitch class
+        best_shift = 0
+        best_dist = 99
+        for pc in valid_pcs:
+            dist = min(abs(detected_pc - pc), 12 - abs(detected_pc - pc))
+            if dist < best_dist:
+                best_dist = dist
+                # Direction
+                up = (pc - detected_pc) % 12
+                down = (detected_pc - pc) % 12
+                best_shift = up if up <= down else -down
+                best_dist = dist
+
+        if best_shift == 0:
+            continue
+
+        # Apply correction (scaled by speed)
+        shift_cents = best_shift * 100.0 * speed
+        ratio = 2 ** (shift_cents / 1200.0)
+        target_len = max(1, int(block / ratio))
+
+        if samples.ndim == 2:
+            for ch in range(2):
+                resampled = sig.resample(out[s:e, ch], target_len)
+                corrected = sig.resample(resampled, block)
+                # Crossfade window
+                window = np.hanning(block)
+                out[s:e, ch] = out[s:e, ch] * (1 - wet * window) + corrected * wet * window
+        else:
+            resampled = sig.resample(out[s:e], target_len)
+            corrected = sig.resample(resampled, block)
+            window = np.hanning(block)
+            out[s:e] = out[s:e] * (1 - wet * window) + corrected * wet * window
+
+    return out.astype(np.float64)
+
+
+def vocal_doubler(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    detune_cents: float = 8.0,
+    delay_ms: float = 15.0,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Vocal doubler / ADT (Automatic Double Tracking).
+
+    The Beatles invented ADT at Abbey Road - a slightly delayed, slightly
+    detuned copy of the vocal blended underneath. Makes a single voice
+    sound like two takes stacked. Thicker, wider, more professional.
+    John Lennon hated doing actual double takes, so Ken Townsend built
+    a machine to do it automatically. This is that machine.
+
+    Args:
+        detune_cents:  Pitch offset of the double (5-15 cents typical).
+        delay_ms:      Time offset (10-30ms typical).
+        wet:           Blend amount.
+    """
+    n = len(samples)
+    delay_samp = int(delay_ms * sample_rate / 1000)
+
+    # Detune via resampling
+    ratio = 2 ** (detune_cents / 1200.0)
+    target_len = max(1, int(n / ratio))
+
+    if samples.ndim == 2:
+        det_l = sig.resample(samples[:, 0], target_len)
+        det_r = sig.resample(samples[:, 1], target_len)
+        det_l = sig.resample(det_l, n)
+        det_r = sig.resample(det_r, n)
+        doubled = np.column_stack([det_l, det_r])
+    else:
+        doubled = sig.resample(sig.resample(samples, target_len), n)
+
+    # Delay the doubled signal
+    delayed = np.zeros_like(doubled)
+    if delay_samp < n:
+        delayed[delay_samp:] = doubled[: n - delay_samp]
+
+    return (samples + delayed * wet).astype(np.float64)
+
+
+def haas_stereo(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 12.0,
+    side: str = "right",
+) -> FloatArray:
+    """Haas effect stereo widener: short delay on one channel.
+
+    The Haas effect (precedence effect): delays under ~30ms are not
+    perceived as echo but as directionality. A 10-15ms delay on one
+    channel makes the sound appear to come from the non-delayed side
+    while maintaining a sense of width that pan alone cannot achieve.
+
+    Caution: can cause phase issues in mono. Check with mono_compat().
+
+    Args:
+        delay_ms:  Delay amount (5-25ms. Under 5 = comb filter. Over 30 = echo).
+        side:      Which channel to delay ("left" or "right").
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    delay_samp = int(delay_ms * sample_rate / 1000)
+    out = samples.copy()
+
+    if side == "left":
+        delayed = np.zeros(len(samples))
+        if delay_samp < len(samples):
+            delayed[delay_samp:] = samples[: len(samples) - delay_samp, 0]
+        out[:, 0] = delayed
+    else:
+        delayed = np.zeros(len(samples))
+        if delay_samp < len(samples):
+            delayed[delay_samp:] = samples[: len(samples) - delay_samp, 1]
+        out[:, 1] = delayed
+
+    return out.astype(np.float64)
+
+
+def multitap_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    taps: list | None = None,
+    feedback: float = 0.3,
+    wet: float = 0.4,
+) -> FloatArray:
+    """Multi-tap delay: multiple echoes at different times, volumes, and pan positions.
+
+    Like Logic's Delay Designer or Ableton's beat-synced delay but fully
+    programmable. Each tap is a separate echo with its own time, gain,
+    and pan position. Create rhythmic delay patterns, ping-pong effects,
+    or complex spatial echo textures.
+
+    Args:
+        taps:      List of (delay_ms, gain, pan) tuples. Pan: -1.0 to 1.0.
+                   Default: classic ping-pong pattern.
+        feedback:  Global feedback amount.
+        wet:       Wet/dry mix.
+
+    Example::
+
+        # Dotted-eighth ping-pong (U2 / The Edge)
+        multitap_delay(audio, bpm=130, taps=[
+            (375, 0.7, -0.8),   # left
+            (750, 0.5, 0.8),    # right
+            (1125, 0.3, -0.6),  # left quieter
+            (1500, 0.2, 0.6),   # right quieter
+        ])
+    """
+    if taps is None:
+        taps = [
+            (250, 0.6, -0.7),
+            (500, 0.45, 0.7),
+            (750, 0.3, -0.5),
+            (1000, 0.2, 0.5),
+        ]
+
+    n = len(samples)
+    ensure_stereo = samples.ndim == 2
+
+    if not ensure_stereo:
+        samples = np.column_stack([samples, samples])
+
+    out = np.zeros_like(samples)
+
+    for delay_ms, gain, tap_pan in taps:
+        d = int(delay_ms * sample_rate / 1000)
+        if d >= n:
+            continue
+        # Pan the tap
+        angle = (tap_pan + 1) / 2 * np.pi / 2
+        l_g = math.cos(angle) * gain
+        r_g = math.sin(angle) * gain
+
+        # Mono sum of input for each tap
+        mono = (samples[:, 0] + samples[:, 1]) * 0.5
+        delayed = np.zeros(n)
+        delayed[d:] = mono[: n - d]
+
+        out[:, 0] += delayed * l_g
+        out[:, 1] += delayed * r_g
+
+    # Feedback: feed the mixed taps back into the delay
+    if feedback > 0:
+        fb_mono = (out[:, 0] + out[:, 1]) * 0.5 * feedback
+        for delay_ms, gain, tap_pan in taps[:2]:
+            d = int(delay_ms * sample_rate / 1000)
+            if d < n:
+                angle = (tap_pan + 1) / 2 * np.pi / 2
+                delayed = np.zeros(n)
+                delayed[d:] = fb_mono[: n - d]
+                out[:, 0] += delayed * math.cos(angle) * gain * 0.5
+                out[:, 1] += delayed * math.sin(angle) * gain * 0.5
+
+    result = samples * (1 - wet) + out * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+def convolver(
+    samples: FloatArray,
+    ir: FloatArray | np.ndarray,
+    sample_rate: int = 44100,
+    wet: float = 0.4,
+) -> FloatArray:
+    """Convolution reverb: apply any impulse response to audio.
+
+    Load a real room recording (concert hall, cathedral, plate reverb,
+    speaker cabinet) as an IR and convolve it with your audio. The most
+    realistic reverb possible - it IS the actual room, captured.
+
+    Free IR libraries exist online (OpenAIR, EchoThief, Voxengo).
+    Load a WAV file with import_audio() and pass it as the ir argument.
+
+    Args:
+        ir:   Impulse response array (mono float64). Load with import_audio().
+        wet:  Wet/dry mix.
+
+    Example::
+
+        from code_music.integrations import import_audio
+        ir = import_audio("concert_hall.wav")
+        song.effects = {"vocals": EffectsChain().add(convolver, ir=ir, wet=0.3)}
+    """
+    if ir.ndim > 1:
+        ir = ir[:, 0] if ir.shape[1] > 0 else ir.flatten()
+
+    # Normalize IR
+    pk = np.max(np.abs(ir))
+    if pk > 0:
+        ir = ir / pk
+
+    if samples.ndim == 2:
+        conv_l = sig.fftconvolve(samples[:, 0], ir, mode="full")[: len(samples)]
+        conv_r = sig.fftconvolve(samples[:, 1], ir, mode="full")[: len(samples)]
+        for ch in (conv_l, conv_r):
+            p = np.max(np.abs(ch))
+            if p > 0:
+                ch /= p
+        conv = np.column_stack([conv_l, conv_r])
+    else:
+        conv = sig.fftconvolve(samples, ir, mode="full")[: len(samples)]
+        p = np.max(np.abs(conv))
+        if p > 0:
+            conv /= p
+
+    return (samples * (1 - wet) + conv * wet).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
