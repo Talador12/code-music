@@ -216,7 +216,14 @@ from .mastering import (
     true_peak_limit,
 )
 from .midi import export_midi, import_midi
-from .effects import noise_gate, sidechain, stereo_width
+from .effects import (
+    amp_cabinet,
+    console_warmth,
+    multiband_compress,
+    noise_gate,
+    sidechain,
+    stereo_width,
+)
 from .integrations import (
     ai_generate_melody,
     ai_generate_sound,

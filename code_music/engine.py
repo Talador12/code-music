@@ -2287,6 +2287,7 @@ class Track:
     swing: float = 0.0  # 0.0 = straight, 0.5 = medium swing, 0.67 = heavy
     density: float = 1.0  # 0.0-1.0 probability each note plays (1.0 = all notes)
     density_seed: int | None = None  # random seed for reproducible dropout
+    humanize: float = 0.0  # 0.0 = robot, 0.3 = subtle, 0.7 = natural, 1.0 = loose
     # Spatial audio (v151.0) - binaural 3D positioning
     spatial_azimuth: float | None = None  # horizontal angle (-180..180), None = use pan
     spatial_elevation: float = 0.0  # vertical angle (-90..90)

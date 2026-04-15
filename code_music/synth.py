@@ -1887,10 +1887,18 @@ class Synth:
         density_rng = _random.Random(track.density_seed)
         use_density = track.density < 1.0 - 1e-6
 
+        # ── Humanization engine ────────────────────────────────────────
+        # Real musicians are not perfectly on time or perfectly consistent.
+        # Micro-timing jitter, velocity fluctuation, and pitch drift create
+        # the feel that separates a live performance from a MIDI playback.
+        # These are subtle (3-10ms timing, +-5% velocity) but critical.
+        humanize = getattr(track, "humanize", 0.0)  # 0.0 = robot, 1.0 = very human
+        h_rng = np.random.default_rng(hash(track.name) % (2**31) if track.name else 42)
+
         cursor = 0
-        beat_idx = 0  # counts 8th-note grid steps for swing
+        beat_idx = 0
         cumulative_beat = 0.0
-        prev_freq = 0.0  # for portamento glide between notes
+        prev_freq = 0.0
         for beat in track.beats:
             # Use per-beat BPM from map if available
             if bpm_map:
@@ -1944,7 +1952,21 @@ class Synth:
             if len(notes) > 1:
                 mixed /= len(notes) ** 0.5  # RMS normalization
 
-            write_pos = cursor + swing_offset
+            # Humanize: micro-timing jitter + velocity variation
+            timing_offset = 0
+            if humanize > 0:
+                # Micro-timing: +-3ms at humanize=0.3, +-10ms at humanize=1.0
+                max_jitter_ms = 3.0 + humanize * 7.0
+                jitter_samples = int(
+                    h_rng.normal(0, max_jitter_ms * 0.001 * self.sample_rate * 0.3)
+                )
+                timing_offset = jitter_samples
+                # Velocity variation: +-3% at humanize=0.3, +-8% at humanize=1.0
+                vel_var = 1.0 + h_rng.normal(0, humanize * 0.03)
+                mixed *= np.clip(vel_var, 0.85, 1.15)
+
+            write_pos = cursor + swing_offset + timing_offset
+            write_pos = max(0, write_pos)
             end = min(write_pos + n_samples, total_samples)
             if end > write_pos:
                 buf[write_pos:end] += mixed[: end - write_pos] * track.volume

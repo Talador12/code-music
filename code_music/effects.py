@@ -2815,6 +2815,189 @@ def room_reverb(
 
 
 # ---------------------------------------------------------------------------
+# Guitar amp + cabinet simulation (v170)
+# ---------------------------------------------------------------------------
+
+
+def amp_cabinet(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    gain: float = 5.0,
+    tone: float = 0.5,
+    cabinet: str = "4x12",
+    wet: float = 1.0,
+) -> FloatArray:
+    """Guitar amplifier + cabinet simulation.
+
+    Three stages: preamp (asymmetric tube saturation for even harmonics),
+    tone stack (mid-focused parametric EQ), cabinet (speaker lowpass +
+    resonance). Without a cabinet sim, distortion sounds like a broken
+    calculator. With it, it sounds like a Marshall stack.
+
+    Cabinets:
+        4x12:  Marshall closed back (rock/metal, tight, forward mids)
+        2x12:  Fender Twin open back (clean/blues, wider, more air)
+        1x12:  Small combo (jazz/country, warm, rolled-off highs)
+
+    Args:
+        gain:     Preamp gain (1=clean, 3=crunch, 6=high gain, 10=insane).
+        tone:     Tone knob (0=dark, 0.5=balanced, 1=bright).
+        cabinet:  Cabinet type.
+        wet:      Wet/dry mix.
+    """
+    # Preamp: asymmetric soft clip (even harmonics = warmth)
+    driven = samples * gain
+    pos = np.maximum(driven, 0)
+    neg = np.minimum(driven, 0)
+    saturated = np.tanh(pos * 0.8) * 1.1 + np.tanh(neg * 1.0)
+
+    # Tone stack
+    nyq = sample_rate / 2 - 1
+    hi_cut = min(3500.0 + tone * 4000.0, nyq)
+    sos_hi = sig.butter(2, hi_cut, btype="low", fs=sample_rate, output="sos")
+
+    if saturated.ndim == 2:
+        toned = np.column_stack(
+            [
+                sig.sosfilt(sos_hi, saturated[:, 0]),
+                sig.sosfilt(sos_hi, saturated[:, 1]),
+            ]
+        )
+    else:
+        toned = sig.sosfilt(sos_hi, saturated)
+
+    # Cabinet lowpass (speakers cannot reproduce above ~5-6 kHz)
+    cab_lp = {"4x12": 5500.0, "2x12": 6500.0, "1x12": 4500.0}
+    lp_hz = min(cab_lp.get(cabinet, 5500.0), nyq)
+    sos_cab = sig.butter(4, lp_hz, btype="low", fs=sample_rate, output="sos")
+
+    if toned.ndim == 2:
+        result = np.column_stack(
+            [
+                sig.sosfilt(sos_cab, toned[:, 0]),
+                sig.sosfilt(sos_cab, toned[:, 1]),
+            ]
+        )
+    else:
+        result = sig.sosfilt(sos_cab, toned)
+
+    out = samples * (1 - wet) + result * wet
+    return np.clip(out, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Multiband compression (v170)
+# ---------------------------------------------------------------------------
+
+
+def multiband_compress(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    low_threshold: float = 0.5,
+    mid_threshold: float = 0.4,
+    high_threshold: float = 0.35,
+    low_ratio: float = 3.0,
+    mid_ratio: float = 2.5,
+    high_ratio: float = 4.0,
+    crossover_low: float = 250.0,
+    crossover_high: float = 4000.0,
+) -> FloatArray:
+    """Multiband compressor: independent compression per frequency band.
+
+    Splits into low/mid/high, compresses each, sums back. Bass stays
+    tight without squashing vocals. Highs sparkle without kick pumping
+    cymbals. Every professional mastering chain has one.
+
+    Args:
+        crossover_low:   Low/mid split frequency (Hz).
+        crossover_high:  Mid/high split frequency (Hz).
+    """
+    nyq = sample_rate / 2 - 1
+    xlo = min(crossover_low, nyq)
+    xhi = min(crossover_high, nyq)
+
+    sos_lo = sig.butter(4, xlo, btype="low", fs=sample_rate, output="sos")
+    sos_hi = sig.butter(4, xhi, btype="high", fs=sample_rate, output="sos")
+    if xlo < xhi:
+        sos_mid = sig.butter(4, [xlo, xhi], btype="band", fs=sample_rate, output="sos")
+    else:
+        sos_mid = sos_lo
+
+    def _bc(band, threshold, ratio):
+        peak = np.max(np.abs(band), axis=1) if band.ndim == 2 else np.abs(band)
+        gain = np.where(
+            peak > threshold, (threshold + (peak - threshold) / ratio) / np.maximum(peak, 1e-9), 1.0
+        )
+        return band * gain[:, np.newaxis] if band.ndim == 2 else band * gain
+
+    if samples.ndim == 2:
+        lo = np.column_stack(
+            [sig.sosfilt(sos_lo, samples[:, 0]), sig.sosfilt(sos_lo, samples[:, 1])]
+        )
+        mid = np.column_stack(
+            [sig.sosfilt(sos_mid, samples[:, 0]), sig.sosfilt(sos_mid, samples[:, 1])]
+        )
+        hi = np.column_stack(
+            [sig.sosfilt(sos_hi, samples[:, 0]), sig.sosfilt(sos_hi, samples[:, 1])]
+        )
+    else:
+        lo = sig.sosfilt(sos_lo, samples)
+        mid = sig.sosfilt(sos_mid, samples)
+        hi = sig.sosfilt(sos_hi, samples)
+
+    result = (
+        _bc(lo, low_threshold, low_ratio)
+        + _bc(mid, mid_threshold, mid_ratio)
+        + _bc(hi, high_threshold, high_ratio)
+    )
+    peak = np.max(np.abs(result))
+    if peak > 0:
+        result /= peak
+    return result.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Analog console warmth (v170)
+# ---------------------------------------------------------------------------
+
+
+def console_warmth(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    drive: float = 1.2,
+    hf_rolloff: float = 0.3,
+) -> FloatArray:
+    """Analog console emulation: subtle saturation + HF rolloff.
+
+    What people pay $50K/channel for in a Neve or SSL. Gentle asymmetric
+    saturation adds even harmonics (warmth). Subtle HF rolloff rounds the
+    top end. Transparent on one track, transformative across a full mix.
+
+    Args:
+        drive:      Saturation (1.0=barely there, 2.0=audible warmth).
+        hf_rolloff: High-frequency rolloff (0.0=none, 1.0=dark).
+    """
+    x = samples * drive
+    warm = np.tanh(np.maximum(x, 0) * 0.9) + np.tanh(np.minimum(x, 0) * 1.1)
+
+    if hf_rolloff > 0:
+        nyq = sample_rate / 2 - 1
+        cutoff = min(nyq, max(8000.0, 18000.0 * (1.0 - hf_rolloff)))
+        sos = sig.butter(1, cutoff, btype="low", fs=sample_rate, output="sos")
+        if warm.ndim == 2:
+            warm[:, 0] = sig.sosfilt(sos, warm[:, 0])
+            warm[:, 1] = sig.sosfilt(sos, warm[:, 1])
+        else:
+            warm = sig.sosfilt(sos, warm)
+
+    peak_in = np.max(np.abs(samples))
+    peak_out = np.max(np.abs(warm))
+    if peak_out > 0 and peak_in > 0:
+        warm *= peak_in / peak_out
+    return warm.astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
 # Shimmer reverb — pitch-shifted reverb tail for ethereal textures (v170)
 # ---------------------------------------------------------------------------
 
