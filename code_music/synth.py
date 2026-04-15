@@ -2618,12 +2618,34 @@ class Synth:
 
         # ── Generic articulations ────────────────────────────────────
         elif art == "staccato":
-            # Staccato: sharper release, slightly shorter envelope
             R = min(R, 0.08)
             S = max(S * 0.3, 0.0)
 
+        elif art == "staccatissimo":
+            # Staccatissimo: even shorter than staccato, as short as possible
+            A = min(A, 0.001)
+            D = min(D, 0.03)
+            S = 0.0
+            R = min(R, 0.02)
+
+        elif art == "marcato":
+            # Marcato: hard accent, slightly shorter, louder attack
+            A = min(A, 0.002)
+            # Add a brief noise transient for the accent
+            attack_len = min(int(0.008 * sr), n_samples)
+            if attack_len > 0:
+                rng_m = np.random.default_rng(42)
+                accent = rng_m.standard_normal(attack_len) * 0.15
+                accent *= np.linspace(1.0, 0.0, attack_len)
+                raw[:attack_len] += accent
+            S = max(S * 0.7, 0.0)
+
+        elif art == "tenuto":
+            # Tenuto: full value, held for complete duration, no decay
+            S = max(S, 0.9)
+            R = max(R, R * 1.3)
+
         elif art == "legato":
-            # Legato: slower attack, longer release, smoother
             A = max(A, A * 1.5)
             R = max(R, R * 1.5)
 

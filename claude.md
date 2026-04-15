@@ -3500,16 +3500,15 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
       exists as pedal_point but not integrated with chord progressions)
 - [ ] **Passing chords** (chromatic or diatonic chords between structural chords,
       automatic insertion based on voice leading rules)
-- [ ] **Neighbor tones** (non-chord tones that step away and return, as
-      automatic ornamentation applied to melody)
-- [ ] **Escape tones** (step in one direction, leap in the other)
-- [ ] **Anticipation** (arriving at next chord's note early)
-- [ ] **Retardation** (arriving at next chord's note late, opposite of suspension)
+- [x] **Neighbor tones** (DONE - upper/lower neighbor with step size control)
+- [x] **Passing tones** (DONE - chromatic or diatonic stepwise fill between notes)
+- [x] **Escape tones** (DONE - step away, leap to next note)
+- [x] **Anticipation** (DONE - arrive at next note early, configurable amount)
+- [x] **Retardation** (DONE - hold current note late into next, resolves up)
 
 ### Dynamics and Expression
-- [ ] **Hairpin dynamics** (crescendo/decrescendo with beat-level granularity,
-      not just start/end velocity)
+- [x] **Hairpin dynamics** (DONE - beat-level with shape control and configurable peak position)
 - [x] **Subito dynamics** (DONE - sudden velocity change at any index)
 - [x] **Messa di voce** (DONE - pp -> ff -> pp parabolic curve on sustained note)
-- [ ] **Accent patterns** (marcato, tenuto, staccatissimo as articulations)
-- [ ] **Breath marks** (natural phrasing pauses for wind/vocal lines)
+- [x] **Accent patterns** (DONE - marcato, tenuto, staccatissimo in synth articulation handler)
+- [x] **Breath marks** (DONE - breath_mark() + insert_breaths() for automatic phrasing)

@@ -1846,6 +1846,232 @@ def n_tuplet(
     return result
 
 
+def neighbor_tone(
+    note: Note, direction: int = 1, semitones: int = 1, speed: float = SIXTEENTH
+) -> list[Note]:
+    """Insert a neighbor tone: step away and return.
+
+    A non-chord tone that moves one step from the main note and comes
+    back. Upper neighbor (direction=1) goes up then returns. Lower
+    neighbor (direction=-1) goes down then returns. The most common
+    ornamental motion in all of tonal music.
+
+    Args:
+        note:       Main note.
+        direction:  1 = upper neighbor, -1 = lower neighbor.
+        semitones:  Step size (1=chromatic, 2=diatonic whole step).
+        speed:      Duration of the neighbor note.
+    """
+    if note.pitch is None:
+        return [Note.rest(note.duration)]
+    base = note.midi or 0
+    main_dur = max(SIXTY_FOURTH, note.duration - speed)
+    return [
+        Note(pitch=base, duration=main_dur * 0.5, velocity=note.velocity),
+        Note(pitch=base + direction * semitones, duration=speed, velocity=note.velocity * 0.8),
+        Note(pitch=base, duration=main_dur * 0.5, velocity=note.velocity),
+    ]
+
+
+def passing_tone(start: Note, end: Note, chromatic: bool = False) -> list[Note]:
+    """Insert passing tones between two notes.
+
+    Fill the gap between two pitches with stepwise motion. Diatonic
+    passing tones use whole steps. Chromatic passing tones use half
+    steps. Makes melodic leaps smooth and connected.
+
+    Args:
+        start:     First note.
+        end:       Second note.
+        chromatic: True = chromatic (half steps), False = whole steps.
+    """
+    if start.pitch is None or end.pitch is None:
+        return [start, end]
+    start_midi = start.midi or 0
+    end_midi = end.midi or 0
+    if start_midi == end_midi:
+        return [start, end]
+
+    direction = 1 if end_midi > start_midi else -1
+    step = 1 if chromatic else 2
+    passing = []
+    current = start_midi + direction * step
+    while (direction == 1 and current < end_midi) or (direction == -1 and current > end_midi):
+        passing.append(current)
+        current += direction * step
+
+    if not passing:
+        return [start, end]
+
+    total_passing_dur = start.duration * 0.4
+    pass_dur = total_passing_dur / len(passing)
+    main_dur = start.duration - total_passing_dur
+
+    result = [Note(pitch=start_midi, duration=main_dur, velocity=start.velocity)]
+    for p in passing:
+        result.append(Note(pitch=p, duration=pass_dur, velocity=start.velocity * 0.75))
+    result.append(end)
+    return result
+
+
+def escape_tone(note: Note, next_note: Note, semitones: int = 2) -> list[Note]:
+    """Escape tone: step in one direction, leap in the other.
+
+    A non-chord tone that steps away from the current note then leaps
+    to the next note instead of stepping back. Creates a brief moment
+    of melodic surprise. Less predictable than a neighbor tone.
+
+    Args:
+        note:       Current note (the escape steps away from this).
+        next_note:  The note that follows (the escape leaps to this).
+        semitones:  Step size for the escape.
+    """
+    if note.pitch is None or next_note.pitch is None:
+        return [note, next_note]
+    base = note.midi or 0
+    target = next_note.midi or 0
+    # Step in the opposite direction of the target
+    escape_dir = -1 if target > base else 1
+    escape_pitch = base + escape_dir * semitones
+    escape_dur = note.duration * 0.25
+    main_dur = note.duration - escape_dur
+    return [
+        Note(pitch=base, duration=main_dur, velocity=note.velocity),
+        Note(pitch=escape_pitch, duration=escape_dur, velocity=note.velocity * 0.7),
+        next_note,
+    ]
+
+
+def anticipation(note: Note, next_note: Note, amount: float = 0.25) -> list[Note]:
+    """Anticipation: arrive at the next note early.
+
+    The last portion of the current note's duration plays the NEXT note's
+    pitch. Creates forward momentum - the melody leans into what is coming.
+    Common in pop, jazz, and any music that wants to feel eager.
+
+    Args:
+        note:       Current note (shortened).
+        next_note:  Next note (anticipated early).
+        amount:     Fraction of current note's duration to anticipate (0.1-0.5).
+    """
+    if note.pitch is None or next_note.pitch is None:
+        return [note, next_note]
+    antic_dur = note.duration * amount
+    main_dur = note.duration - antic_dur
+    target_midi = next_note.midi or 0
+    return [
+        Note(pitch=note.midi, duration=main_dur, velocity=note.velocity),
+        Note(pitch=target_midi, duration=antic_dur, velocity=next_note.velocity * 0.85),
+        Note(pitch=target_midi, duration=next_note.duration, velocity=next_note.velocity),
+    ]
+
+
+def retardation(note: Note, next_note: Note, amount: float = 0.25) -> list[Note]:
+    """Retardation: arrive at the next note late.
+
+    The opposite of anticipation. The current note holds PAST its written
+    duration into the next note's time, then resolves upward. Creates
+    suspension-like tension. The melody resists moving forward.
+
+    Args:
+        note:       Current note (extended).
+        next_note:  Next note (delayed).
+        amount:     Fraction of next note's duration to delay (0.1-0.5).
+    """
+    if note.pitch is None or next_note.pitch is None:
+        return [note, next_note]
+    hold_dur = next_note.duration * amount
+    remaining_dur = next_note.duration - hold_dur
+    return [
+        Note(pitch=note.midi, duration=note.duration + hold_dur, velocity=note.velocity),
+        Note(pitch=next_note.midi, duration=remaining_dur, velocity=next_note.velocity),
+    ]
+
+
+def hairpin(
+    notes: list[Note],
+    start_vel: float = 0.3,
+    peak_vel: float = 0.9,
+    end_vel: float = 0.3,
+    peak_at: float = 0.5,
+) -> list[Note]:
+    """Hairpin dynamics: crescendo to a peak, then decrescendo.
+
+    Beat-level granularity dynamics with shape control. The peak
+    position determines whether it is a crescendo-heavy hairpin
+    (peak_at=0.8) or a decrescendo-heavy hairpin (peak_at=0.2).
+    Symmetric (peak_at=0.5) is the classic diamond hairpin.
+
+    Args:
+        notes:     Input notes.
+        start_vel: Starting velocity.
+        peak_vel:  Peak velocity at the apex.
+        end_vel:   Ending velocity.
+        peak_at:   Where the peak falls (0.0-1.0, 0.5=symmetric).
+    """
+    if not notes:
+        return []
+    result = []
+    for i, n in enumerate(notes):
+        frac = i / max(len(notes) - 1, 1)
+        if frac <= peak_at:
+            # Crescendo phase
+            phase_frac = frac / max(peak_at, 0.001)
+            vel = start_vel + (peak_vel - start_vel) * phase_frac
+        else:
+            # Decrescendo phase
+            phase_frac = (frac - peak_at) / max(1.0 - peak_at, 0.001)
+            vel = peak_vel + (end_vel - peak_vel) * phase_frac
+        vel = max(0.01, min(1.0, vel))
+        if n.pitch is None:
+            result.append(n)
+        else:
+            result.append(
+                Note(n.pitch, n.octave, n.duration, velocity=vel, articulation=n.articulation)
+            )
+    return result
+
+
+def breath_mark(duration: float = 0.125) -> Note:
+    """Insert a breath mark: a natural phrasing pause for wind/vocal lines.
+
+    A brief silence that represents a breath between phrases. Not just
+    a rest - it is shorter and more specific to wind and vocal music.
+    Standard breath mark is an eighth note or shorter.
+
+    Args:
+        duration: Length of the breath in beats (0.125 = 32nd note).
+    """
+    return Note.rest(duration)
+
+
+def insert_breaths(
+    notes: list[Note],
+    every_n: int = 4,
+    breath_dur: float = 0.125,
+) -> list[Note]:
+    """Insert breath marks every N notes for natural wind/vocal phrasing.
+
+    Real wind players breathe. Real singers breathe. Without breath
+    marks, synthesized wind and vocal lines sound robotic because they
+    never pause. This inserts brief rests at regular intervals.
+
+    Args:
+        notes:      Input notes.
+        every_n:    Insert a breath every N notes (4=every bar in 4/4).
+        breath_dur: Duration of each breath.
+    """
+    result = []
+    count = 0
+    for n in notes:
+        result.append(n)
+        count += 1
+        if count >= every_n and n.pitch is not None:
+            result.append(breath_mark(breath_dur))
+            count = 0
+    return result
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [
