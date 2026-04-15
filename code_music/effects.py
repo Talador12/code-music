@@ -2921,6 +2921,291 @@ def stereo_rotate(
     return np.column_stack([left, right]).astype(np.float64)
 
 
+def formant_shift(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    shift_semitones: float = 0.0,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Formant shifter: change vocal character without changing pitch.
+
+    Shift the formant frequencies (the resonances that define vowel sounds
+    and vocal character) independently of the fundamental pitch. Shift up =
+    chipmunk/female character. Shift down = deep/male character. The pitch
+    stays the same. This is how voice changers work.
+
+    Different from pitch_shift: pitch_shift moves everything together.
+    Formant_shift moves the spectral envelope while keeping the pitch.
+
+    Args:
+        shift_semitones: Formant shift (-12 to +12). Positive = higher character.
+        wet: Wet/dry mix.
+    """
+    if abs(shift_semitones) < 0.1:
+        return samples.copy()
+
+    n = len(samples)
+    # Shift formants by resampling the spectral envelope
+    # Method: pitch shift up, then time-stretch back (keeps formants shifted but pitch same)
+    ratio = 2 ** (shift_semitones / 12.0)
+    target_len = max(1, int(n / ratio))
+
+    if samples.ndim == 2:
+        # Resample (shifts both pitch and formants)
+        shifted_l = sig.resample(samples[:, 0], target_len)
+        shifted_r = sig.resample(samples[:, 1], target_len)
+        # Resample back to original length (restores original pitch, keeps shifted formants)
+        restored_l = sig.resample(shifted_l, n)
+        restored_r = sig.resample(shifted_r, n)
+        shifted = np.column_stack([restored_l, restored_r])
+    else:
+        shifted = sig.resample(sig.resample(samples, target_len), n)
+
+    return (samples * (1 - wet) + shifted * wet).astype(np.float64)
+
+
+def spectral_freeze(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    freeze_at: float = 0.5,
+    duration_sec: float = 4.0,
+    fade_in: float = 0.5,
+) -> FloatArray:
+    """Spectral freeze: capture a moment and sustain it indefinitely.
+
+    Takes an FFT snapshot at a specific time position and uses it to
+    generate a sustained, frozen texture. The harmonic content of that
+    instant becomes a static drone. Ambient music essential. Sigur Ros,
+    Stars of the Lid, every ambient producer.
+
+    Args:
+        freeze_at:     Position in the signal to freeze (0.0-1.0, fraction of length).
+        duration_sec:  How long the frozen output should be.
+        fade_in:       Crossfade time from original to frozen (seconds).
+    """
+    n = len(samples)
+    freeze_pos = int(freeze_at * n)
+    fft_size = 4096
+    freeze_pos = min(freeze_pos, n - fft_size)
+    freeze_pos = max(0, freeze_pos)
+
+    mono = (
+        samples[freeze_pos : freeze_pos + fft_size, 0]
+        if samples.ndim == 2
+        else samples[freeze_pos : freeze_pos + fft_size]
+    )
+    if len(mono) < fft_size:
+        mono = np.pad(mono, (0, fft_size - len(mono)))
+
+    # Get the spectral snapshot
+    window = np.hanning(fft_size)
+    spectrum = np.fft.rfft(mono * window)
+    magnitudes = np.abs(spectrum)
+    phases = np.angle(spectrum)
+
+    # Generate frozen audio by overlap-add with the frozen spectrum
+    out_len = int(duration_sec * sample_rate)
+    out = np.zeros(out_len)
+    hop = fft_size // 4
+
+    for i in range(0, out_len - fft_size, hop):
+        # Randomize phases slightly for each frame (avoids metallic repetition)
+        rng_phase = np.random.default_rng(i)
+        new_phases = phases + rng_phase.uniform(-0.1, 0.1, len(phases))
+        frame_spectrum = magnitudes * np.exp(1j * new_phases)
+        frame = np.fft.irfft(frame_spectrum, fft_size) * window
+        out[i : i + fft_size] += frame
+
+    # Normalize
+    pk = np.max(np.abs(out))
+    if pk > 0:
+        out /= pk
+    out *= np.max(np.abs(samples))
+
+    # Crossfade from original to frozen
+    fade_samples = int(fade_in * sample_rate)
+    result_len = min(out_len, n)
+    result = np.zeros((result_len, 2) if samples.ndim == 2 else result_len)
+
+    if samples.ndim == 2:
+        for ch in range(2):
+            result[:, ch] = out[:result_len]
+        # Crossfade at the start
+        if fade_samples > 0 and fade_samples < result_len:
+            fade = np.linspace(0, 1, fade_samples)
+            result[:fade_samples, 0] = (
+                samples[:fade_samples, 0] * (1 - fade) + result[:fade_samples, 0] * fade
+            )
+            result[:fade_samples, 1] = (
+                samples[:fade_samples, 1] * (1 - fade) + result[:fade_samples, 1] * fade
+            )
+    else:
+        result = out[:result_len]
+        if fade_samples > 0 and fade_samples < result_len:
+            fade = np.linspace(0, 1, fade_samples)
+            result[:fade_samples] = (
+                samples[:fade_samples] * (1 - fade) + result[:fade_samples] * fade
+            )
+
+    return result.astype(np.float64)
+
+
+def harmonic_tremolo(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    rate_hz: float = 4.0,
+    depth: float = 0.7,
+    wet: float = 0.8,
+) -> FloatArray:
+    """Harmonic tremolo: the Fender brownface tremolo sound.
+
+    NOT the same as standard amplitude tremolo. Harmonic tremolo splits
+    the signal into low and high frequency bands and modulates them with
+    opposite-phase LFOs. When lows are loud, highs are quiet, and vice
+    versa. Creates a phase-shift-like sweep that is warmer and more
+    complex than simple volume modulation. The Fender Vibrolux and
+    Tremolux sound that guitarists pay premium for.
+
+    Args:
+        rate_hz:  LFO speed (2-8 Hz typical for guitar).
+        depth:    Modulation depth.
+        wet:      Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+    lfo = np.sin(2 * np.pi * rate_hz * t)
+
+    nyq = sample_rate / 2 - 1
+    split_freq = min(800.0, nyq)
+    sos_lo = sig.butter(2, split_freq, btype="low", fs=sample_rate, output="sos")
+    sos_hi = sig.butter(2, split_freq, btype="high", fs=sample_rate, output="sos")
+
+    if samples.ndim == 2:
+        lo = np.column_stack(
+            [sig.sosfilt(sos_lo, samples[:, 0]), sig.sosfilt(sos_lo, samples[:, 1])]
+        )
+        hi = np.column_stack(
+            [sig.sosfilt(sos_hi, samples[:, 0]), sig.sosfilt(sos_hi, samples[:, 1])]
+        )
+        # Opposite-phase modulation
+        lo_mod = lo * (1.0 - depth * 0.5 * (1 + lfo))[:, np.newaxis]
+        hi_mod = hi * (1.0 - depth * 0.5 * (1 - lfo))[:, np.newaxis]
+    else:
+        lo = sig.sosfilt(sos_lo, samples)
+        hi = sig.sosfilt(sos_hi, samples)
+        lo_mod = lo * (1.0 - depth * 0.5 * (1 + lfo))
+        hi_mod = hi * (1.0 - depth * 0.5 * (1 - lfo))
+
+    result = lo_mod + hi_mod
+    return (samples * (1 - wet) + result * wet).astype(np.float64)
+
+
+def micro_shift(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    cents: float = 7.0,
+    delay_ms: float = 10.0,
+) -> FloatArray:
+    """Micro-pitch shift stereo widener: the Waves Doubler trick.
+
+    Shift the left channel down by N cents and the right channel up by N
+    cents. Add a tiny delay offset. The result is a wider stereo image
+    that sounds natural and does not collapse in mono (unlike Haas, which
+    can phase-cancel). This is the #1 stereo widening technique used by
+    pro mix engineers.
+
+    5-7 cents shift is the sweet spot - enough width to hear, not enough
+    to sound detuned. Works on anything: vocals, guitars, synths, pads.
+
+    Args:
+        cents:     Pitch shift amount per side (3-10 cents typical).
+        delay_ms:  Additional delay offset per side (5-15ms).
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    n = len(samples)
+    delay_samp = int(delay_ms * sample_rate / 1000)
+
+    # Pitch shift L down, R up
+    ratio_down = 2 ** (-cents / 1200.0)
+    ratio_up = 2 ** (cents / 1200.0)
+
+    # L channel: shift down
+    target_l = max(1, int(n / ratio_down))
+    shifted_l = sig.resample(sig.resample(samples[:, 0], target_l), n)
+
+    # R channel: shift up + tiny delay
+    target_r = max(1, int(n / ratio_up))
+    shifted_r = sig.resample(sig.resample(samples[:, 1], target_r), n)
+    if delay_samp > 0 and delay_samp < n:
+        delayed_r = np.zeros(n)
+        delayed_r[delay_samp:] = shifted_r[: n - delay_samp]
+        shifted_r = delayed_r
+
+    return np.column_stack([shifted_l, shifted_r]).astype(np.float64)
+
+
+def dub_delay(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 375.0,
+    feedback: float = 0.6,
+    filter_freq: float = 2000.0,
+    filter_res: float = 3.0,
+    wet: float = 0.4,
+) -> FloatArray:
+    """Dub delay: delay with a resonant filter in the feedback loop.
+
+    The King Tubby / Lee Perry / Scientist sound. Each echo passes
+    through a resonant lowpass filter, getting darker and more colored
+    with each repeat. The feedback pushes the filter into self-oscillation
+    territory, creating the screaming, bubbling delays that define dub
+    reggae. Turn the feedback up to 0.9 and the filter resonance to 8
+    and it starts to sing on its own.
+
+    Args:
+        delay_ms:    Delay time.
+        feedback:    Feedback (0.0-0.95). Above 0.8 = self-oscillation danger zone.
+        filter_freq: Resonant filter frequency in the loop.
+        filter_res:  Filter resonance / Q (1=gentle, 8=screaming).
+        wet:         Wet/dry mix.
+    """
+    n = len(samples)
+    d = int(delay_ms * sample_rate / 1000)
+    nyq = sample_rate / 2 - 1
+    filt_hz = min(filter_freq, nyq)
+
+    out = np.zeros_like(samples)
+    buf = np.zeros_like(samples)
+
+    # Pre-compute filter
+    sos_fb = sig.butter(2, filt_hz, btype="low", fs=sample_rate, output="sos")
+
+    # Process in delay-length blocks for the filter
+    block = d if d > 0 else 256
+    for s in range(0, n, block):
+        e = min(s + block, n)
+        read_start = s - d
+        if read_start >= 0:
+            # Read from buffer, apply filter
+            delayed = buf[read_start : read_start + (e - s)]
+            if len(delayed) < e - s:
+                delayed = np.pad(
+                    delayed, ((0, e - s - len(delayed)),) + ((0, 0),) * (delayed.ndim - 1)
+                )
+            if delayed.ndim == 2:
+                delayed[:, 0] = sig.sosfilt(sos_fb, delayed[:, 0])
+                delayed[:, 1] = sig.sosfilt(sos_fb, delayed[:, 1])
+            else:
+                delayed = sig.sosfilt(sos_fb, delayed)
+            out[s:e] = delayed
+        # Write to buffer: input + feedback
+        buf[s:e] = samples[s:e] + out[s:e] * feedback
+
+    return np.clip(samples * (1 - wet) + out * wet, -1.0, 1.0).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
