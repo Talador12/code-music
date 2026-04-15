@@ -3332,3 +3332,104 @@ dim_maj7, aug_maj7, quartal (stacked 4ths).
 
 **Stats:** 595+ public functions. 3338 tests. 415 songs. 85 presets.
 53 scales. 36 chords. 5 albums. 8 synthesis types all with presets.
+
+## v170 Session Summary
+
+Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
+
+### Shipped
+- 80+ new instrument presets (200+ total): orchestral, world, synth, percussion
+- 8 new effects: shimmer reverb, spring reverb, rotary speaker, tape wow/flutter,
+  lo-fi vinyl, harmonic exciter, pitch shift (kept original)
+- 50+ new chord shapes (85+ total): polychords, clusters, slash, quintal, spectral,
+  Messiaen, jazz/funk/bossa/lofi/big band voicings
+- Dynamic range system: PPPP-FFFF constants, velocity curves, dynamics()
+- Pitch range: octave_up/down, double_octave
+- Velocity-to-timbre: per-family brightness/darkness (brass, woodwind, string,
+  plucked, keys, choir) - soft=dark, loud=bright with non-linear curve
+- Articulation system: Note.articulation field + 30 synth-aware profiles
+  (pizzicato, sul ponticello, con sordino, muted, harmon mute, brush, mallet, etc.)
+- Performance effects: fermata, caesura, grand_pause, a_tempo, tempo_curve,
+  morendo, calando
+- Genre infrastructure: 10 groove templates, 7 progression templates,
+  clave/cascara/montuno/bossa/funk/lofi/shuffle/big band drum patterns,
+  blues/lofi bass generators
+- Symphony system: Symphony, Movement, Part classes, MusicXML + LilyPond
+  orchestral score export, part extraction, transposing instruments
+- Big band orchestrator: orchestrate_big_band() with brass soli, reed section
+- Ska infrastructure: 8 genre variants, ska_drum_pattern (3 styles),
+  skank_pattern (3 styles), ska_bass_line (3 styles), ska_horn_riff (3 styles),
+  ska/rocksteady/dub groove templates
+- Metal engine: harmonize_lead (diatonic), dual_guitar, drop_tuning (5 tunings),
+  metal_drum_pattern (5 styles), palm_mute_chug (5 patterns), clean_arpeggio (4 styles)
+- Genre transform engine: genre_transform() with 52 genre profiles, 7 layered
+  transforms (rhythm, harmony, instruments, groove, dynamics, articulation, effects),
+  28 named rhythm patterns
+- Rhythm game exporters: export_stepmania (.sm), export_clone_hero (.chart),
+  5 difficulty levels, onset extraction, difficulty scaling
+
+### Stubbed Albums
+- Rasputin Remixes (12 tracks, every genre)
+- RUSH-ABC (26 tracks, A-Z escalating intensity, RUSH E centerpiece)
+- The Planets (10 tracks, solar system symphonies)
+- Constellations (15 tracks, real night sky patterns as melody seeds)
+- Elements (16 tracks, 4 classical elements x 4 movements)
+- Fibonacci (8 tracks, math-structured music)
+- Time Periods (13 tracks, 800 AD to 2026)
+- The Periodic Table (118 + 10 reaction bonus tracks, magnum opus)
+
+## Backlog: Music Theory Expressiveness
+
+### Ornaments and Turns of Phrase
+- [ ] **Fall** (pitch bend down at end of note, jazz/blues brass staple)
+- [ ] **Doit** (upward pitch scoop, jazz trumpet going "bweeee" up)
+- [ ] **Bend** (guitar-style pitch bend, half step to full step, with rate control)
+- [ ] **Scoop** (approach from below, slide into the note)
+- [ ] **Plop** (approach from above, fall into the note)
+- [ ] **Glissando** (smooth pitch slide between two notes, distinct from portamento)
+- [ ] **Portamento** (continuous pitch glide, synth-style)
+- [ ] **Turn / Gruppetto** (upper-note-main-lower-main ornament, classical)
+- [ ] **Inverted turn** (lower-note-main-upper-main)
+- [ ] **Mordent** (rapid alternation with adjacent note, exists but could be better)
+- [ ] **Double mordent** (extended alternation)
+- [ ] **Appoggiatura** (accented non-chord tone that resolves, "leaning" note)
+- [ ] **Acciaccatura** (crushed grace note, as fast as possible)
+- [ ] **Shake** (brass lip trill between harmonics, big band lead trumpet move)
+- [ ] **Rip** (brass glissando up to a note, big band shout chorus energy)
+- [ ] **Smear** (slow brass glissando between notes)
+- [ ] **Ghost bend** (guitar: bend up before picking, release to pitch)
+
+### Tuplets and Rhythmic Subdivisions
+- [ ] **Arbitrary n-tuplet** (quintuplet=5, sextuplet=6, septuplet=7, etc.)
+- [ ] **Nested tuplets** (triplet of quintuplets, etc.)
+- [ ] **Irrational tuplets** (7:4, 5:3, 11:8 - Ligeti territory)
+- [ ] **Swing tuplet** (long-short with arbitrary ratio, not just triplet swing)
+- [ ] **Metric modulation via tuplet** (quintuplet becomes new quarter note)
+- [ ] **Hemiola via tuplet** (3 over 2, 2 over 3)
+
+### Advanced Music Theory Application
+- [ ] **Voice leading rules as constraints** (parallel 5ths/8ths avoidance
+      applied automatically in harmonize_lead, chord voicing, etc.)
+- [ ] **Tendency tone resolution** (7th of chord resolves down, leading tone
+      resolves up, applied as default in voice_lead and harmonize_melody)
+- [ ] **Suspensions with preparation and resolution** (sus4 prepared by 4th
+      in previous chord, resolves to 3rd - not just a sus4 chord shape)
+- [ ] **Sequences** (melodic/harmonic pattern transposed through the scale -
+      exists as sequence_by_interval but needs more real-world patterns)
+- [ ] **Pedal tones** (sustained bass or soprano note while harmony moves,
+      exists as pedal_point but not integrated with chord progressions)
+- [ ] **Passing chords** (chromatic or diatonic chords between structural chords,
+      automatic insertion based on voice leading rules)
+- [ ] **Neighbor tones** (non-chord tones that step away and return, as
+      automatic ornamentation applied to melody)
+- [ ] **Escape tones** (step in one direction, leap in the other)
+- [ ] **Anticipation** (arriving at next chord's note early)
+- [ ] **Retardation** (arriving at next chord's note late, opposite of suspension)
+
+### Dynamics and Expression
+- [ ] **Hairpin dynamics** (crescendo/decrescendo with beat-level granularity,
+      not just start/end velocity)
+- [ ] **Subito dynamics** (sudden change, subito piano, subito forte)
+- [ ] **Messa di voce** (pp -> ff -> pp on a single sustained note)
+- [ ] **Accent patterns** (marcato, tenuto, staccatissimo as articulations)
+- [ ] **Breath marks** (natural phrasing pauses for wind/vocal lines)

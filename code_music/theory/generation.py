@@ -1134,6 +1134,101 @@ def bass_line_latin(
             result.append(Note(_NOTE_NAMES[next_k], octave, 0.5, velocity=95))
         else:
             result.append(Note(_NOTE_NAMES[k], octave, 0.5, velocity=80))
+    return result
+
+
+def bass_line_blues(
+    progression: list[tuple[str, str]],
+    octave: int = 2,
+    style: str = "shuffle",
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a blues bass line with shuffle or boogie feel.
+
+    Blues bass is about the groove. Shuffle bass walks in triplet feel,
+    alternating root and fifth. Boogie bass adds the 6th for that
+    classic boogie-woogie left-hand piano feel.
+
+    Args:
+        progression: Chord progression.
+        octave:      Bass octave.
+        style:       "shuffle" (root-fifth), "boogie" (root-3rd-5th-6th),
+                     "walking" (jazz-blues walking).
+        seed:        Random seed.
+
+    Returns:
+        List of Notes.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    result: list[Note] = []
+
+    for root_name, shape in progression:
+        k = _semi(root_name)
+        third = (k + 4) % 12 if "min" not in shape else (k + 3) % 12
+        fifth = (k + 7) % 12
+        sixth = (k + 9) % 12
+
+        if style == "boogie":
+            # Boogie-woogie: root-3-5-6-5-3-root-root
+            pattern = [k, third, fifth, sixth, fifth, third, k, k]
+            for p in pattern:
+                result.append(Note(_NOTE_NAMES[p], octave, 0.5, velocity=80))
+        elif style == "walking":
+            # Walking blues: root, chromatic approach tones, scalar
+            tones = [k, third, fifth, (k + 10) % 12]
+            rng.shuffle(tones)
+            for p in tones:
+                result.append(Note(_NOTE_NAMES[p], octave, 1.0, velocity=85))
+        else:
+            # Shuffle: root-fifth alternation in triplet feel
+            for beat in range(4):
+                result.append(Note(_NOTE_NAMES[k], octave, 0.667, velocity=85))
+                result.append(Note(_NOTE_NAMES[fifth], octave, 0.333, velocity=70))
+
+    return result
+
+
+def bass_line_lofi(
+    progression: list[tuple[str, str]],
+    octave: int = 2,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a lofi hip-hop bass line.
+
+    Minimal, spacious, slightly behind the beat. Roots and fifths
+    with lots of space. Pair with lofi groove template for the full
+    midnight-study-session energy.
+
+    Args:
+        progression: Chord progression.
+        octave:      Bass octave.
+        seed:        Random seed.
+
+    Returns:
+        List of Notes.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    result: list[Note] = []
+
+    for root_name, shape in progression:
+        k = _semi(root_name)
+        fifth = (k + 7) % 12
+
+        # Sparse: root on 1, maybe fifth on 3, rest of the bar breathes
+        result.append(Note(_NOTE_NAMES[k], octave, 1.0, velocity=rng.uniform(0.55, 0.7)))
+        if rng.random() > 0.3:
+            result.append(Note.rest(1.0))
+        else:
+            result.append(Note(_NOTE_NAMES[fifth], octave, 1.0, velocity=rng.uniform(0.45, 0.6)))
+        if rng.random() > 0.5:
+            result.append(Note(_NOTE_NAMES[k], octave, 1.0, velocity=rng.uniform(0.4, 0.55)))
+            result.append(Note.rest(1.0))
+        else:
+            result.append(Note.rest(2.0))
 
     return result
 

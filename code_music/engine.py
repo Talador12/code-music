@@ -53,6 +53,37 @@ DOUBLE_DOTTED_QUARTER = 1.75
 DOUBLE_DOTTED_HALF = 3.5
 
 
+# ---------------------------------------------------------------------------
+# Dynamic markings — standard velocity values for musical dynamics
+# ---------------------------------------------------------------------------
+PPPP = 0.08  # pianississimo — barely audible
+PPP = 0.15  # pianissimo piano — very very soft
+PP = 0.25  # pianissimo — very soft
+P = 0.35  # piano — soft
+MP = 0.50  # mezzo-piano — moderately soft
+MF = 0.62  # mezzo-forte — moderately loud
+F = 0.75  # forte — loud
+FF = 0.85  # fortissimo — very loud
+FFF = 0.92  # forte fortissimo — very very loud
+FFFF = 0.98  # fortississimo — as loud as possible without distortion
+# Accent modifiers (multiply with base dynamic)
+SFZ = 1.0  # sforzando — sudden strong accent
+FP = 0.40  # forte-piano — loud attack, immediately soft
+SFP = 0.45  # sforzando-piano — accented then soft
+FZ = 0.95  # forzando — forced accent
+RF = 0.88  # rinforzando — reinforced
+
+# Velocity curve presets for different instrument behaviors
+VELOCITY_CURVES = {
+    "linear": lambda v: v,
+    "exponential": lambda v: v**2.0,
+    "logarithmic": lambda v: v**0.5,
+    "s_curve": lambda v: 3 * v**2 - 2 * v**3,
+    "piano": lambda v: v**1.5,  # harder touch = more volume
+    "organ": lambda v: 0.6 + v * 0.4,  # always audible, less range
+    "percussion": lambda v: v**0.7,  # sensitive to light touch
+}
+
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 # Enharmonic aliases — normalized when resolving pitch names
@@ -202,6 +233,84 @@ CHORD_SHAPES.update(
         "dim_maj7": [0, 3, 6, 11],  # Diminished major 7th
         "aug_maj7": [0, 4, 8, 11],  # Augmented major 7th
         "quartal": [0, 5, 10, 15],  # Stacked 4ths (McCoy Tyner)
+        # ── v170 expansions ──────────────────────────────────────────────
+        # Quintal / extended quartal stacks
+        "quintal": [0, 7, 14, 21],  # Stacked 5ths (Hindemith, Debussy)
+        "quartal5": [0, 5, 10, 15, 20],  # 5-note quartal stack
+        "quintal4": [0, 7, 14, 21],  # 4-note quintal stack (alias)
+        # Polychords (two triads superimposed)
+        "poly_C_D": [0, 4, 7, 2, 6, 9],  # C + D = Stravinsky / Petrushka
+        "poly_C_Gb": [0, 4, 7, 6, 10, 13],  # C + Gb = tritone polychord
+        "poly_C_E": [0, 4, 7, 4, 8, 11],  # C + E = Messiaen color
+        # Clusters (adjacent semitones - Cowell, Ligeti, Penderecki)
+        "cluster3": [0, 1, 2],  # 3-note chromatic cluster
+        "cluster4": [0, 1, 2, 3],  # 4-note chromatic cluster
+        "cluster5": [0, 1, 2, 3, 4],  # 5-note chromatic cluster
+        "diatonic_cluster3": [0, 2, 4],  # 3-note diatonic cluster
+        "diatonic_cluster4": [0, 2, 4, 5],  # 4-note diatonic cluster
+        # Slash chords (voicing with specific bass note offset)
+        "maj_inv1_bass": [-8, 0, 4, 7],  # C/E (E in bass, -8 from root)
+        "maj_inv2_bass": [-5, 0, 4, 7],  # C/G (G in bass)
+        "min_inv1_bass": [-9, 0, 3, 7],  # Cm/Eb
+        # Extended altered dominants
+        "7b5": [0, 4, 6, 10],  # Dominant flat 5
+        "7#5": [0, 4, 8, 10],  # Dominant sharp 5
+        "7b5b9": [0, 4, 6, 10, 13],  # Altered tritone sub voicing
+        "7#5#9": [0, 4, 8, 10, 15],  # Full altered dominant
+        "7b13": [0, 4, 7, 10, 20],  # Dominant flat 13
+        "9#11": [0, 4, 7, 10, 14, 18],  # Lydian dominant 9th
+        "13#11": [0, 4, 7, 10, 14, 18, 21],  # Full lydian dominant
+        # More jazz / neo-soul voicings
+        "min_maj7": [0, 3, 7, 11],  # Minor major 7th (Bond chord)
+        "min_add9": [0, 3, 7, 14],  # Minor add 9 (Radiohead)
+        "maj_add9": [0, 4, 7, 14],  # Major add 9 (same as add9)
+        "7sus2": [0, 2, 7, 10],  # Dominant 7 sus 2
+        "9sus4": [0, 5, 7, 10, 14],  # 9 sus 4 (gospel / neo-soul)
+        "min7_add11": [0, 3, 7, 10, 17],  # Minor 7 add 11
+        "maj7_add13": [0, 4, 7, 11, 21],  # Major 7 add 13
+        # Spectral / extended harmony (Grisey, Murail, Saariaho)
+        "harmonic7": [0, 12, 19, 24, 28],  # Partials 1-5 from harmonic series
+        "harmonic9": [0, 12, 19, 24, 28, 31],  # Partials 1-6
+        "spectral_cluster": [0, 12, 19, 24, 28, 31, 34],  # Partials 1-7
+        # Messiaen modes of limited transposition chords
+        "messiaen_mode2": [0, 1, 3, 4, 6, 7, 9, 10],  # Octatonic
+        "messiaen_mode3": [0, 2, 3, 4, 6, 7, 8, 10, 11],  # 9-note scale
+        # Mu chord (Steely Dan) and other pop extensions
+        "mu": [0, 2, 4, 7],  # Major with added 2nd
+        "mu7": [0, 2, 4, 7, 11],  # Mu chord with major 7th
+        # ── Jazz / Blues / Funk / Neo-soul voicings ──────────────────────
+        # Blues-specific
+        "dom7#9": [0, 4, 7, 10, 15],  # Hendrix chord (alias for 7#9)
+        "dom7b9#9": [0, 4, 7, 10, 13, 15],  # tritone crunch
+        "dom9#11": [0, 4, 7, 10, 14, 18],  # Lydian dominant 9th
+        "blues_maj": [0, 3, 4, 7],  # major with blue note (b3 grace)
+        # Funk one-chord vamp voicings
+        "min7_funk": [0, 3, 7, 10, 14, 17],  # min11 - the funk default
+        "dom7_funk": [0, 4, 7, 10, 14],  # 9th - JB / Herbie
+        "min9_funk": [0, 3, 7, 10, 14],  # same as min9 but named for funk
+        # Neo-soul / R&B / Gospel
+        "maj9#11": [0, 4, 7, 11, 14, 18],  # Erykah Badu / D'Angelo
+        "min11_neo": [0, 3, 5, 7, 10, 14],  # open neo-soul voicing
+        "dom7#9#5": [0, 4, 8, 10, 15],  # altered funk chord
+        "dim_add9": [0, 3, 6, 14],  # diminished + 9th (gospel passing)
+        "maj7#5": [0, 4, 8, 11],  # augmented major 7 (Stevie Wonder)
+        "min_add11": [0, 3, 7, 17],  # minor add 11 (neo-soul open)
+        # Bossa nova / Latin jazz
+        "6_9": [0, 4, 7, 9, 14],  # alias for 6/9 (bossa standard)
+        "min6_9": [0, 3, 7, 9, 14],  # minor 6/9 (Jobim)
+        "dom7b9_latin": [0, 4, 7, 10, 13],  # b9 for Latin ii-V
+        "dom7#11_latin": [0, 4, 7, 10, 18],  # #11 for Latin V
+        # Chill / Lofi / Ambient
+        "maj7_open": [0, 7, 11, 16],  # wide maj7 (lofi Rhodes)
+        "min7_open": [0, 7, 10, 15],  # wide min7 (lofi keys)
+        "add9_open": [0, 7, 14, 16],  # wide add9 (ambient)
+        "sus4_add9": [0, 5, 7, 14],  # sus4 with 9th (ambient floating)
+        "maj7sus2": [0, 2, 7, 11],  # major 7 sus 2 (dreamy)
+        # Big band section voicings (close position for sax/brass soli)
+        "dom13": [0, 4, 7, 10, 14, 17, 21],  # full 13th
+        "dom13_shell": [0, 4, 10, 21],  # root-3-7-13 (tight soli)
+        "min13_shell": [0, 3, 10, 21],  # min root-b3-b7-13
+        "dom7_drop24": [0, 4, -3, 10],  # drop 2-4 voicing
     }
 )
 
@@ -255,19 +364,32 @@ def midi_to_note_name(midi_num: int) -> tuple[str, int]:
 
 @dataclass
 class Note:
-    """A single pitched note with duration and velocity.
+    """A single pitched note with duration, velocity, and articulation.
 
     Attributes:
         pitch: Note name (e.g. 'A', 'C#') or MIDI number or None for rest.
         octave: Octave number (4 = middle octave, A4 = 440 Hz).
         duration: Duration in beats (1.0 = quarter note at current BPM).
-        velocity: 0.0–1.0 volume/intensity.
+        velocity: 0.0-1.0 volume/intensity.
+        articulation: Playing technique that changes timbre, not just duration.
+            None = default for the instrument. Common values:
+            Strings: "arco", "pizzicato", "tremolo", "harmonics", "col_legno",
+                     "sul_ponticello", "sul_tasto", "spiccato", "con_sordino"
+            Brass:   "open", "muted", "harmon_mute", "cup_mute", "stopped",
+                     "flutter_tongue", "sforzando"
+            Woodwind: "normal", "flutter_tongue", "overblown", "subtone",
+                      "slap_tongue"
+            Keys:    "normal", "damped", "prepared", "una_corda", "tre_corde"
+            Percussion: "stick", "mallet", "brush", "rod", "hot_rod",
+                        "rimshot", "cross_stick", "rim_click", "dead_stroke",
+                        "flam", "roll"
     """
 
     pitch: str | int | None  # name, MIDI int, or None for rest
     octave: int = 4
     duration: float = 1.0  # beats
     velocity: float = 0.8
+    articulation: str | None = None
 
     @property
     def freq(self) -> float | None:
@@ -753,15 +875,15 @@ def humanize(
 
 
 def staccato(notes: list[Note], factor: float = 0.5) -> list[Note]:
-    """Shorten note durations to create staccato articulation.
+    """Shorten note durations and tag with staccato articulation.
 
     Each note's sounding duration is shortened to `factor` of its original,
-    with the remaining time becoming silence (rest). This creates the detached,
-    clipped feel of staccato playing.
+    with the remaining time becoming silence (rest). The synth also sees the
+    "staccato" articulation tag and applies a sharper release envelope.
 
     Args:
         notes:  List of Notes to articulate.
-        factor: 0.0–1.0 — fraction of note duration that sounds (0.5 = half).
+        factor: 0.0-1.0 - fraction of note duration that sounds (0.5 = half).
     """
     result = []
     for n in notes:
@@ -770,17 +892,25 @@ def staccato(notes: list[Note], factor: float = 0.5) -> list[Note]:
             continue
         sound_dur = max(0.05, n.duration * factor)
         rest_dur = n.duration - sound_dur
-        result.append(Note(pitch=n.pitch, octave=n.octave, duration=sound_dur, velocity=n.velocity))
+        result.append(
+            Note(
+                pitch=n.pitch,
+                octave=n.octave,
+                duration=sound_dur,
+                velocity=n.velocity,
+                articulation="staccato",
+            )
+        )
         if rest_dur > 0.01:
             result.append(Note.rest(rest_dur))
     return result
 
 
 def legato(notes: list[Note], overlap: float = 0.1) -> list[Note]:
-    """Extend note durations slightly for legato (slurred) articulation.
+    """Extend note durations and tag with legato articulation.
 
     Each note is lengthened by `overlap` beats so it slightly overlaps the next.
-    This creates the connected, smooth feel of legato playing.
+    The synth sees the "legato" tag and uses a slower attack and longer release.
 
     Args:
         notes:   List of Notes to articulate.
@@ -797,17 +927,34 @@ def legato(notes: list[Note], overlap: float = 0.1) -> list[Note]:
                     octave=n.octave,
                     duration=n.duration + overlap,
                     velocity=n.velocity,
+                    articulation="legato",
                 )
             )
     return result
 
 
 def pizzicato(notes: list[Note]) -> list[Note]:
-    """Convert notes to pizzicato articulation: very short, plucked feel.
+    """Convert notes to pizzicato articulation: plucked string sound.
 
-    Equivalent to staccato(notes, factor=0.15).
+    Sets the articulation to "pizzicato" which the synth renders with a
+    percussive attack, zero sustain, and reduced harmonics. Much more
+    realistic than just shortening the duration.
     """
-    return staccato(notes, factor=0.15)
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+        else:
+            result.append(
+                Note(
+                    pitch=n.pitch,
+                    octave=n.octave,
+                    duration=n.duration,
+                    velocity=n.velocity,
+                    articulation="pizzicato",
+                )
+            )
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -1286,6 +1433,250 @@ def repeat(events: list, n: int) -> list:
     result = []
     for _ in range(n):
         result.extend(events)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Pitch range utilities — octave shifting and doubling
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Articulation helpers — set the articulation field for synth-aware rendering
+# ---------------------------------------------------------------------------
+
+
+def con_sordino(notes: list[Note]) -> list[Note]:
+    """Apply mute (con sordino) to notes. Darker, softer timbre."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="con_sordino")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def senza_sordino(notes: list[Note]) -> list[Note]:
+    """Remove mute. Return to normal open sound."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation=None)
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def sul_ponticello(notes: list[Note]) -> list[Note]:
+    """Bow near the bridge. Glassy, metallic, harmonic-rich."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="sul_ponticello")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def sul_tasto(notes: list[Note]) -> list[Note]:
+    """Bow over the fingerboard. Breathy, dark, flute-like."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="sul_tasto")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def col_legno(notes: list[Note]) -> list[Note]:
+    """Strike with the wood of the bow. Percussive, dry click."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="col_legno")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def spiccato(notes: list[Note]) -> list[Note]:
+    """Bouncing bow. Short, crisp, more resonant than staccato."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="spiccato")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def tremolo_bow(notes: list[Note]) -> list[Note]:
+    """Rapid bow tremolo. Shimmering, agitated sustain."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="tremolo")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def harmonics(notes: list[Note]) -> list[Note]:
+    """Natural harmonics. Pure, bell-like, ethereal overtone."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="harmonics")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def muted(notes: list[Note]) -> list[Note]:
+    """Muted/stopped brass or palm-muted guitar."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="muted")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def flutter_tongue(notes: list[Note]) -> list[Note]:
+    """Flutter tongue on brass/woodwind. Buzzy, tremolo-like."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="flutter_tongue")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def with_brushes(notes: list[Note]) -> list[Note]:
+    """Percussion played with brushes instead of sticks."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="brush")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def with_mallets(notes: list[Note]) -> list[Note]:
+    """Percussion played with soft mallets. Warmer, rounder attack."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="mallet")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def with_rods(notes: list[Note]) -> list[Note]:
+    """Percussion played with rods/hot rods. Between stick and brush."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="rod")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def rim_click(notes: list[Note]) -> list[Note]:
+    """Cross-stick / rim click. Woodblock-like from a snare drum."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="cross_stick")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def dead_stroke(notes: list[Note]) -> list[Note]:
+    """Dead stroke on percussion. Hit and immediately dampen. Dry thud."""
+    return [
+        Note(n.pitch, n.octave, n.duration, n.velocity, articulation="dead_stroke")
+        if n.pitch is not None
+        else n
+        for n in notes
+    ]
+
+
+def octave_up(notes: list[Note], n: int = 1) -> list[Note]:
+    """Shift all notes up by n octaves (12 semitones each)."""
+    return transpose(notes, 12 * n)
+
+
+def octave_down(notes: list[Note], n: int = 1) -> list[Note]:
+    """Shift all notes down by n octaves (12 semitones each)."""
+    return transpose(notes, -12 * n)
+
+
+def double_octave(notes: list[Note], direction: str = "both") -> list[Note]:
+    """Double notes at the octave for a fuller sound.
+
+    Args:
+        notes: Input notes.
+        direction: "up" (add octave above), "down" (add octave below),
+                   "both" (add both). Each note becomes 2 or 3 simultaneous pitches
+                   expressed as sequential notes with zero-duration spacing.
+
+    Returns:
+        Expanded note list with octave doublings interleaved.
+    """
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+            continue
+        result.append(n)
+        midi = n.midi
+        if midi is None:
+            continue
+        if direction in ("up", "both"):
+            result.append(Note(pitch=midi + 12, duration=n.duration, velocity=n.velocity * 0.7))
+        if direction in ("down", "both"):
+            result.append(Note(pitch=midi - 12, duration=n.duration, velocity=n.velocity * 0.65))
+    return result
+
+
+def velocity_curve(notes: list[Note], curve: str = "linear") -> list[Note]:
+    """Apply a velocity curve to reshape dynamics without changing velocity values.
+
+    Args:
+        notes: Input notes.
+        curve: Curve name from VELOCITY_CURVES: "linear", "exponential",
+               "logarithmic", "s_curve", "piano", "organ", "percussion".
+
+    Returns:
+        Notes with velocities remapped through the curve function.
+    """
+    fn = VELOCITY_CURVES.get(curve, VELOCITY_CURVES["linear"])
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+        else:
+            new_vel = max(0.01, min(1.0, fn(n.velocity)))
+            result.append(
+                Note(pitch=n.pitch, octave=n.octave, duration=n.duration, velocity=new_vel)
+            )
+    return result
+
+
+def dynamics(notes: list[Note], marking: float) -> list[Note]:
+    """Set all notes to a specific dynamic marking.
+
+    Args:
+        notes: Input notes.
+        marking: One of the dynamic constants (PP, MP, MF, F, FF, etc.)
+                 or any float 0.0-1.0.
+
+    Returns:
+        Notes with velocity set to the marking value.
+    """
+    result = []
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+        else:
+            result.append(
+                Note(pitch=n.pitch, octave=n.octave, duration=n.duration, velocity=marking)
+            )
     return result
 
 

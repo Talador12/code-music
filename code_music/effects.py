@@ -2479,3 +2479,357 @@ def room_reverb(
         wet_stereo = np.column_stack([wet_signal, wet_signal])
         return (1 - wet) * samples + wet * wet_stereo
     return (1 - wet) * samples + wet * wet_signal
+
+
+# ---------------------------------------------------------------------------
+# Shimmer reverb — pitch-shifted reverb tail for ethereal textures (v170)
+# ---------------------------------------------------------------------------
+
+
+def shimmer_reverb(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    room_size: float = 0.8,
+    damping: float = 0.3,
+    shift_semitones: float = 12.0,
+    shimmer_amount: float = 0.3,
+    wet: float = 0.35,
+) -> FloatArray:
+    """Shimmer reverb: reverb with a pitch-shifted feedback path.
+
+    The reverb tail gets pitch-shifted (typically up an octave) and fed
+    back, creating an ethereal, rising quality. Signature effect of
+    ambient music, post-rock, and film scores. Brian Eno's secret weapon.
+
+    Args:
+        room_size:        Reverb size (0.0-1.0).
+        damping:          High frequency damping.
+        shift_semitones:  Pitch shift for the shimmer (12 = octave up).
+        shimmer_amount:   How much shifted signal feeds back (0.0-1.0).
+        wet:              Wet/dry mix.
+    """
+    # Standard reverb first
+    ir = _make_reverb_ir(sample_rate, room_size, damping)
+    left = samples[:, 0]
+    right = samples[:, 1]
+
+    rev_l = sig.fftconvolve(left, ir, mode="full")[: len(left)]
+    rev_r = sig.fftconvolve(right, np.roll(ir, 1), mode="full")[: len(right)]
+
+    for rev in (rev_l, rev_r):
+        p = np.max(np.abs(rev))
+        if p > 0:
+            rev /= p
+
+    # Pitch shift the reverb tail up
+    ratio = 2 ** (shift_semitones / 12.0)
+    target_len = max(1, int(len(rev_l) / ratio))
+    shifted_l = sig.resample(rev_l, target_len)
+    shifted_r = sig.resample(rev_r, target_len)
+
+    # Pad or trim to original length
+    n = len(left)
+    if len(shifted_l) < n:
+        shifted_l = np.pad(shifted_l, (0, n - len(shifted_l)))
+        shifted_r = np.pad(shifted_r, (0, n - len(shifted_r)))
+    else:
+        shifted_l = shifted_l[:n]
+        shifted_r = shifted_r[:n]
+
+    # Mix: dry + reverb + shimmer
+    out_l = left * (1 - wet) + rev_l * wet * (1 - shimmer_amount) + shifted_l * wet * shimmer_amount
+    out_r = (
+        right * (1 - wet) + rev_r * wet * (1 - shimmer_amount) + shifted_r * wet * shimmer_amount
+    )
+
+    return np.column_stack([out_l, out_r]).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Spring reverb — the classic guitar amp reverb (v170)
+# ---------------------------------------------------------------------------
+
+
+def spring_reverb(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    tension: float = 0.6,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Spring reverb: metallic, boingy character of a spring tank.
+
+    The reverb found in every Fender amp since 1963. Characterized by
+    a bright, splashy attack followed by a metallic decay. Hit the amp
+    hard enough and it goes SPROING.
+
+    Args:
+        tension:  Spring tension (0.0=loose/long, 1.0=tight/short).
+        wet:      Wet/dry mix.
+    """
+    # Model spring reverb as a series of closely-spaced comb filters
+    decay = 0.3 + (1.0 - tension) * 1.5
+    ir_len = int(decay * sample_rate)
+    rng = np.random.default_rng(73)
+
+    # Spring resonances: metallic, evenly-spaced peaks
+    ir = np.zeros(ir_len)
+    n_springs = 3
+    for s in range(n_springs):
+        base_delay = int((0.008 + s * 0.004) * sample_rate)
+        for tap in range(50):
+            pos = base_delay * (tap + 1)
+            if pos >= ir_len:
+                break
+            amp = 0.7**tap * rng.choice([-1, 1])
+            ir[min(pos, ir_len - 1)] += amp / n_springs
+
+    # Envelope and high-pass (springs are bright)
+    t = np.arange(ir_len) / sample_rate
+    env = np.exp(-4.0 * t / decay)
+    ir *= env
+
+    cutoff = 400.0
+    sos = sig.butter(2, cutoff, btype="high", fs=sample_rate, output="sos")
+    ir = sig.sosfilt(sos, ir)
+
+    peak = np.max(np.abs(ir))
+    if peak > 0:
+        ir /= peak
+
+    left = sig.fftconvolve(samples[:, 0], ir, mode="full")[: len(samples)]
+    right = sig.fftconvolve(samples[:, 1], ir * 0.9, mode="full")[: len(samples)]
+
+    for ch in (left, right):
+        p = np.max(np.abs(ch))
+        if p > 0:
+            ch /= p
+
+    return np.column_stack(
+        [
+            samples[:, 0] * (1 - wet) + left * wet,
+            samples[:, 1] * (1 - wet) + right * wet,
+        ]
+    ).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Rotary speaker — Leslie cabinet simulation (v170)
+# ---------------------------------------------------------------------------
+
+
+def rotary_speaker(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    speed: str = "slow",
+    wet: float = 0.7,
+) -> FloatArray:
+    """Rotary speaker (Leslie cabinet) simulation.
+
+    The sound of a Hammond B3 organ. A spinning horn (treble) and drum
+    (bass) create Doppler pitch shift, amplitude tremolo, and spatial
+    movement. "Slow" is chorale, "fast" is tremolo. The transition
+    between them is half the magic.
+
+    Args:
+        speed:  "slow" (chorale, 0.8 Hz) or "fast" (tremolo, 6.8 Hz).
+        wet:    Wet/dry mix.
+    """
+    rates = {"slow": 0.8, "fast": 6.8, "brake": 0.0}
+    rate = rates.get(speed, 0.8)
+
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+
+    # Amplitude modulation (tremolo component)
+    am = 0.5 + 0.5 * np.sin(2 * np.pi * rate * t)
+
+    # Frequency modulation via time-warping (Doppler component)
+    depth_samples = rate * 0.002 * sample_rate  # ~2ms depth
+    offsets = depth_samples * np.sin(2 * np.pi * rate * t)
+    indices = np.clip(np.arange(n, dtype=np.float64) - offsets, 0, n - 1)
+
+    lo = np.floor(indices).astype(int)
+    hi = np.minimum(lo + 1, n - 1)
+    frac = indices - lo
+
+    # Stereo: left horn leads, right horn lags by 90 degrees
+    am_r = 0.5 + 0.5 * np.sin(2 * np.pi * rate * t + np.pi / 2)
+    offsets_r = depth_samples * np.sin(2 * np.pi * rate * t + np.pi / 2)
+    indices_r = np.clip(np.arange(n, dtype=np.float64) - offsets_r, 0, n - 1)
+    lo_r = np.floor(indices_r).astype(int)
+    hi_r = np.minimum(lo_r + 1, n - 1)
+    frac_r = indices_r - lo_r
+
+    warped_l = (samples[lo, 0] * (1 - frac) + samples[hi, 0] * frac) * am
+    warped_r = (samples[lo_r, 1] * (1 - frac_r) + samples[hi_r, 1] * frac_r) * am_r
+
+    return np.column_stack(
+        [
+            samples[:, 0] * (1 - wet) + warped_l * wet,
+            samples[:, 1] * (1 - wet) + warped_r * wet,
+        ]
+    ).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Tape wow and flutter — analog tape imperfections (v170)
+# ---------------------------------------------------------------------------
+
+
+def tape_wow_flutter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    wow_rate: float = 0.5,
+    wow_depth: float = 0.003,
+    flutter_rate: float = 6.0,
+    flutter_depth: float = 0.001,
+    wet: float = 0.8,
+) -> FloatArray:
+    """Tape wow and flutter: slow and fast pitch variations of analog tape.
+
+    Wow is the slow waver (capstan irregularity, 0.5-2 Hz). Flutter is
+    the fast variation (motor vibration, 4-10 Hz). Together they create
+    the subtle pitch instability that makes tape sound alive.
+
+    Args:
+        wow_rate:       Wow LFO speed in Hz (0.5-2.0 typical).
+        wow_depth:      Wow modulation depth (0.001-0.005).
+        flutter_rate:   Flutter LFO speed in Hz (4-10 typical).
+        flutter_depth:  Flutter modulation depth (0.0005-0.002).
+        wet:            Wet/dry mix.
+    """
+    n = len(samples)
+    t = np.arange(n) / sample_rate
+
+    # Combined modulation signal
+    mod = wow_depth * np.sin(2 * np.pi * wow_rate * t) + flutter_depth * np.sin(
+        2 * np.pi * flutter_rate * t
+    )
+
+    # Time-warp via modulated read position
+    offsets = mod * sample_rate
+    indices = np.clip(np.arange(n, dtype=np.float64) - offsets, 0, n - 1)
+    lo = np.floor(indices).astype(int)
+    hi = np.minimum(lo + 1, n - 1)
+    frac = indices - lo
+
+    warped_l = samples[lo, 0] * (1 - frac) + samples[hi, 0] * frac
+    warped_r = samples[lo, 1] * (1 - frac) + samples[hi, 1] * frac
+
+    return np.column_stack(
+        [
+            samples[:, 0] * (1 - wet) + warped_l * wet,
+            samples[:, 1] * (1 - wet) + warped_r * wet,
+        ]
+    ).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Lo-fi vinyl — crackle, hiss, and warmth (v170)
+# ---------------------------------------------------------------------------
+
+
+def lofi_vinyl(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    crackle: float = 0.02,
+    hiss: float = 0.01,
+    warmth: float = 0.5,
+    wear: float = 0.3,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Lo-fi vinyl effect: crackle, hiss, filtering, and warmth.
+
+    Simulates a well-loved record player. Crackle = random pops,
+    hiss = tape/surface noise, warmth = low-pass + saturation,
+    wear = high-frequency loss from repeated plays.
+
+    Args:
+        crackle:  Crackle intensity (0.0-0.1).
+        hiss:     Background hiss level (0.0-0.05).
+        warmth:   Low-end warmth / saturation (0.0-1.0).
+        wear:     High-frequency roll-off simulating worn vinyl (0.0-1.0).
+        wet:      Wet/dry mix.
+    """
+    n = len(samples)
+    rng = np.random.default_rng(42)
+    out = samples.copy()
+
+    # Crackle: sparse random impulses
+    if crackle > 0:
+        crackle_signal = np.zeros(n)
+        n_pops = int(n * crackle * 0.01)
+        pop_positions = rng.integers(0, n, size=n_pops)
+        pop_amplitudes = rng.uniform(0.05, 0.3, size=n_pops) * crackle * 10
+        for pos, amp in zip(pop_positions, pop_amplitudes):
+            crackle_signal[pos] = rng.choice([-1, 1]) * amp
+        out[:, 0] += crackle_signal
+        out[:, 1] += crackle_signal
+
+    # Hiss: filtered noise
+    if hiss > 0:
+        noise = rng.standard_normal(n) * hiss
+        sos_hp = sig.butter(2, 2000.0, btype="high", fs=sample_rate, output="sos")
+        noise = sig.sosfilt(sos_hp, noise)
+        out[:, 0] += noise
+        out[:, 1] += noise
+
+    # Warmth: gentle saturation + low-shelf boost
+    if warmth > 0:
+        out = out * (1.0 + warmth * 0.5)
+        out = out / (1 + np.abs(out) * warmth * 0.3)
+        cutoff = 300.0
+        sos_lp = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        low_l = sig.sosfilt(sos_lp, out[:, 0])
+        low_r = sig.sosfilt(sos_lp, out[:, 1])
+        out[:, 0] += low_l * warmth * 0.3
+        out[:, 1] += low_r * warmth * 0.3
+
+    # Wear: high-frequency roll-off
+    if wear > 0:
+        cutoff = max(2000.0, min(16000.0 * (1.0 - wear), sample_rate / 2 - 1))
+        sos_wear = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        out[:, 0] = sig.sosfilt(sos_wear, out[:, 0])
+        out[:, 1] = sig.sosfilt(sos_wear, out[:, 1])
+
+    result = samples * (1 - wet) + out * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+# ---------------------------------------------------------------------------
+# Harmonic exciter — add sparkle and presence (v170)
+# ---------------------------------------------------------------------------
+
+
+def harmonic_exciter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    frequency: float = 3000.0,
+    drive: float = 2.0,
+    mix: float = 0.15,
+) -> FloatArray:
+    """Harmonic exciter: generate and add upper harmonics for presence.
+
+    Filters the signal above a frequency, applies saturation to generate
+    new harmonics, then blends back. The Aphex Aural Exciter in a function.
+    Makes dull mixes sparkle without just turning up the treble.
+
+    Args:
+        frequency:  High-pass frequency for exciter input (Hz).
+        drive:      Saturation amount for harmonic generation.
+        mix:        How much excited signal to add (0.0-0.5 typical).
+    """
+    # Extract high frequencies
+    sos = sig.butter(2, frequency, btype="high", fs=sample_rate, output="sos")
+    hi_l = sig.sosfilt(sos, samples[:, 0])
+    hi_r = sig.sosfilt(sos, samples[:, 1])
+
+    # Generate harmonics via soft saturation
+    excited_l = np.tanh(hi_l * drive)
+    excited_r = np.tanh(hi_r * drive)
+
+    # Blend back
+    out_l = samples[:, 0] + excited_l * mix
+    out_r = samples[:, 1] + excited_r * mix
+
+    return np.clip(np.column_stack([out_l, out_r]), -1.0, 1.0).astype(np.float64)

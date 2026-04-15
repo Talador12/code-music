@@ -66,17 +66,18 @@ class TestLegato:
 
 
 class TestPizzicato:
-    def test_very_short(self):
+    def test_sets_articulation(self):
         notes = [Note("C", 4, 2.0)]
         result = pizzicato(notes)
-        # 0.15 * 2.0 = 0.3s sounding
-        assert result[0].duration == pytest.approx(0.3, abs=0.01)
+        # v170: pizzicato sets articulation field, synth handles the pluck via ADSR
+        assert result[0].articulation == "pizzicato"
+        assert result[0].duration == 2.0  # duration preserved (synth handles the short decay)
 
-    def test_produces_rest(self):
+    def test_preserves_pitch(self):
         notes = [Note("A", 4, 1.0)]
         result = pizzicato(notes)
-        assert len(result) == 2
-        assert result[1].pitch is None
+        assert len(result) == 1  # no rest inserted, synth controls decay
+        assert result[0].pitch == "A"
 
 
 class TestProb:

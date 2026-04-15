@@ -131,10 +131,256 @@ class Synth:
         "gong": {"wave": "triangle", "harmonics": 5, "A": 0.01, "D": 0.5, "S": 0.3, "R": 2.0},
         "snare_orch": {"wave": "square", "harmonics": 3, "A": 0.001, "D": 0.12, "S": 0.0, "R": 0.1},
         "cymbals": {"wave": "square", "harmonics": 20, "A": 0.005, "D": 0.8, "S": 0.1, "R": 1.5},
+        # ── Extended Woodwinds (v170) ─────────────────────────────────────────
+        "cor_anglais": {
+            "wave": "square",
+            "harmonics": 8,
+            "A": 0.05,
+            "D": 0.02,
+            "S": 0.87,
+            "R": 0.18,
+        },
+        "bass_clarinet": {
+            "wave": "square",
+            "harmonics": 5,
+            "A": 0.06,
+            "D": 0.03,
+            "S": 0.88,
+            "R": 0.22,
+        },
+        "contrabassoon": {
+            "wave": "sawtooth",
+            "harmonics": 6,
+            "A": 0.08,
+            "D": 0.04,
+            "S": 0.82,
+            "R": 0.25,
+        },
+        "alto_flute": {"wave": "sine", "harmonics": 2, "A": 0.07, "D": 0.02, "S": 0.88, "R": 0.22},
+        "english_horn": {
+            "wave": "square",
+            "harmonics": 7,
+            "A": 0.05,
+            "D": 0.02,
+            "S": 0.86,
+            "R": 0.17,
+        },
+        "soprano_sax": {
+            "wave": "sawtooth",
+            "harmonics": 12,
+            "A": 0.03,
+            "D": 0.02,
+            "S": 0.9,
+            "R": 0.15,
+        },
+        "tenor_sax": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.04,
+            "D": 0.03,
+            "S": 0.87,
+            "R": 0.2,
+        },
+        "bari_sax": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "A": 0.05,
+            "D": 0.04,
+            "S": 0.85,
+            "R": 0.22,
+        },
+        # ── Extended Brass (v170) ─────────────────────────────────────────────
+        "euphonium": {"wave": "square", "harmonics": 9, "A": 0.07, "D": 0.04, "S": 0.83, "R": 0.22},
+        "cornet": {"wave": "square", "harmonics": 11, "A": 0.04, "D": 0.04, "S": 0.86, "R": 0.16},
+        "flugelhorn": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "A": 0.05,
+            "D": 0.05,
+            "S": 0.82,
+            "R": 0.2,
+        },
+        "piccolo_trumpet": {
+            "wave": "square",
+            "harmonics": 14,
+            "A": 0.03,
+            "D": 0.04,
+            "S": 0.87,
+            "R": 0.12,
+        },
+        "bass_trombone": {
+            "wave": "square",
+            "harmonics": 8,
+            "A": 0.07,
+            "D": 0.05,
+            "S": 0.83,
+            "R": 0.25,
+        },
+        "horn_section": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.06,
+            "D": 0.04,
+            "S": 0.85,
+            "R": 0.2,
+        },
+        # ── Extended Strings (v170) ───────────────────────────────────────────
+        "viola": {"wave": "sawtooth", "harmonics": 12, "A": 0.09, "D": 0.03, "S": 0.92, "R": 0.35},
+        "string_section": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.14,
+            "D": 0.05,
+            "S": 0.88,
+            "R": 0.45,
+        },
+        "string_tremolo": {
+            "wave": "sawtooth",
+            "harmonics": 10,
+            "A": 0.02,
+            "D": 0.01,
+            "S": 0.95,
+            "R": 0.15,
+        },
+        "string_harmonics": {
+            "wave": "sine",
+            "harmonics": 2,
+            "A": 0.01,
+            "D": 0.15,
+            "S": 0.3,
+            "R": 0.8,
+        },
+        # ── World Instruments (v170) ──────────────────────────────────────────
+        "erhu": {"wave": "sawtooth", "harmonics": 12, "A": 0.06, "D": 0.02, "S": 0.93, "R": 0.3},
+        "shamisen": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.7},
+        "oud": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.1},
+        "bouzouki": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.8},
+        "dulcimer": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.5},
+        "guzheng": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.3},
+        "balalaika": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.6},
+        "ukulele": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.5},
+        "mandolin": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.45},
+        "steelpan": {"wave": "sine", "harmonics": 4, "A": 0.001, "D": 0.25, "S": 0.15, "R": 0.8},
+        "kalimba": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.2, "S": 0.05, "R": 0.6},
+        "gamelan": {"wave": "triangle", "harmonics": 6, "A": 0.002, "D": 0.35, "S": 0.1, "R": 1.5},
+        "didgeridoo": {"wave": "sawtooth", "harmonics": 4, "A": 0.15, "D": 0.0, "S": 1.0, "R": 0.3},
+        "bagpipe": {"wave": "square", "harmonics": 8, "A": 0.15, "D": 0.0, "S": 1.0, "R": 0.2},
+        "harmonica": {"wave": "square", "harmonics": 6, "A": 0.02, "D": 0.01, "S": 0.92, "R": 0.1},
+        "accordion": {"wave": "square", "harmonics": 8, "A": 0.03, "D": 0.0, "S": 1.0, "R": 0.12},
+        "bandoneon": {"wave": "square", "harmonics": 6, "A": 0.04, "D": 0.0, "S": 1.0, "R": 0.15},
+        # ── World Percussion (v170) ───────────────────────────────────────────
+        "cajon": {"wave": "sine", "harmonics": 2, "A": 0.001, "D": 0.18, "S": 0.0, "R": 0.2},
+        "bongo": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.1, "S": 0.0, "R": 0.15},
+        "conga": {"wave": "sine", "harmonics": 2, "A": 0.001, "D": 0.15, "S": 0.0, "R": 0.2},
+        "shaker": {"wave": "noise", "harmonics": 1, "A": 0.001, "D": 0.03, "S": 0.0, "R": 0.02},
+        "tambourine": {"wave": "noise", "harmonics": 1, "A": 0.001, "D": 0.08, "S": 0.0, "R": 0.1},
+        "cowbell": {"wave": "square", "harmonics": 4, "A": 0.001, "D": 0.15, "S": 0.0, "R": 0.2},
+        "woodblock": {"wave": "square", "harmonics": 3, "A": 0.001, "D": 0.05, "S": 0.0, "R": 0.05},
+        "triangle_perc": {"wave": "sine", "harmonics": 5, "A": 0.001, "D": 0.5, "S": 0.1, "R": 1.0},
+        "timbales": {"wave": "sine", "harmonics": 3, "A": 0.001, "D": 0.12, "S": 0.0, "R": 0.15},
+        "surdo": {"wave": "sine", "harmonics": 1, "A": 0.002, "D": 0.3, "S": 0.05, "R": 0.4},
         # ── Choir / Vocal ─────────────────────────────────────────────────────
         "choir_aah": {"wave": "sawtooth", "harmonics": 6, "A": 0.15, "D": 0.1, "S": 0.85, "R": 0.5},
         "choir_ooh": {"wave": "sine", "harmonics": 4, "A": 0.2, "D": 0.08, "S": 0.9, "R": 0.6},
         "vox_pad": {"wave": "triangle", "harmonics": 5, "A": 0.35, "D": 0.1, "S": 0.85, "R": 0.8},
+        # ── Extended Synths (v170) ────────────────────────────────────────────
+        "pulse": {"wave": "square", "harmonics": 10, "A": 0.01, "D": 0.05, "S": 0.85, "R": 0.2},
+        "sync_lead": {
+            "wave": "sawtooth",
+            "harmonics": 16,
+            "A": 0.005,
+            "D": 0.05,
+            "S": 0.9,
+            "R": 0.15,
+        },
+        "trance_lead": {
+            "wave": "sawtooth",
+            "harmonics": 12,
+            "A": 0.005,
+            "D": 0.08,
+            "S": 0.85,
+            "R": 0.2,
+        },
+        "chiptune": {"wave": "square", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.02},
+        "ambient_pad": {"wave": "sine", "harmonics": 4, "A": 0.5, "D": 0.0, "S": 1.0, "R": 1.5},
+        "dark_pad": {"wave": "sawtooth", "harmonics": 6, "A": 0.4, "D": 0.1, "S": 0.9, "R": 1.2},
+        "glass_pad": {"wave": "triangle", "harmonics": 8, "A": 0.3, "D": 0.15, "S": 0.7, "R": 1.0},
+        "warm_pad": {"wave": "sawtooth", "harmonics": 4, "A": 0.4, "D": 0.05, "S": 0.95, "R": 1.0},
+        "poly_synth": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "A": 0.01,
+            "D": 0.15,
+            "S": 0.6,
+            "R": 0.4,
+        },
+        "fm_keys": {"wave": "fm", "harmonics": 3, "A": 0.005, "D": 0.2, "S": 0.4, "R": 0.8},
+        "fm_pad": {"wave": "fm", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 1.0},
+        # ── Extended Drums (v170) ─────────────────────────────────────────────
+        "drums_rimshot": {
+            "wave": "square",
+            "harmonics": 4,
+            "A": 0.001,
+            "D": 0.03,
+            "S": 0.0,
+            "R": 0.03,
+        },
+        "drums_open_hat": {
+            "wave": "square",
+            "harmonics": 16,
+            "A": 0.001,
+            "D": 0.3,
+            "S": 0.05,
+            "R": 0.4,
+        },
+        "drums_low_tom": {
+            "wave": "sine",
+            "harmonics": 2,
+            "A": 0.003,
+            "D": 0.25,
+            "S": 0.0,
+            "R": 0.35,
+        },
+        "drums_floor_tom": {
+            "wave": "sine",
+            "harmonics": 1,
+            "A": 0.003,
+            "D": 0.3,
+            "S": 0.0,
+            "R": 0.4,
+        },
+        "drums_splash": {
+            "wave": "square",
+            "harmonics": 14,
+            "A": 0.003,
+            "D": 0.4,
+            "S": 0.05,
+            "R": 0.8,
+        },
+        "drums_china": {
+            "wave": "square",
+            "harmonics": 18,
+            "A": 0.002,
+            "D": 0.5,
+            "S": 0.08,
+            "R": 1.0,
+        },
+        "drums_ghost_snare": {
+            "wave": "square",
+            "harmonics": 2,
+            "A": 0.001,
+            "D": 0.06,
+            "S": 0.0,
+            "R": 0.04,
+        },
+        "drums_brush": {
+            "wave": "noise",
+            "harmonics": 1,
+            "A": 0.003,
+            "D": 0.15,
+            "S": 0.05,
+            "R": 0.2,
+        },
         # ── EDM synths ────────────────────────────────────────────────────────
         "bass": {"wave": "sawtooth", "harmonics": 6, "A": 0.02, "D": 0.2, "S": 0.6, "R": 0.3},
         "pad": {"wave": "sine", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 0.8},
@@ -520,23 +766,534 @@ class Synth:
             noise_env[:attack_end] = np.linspace(1, 0, attack_end)
             raw = raw * 0.75 + attack_noise * noise_env * 0.4
 
-        env = self._adsr(n_samples, preset["A"], preset["D"], preset["S"], preset["R"])
+        # ── Articulation-aware envelope and timbre (v170) ─────────────────
+        art = getattr(note, "articulation", None)
+        A, D, S, R = preset["A"], preset["D"], preset["S"], preset["R"]
 
-        # ── Velocity-to-timbre: louder = brighter (more high harmonics) ──
-        # Applies to piano, guitar, and acoustic instruments
-        # Use wave_type and preset structure to detect acoustic instruments
-        vel_timbre_waves = {"sine", "karplus"}
-        is_acoustic = wave_type in vel_timbre_waves and preset.get("A", 0.1) < 0.02
-        if is_acoustic and note.velocity > 0.01:
-            # Boost high frequencies proportional to velocity
-            brightness = max(0.0, (note.velocity - 0.5) * 2.0)  # 0 at vel=0.5, 1 at vel=1.0
+        if art is not None:
+            A, D, S, R, raw = self._apply_articulation(
+                raw,
+                art,
+                A,
+                D,
+                S,
+                R,
+                wave_type,
+                n_samples,
+                _sig,
+            )
+
+        env = self._adsr(n_samples, A, D, S, R)
+
+        # ── Velocity-to-timbre: every instrument family responds differently ──
+        # Real instruments change spectral content with dynamics, not just volume.
+        # Soft = darker/rounder, loud = brighter/edgier. The amount and character
+        # of this change depends on the instrument family.
+        vel = note.velocity
+        if vel > 0.01 and n_samples > 64:
+            raw = self._apply_velocity_timbre(raw, vel, wave_type, preset, instrument_name, _sig)
+
+        return raw * env * vel
+
+    # ------------------------------------------------------------------
+    # Velocity-dependent timbre shaping
+    # ------------------------------------------------------------------
+
+    # Instrument family classification for timbre response
+    _TIMBRE_FAMILIES = {
+        "brass": {
+            "instruments": {
+                "trumpet",
+                "trombone",
+                "french_horn",
+                "tuba",
+                "brass_section",
+                "euphonium",
+                "cornet",
+                "flugelhorn",
+                "piccolo_trumpet",
+                "bass_trombone",
+                "horn_section",
+            },
+            # Brass: soft = dark and mellow, loud = bright and biting
+            # At ff the upper partials explode. At pp it sounds almost like a flute.
+            "lp_range": (1500.0, 12000.0),  # LP cutoff: pp to ff
+            "hp_boost": 0.5,  # high shelf boost at forte
+            "attack_bite": 0.3,  # transient edge at high velocity
+        },
+        "woodwind": {
+            "instruments": {
+                "flute",
+                "oboe",
+                "clarinet",
+                "bassoon",
+                "saxophone",
+                "piccolo",
+                "cor_anglais",
+                "bass_clarinet",
+                "contrabassoon",
+                "alto_flute",
+                "english_horn",
+                "soprano_sax",
+                "tenor_sax",
+                "bari_sax",
+                "harmonica",
+                "accordion",
+                "bandoneon",
+                "bagpipe",
+            },
+            # Woodwinds: soft = breathy, loud = focused and reedy
+            "lp_range": (2000.0, 10000.0),
+            "hp_boost": 0.35,
+            "attack_bite": 0.15,
+        },
+        "string": {
+            "instruments": {
+                "strings",
+                "violin",
+                "cello",
+                "contrabass",
+                "pizzicato",
+                "viola",
+                "string_section",
+                "string_tremolo",
+                "string_harmonics",
+                "erhu",
+            },
+            # Strings: soft = silky sul tasto, loud = bright sul ponticello edge
+            "lp_range": (2500.0, 11000.0),
+            "hp_boost": 0.4,
+            "attack_bite": 0.2,
+        },
+        "plucked": {
+            "instruments": {
+                "guitar_acoustic",
+                "guitar_electric",
+                "harp",
+                "guitar_ks",
+                "banjo_ks",
+                "harp_ks",
+                "sitar_ks",
+                "koto_ks",
+                "shamisen",
+                "oud",
+                "bouzouki",
+                "dulcimer",
+                "guzheng",
+                "balalaika",
+                "ukulele",
+                "mandolin",
+            },
+            # Plucked: soft = round and warm, loud = bright attack with overtones
+            "lp_range": (2000.0, 12000.0),
+            "hp_boost": 0.45,
+            "attack_bite": 0.25,
+        },
+        "keys": {
+            "instruments": {
+                "piano",
+                "rhodes",
+                "wurlitzer",
+                "celesta",
+                "organ",
+                "harpsichord",
+                "marimba",
+                "vibraphone",
+                "xylophone",
+                "steelpan",
+                "kalimba",
+                "gamelan",
+                "fm_keys",
+            },
+            # Keys: soft = mellow and dark, loud = bell-like clarity
+            "lp_range": (1800.0, 14000.0),
+            "hp_boost": 0.4,
+            "attack_bite": 0.2,
+        },
+        "choir": {
+            "instruments": {
+                "choir_aah",
+                "choir_ooh",
+                "vox_pad",
+            },
+            # Choir: soft = covered/dark, loud = open and brilliant (singer's formant)
+            "lp_range": (2000.0, 8000.0),
+            "hp_boost": 0.5,
+            "attack_bite": 0.1,
+        },
+    }
+
+    def _apply_velocity_timbre(
+        self,
+        raw: FloatArray,
+        vel: float,
+        wave_type: str,
+        preset: dict,
+        instrument_name: str,
+        _sig,
+    ) -> FloatArray:
+        """Apply velocity-dependent timbral shaping.
+
+        Real instruments do not just get louder when played harder.
+        They change character. This function applies a velocity-controlled
+        low-pass filter (darker at low velocity) and high-frequency boost
+        (brighter at high velocity) based on the instrument family.
+        """
+        # Determine which family this instrument belongs to
+        family_config = None
+        for family_name, config in self._TIMBRE_FAMILIES.items():
+            if instrument_name in config["instruments"]:
+                family_config = config
+                break
+
+        # Fallback: basic brightness scaling for unclassified instruments
+        if family_config is None:
+            # Still apply gentle brightness scaling for everything
+            brightness = max(0.0, (vel - 0.5) * 2.0)
             if brightness > 0.05:
-                cutoff = min(self.sample_rate / 2 - 1, 1000.0 + brightness * 8000.0)
+                cutoff = min(self.sample_rate / 2 - 1, 2000.0 + brightness * 8000.0)
                 sos_hi = _sig.butter(1, cutoff, btype="high", fs=self.sample_rate, output="sos")
                 hi_shelf = _sig.sosfilt(sos_hi, raw)
-                raw = raw + hi_shelf * brightness * 0.4
+                raw = raw + hi_shelf * brightness * 0.3
+            elif vel < 0.4:
+                # Darken at low velocity
+                darkness = (0.4 - vel) / 0.4
+                cutoff = min(self.sample_rate / 2 - 1, max(500.0, 8000.0 - darkness * 5000.0))
+                sos_lp = _sig.butter(2, cutoff, btype="low", fs=self.sample_rate, output="sos")
+                raw = raw * (1.0 - darkness * 0.6) + _sig.sosfilt(sos_lp, raw) * darkness * 0.6
+            return raw
 
-        return raw * env * note.velocity
+        lp_low, lp_high = family_config["lp_range"]
+        hp_boost = family_config["hp_boost"]
+        attack_bite = family_config["attack_bite"]
+
+        # 1. Velocity-controlled low-pass filter
+        # At vel=0.1, cutoff is near lp_low (dark). At vel=1.0, near lp_high (bright).
+        lp_cutoff = lp_low + vel * (lp_high - lp_low)
+        lp_cutoff = min(lp_cutoff, self.sample_rate / 2 - 1)
+        lp_cutoff = max(lp_cutoff, 200.0)
+        sos_lp = _sig.butter(2, lp_cutoff, btype="low", fs=self.sample_rate, output="sos")
+        filtered = _sig.sosfilt(sos_lp, raw)
+
+        # Blend between filtered and raw based on velocity
+        # At pp: mostly filtered (dark). At ff: mostly raw (full spectrum).
+        blend = vel**0.7  # non-linear: stays dark longer, then opens up
+        raw = filtered * (1.0 - blend) + raw * blend
+
+        # 2. High-frequency boost at forte and above
+        if vel > 0.6 and hp_boost > 0:
+            boost_amount = (vel - 0.6) / 0.4 * hp_boost
+            hp_freq = min(self.sample_rate / 2 - 1, max(1000.0, lp_high * 0.5))
+            sos_hi = _sig.butter(1, hp_freq, btype="high", fs=self.sample_rate, output="sos")
+            hi_content = _sig.sosfilt(sos_hi, raw)
+            raw = raw + hi_content * boost_amount
+
+        # 3. Attack transient bite at high velocity (brass/plucked especially)
+        if vel > 0.7 and attack_bite > 0:
+            bite_amount = (vel - 0.7) / 0.3 * attack_bite
+            # Short noise burst at the start of the note
+            attack_len = min(int(0.015 * self.sample_rate), len(raw))
+            if attack_len > 0:
+                attack_env = np.linspace(1.0, 0.0, attack_len)
+                rng = np.random.default_rng(int(vel * 1000) % (2**31))
+                attack_noise = rng.standard_normal(attack_len) * bite_amount * 0.2
+                raw[:attack_len] += attack_noise * attack_env
+
+        return raw
+
+    # ------------------------------------------------------------------
+    # Articulation-aware synthesis (v170)
+    # ------------------------------------------------------------------
+
+    def _apply_articulation(
+        self,
+        raw: FloatArray,
+        art: str,
+        A: float,
+        D: float,
+        S: float,
+        R: float,
+        wave_type: str,
+        n_samples: int,
+        _sig,
+    ) -> tuple[float, float, float, float, FloatArray]:
+        """Modify ADSR and timbre based on articulation marking.
+
+        Returns (A, D, S, R, modified_raw). The caller uses the returned
+        ADSR values for envelope generation. The raw waveform may also be
+        filtered or modified for timbral changes.
+
+        This is where "how you play" becomes audible. A pizzicato note
+        does not just get shorter - it gets a percussive burst with
+        reduced harmonics. A muted brass note does not just get quieter -
+        it gets a nasal, dark, stuffy quality.
+        """
+        sr = self.sample_rate
+        nyq = sr / 2 - 1
+
+        # ── String articulations ─────────────────────────────────────
+        if art == "pizzicato":
+            # Percussive pluck: instant attack, no sustain, fast decay
+            A = 0.001
+            D = max(0.08, D)
+            S = 0.0
+            R = min(R, 0.3)
+            # Reduce upper harmonics (pluck is darker than bow)
+            cutoff = min(nyq, 3000.0)
+            sos = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos, raw)
+
+        elif art == "spiccato":
+            # Bouncing bow: short but more resonant than staccato
+            A = max(0.002, A * 0.3)
+            D = max(0.05, D)
+            S = max(0.0, S * 0.2)
+            R = min(R, 0.15)
+
+        elif art == "tremolo":
+            # Rapid bow tremolo: amplitude modulation at ~12-16 Hz
+            t = np.arange(n_samples) / sr
+            trem_rate = 14.0
+            trem = 0.7 + 0.3 * np.sin(2 * np.pi * trem_rate * t)
+            raw = raw * trem
+
+        elif art == "harmonics":
+            # Natural harmonics: pure sine, octave up, bell-like
+            A = max(0.005, A)
+            D = 0.15
+            S = 0.2
+            R = max(R, 0.8)
+            # Filter to near-sine (kill most harmonics)
+            freq = 440.0  # approximate, the actual freq is in the waveform
+            cutoff = min(nyq, 2000.0)
+            sos = _sig.butter(4, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos, raw)
+
+        elif art == "sul_ponticello":
+            # Bow near bridge: glassy, harsh, harmonic-rich
+            cutoff = min(nyq, max(2000.0, 5000.0))
+            sos = _sig.butter(2, cutoff, btype="high", fs=sr, output="sos")
+            hi = _sig.sosfilt(sos, raw)
+            raw = raw * 0.5 + hi * 0.6  # boost upper partials
+
+        elif art == "sul_tasto":
+            # Bow over fingerboard: breathy, dark, flute-like
+            cutoff = min(nyq, 2500.0)
+            sos = _sig.butter(3, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos, raw)
+            A = max(A, 0.08)  # softer attack
+
+        elif art == "col_legno":
+            # Wood of the bow: percussive click with minimal pitch
+            A = 0.001
+            D = 0.05
+            S = 0.0
+            R = 0.05
+            # Mostly noise burst
+            rng = np.random.default_rng(42)
+            noise = rng.standard_normal(n_samples)
+            raw = raw * 0.2 + noise * 0.4
+            cutoff = min(nyq, 4000.0)
+            sos = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos, raw)
+
+        elif art == "con_sordino":
+            # Muted strings: darker, covered, reduced volume
+            cutoff = min(nyq, 3000.0)
+            sos = _sig.butter(3, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos, raw) * 0.7
+            A = max(A, A * 1.3)  # slightly slower attack
+
+        # ── Brass articulations ──────────────────────────────────────
+        elif art == "muted":
+            # Straight mute: nasal, stuffy, thin
+            cutoff = min(nyq, 2500.0)
+            sos_lp = _sig.butter(3, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.6
+            # Add nasal resonance peak around 1500 Hz
+            peak = min(1500.0, nyq)
+            bw = 300.0
+            lo = max(20.0, peak - bw)
+            hi = min(nyq, peak + bw)
+            if lo < hi:
+                sos_bp = _sig.butter(2, [lo, hi], btype="band", fs=sr, output="sos")
+                nasal = _sig.sosfilt(sos_bp, raw)
+                raw = raw + nasal * 0.5
+
+        elif art == "harmon_mute":
+            # Harmon mute (wah-wah): very nasal, focused, Miles Davis tone
+            cutoff = min(nyq, 2000.0)
+            sos_lp = _sig.butter(4, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.5
+            peak = min(1200.0, nyq)
+            bw = 200.0
+            lo = max(20.0, peak - bw)
+            hi = min(nyq, peak + bw)
+            if lo < hi:
+                sos_bp = _sig.butter(2, [lo, hi], btype="band", fs=sr, output="sos")
+                nasal = _sig.sosfilt(sos_bp, raw)
+                raw = raw + nasal * 0.8
+
+        elif art == "cup_mute":
+            # Cup mute: warmer than straight mute, less nasal
+            cutoff = min(nyq, 3500.0)
+            sos_lp = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.65
+
+        elif art == "stopped":
+            # Hand-stopped horn: very stuffy, raised pitch feel
+            cutoff = min(nyq, 1800.0)
+            sos_lp = _sig.butter(4, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.4
+
+        elif art == "flutter_tongue":
+            # Flutter tongue: rapid roll, buzzy tremolo
+            t = np.arange(n_samples) / sr
+            flutter = 0.6 + 0.4 * np.sin(2 * np.pi * 25.0 * t)  # ~25 Hz roll
+            raw = raw * flutter
+
+        elif art == "sforzando":
+            # Sforzando: hard attack burst then immediate drop
+            A = 0.001
+            D = 0.08
+            S = max(S * 0.3, 0.0)
+
+        # ── Woodwind articulations ───────────────────────────────────
+        elif art == "overblown":
+            # Overblown: playing in upper register, more harmonics
+            cutoff = min(nyq, max(3000.0, 6000.0))
+            sos_hp = _sig.butter(1, cutoff, btype="high", fs=sr, output="sos")
+            hi = _sig.sosfilt(sos_hp, raw)
+            raw = raw + hi * 0.4
+
+        elif art == "subtone":
+            # Subtone: breathy, soft, minimal overtones (jazz sax ballad)
+            cutoff = min(nyq, 2000.0)
+            sos_lp = _sig.butter(3, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.6
+            # Add breath noise
+            rng = np.random.default_rng(42)
+            breath = rng.standard_normal(n_samples) * 0.08
+            cutoff_b = min(nyq, 6000.0)
+            sos_b = _sig.butter(2, cutoff_b, btype="low", fs=sr, output="sos")
+            raw = raw + _sig.sosfilt(sos_b, breath)
+            A = max(A, 0.06)
+
+        elif art == "slap_tongue":
+            # Slap tongue: percussive pop on attack (funk sax)
+            A = 0.001
+            D = max(0.03, D)
+            attack_len = min(int(0.01 * sr), n_samples)
+            if attack_len > 0:
+                rng = np.random.default_rng(42)
+                pop = rng.standard_normal(attack_len) * 0.5
+                pop_env = np.linspace(1.0, 0.0, attack_len)
+                raw[:attack_len] += pop * pop_env
+
+        # ── Keyboard articulations ───────────────────────────────────
+        elif art == "damped":
+            # Piano with damper: very short sustain
+            S = 0.0
+            D = max(0.05, D * 0.3)
+            R = min(R, 0.1)
+
+        elif art == "una_corda":
+            # Soft pedal: darker, fewer harmonics, quieter
+            cutoff = min(nyq, 3000.0)
+            sos_lp = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw) * 0.7
+
+        elif art == "prepared":
+            # Prepared piano: objects on strings, metallic/percussive
+            rng = np.random.default_rng(42)
+            metallic = rng.standard_normal(n_samples) * 0.15
+            raw = raw * 0.5 + metallic * 0.3
+            D = max(0.1, D)
+            S = max(S * 0.3, 0.0)
+
+        # ── Percussion implement articulations ───────────────────────
+        elif art == "brush":
+            # Brushes: swishy, softer attack, sustained wash
+            rng = np.random.default_rng(42)
+            swish = rng.standard_normal(n_samples) * 0.3
+            cutoff = min(nyq, 8000.0)
+            sos_lp = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            swish = _sig.sosfilt(sos_lp, swish)
+            raw = raw * 0.3 + swish * 0.5
+            A = max(A, 0.005)
+            D = max(D, 0.15)
+
+        elif art == "mallet":
+            # Soft mallet: warmer, rounder attack, less stick click
+            cutoff = min(nyq, 4000.0)
+            sos_lp = _sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            raw = _sig.sosfilt(sos_lp, raw)
+            A = max(A, 0.003)
+
+        elif art == "rod" or art == "hot_rod":
+            # Rods/hot rods: between stick and brush
+            rng = np.random.default_rng(42)
+            rod_noise = rng.standard_normal(n_samples) * 0.1
+            raw = raw * 0.7 + rod_noise * 0.15
+
+        elif art == "cross_stick" or art == "rim_click":
+            # Cross-stick: sharp, woody click
+            A = 0.001
+            D = 0.03
+            S = 0.0
+            R = 0.03
+            rng = np.random.default_rng(42)
+            click = rng.standard_normal(n_samples) * 0.4
+            cutoff = min(nyq, 5000.0)
+            lo = max(20.0, 800.0)
+            if lo < cutoff:
+                sos_bp = _sig.butter(2, [lo, cutoff], btype="band", fs=sr, output="sos")
+                raw = _sig.sosfilt(sos_bp, click)
+
+        elif art == "rimshot":
+            # Rimshot: loud crack, head + rim simultaneously
+            rng = np.random.default_rng(42)
+            crack = rng.standard_normal(n_samples) * 0.5
+            raw = raw * 0.6 + crack * 0.4
+            A = 0.001
+
+        elif art == "dead_stroke":
+            # Dead stroke: hit and immediately dampen
+            A = 0.001
+            D = 0.02
+            S = 0.0
+            R = 0.01
+
+        elif art == "flam":
+            # Flam: grace note before the main hit
+            grace_len = min(int(0.025 * sr), n_samples // 4)
+            if grace_len > 0:
+                grace = raw[:grace_len].copy() * 0.4
+                # Shift main hit slightly later
+                shifted = np.zeros(n_samples)
+                shifted[grace_len:] = raw[: n_samples - grace_len]
+                shifted[:grace_len] = grace
+                raw = shifted
+
+        elif art == "roll":
+            # Drum roll: rapid repeated hits via amplitude modulation
+            t = np.arange(n_samples) / sr
+            roll_rate = 20.0  # hits per second
+            roll_env = 0.5 + 0.5 * np.abs(np.sin(2 * np.pi * roll_rate * t))
+            raw = raw * roll_env
+
+        # ── Generic articulations ────────────────────────────────────
+        elif art == "staccato":
+            # Staccato: sharper release, slightly shorter envelope
+            R = min(R, 0.08)
+            S = max(S * 0.3, 0.0)
+
+        elif art == "legato":
+            # Legato: slower attack, longer release, smoother
+            A = max(A, A * 1.5)
+            R = max(R, R * 1.5)
+
+        return A, D, S, R, raw
 
     # ------------------------------------------------------------------
     # Track → mono array

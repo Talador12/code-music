@@ -78,9 +78,17 @@ from .effects import (
     stereo_width,
     sum_bformat,
     tape_sat,
+    tape_wow_flutter,
     tremolo,
     vibrato,
     vocoder,
+    # v170 effects
+    harmonic_exciter,
+    lofi_vinyl,
+    pitch_shift,
+    rotary_speaker,
+    shimmer_reverb,
+    spring_reverb,
 )
 from .engine import (
     # composition helpers
@@ -94,13 +102,30 @@ from .engine import (
     DOUBLE_DOTTED_HALF,
     DOUBLE_DOTTED_QUARTER,
     EIGHTH,
+    # v170 dynamics
+    F,
+    FF,
+    FFF,
+    FFFF,
+    FP,
+    FZ,
     HALF,
     INTERVALS,
+    MF,
+    MP,
+    P,
+    PP,
+    PPP,
+    PPPP,
     QUARTER,
+    RF,
     SCALES,
+    SFP,
+    SFZ,
     SIXTEENTH,
     SIXTY_FOURTH,
     THIRTY_SECOND,
+    VELOCITY_CURVES,
     # durations
     WHOLE,
     Beat,
@@ -154,6 +179,28 @@ from .engine import (
     turn,
     upper_mordent,
     voice_lead,
+    # v170 articulations
+    col_legno,
+    con_sordino,
+    dead_stroke,
+    flutter_tongue,
+    harmonics,
+    muted,
+    rim_click,
+    senza_sordino,
+    spiccato,
+    sul_ponticello,
+    sul_tasto,
+    tremolo_bow,
+    with_brushes,
+    with_mallets,
+    with_rods,
+    # v170 pitch/dynamics utilities
+    double_octave,
+    dynamics,
+    octave_down,
+    octave_up,
+    velocity_curve,
 )
 from .export import export_flac, export_mp3, export_ogg, export_wav
 from .flow import FlowBeat, apply_flow_to_lyrics, flow_summary, generate_flow
@@ -167,6 +214,35 @@ from .mastering import (
 )
 from .midi import export_midi, import_midi
 from .notation import export_abc, export_lilypond, export_musicxml
+from .rhythm_game import export_clone_hero, export_stepmania
+from .transform import (
+    GENRE_PROFILES,
+    GenreProfile,
+    apply_rhythm_pattern,
+    articulation_transform,
+    dynamics_transform,
+    genre_transform,
+    groove_transform,
+    harmony_transform,
+    instrument_transform,
+    list_genres,
+    list_rhythm_patterns,
+    rhythm_transform,
+)
+from .symphony import (
+    BIG_BAND_SECTIONS,
+    FAMILIES,
+    INSTRUMENT_RANGES,
+    SCORE_ORDER,
+    TRANSPOSING_INSTRUMENTS,
+    Movement,
+    Part,
+    Symphony,
+    get_family,
+    orchestrate,
+    orchestrate_big_band,
+    score_sort_key,
+)
 from .pattern import Pattern
 from .playback import play
 from .plugins import (
