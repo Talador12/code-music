@@ -3372,11 +3372,29 @@ Massive foundation expansion. 3705 -> 3705 tests, 0 failures.
 - Rasputin Remixes (12 tracks, every genre)
 - RUSH-ABC (26 tracks, A-Z escalating intensity, RUSH E centerpiece)
 - The Planets (10 tracks, solar system symphonies)
-- Constellations (15 tracks, real night sky patterns as melody seeds)
+- Constellations (15 tracks, real night sky star patterns as melody seeds)
 - Elements (16 tracks, 4 classical elements x 4 movements)
 - Fibonacci (8 tracks, math-structured music)
 - Time Periods (13 tracks, 800 AD to 2026)
-- The Periodic Table (118 + 10 reaction bonus tracks, magnum opus)
+- The Periodic Table (2,304 lines, the magnum opus):
+  - 118 elements + 30 verified compound/reaction bonus tracks (148 total)
+  - 11 physics-to-music mapping rules with real constants (melting point ->
+    tempo, electronegativity -> tension, binding energy -> stability arc,
+    electron config -> rhythm layers, oxidation states -> key changes,
+    radioactivity -> audio decay effects, bond type -> how compound
+    tracks combine themes)
+  - 7-act narrative arc based on nuclear binding energy curve (light
+    elements -> iron peak climax -> heavy element decline -> radioactive
+    decay -> transactinide dissolution -> silence at element 118)
+  - Key signatures assigned by group, period motifs shared across rows
+  - 27 elements enriched with origin/stability/binding_energy fields
+    (H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Ti, Cr, Mn, Fe, Co,
+    Ni, Cu, Ag, W, Au, Pb, Bi, U, Pu, Og)
+  - 30 compounds with verified chemistry: correct formulas, bond types,
+    real melting/boiling points, proper balanced equations (photosynthesis,
+    combustion, rusting, NaCl ionic, steel interstitial alloy, etc.)
+  - Remaining ~91 elements have musical descriptions, pending full
+    physics enrichment pass
 
 ## Backlog: Music Theory Expressiveness
 
