@@ -879,22 +879,42 @@ class Synth:
             )
 
         elif wave == "karplus":
-            # Karplus-Strong plucked string synthesis.
-            # Seeds a short buffer with noise, then applies a feedback loop
-            # with a simple averaging filter — models a vibrating string.
+            # Karplus-Strong plucked string with body resonance.
+            # The string vibration alone sounds thin and electric. A real guitar
+            # or piano has a body that resonates sympathetically, adding warmth
+            # and character. The body acts as a bandpass filter centered around
+            # the instrument's resonant frequencies.
             period = max(2, int(self.sample_rate / max(freq, 1.0)))
             out = np.zeros(n_samples)
-            # Seed: short burst of white noise at pitch frequency
             rng = np.random.default_rng(int(freq * 137) % (2**31))
             buf = rng.uniform(-1.0, 1.0, period)
-            # Frequency-dependent loss: high strings decay faster than low strings
-            # (physics: shorter wavelength = more energy dissipation per cycle)
+            # Frequency-dependent loss
             base_loss = 0.998
-            freq_factor = min(freq / 4000.0, 0.01)  # higher freq = more loss
+            freq_factor = min(freq / 4000.0, 0.01)
             loss = max(0.98, base_loss - freq_factor)
             for i in range(n_samples):
                 out[i] = buf[i % period]
                 buf[i % period] = loss * 0.5 * (buf[i % period] + buf[(i + 1) % period])
+
+            # Body resonance: simulate the guitar body / piano soundboard.
+            # A guitar body has resonances around 100-200 Hz (air resonance),
+            # 400-600 Hz (top plate), and 1000-2000 Hz (bridge). These color
+            # the string's raw sound into something warm and wooden.
+            from scipy import signal as _ks_sig
+
+            nyq_ks = self.sample_rate / 2 - 1
+            # Three body resonance peaks
+            body_freqs = [(180.0, 80.0, 0.15), (500.0, 120.0, 0.10), (1200.0, 200.0, 0.06)]
+            body = np.zeros(n_samples)
+            for center, bw, gain in body_freqs:
+                lo = max(20.0, min(center - bw / 2, nyq_ks))
+                hi = min(center + bw / 2, nyq_ks)
+                if lo < hi:
+                    sos = _ks_sig.butter(
+                        2, [lo, hi], btype="band", fs=self.sample_rate, output="sos"
+                    )
+                    body += _ks_sig.sosfilt(sos, out) * gain
+            out = out * 0.8 + body  # blend body with direct string
             return out
 
         else:
@@ -1213,6 +1233,25 @@ class Synth:
                 sos_lp = _sig.butter(2, lp, btype="low", fs=self.sample_rate, output="sos")
                 thump = _sig.sosfilt(sos_lp, np.pad(thump, (0, n_samples - thump_len)))[:thump_len]
                 raw[:thump_len] += thump
+
+        # Sympathetic string resonance for piano
+        # When a piano string is struck, other undamped strings that share
+        # harmonics with the fundamental ring sympathetically. This is the
+        # "bloom" that makes a grand piano sound huge. Without it, each note
+        # is isolated. With it, the piano sings as a whole instrument.
+        if inst == "piano" and n_samples > 500:
+            nyq_sym = self.sample_rate / 2 - 1
+            sympathetic = np.zeros(n_samples)
+            # Strings at octave, fifth, and double octave resonate most
+            sym_ratios = [2.0, 3.0, 4.0, 1.5]  # octave, 12th, double oct, fifth
+            for ratio in sym_ratios:
+                sym_freq = freq * ratio
+                if sym_freq < nyq_sym and sym_freq > 20:
+                    # Very quiet sine at the sympathetic frequency with slow decay
+                    t_sym = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+                    sym_env = np.exp(-t_sym * 2.0) * 0.02  # very subtle
+                    sympathetic += np.sin(2 * np.pi * sym_freq * t_sym) * sym_env
+            raw = raw + sympathetic
 
         # Velocity-sensitive filter for pads and synths (filter opens with velocity)
         _PAD_INSTRUMENTS = {

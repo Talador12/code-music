@@ -223,6 +223,8 @@ from .effects import (
     noise_gate,
     sidechain,
     stereo_width,
+    tape_emulation,
+    transient_shaper,
 )
 from .integrations import (
     ai_generate_melody,

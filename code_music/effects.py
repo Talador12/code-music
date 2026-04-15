@@ -657,6 +657,166 @@ def stereo_width(
     return np.column_stack([mid + side, mid - side]).astype(np.float64)
 
 
+def transient_shaper(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    attack: float = 0.0,
+    sustain: float = 0.0,
+) -> FloatArray:
+    """Transient shaper: control attack punch and sustain body independently.
+
+    Unlike a compressor which reduces everything above a threshold, a
+    transient shaper detects the onset (attack) and steady-state (sustain)
+    portions of each hit and lets you boost or cut them independently.
+    +attack = more snap on drums. -attack = softer transients. +sustain =
+    more room/body. -sustain = tighter, drier.
+
+    The secret weapon for drums and percussion. Makes a weak snare
+    crack like a gunshot or turns a ringy tom into a tight thud.
+
+    Args:
+        attack:   Attack gain in dB (-12 to +12). Positive = more snap.
+        sustain:  Sustain gain in dB (-12 to +12). Positive = more body.
+    """
+    if abs(attack) < 0.1 and abs(sustain) < 0.1:
+        return samples.copy()
+
+    # Envelope follower with fast attack, slow release
+    peak = np.max(np.abs(samples), axis=1) if samples.ndim == 2 else np.abs(samples)
+
+    fast_coef = math.exp(-1.0 / (0.001 * sample_rate))  # 1ms
+    slow_coef = math.exp(-1.0 / (0.1 * sample_rate))  # 100ms
+
+    fast_env = np.zeros(len(peak))
+    slow_env = np.zeros(len(peak))
+    fast_env[0] = peak[0]
+    slow_env[0] = peak[0]
+    for i in range(1, len(peak)):
+        coef_f = fast_coef if peak[i] < fast_env[i - 1] else 0.0
+        fast_env[i] = coef_f * fast_env[i - 1] + (1 - coef_f) * peak[i]
+        coef_s = slow_coef if peak[i] < slow_env[i - 1] else 0.0
+        slow_env[i] = coef_s * slow_env[i - 1] + (1 - coef_s) * peak[i]
+
+    # Transient = fast - slow (positive during attacks)
+    transient = fast_env - slow_env
+    transient = np.clip(transient, 0, None)
+
+    # Sustain mask = inverse of transient
+    sustain_mask = np.clip(slow_env - transient * 0.5, 0, None)
+
+    # Apply gains
+    attack_gain = 10 ** (attack / 20.0) - 1.0
+    sustain_gain = 10 ** (sustain / 20.0) - 1.0
+
+    # Normalize envelopes
+    t_max = np.max(transient)
+    s_max = np.max(sustain_mask)
+    if t_max > 0:
+        transient /= t_max
+    if s_max > 0:
+        sustain_mask /= s_max
+
+    gain = 1.0 + transient * attack_gain + sustain_mask * sustain_gain
+
+    if samples.ndim == 2:
+        result = samples * gain[:, np.newaxis]
+    else:
+        result = samples * gain
+
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
+def tape_emulation(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    speed: str = "15ips",
+    saturation: float = 0.5,
+    hiss: float = 0.005,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Analog tape machine emulation.
+
+    Real tape does three things to audio:
+    1. Soft compression (tape naturally compresses peaks)
+    2. Harmonic saturation (subtle, warm, adds density)
+    3. Frequency response curve (bass bump, gentle HF rolloff)
+
+    Different tape speeds have different characters:
+        30ips: flattest response, most headroom, least color
+        15ips: slight bass bump (~50Hz), gentle HF rolloff, most common
+        7.5ips: pronounced bass bump, noticeable HF loss, lo-fi character
+
+    This is the "glue" that makes analog recordings sound cohesive.
+    Every track hitting the same tape gets the same subtle processing.
+
+    Args:
+        speed:       Tape speed ("30ips", "15ips", "7.5ips").
+        saturation:  Tape saturation amount (0.0-1.0).
+        hiss:        Tape hiss level (0.0-0.02).
+        wet:         Wet/dry mix.
+    """
+    nyq = sample_rate / 2 - 1
+
+    # Frequency response curve per speed
+    curves = {
+        "30ips": (20.0, 20000.0, 0.0),  # flat
+        "15ips": (40.0, 16000.0, 1.5),  # bass bump, gentle rolloff
+        "7.5ips": (60.0, 10000.0, 3.0),  # pronounced character
+    }
+    bass_freq, hf_cutoff, bass_boost = curves.get(speed, curves["15ips"])
+    hf_cutoff = min(hf_cutoff, nyq)
+
+    out = samples.copy()
+
+    # HF rolloff (tape head gap loss)
+    sos_hf = sig.butter(2, hf_cutoff, btype="low", fs=sample_rate, output="sos")
+    if out.ndim == 2:
+        out[:, 0] = sig.sosfilt(sos_hf, out[:, 0])
+        out[:, 1] = sig.sosfilt(sos_hf, out[:, 1])
+    else:
+        out = sig.sosfilt(sos_hf, out)
+
+    # Bass bump (head bump resonance)
+    if bass_boost > 0:
+        bass_freq = min(bass_freq, nyq)
+        sos_bass = sig.butter(1, bass_freq, btype="low", fs=sample_rate, output="sos")
+        if out.ndim == 2:
+            out[:, 0] += sig.sosfilt(sos_bass, out[:, 0]) * bass_boost * 0.15
+            out[:, 1] += sig.sosfilt(sos_bass, out[:, 1]) * bass_boost * 0.15
+        else:
+            out += sig.sosfilt(sos_bass, out) * bass_boost * 0.15
+
+    # Tape saturation (soft compression + harmonics)
+    if saturation > 0:
+        drive = 1.0 + saturation * 2.0
+        out = out * drive
+        out = out / (1.0 + np.abs(out) * saturation * 0.5)  # soft clip
+        # Normalize back
+        pk = np.max(np.abs(out))
+        if pk > 0:
+            out /= pk
+        out *= np.max(np.abs(samples))
+
+    # Tape hiss
+    if hiss > 0:
+        rng = np.random.default_rng(42)
+        if out.ndim == 2:
+            noise = rng.standard_normal(out.shape) * hiss
+        else:
+            noise = rng.standard_normal(len(out)) * hiss
+        # Tape hiss is shaped (not flat white noise)
+        sos_hiss = sig.butter(1, min(8000.0, nyq), btype="low", fs=sample_rate, output="sos")
+        if out.ndim == 2:
+            noise[:, 0] = sig.sosfilt(sos_hiss, noise[:, 0])
+            noise[:, 1] = sig.sosfilt(sos_hiss, noise[:, 1])
+        else:
+            noise = sig.sosfilt(sos_hiss, noise)
+        out = out + noise
+
+    result = samples * (1 - wet) + out * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
