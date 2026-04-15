@@ -1268,9 +1268,14 @@ ALBUM = {
             "bpm": 88,
             "group": 1,
             "genre": "blues",
-            "notes": "Most electropositive. Melts at 28C (room temperature liquid metal). "
-            "Atomic clocks (defines the second). Explodes in water spectacularly. "
-            "Blues that keeps perfect time while falling apart.",
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. Cs-133 (100%). Only one stable isotope. "
+            "Cs-133 hyperfine transition (9,192,631,770 Hz) defines the SI second.",
+            "binding_energy": "8.41 MeV/nucleon",
+            "notes": "Most electropositive element (0.79 Pauling). Melts at 28.4C (room temp "
+            "liquid metal). Cs-133 hyperfine transition literally defines what a second IS "
+            "(since 1967). Explodes in water more violently than any other alkali metal. "
+            "One stable isotope = one key. Blues that keeps perfect time while falling apart.",
         },
         {
             "n": 56,
@@ -1279,8 +1284,13 @@ ALBUM = {
             "bpm": 112,
             "group": 2,
             "genre": "country",
-            "notes": "Green flame test. Barium meals (X-ray contrast). Rat poison. "
-            "Heavy. Country ballad with toxic undertones. Green-lit stage.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Ba-138 (71.7%). 7 stable isotopes. Ba-138 has magic N=82.",
+            "binding_energy": "8.39 MeV/nucleon",
+            "notes": "Green flame test (vivid green). Barium meals (BaSO4 for X-ray contrast, "
+            "insoluble and safe; soluble Ba compounds are toxic). Rat poison (BaCO3). "
+            "Ba-138 has magic neutron number 82 = extra nuclear stability. "
+            "7 stable isotopes = 7 verses. Country ballad with toxic undertones. Green-lit stage.",
         },
         # Lanthanides 57-71: classical suite
         {
@@ -1290,7 +1300,11 @@ ALBUM = {
             "bpm": 96,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "First lanthanide. Lighter flints. Camera lenses. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. La-139 (99.9%). 2 isotopes (La-138 is radioactive, t1/2=1.02x10^11 yr).",
+            "binding_energy": "8.38 MeV/nucleon",
+            "notes": "First lanthanide. Lighter flints (mischmetal). Camera lenses (La2O3 for optical glass). "
+            "Named from Greek lanthanein (to lie hidden - it hid in cerium oxide for 30 years). "
             "Classical overture. The rare earth suite begins. Sets the theme.",
         },
         {
@@ -1300,8 +1314,12 @@ ALBUM = {
             "bpm": 100,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Most abundant rare earth. Self-cleaning ovens. Lighter flints. "
-            "Classical. Bright, common (for a rare earth), sparking.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Ce-140 (88.5%). 4 stable isotopes. Most abundant rare earth (66 ppm in crust).",
+            "binding_energy": "8.38 MeV/nucleon",
+            "notes": "Most abundant rare earth (66 ppm, more common than copper). Self-cleaning ovens "
+            "(CeO2 catalytic coating). Lighter flints (mischmetal is 50% Ce). Catalytic converters. "
+            "4 stable isotopes = 4-movement classical structure. Bright, common (for a rare earth), sparking.",
         },
         {
             "n": 59,
@@ -1310,7 +1328,12 @@ ALBUM = {
             "bpm": 104,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Green glass. Magnets. Welding goggles. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Pr-141 (100%). Only one stable isotope.",
+            "binding_energy": "8.37 MeV/nucleon",
+            "notes": "Green glass (praseodymium-doped, also gives yellow to didymium glass). "
+            "NdFeB magnets use Pr as partial Nd substitute. Welding goggles (didymium glass). "
+            "Named from Greek prasios didymos (green twin). One stable isotope = one key. "
             "Classical with green tinted tone. Protective and colorful.",
         },
         {
@@ -1320,7 +1343,12 @@ ALBUM = {
             "bpm": 115,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "THE magnet element. Every speaker, every hard drive, every headphone. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Nd-142 (27.2%). 7 stable isotopes.",
+            "binding_energy": "8.36 MeV/nucleon",
+            "notes": "THE magnet element. NdFeB magnets (strongest permanent magnets known, "
+            "invented 1982). Every speaker, every hard drive, every headphone, every electric "
+            "motor in an EV. 7 stable isotopes = 7 orchestral sections. "
             "Classical that pulls you in. Magnetic. You are listening through "
             "neodymium magnets right now.",
         },
@@ -1331,7 +1359,14 @@ ALBUM = {
             "bpm": 108,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Only radioactive lanthanide. Named for Prometheus. No stable isotopes. "
+            "origin": "Artificial. Pm-147 produced in nuclear reactors. Trace amounts from "
+            "spontaneous fission of U-238. Named for Prometheus who stole fire from the gods.",
+            "stability": "NO stable isotopes. Pm-145 has longest half-life (17.7 years). "
+            "The only lanthanide with no stable isotope.",
+            "binding_energy": "8.35 MeV/nucleon",
+            "notes": "Only radioactive lanthanide. No stable isotopes at all. Named for Prometheus "
+            "(who stole fire and was punished - fitting for a radioactive element). "
+            "Pm-147 used in luminous paint and atomic batteries. "
             "Classical that decays. The stolen fire. Each repeat loses a voice.",
         },
         {
@@ -1341,8 +1376,13 @@ ALBUM = {
             "bpm": 106,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Magnets (SmCo). Neutron absorber in reactors. "
-            "Classical with magnetic pull. Controlled power.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Sm-152 (26.7%). 7 stable isotopes.",
+            "binding_energy": "8.33 MeV/nucleon",
+            "notes": "SmCo magnets (preceded NdFeB, still used where heat resistance matters). "
+            "Neutron absorber in reactor control rods. Named for Vasili Samarsky-Bykhovets "
+            "(first person to have an element named after them). "
+            "7 stable isotopes = 7 movements. Classical with magnetic pull. Controlled power.",
         },
         {
             "n": 63,
@@ -1351,7 +1391,12 @@ ALBUM = {
             "bpm": 102,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Euro banknote anti-counterfeiting (fluoresces red). Named for Europe. "
+            "origin": "r-process in supernovae (s-process contribution is minimal for Eu)",
+            "stability": "Stable. Eu-153 (52.2%). 2 stable isotopes. Most reactive of the lanthanides.",
+            "binding_energy": "8.33 MeV/nucleon",
+            "notes": "Euro banknote anti-counterfeiting (Eu3+ fluoresces red under UV). Named for Europe. "
+            "Red phosphor in CRT displays and LED lighting (Eu3+). "
+            "2 stable isotopes = two-part classical structure. "
             "Classical with European grandeur. Authenticating. Red glow.",
         },
         {
@@ -1361,8 +1406,14 @@ ALBUM = {
             "bpm": 110,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "MRI contrast agent. Most magnetic of rare earths. Neutron absorber. "
-            "Classical that reveals hidden structure. Diagnostic.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Gd-158 (24.8%). 7 stable isotopes. Gd-157 has the highest thermal "
+            "neutron capture cross section of any stable nuclide (259,000 barns).",
+            "binding_energy": "8.31 MeV/nucleon",
+            "notes": "MRI contrast agent (Gd-DTPA). Most magnetic of rare earths at room temperature. "
+            "Gd-157 captures neutrons better than any other stable isotope (259,000 barns). "
+            "Named for Johan Gadolin. 7 stable isotopes = 7 diagnostic movements. "
+            "Classical that reveals hidden structure.",
         },
         {
             "n": 65,
@@ -1371,8 +1422,13 @@ ALBUM = {
             "bpm": 105,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Green phosphor in screens. Named for Ytterby (element 2 of 4). "
-            "Classical with green luminescence. Screen glow.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Tb-159 (100%). Only one stable isotope.",
+            "binding_energy": "8.30 MeV/nucleon",
+            "notes": "Green phosphor in CRT screens and fluorescent lamps. Named for Ytterby "
+            "(element 2 of 4 from that Swedish village). Magnetostrictive alloy Terfenol-D "
+            "(Tb-Dy-Fe, changes shape in magnetic field - used in sonar). "
+            "One stable isotope = one key. Classical with green luminescence.",
         },
         {
             "n": 66,
@@ -1381,8 +1437,13 @@ ALBUM = {
             "bpm": 112,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Name means 'hard to get.' Magnets. Nuclear reactor control rods. "
-            "Classical that plays hard to get. Elusive melody.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Dy-164 (28.2%). 7 stable isotopes.",
+            "binding_energy": "8.29 MeV/nucleon",
+            "notes": "Name means 'hard to get' (Greek dysprositos). NdFeB magnets use Dy to "
+            "maintain performance at high temperatures (EV motors). Nuclear reactor control rods. "
+            "7 stable isotopes = 7 elusive melodic fragments. "
+            "Classical that plays hard to get.",
         },
         {
             "n": 67,
@@ -1391,7 +1452,13 @@ ALBUM = {
             "bpm": 108,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Highest magnetic moment of any element. Lasers. Yellow oxide. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Ho-165 (100%). Only one stable isotope. Highest magnetic moment "
+            "of any naturally occurring element (10.6 Bohr magnetons).",
+            "binding_energy": "8.28 MeV/nucleon",
+            "notes": "Highest magnetic moment of any naturally occurring element (10.6 uB). "
+            "Holmium lasers (Ho:YAG) for kidney stone surgery. Yellow oxide. "
+            "Named for Stockholm (Latin Holmia). One stable isotope = one magnetic key. "
             "Classical with the strongest pull. Maximum magnetic melody.",
         },
         {
@@ -1401,7 +1468,13 @@ ALBUM = {
             "bpm": 104,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Pink glass. Fiber optic amplifiers. Named for Ytterby (3 of 4). "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Er-166 (33.5%). 6 stable isotopes.",
+            "binding_energy": "8.28 MeV/nucleon",
+            "notes": "Pink glass (Er2O3, used in decorative glass since the 19th century). "
+            "Erbium-doped fiber amplifiers (EDFA) - the technology that made the internet "
+            "possible by amplifying optical signals without converting to electrical. "
+            "Named for Ytterby (3 of 4). 6 stable isotopes = 6 sections. "
             "Classical with pink warmth. Amplifying. The signal booster.",
         },
         {
@@ -1411,8 +1484,14 @@ ALBUM = {
             "bpm": 100,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Rarest naturally occurring lanthanide. Portable X-ray sources. "
-            "Sparse classical. Barely there. The rarest voice in the suite.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Tm-169 (100%). Only one stable isotope. Rarest naturally "
+            "occurring lanthanide (0.5 ppm in crust).",
+            "binding_energy": "8.26 MeV/nucleon",
+            "notes": "Rarest naturally occurring lanthanide (0.5 ppm, rarer than platinum). "
+            "Portable X-ray sources (Tm-170). Named for Thule (ancient name for Scandinavia). "
+            "One stable isotope = the sparsest, most minimal classical movement. "
+            "Barely there. The rarest voice in the suite.",
         },
         {
             "n": 70,
@@ -1421,7 +1500,13 @@ ALBUM = {
             "bpm": 98,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Named for Ytterby (4 of 4). Atomic clocks. Stress sensors. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Yb-174 (31.8%). 7 stable isotopes.",
+            "binding_energy": "8.25 MeV/nucleon",
+            "notes": "Named for Ytterby (4 of 4 - the village that gave us Y, Tb, Er, Yb). "
+            "Next-generation atomic clocks (optical lattice clocks using Yb-171 are 100x more "
+            "accurate than cesium clocks). Stress sensors (piezoresistive). "
+            "7 stable isotopes = 7 precisely timed movements. "
             "Classical that measures its own tempo with atomic precision.",
         },
         {
@@ -1431,7 +1516,13 @@ ALBUM = {
             "bpm": 114,
             "group": "lanthanide",
             "genre": "classical",
-            "notes": "Last lanthanide. Densest, hardest, highest melting point of the group. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Lu-175 (97.4%). 2 isotopes (Lu-176 radioactive, t1/2=3.76x10^10 yr, "
+            "used for Lu-Hf radiometric dating).",
+            "binding_energy": "8.24 MeV/nucleon",
+            "notes": "Last lanthanide. Densest (9.84 g/cm3), hardest, highest melting point (1663C) "
+            "of the entire rare earth series. Lu-176 decay to Hf-176 is used for dating the "
+            "oldest rocks and meteorites. PET scanner detectors (Lu2SiO5:Ce). "
             "Classical finale. Full orchestra. Maximum density. "
             "The rare earth suite closes with its heaviest member.",
         },
@@ -1442,8 +1533,13 @@ ALBUM = {
             "bpm": 158,
             "group": 4,
             "genre": "metal",
-            "notes": "Nuclear reactor control rods. Always found with zirconium. "
-            "Identical twins, different destiny. Metal with nuclear restraint.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Hf-180 (35.1%). 6 stable isotopes. Hf-177 has magic N=106 (subshell).",
+            "binding_energy": "8.10 MeV/nucleon",
+            "notes": "Nuclear reactor control rods (excellent neutron absorber - opposite of Zr which "
+            "is transparent to neutrons). Always found with zirconium (identical electron config, "
+            "same ore). Separated industrially only since 1920s. "
+            "6 stable isotopes = 6 sections. Identical twins, different destiny.",
         },
         {
             "n": 73,
@@ -1452,8 +1548,16 @@ ALBUM = {
             "bpm": 155,
             "group": 5,
             "genre": "metal",
-            "notes": "Phone capacitors. Surgical implants. Highly corrosion resistant. "
-            "Named for Tantalus. Metal that resists everything. Untouchable.",
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Ta-181 (99.99%). 2 isotopes (Ta-180m is the rarest primordial "
+            "isotope, only 0.012%, and is a nuclear isomer - an excited nuclear state that is "
+            "metastable for >10^15 years).",
+            "binding_energy": "8.06 MeV/nucleon",
+            "notes": "Phone capacitors (tantalum capacitors in every smartphone). Surgical implants "
+            "(biocompatible, corrosion immune). Named for Tantalus (Greek myth: cursed to stand "
+            "in water he could never drink - tantalum resists all acids). "
+            "Ta-180m is the rarest primordial isotope and a nuclear isomer. "
+            "Metal that resists everything. Untouchable.",
         },
         {
             "n": 74,
@@ -1481,8 +1585,15 @@ ALBUM = {
             "bpm": 170,
             "group": 7,
             "genre": "metal",
-            "notes": "Jet engine turbine blades. Fourth highest melting point. "
-            "Extremely rare. Metal that flies. Turbine riff. Screaming lead.",
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Re-187 (62.6%). 2 isotopes. Re-187 is radioactive "
+            "(t1/2=4.12x10^10 years, decay to Os-187 used for Re-Os dating of ore deposits).",
+            "binding_energy": "8.03 MeV/nucleon",
+            "notes": "Jet engine turbine blades (Ni-based superalloys with 3-6% Re withstand "
+            "1500C+ in jet engines). Fourth highest melting point (3186C). Last naturally "
+            "occurring element to be discovered (1925). Extremely rare (0.7 ppb in crust). "
+            "Re-Os dating determines when ore deposits formed. "
+            "Metal that flies. Turbine riff. Screaming lead.",
         },
         {
             "n": 76,
@@ -1491,9 +1602,14 @@ ALBUM = {
             "bpm": 165,
             "group": 8,
             "genre": "metal",
-            "notes": "Densest naturally occurring element. Blue-silver. Pen tips. "
-            "The heaviest metal track by mass. Maximum low-end. "
-            "Sub bass so dense it warps spacetime.",
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Os-192 (40.8%). 7 stable isotopes.",
+            "binding_energy": "8.00 MeV/nucleon",
+            "notes": "Densest naturally occurring element (22.59 g/cm3 - a 1-liter cube weighs 50 lbs). "
+            "Blue-silver with a faint blue tinge. Pen tips (Os-Ir alloy for fountain pen nibs). "
+            "OsO4 is extremely toxic and volatile (used as a biological stain). "
+            "7 stable isotopes = 7 bass-heavy layers. "
+            "The heaviest metal track by mass. Maximum low-end. Sub bass so dense it warps spacetime.",
         },
         {
             "n": 77,
@@ -1502,9 +1618,15 @@ ALBUM = {
             "bpm": 162,
             "group": 9,
             "genre": "metal",
-            "notes": "Most corrosion resistant metal. Asteroid impact layer (K-Pg boundary). "
-            "The element that killed the dinosaurs. Metal. Extinction-level riff. "
-            "Iridium layer = the breakdown that ended an era.",
+            "origin": "r-process in supernovae and neutron star mergers. The iridium-rich layer "
+            "at the K-Pg boundary (65 million years ago) proved the asteroid impact hypothesis.",
+            "stability": "Stable. Ir-193 (62.7%). 2 stable isotopes.",
+            "binding_energy": "7.98 MeV/nucleon",
+            "notes": "Most corrosion resistant metal of all elements (survives aqua regia). "
+            "K-Pg boundary iridium layer (1980, Alvarez hypothesis) proved an asteroid killed "
+            "the dinosaurs - Ir is rare on Earth but common in meteorites. "
+            "2 stable isotopes = two eras (before and after the impact). "
+            "Metal. Extinction-level riff. Iridium layer = the breakdown that ended an era.",
         },
         {
             "n": 78,
@@ -1513,9 +1635,14 @@ ALBUM = {
             "bpm": 132,
             "group": 10,
             "genre": "big_band",
-            "notes": "Catalysts. Jewelry. Record certification (going platinum). "
-            "Big band because going platinum means the album succeeded. "
-            "Rich, prestigious, the element of achievement.",
+            "origin": "r-process in supernovae and neutron star mergers",
+            "stability": "Stable. Pt-195 (33.8%). 6 stable isotopes.",
+            "binding_energy": "7.94 MeV/nucleon",
+            "notes": "Catalysts (catalytic converters, petroleum cracking, fuel cells). "
+            "Jewelry. Record certification (going platinum = 1 million copies). "
+            "Cisplatin (Pt chemotherapy drug, treats 50% of cancer patients). "
+            "6 stable isotopes = 6 sections. "
+            "Big band because going platinum means the album succeeded.",
         },
         {
             "n": 79,
@@ -1545,9 +1672,14 @@ ALBUM = {
             "bpm": 140,
             "group": 12,
             "genre": "bossa_nova",
-            "notes": "ONLY metal liquid at room temperature. Quicksilver. Thermometers. "
-            "Bossa nova because mercury flows. Impossible to hold. "
-            "Freddie would approve of the genre choice.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Hg-202 (29.7%). 7 stable isotopes.",
+            "binding_energy": "7.90 MeV/nucleon",
+            "notes": "ONLY metal liquid at room temperature (MP -38.8C). Quicksilver. Thermometers. "
+            "Amalgam dental fillings (Hg + Ag + Sn + Cu). Mad Hatter disease (mercury poisoning "
+            "in hat-making industry). Minamata disease (methylmercury bioaccumulation). "
+            "7 stable isotopes = 7 flowing sections. "
+            "Bossa nova because mercury flows. Impossible to hold.",
         },
         {
             "n": 81,
@@ -1556,9 +1688,13 @@ ALBUM = {
             "bpm": 80,
             "group": 13,
             "genre": "trip_hop",
-            "notes": "The poisoner's poison. Odorless, tasteless, lethal. Detective novels. "
-            "Trip-hop. Dark, slow, sinister. Massive Attack energy. "
-            "You do not know it is there until it is too late.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Tl-205 (70.5%). 2 stable isotopes.",
+            "binding_energy": "7.88 MeV/nucleon",
+            "notes": "The poisoner's poison. Odorless, tasteless, lethal (Tl2SO4). Detective novel "
+            "staple (Agatha Christie, The Pale Horse). Tl-201 used in cardiac imaging (stress tests). "
+            "2 stable isotopes = two faces (healing and killing). "
+            "Trip-hop. Dark, slow, sinister. Massive Attack energy.",
         },
         {
             "n": 82,
@@ -1610,9 +1746,15 @@ ALBUM = {
             "bpm": 92,
             "group": 16,
             "genre": "neo_soul",
-            "notes": "Discovered by Marie Curie. Named for Poland. Extremely radioactive. "
-            "Used to assassinate Alexander Litvinenko. Neo-soul with danger underneath. "
-            "Beautiful surface, lethal core.",
+            "origin": "Radioactive decay of Bi-209 (alpha decay, extremely long half-life) "
+            "and U-238 decay chain. Discovered by Marie and Pierre Curie in 1898.",
+            "stability": "NO stable isotopes. Po-209 has longest half-life (124 years). "
+            "Po-210 (t1/2=138 days) was used to assassinate Alexander Litvinenko (2006).",
+            "binding_energy": "7.83 MeV/nucleon",
+            "notes": "Discovered by Marie Curie, named for Poland (her homeland, then under "
+            "partition). Extremely radioactive alpha emitter. Po-210 was the neutron initiator "
+            "in Fat Man (Pu implosion bomb). Used to assassinate Litvinenko in London (2006). "
+            "Neo-soul with danger underneath. Beautiful surface, lethal core.",
         },
         {
             "n": 85,
@@ -1621,9 +1763,15 @@ ALBUM = {
             "bpm": 160,
             "group": 17,
             "genre": "punk",
-            "notes": "Rarest naturally occurring element. Less than 30g on entire Earth. "
-            "Halogen but barely exists. Punk that is over before you notice it. "
-            "30 seconds. Gone.",
+            "origin": "Radioactive decay chains of U-235 and Np-237. At any given moment, "
+            "less than 30 grams exist in the entire Earth's crust.",
+            "stability": "NO stable isotopes. At-210 has longest half-life (8.1 hours). "
+            "Rarest naturally occurring element.",
+            "binding_energy": "~7.80 MeV/nucleon (estimated)",
+            "notes": "Rarest naturally occurring element. Less than 30g exist on Earth at any moment. "
+            "Halogen but barely exists. Named from Greek astatos (unstable). "
+            "At-211 being studied for targeted alpha therapy in cancer treatment. "
+            "Punk that is over before you notice it. 30 seconds. Gone.",
         },
         {
             "n": 86,
@@ -1632,9 +1780,16 @@ ALBUM = {
             "bpm": 58,
             "group": 18,
             "genre": "ambient",
-            "notes": "Radioactive noble gas. Seeps from the ground. Invisible. Odorless. "
-            "Second leading cause of lung cancer. Ambient that is dangerous to sit in. "
-            "The gas in your basement you should test for.",
+            "origin": "Radioactive decay of Ra-226 (in the U-238 decay chain). "
+            "Continuously produced from radium in soil and rock.",
+            "stability": "NO stable isotopes. Rn-222 has longest half-life (3.82 days). "
+            "Rn-222 is the specific isotope that accumulates in basements.",
+            "binding_energy": "~7.78 MeV/nucleon (estimated)",
+            "notes": "Radioactive noble gas. Seeps from soil through foundation cracks. "
+            "Invisible. Odorless. Colorless. Second leading cause of lung cancer (after smoking). "
+            "EPA recommends testing all homes below the third floor. "
+            "Rn-222 alpha decays to Po-218 which plates out on lung tissue. "
+            "Ambient that is dangerous to sit in. Test your basement.",
         },
         # ══════════════════════════════════════════════════════════════
         # PERIOD 7 — Extreme Territory (Fr through Og)
