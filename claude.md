@@ -2,15 +2,26 @@
 
 ## Status: v170.0.0 — 415 songs, 3705 tests, 98 effects, 171 presets, 595+ theory functions
 
-## WHERE WE LEFT OFF (2026-04-15)
+## WHERE WE LEFT OFF (2026-04-15, continued)
 
-Massive quality push across two sessions (28+ commits). Package is built,
-tested, and ready to publish to PyPI.
+Massive quality + theory push across multiple sessions (35+ commits).
+Package is built, tested, and ready to publish to PyPI.
 
-### Actual current stats
+### Actual current stats (verified via introspection)
 - 98 effect functions (was ~30 before quality push)
-- 171 instrument presets (was ~120)
+- 171+ instrument presets (was ~120)
+- 67 genre transform profiles
+- 97 chord shapes, 53 scales
+- 22 export quality presets, 9 mastering styles
+- 12 body resonance models, 14 instrument noise layers
 - 27-stage per-note processing pipeline
+- Music theory backlog: 34/38 items complete
+- Composition intelligence: auto_harmonize, embellish, rhythmic_variation,
+  chord_substitute (7 types), reharmonize, melodic_inversion, retrograde,
+  retrograde_inversion, melodic_sequence, pedal_tone, call_and_response
+- 25+ ornament/embellishment functions
+- 5 non-chord tone inserters
+- Full auto-mix + mastering pipeline
 - Professional mastering chain on master bus
 - Dynamic band-limited oscillators (fill to Nyquist per frequency)
 - Exponential ADSR, 2ms micro-fades, DC offset removal
