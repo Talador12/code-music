@@ -213,6 +213,8 @@ from .mastering import (
     true_peak_limit,
 )
 from .midi import export_midi, import_midi
+from .effects import stereo_width
+from .export import QUALITY_PRESETS, export_with_preset, list_quality_presets
 from .notation import export_abc, export_lilypond, export_musicxml
 from .rhythm_game import export_clone_hero, export_stepmania
 from .transform import (

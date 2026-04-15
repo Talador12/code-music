@@ -202,6 +202,20 @@ examples:
         help="List all available genres for --genre-transform and exit",
     )
     parser.add_argument(
+        "--quality",
+        type=str,
+        default=None,
+        metavar="PRESET",
+        help="Export with a named quality preset (e.g. --quality spotify-upload, "
+        "--quality apple-lossless, --quality archive-master). "
+        "Use --list-quality to see all options.",
+    )
+    parser.add_argument(
+        "--list-quality",
+        action="store_true",
+        help="List all quality presets (platform-specific export settings) and exit",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=Path,
@@ -371,6 +385,18 @@ examples:
         print(f"{len(genres)} genres available for --genre-transform:\n")
         for g in genres:
             print(f"  {g}")
+        return 0
+
+    if args.list_quality:
+        from .export import list_quality_presets
+
+        presets = list_quality_presets()
+        print(f"{len(presets)} quality presets available:\n")
+        for p in presets:
+            print(
+                f"  {p['name']:20s} {p['format']:4s} {p['bit_depth']:2s}-bit "
+                f"{p['sample_rate']:>5s}Hz  {p['description']}"
+            )
         return 0
 
     if args.list_instruments:

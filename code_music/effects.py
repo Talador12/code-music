@@ -28,22 +28,65 @@ def _stereo(fn, samples: FloatArray, **kw) -> FloatArray:
 
 
 def _make_reverb_ir(sample_rate: int, room_size: float, damping: float) -> np.ndarray:
-    """Build a short exponentially-decaying impulse response for convolution reverb.
+    """Build an impulse response with early reflections + diffuse tail.
 
-    Much faster than recursive comb/allpass for long signals — O(N log N) FFT convolution.
+    Three stages for a realistic reverb:
+    1. Pre-delay gap (1-30ms depending on room size)
+    2. Early reflections: discrete taps that define room shape
+    3. Diffuse tail: allpass-filtered noise with frequency-dependent decay
+
+    The early reflections are what make a room sound like a room instead
+    of a generic wash. The diffuse tail is the lush sustain. Together
+    they create a reverb that has both clarity and depth.
     """
-    decay_sec = 0.5 + room_size * 2.5  # 0.5s (small) … 3.0s (large)
+    decay_sec = 0.5 + room_size * 2.5
     ir_len = int(decay_sec * sample_rate)
-    rng = np.random.default_rng(42)  # deterministic
+    rng = np.random.default_rng(42)
+
+    # Stage 1: Pre-delay (empty gap before first reflection)
+    predelay_ms = 5.0 + room_size * 25.0
+    predelay_samples = int(predelay_ms * sample_rate / 1000.0)
+    predelay_samples = min(predelay_samples, ir_len // 8)
+
+    # Stage 2: Early reflections (6 discrete taps at room-appropriate delays)
+    er = np.zeros(ir_len)
+    er_delays_ms = [11.0, 23.0, 37.0, 53.0, 71.0, 89.0]
+    er_gains = [0.7, 0.55, 0.45, 0.35, 0.25, 0.18]
+    for delay_ms, gain in zip(er_delays_ms, er_gains):
+        scaled_delay = delay_ms * (0.5 + room_size)
+        pos = predelay_samples + int(scaled_delay * sample_rate / 1000.0)
+        if pos < ir_len:
+            er[pos] = gain * rng.choice([-1.0, 1.0])
+
+    # Stage 3: Diffuse tail (shaped noise through allpass filters)
     noise = rng.standard_normal(ir_len)
     t = np.arange(ir_len) / sample_rate
-    # Exponential decay envelope
+
+    # Frequency-dependent decay: highs decay faster than lows (real rooms absorb treble)
     env = np.exp(-t * (3.0 + damping * 8.0))
-    # Low-pass the IR to simulate room damping
-    cutoff = max(500.0, 8000.0 * (1.0 - damping))
-    sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
-    ir = sig.sosfilt(sos, noise * env)
-    # Normalize IR
+    diffuse = noise * env
+
+    # High-frequency damping (increases with damping parameter)
+    cutoff = max(500.0, min(sample_rate / 2 - 1, 8000.0 * (1.0 - damping * 0.7)))
+    sos_lp = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+    diffuse = sig.sosfilt(sos_lp, diffuse)
+
+    # Allpass diffusion stages (smear the transients into a smooth tail)
+    for ap_delay in [37, 113, 271, 503]:
+        if ap_delay >= ir_len:
+            continue
+        g = 0.6
+        padded = np.zeros(ir_len)
+        padded[ap_delay:] = diffuse[:-ap_delay] if ap_delay > 0 else diffuse
+        diffuse = -g * diffuse + padded + g * np.roll(padded, ap_delay)
+
+    # Zero out the pre-delay region of the diffuse tail
+    diffuse[: predelay_samples + int(30 * sample_rate / 1000)] *= np.linspace(
+        0, 1, predelay_samples + int(30 * sample_rate / 1000)
+    )[: len(diffuse[: predelay_samples + int(30 * sample_rate / 1000)])]
+
+    # Combine early reflections + diffuse tail
+    ir = er * 0.4 + diffuse * 0.8
     peak = np.max(np.abs(ir))
     if peak > 0:
         ir /= peak
@@ -189,35 +232,56 @@ def chorus(
     sample_rate: int = 44100,
     rate_hz: float = 0.8,
     depth_ms: float = 3.0,
+    voices: int = 3,
+    spread: float = 0.6,
     wet: float = 0.4,
 ) -> FloatArray:
-    """LFO-modulated pitch/delay chorus via fractional resampling."""
+    """Multi-voice stereo chorus with phase-offset LFOs.
+
+    Real chorus units (Roland Juno, Boss CE-2) use multiple delayed copies
+    of the signal, each modulated at slightly different rates and phases.
+    The phase offsets between voices create stereo width. More voices =
+    thicker, more ensemble-like. Three voices is the sweet spot for most
+    instruments. Six voices starts to sound like a string section.
+
+    Args:
+        rate_hz:  LFO speed in Hz (0.5-2.0 typical).
+        depth_ms: Modulation depth (2-5ms typical).
+        voices:   Number of chorus voices (1-6). More = thicker.
+        spread:   Stereo width of the chorus (0.0-1.0).
+        wet:      Wet/dry mix.
+    """
     n = len(samples)
     t = np.arange(n) / sample_rate
-    # LFO modulates playback speed slightly — resample approach:
-    # shift each channel by a time-varying amount using numpy interp
-    lfo = np.sin(2 * np.pi * rate_hz * t)
     depth_samples = depth_ms * sample_rate / 1000.0
-    offsets = (lfo * depth_samples).astype(np.float64)
 
-    indices = np.arange(n, dtype=np.float64) - offsets
-    indices = np.clip(indices, 0, n - 1)
+    out_l = samples[:, 0] * (1 - wet)
+    out_r = samples[:, 1] * (1 - wet)
+    voice_gain = wet / max(voices, 1)
 
-    def _warp(ch: np.ndarray) -> np.ndarray:
+    for v in range(voices):
+        # Each voice gets a unique phase offset and slight rate variation
+        phase = v * 2 * np.pi / voices
+        rate_variation = 1.0 + (v - voices / 2) * 0.05  # slight detuning
+        lfo = np.sin(2 * np.pi * rate_hz * rate_variation * t + phase)
+        offsets = (lfo * depth_samples).astype(np.float64)
+
+        indices = np.clip(np.arange(n, dtype=np.float64) - offsets, 0, n - 1)
         lo = np.floor(indices).astype(int)
         hi = np.minimum(lo + 1, n - 1)
         frac = indices - lo
-        return ch[lo] * (1 - frac) + ch[hi] * frac
 
-    warped_l = _warp(samples[:, 0])
-    warped_r = _warp(samples[:, 1])
+        warped_l = samples[:, 0][lo] * (1 - frac) + samples[:, 0][hi] * frac
+        warped_r = samples[:, 1][lo] * (1 - frac) + samples[:, 1][hi] * frac
 
-    return np.column_stack(
-        [
-            samples[:, 0] * (1 - wet) + warped_l * wet,
-            samples[:, 1] * (1 - wet) + warped_r * wet,
-        ]
-    ).astype(np.float64)
+        # Stereo placement: voices alternate L/R with spread control
+        pan_angle = (v / max(voices - 1, 1) - 0.5) * spread * np.pi
+        l_gain = np.cos(pan_angle / 2 + np.pi / 4)
+        r_gain = np.sin(pan_angle / 2 + np.pi / 4)
+        out_l += warped_l * voice_gain * l_gain
+        out_r += warped_r * voice_gain * r_gain
+
+    return np.column_stack([out_l, out_r]).astype(np.float64)
 
 
 # ---------------------------------------------------------------------------
@@ -289,8 +353,38 @@ def lowpass(
     cutoff_hz: float = 2000.0,
     q: float = 0.707,
 ) -> FloatArray:
-    """Biquad low-pass filter."""
-    sos = sig.butter(2, cutoff_hz, btype="low", fs=sample_rate, output="sos")
+    """Resonant low-pass filter (biquad).
+
+    Q controls resonance at the cutoff frequency. 0.707 = Butterworth
+    (flat passband, no resonance). Higher Q = resonant peak that makes
+    synths sing and filters scream. Q > 10 = self-oscillation territory.
+
+    Args:
+        cutoff_hz: Cutoff frequency.
+        q: Quality factor / resonance (0.5-20.0). 0.707 = flat. 5+ = resonant peak.
+    """
+    cutoff_hz = min(cutoff_hz, sample_rate / 2 - 1)
+    # Use iirpeak for resonant filters, butter for flat Q=0.707
+    if abs(q - 0.707) < 0.01:
+        sos = sig.butter(2, cutoff_hz, btype="low", fs=sample_rate, output="sos")
+    else:
+        # Convert Q to bandwidth for scipy's iirfilter
+        sos = sig.iirfilter(
+            2, cutoff_hz, btype="lowpass", ftype="butter", fs=sample_rate, output="sos"
+        )
+        # Apply resonance by adding a peak at cutoff
+        if q > 1.0:
+            bw = cutoff_hz / q
+            low_bp = max(20.0, cutoff_hz - bw / 2)
+            high_bp = min(sample_rate / 2 - 1, cutoff_hz + bw / 2)
+            if low_bp < high_bp:
+                sos_peak = sig.butter(
+                    2, [low_bp, high_bp], btype="band", fs=sample_rate, output="sos"
+                )
+                resonance_amount = min((q - 1.0) * 0.3, 3.0)
+                filtered = _biquad_sos(samples, sos)
+                peak = _biquad_sos(samples, sos_peak)
+                return (filtered + peak * resonance_amount).astype(np.float64)
     return _biquad_sos(samples, sos)
 
 
@@ -300,8 +394,24 @@ def highpass(
     cutoff_hz: float = 200.0,
     q: float = 0.707,
 ) -> FloatArray:
-    """Biquad high-pass filter."""
+    """Resonant high-pass filter (biquad).
+
+    Args:
+        cutoff_hz: Cutoff frequency.
+        q: Quality factor / resonance (0.5-20.0).
+    """
+    cutoff_hz = max(20.0, min(cutoff_hz, sample_rate / 2 - 1))
     sos = sig.butter(2, cutoff_hz, btype="high", fs=sample_rate, output="sos")
+    if q > 1.0:
+        bw = cutoff_hz / q
+        low_bp = max(20.0, cutoff_hz - bw / 2)
+        high_bp = min(sample_rate / 2 - 1, cutoff_hz + bw / 2)
+        if low_bp < high_bp:
+            sos_peak = sig.butter(2, [low_bp, high_bp], btype="band", fs=sample_rate, output="sos")
+            resonance_amount = min((q - 1.0) * 0.3, 3.0)
+            filtered = _biquad_sos(samples, sos)
+            peak = _biquad_sos(samples, sos_peak)
+            return (filtered + peak * resonance_amount).astype(np.float64)
     return _biquad_sos(samples, sos)
 
 
@@ -311,10 +421,21 @@ def bandpass(
     center_hz: float = 1000.0,
     q: float = 1.0,
 ) -> FloatArray:
-    """Biquad band-pass filter."""
-    bw = center_hz / q
+    """Resonant band-pass filter (biquad).
+
+    Higher Q = narrower band = more resonant. Q=1 is moderate. Q=10
+    is a sharp notch that rings like a bell. The filter Q here directly
+    controls bandwidth: BW = center/Q.
+
+    Args:
+        center_hz: Center frequency.
+        q: Quality factor (0.5-20.0). Higher = narrower passband.
+    """
+    bw = center_hz / max(q, 0.1)
     low = max(20.0, center_hz - bw / 2)
     high = min(sample_rate / 2 - 1, center_hz + bw / 2)
+    if low >= high:
+        return samples.copy()
     sos = sig.butter(2, [low, high], btype="band", fs=sample_rate, output="sos")
     return _biquad_sos(samples, sos)
 
@@ -331,24 +452,87 @@ def compress(
     ratio: float = 4.0,
     attack_ms: float = 5.0,
     release_ms: float = 50.0,
-    makeup_gain: float = 1.2,
+    makeup_gain: float = 0.0,
+    knee_db: float = 6.0,
+    lookahead_ms: float = 5.0,
 ) -> FloatArray:
-    """Peak-following compressor — vectorised envelope via scipy lfilter."""
-    peak = np.max(np.abs(samples), axis=1)  # mono-linked
+    """Compressor with soft knee, look-ahead, and auto-makeup gain.
 
-    # Smooth envelope: use the slower (release) coefficient as a uniform IIR
-    # smoother — fast via scipy lfilter, good enough for gain riding.
+    Soft knee: instead of an abrupt ratio change at the threshold, the
+    compression ratio ramps gradually over a region around the threshold.
+    This sounds more natural - like a human engineer riding a fader
+    instead of a switch clicking on.
+
+    Look-ahead: a small delay that lets the compressor see transients
+    before they arrive, preventing the first few milliseconds of a
+    snare hit or kick from punching through uncompressed.
+
+    Auto-makeup: when makeup_gain is 0 (default), automatically
+    compensates for the volume reduction caused by compression. The
+    formula approximates the average gain reduction and inverts it.
+
+    Args:
+        threshold:     Compression threshold (0.0-1.0 linear).
+        ratio:         Compression ratio (1.0 = no compression, inf = limiting).
+        attack_ms:     Attack time (1-100ms).
+        release_ms:    Release time (10-500ms).
+        makeup_gain:   Manual makeup gain. 0 = auto-calculate.
+        knee_db:       Soft knee width in dB (0 = hard knee, 6 = gentle, 12 = very soft).
+        lookahead_ms:  Look-ahead time (0-10ms). Delays the dry signal to catch transients.
+    """
+    peak = np.max(np.abs(samples), axis=1)
+
+    # Look-ahead: shift the envelope detection forward in time
+    if lookahead_ms > 0:
+        la_samples = int(lookahead_ms * sample_rate / 1000)
+        peak = np.roll(peak, -la_samples)
+        peak[-la_samples:] = peak[-la_samples - 1]
+
+    # Separate attack/release envelope follower (attack is fast, release is slow)
+    a_coef = math.exp(-1.0 / max(1, attack_ms * sample_rate / 1000))
     r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
-    env = sig.lfilter([1.0 - r_coef], [1.0, -r_coef], peak)
 
-    # Gain computation (fully vectorised)
-    gain = np.where(
-        env > threshold,
-        (threshold + (env - threshold) / ratio) / np.maximum(env, 1e-9),
-        1.0,
-    )
+    env = np.zeros(len(peak))
+    env[0] = peak[0]
+    for i in range(1, len(peak)):
+        if peak[i] > env[i - 1]:
+            env[i] = a_coef * env[i - 1] + (1 - a_coef) * peak[i]
+        else:
+            env[i] = r_coef * env[i - 1] + (1 - r_coef) * peak[i]
 
-    result = samples * gain[:, np.newaxis] * makeup_gain
+    # Convert to dB for soft knee calculation
+    env_db = 20 * np.log10(np.maximum(env, 1e-10))
+    thresh_db = 20 * np.log10(max(threshold, 1e-10))
+
+    # Soft knee gain computation
+    half_knee = knee_db / 2.0
+    gain_db = np.zeros_like(env_db)
+
+    for i in range(len(env_db)):
+        x = env_db[i]
+        if x < thresh_db - half_knee:
+            gain_db[i] = 0.0  # below knee: no compression
+        elif x > thresh_db + half_knee:
+            gain_db[i] = thresh_db + (x - thresh_db) / ratio - x  # above knee: full ratio
+        else:
+            # Inside the knee: quadratic interpolation
+            knee_range = x - (thresh_db - half_knee)
+            gain_db[i] = ((1 / ratio - 1) * knee_range**2) / (2 * knee_db)
+
+    gain_linear = 10 ** (gain_db / 20.0)
+
+    # Auto-makeup gain: compensate for average gain reduction
+    if makeup_gain == 0.0:
+        avg_reduction = np.mean(gain_linear)
+        if avg_reduction > 0:
+            auto_makeup = 1.0 / max(avg_reduction, 0.1)
+            auto_makeup = min(auto_makeup, 4.0)  # cap at +12dB
+        else:
+            auto_makeup = 1.0
+    else:
+        auto_makeup = makeup_gain
+
+    result = samples * gain_linear[:, np.newaxis] * auto_makeup
     return np.clip(result, -1.0, 1.0).astype(np.float64)
 
 
@@ -357,8 +541,31 @@ def compress(
 # ---------------------------------------------------------------------------
 
 
+def stereo_width(
+    samples: FloatArray,
+    width: float = 1.0,
+) -> FloatArray:
+    """Adjust stereo width via mid-side processing.
+
+    Mid-side is the secret weapon of mastering. Convert L/R to M/S,
+    scale the side channel, convert back. Width=0 = mono. Width=1 =
+    unchanged. Width=2 = exaggerated stereo (sides doubled). Width=0.5
+    = narrowed (more focused center image).
+
+    Used in mastering to widen a mix that sounds too narrow, or narrow
+    one that sounds too wide on headphones.
+
+    Args:
+        width: Stereo width multiplier (0.0=mono, 1.0=normal, 2.0=wide).
+    """
+    mid = (samples[:, 0] + samples[:, 1]) * 0.5
+    side = (samples[:, 0] - samples[:, 1]) * 0.5
+    side = side * width
+    return np.column_stack([mid + side, mid - side]).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
-    """Equal-power stereo pan. position: -1.0 (L) … 0.0 (C) … 1.0 (R)."""
+    """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
     result = samples.copy()
     result[:, 0] *= math.cos(angle)
