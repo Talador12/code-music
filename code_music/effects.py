@@ -2733,6 +2733,194 @@ def reference_match(
     return samples.copy()
 
 
+def envelope_follower(
+    samples: FloatArray,
+    control: FloatArray,
+    sample_rate: int = 44100,
+    target: str = "filter",
+    min_val: float = 200.0,
+    max_val: float = 8000.0,
+    attack_ms: float = 5.0,
+    release_ms: float = 50.0,
+) -> FloatArray:
+    """Envelope follower: one signal's dynamics control another's parameters.
+
+    The control signal's amplitude envelope drives a parameter on the
+    target signal. Classic use: drums control a filter on a synth pad -
+    every kick opens the filter. Or: a vocal's dynamics control a gate
+    on a reverb. The glue between elements in a mix.
+
+    Targets:
+        filter:  Control signal drives lowpass cutoff (min_val to max_val Hz).
+        volume:  Control signal drives amplitude (min_val to max_val as 0-1).
+        pan:     Control signal drives stereo position (-1 to +1).
+
+    Args:
+        samples:     Signal to process.
+        control:     Signal whose dynamics drive the effect.
+        target:      What parameter to modulate.
+        min_val:     Parameter value when control is silent.
+        max_val:     Parameter value when control is loud.
+        attack_ms:   Envelope follower attack.
+        release_ms:  Envelope follower release.
+    """
+    # Extract envelope from control signal
+    if control.ndim == 2:
+        ctrl_mono = np.max(np.abs(control), axis=1)
+    else:
+        ctrl_mono = np.abs(control)
+
+    n = min(len(samples), len(ctrl_mono))
+    ctrl_mono = ctrl_mono[:n]
+
+    a_coef = math.exp(-1.0 / max(1, attack_ms * sample_rate / 1000))
+    r_coef = math.exp(-1.0 / max(1, release_ms * sample_rate / 1000))
+
+    env = np.zeros(n)
+    env[0] = ctrl_mono[0]
+    for i in range(1, n):
+        if ctrl_mono[i] > env[i - 1]:
+            env[i] = a_coef * env[i - 1] + (1 - a_coef) * ctrl_mono[i]
+        else:
+            env[i] = r_coef * env[i - 1] + (1 - r_coef) * ctrl_mono[i]
+
+    # Normalize envelope to 0-1
+    env_max = np.max(env)
+    if env_max > 0:
+        env_norm = env / env_max
+    else:
+        env_norm = env
+
+    out = samples[:n].copy()
+
+    if target == "filter":
+        # Drive a lowpass filter cutoff
+        nyq = sample_rate / 2 - 1
+        cutoffs = min_val + env_norm * (max_val - min_val)
+        cutoffs = np.clip(cutoffs, 20.0, nyq)
+        block = 256
+        for s in range(0, n, block):
+            e = min(s + block, n)
+            cutoff = float(np.mean(cutoffs[s:e]))
+            cutoff = max(20.0, min(cutoff, nyq))
+            sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+            if out.ndim == 2:
+                out[s:e, 0] = sig.sosfilt(sos, out[s:e, 0])
+                out[s:e, 1] = sig.sosfilt(sos, out[s:e, 1])
+            else:
+                out[s:e] = sig.sosfilt(sos, out[s:e])
+
+    elif target == "volume":
+        gain = min_val + env_norm * (max_val - min_val)
+        if out.ndim == 2:
+            out *= gain[:, np.newaxis]
+        else:
+            out *= gain
+
+    elif target == "pan":
+        pan_pos = -1.0 + env_norm * 2.0  # -1 to +1
+        angle = (pan_pos + 1) / 2 * np.pi / 2
+        if out.ndim == 2:
+            mono = (out[:, 0] + out[:, 1]) * 0.5
+            out[:, 0] = mono * np.cos(angle)
+            out[:, 1] = mono * np.sin(angle)
+
+    return out.astype(np.float64)
+
+
+def delay_throw(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    at_sample: int = 0,
+    delay_ms: float = 375.0,
+    feedback: float = 0.4,
+    repeats: int = 4,
+    pan_lr: float = 0.0,
+    wet: float = 0.5,
+) -> FloatArray:
+    """Delay throw: one-shot delay on a specific moment for mix ear candy.
+
+    Instead of running delay on an entire track, you throw a single word
+    or note into the delay at a specific point. The "delay throw" is the
+    mixing trick that makes certain moments sparkle - a vocal phrase echoes
+    into space, a snare hit rings out, a guitar lick repeats and fades.
+
+    Professional mixers automate delay sends for these moments. This
+    function gives you the same result without automation.
+
+    Args:
+        at_sample:  Sample position where the throw starts.
+        delay_ms:   Delay time per repeat.
+        feedback:   Volume decay per repeat (0.3-0.6 typical).
+        repeats:    Number of echo repeats.
+        pan_lr:     Pan position of the echoes (-1 to +1).
+        wet:        Wet level of the echoes.
+    """
+    n = len(samples)
+    delay_samp = int(delay_ms * sample_rate / 1000)
+    out = samples.copy()
+
+    # Grab a short section at the throw point (one delay period worth)
+    grab_end = min(at_sample + delay_samp, n)
+    if at_sample >= n or grab_end <= at_sample:
+        return out
+
+    grain = samples[at_sample:grab_end].copy()
+
+    # Generate echoes
+    for rep in range(1, repeats + 1):
+        write_pos = at_sample + delay_samp * rep
+        gain = feedback**rep * wet
+        if gain < 0.01:
+            break
+        write_end = min(write_pos + len(grain), n)
+        actual = write_end - write_pos
+        if actual <= 0:
+            break
+
+        echo = grain[:actual] * gain
+
+        if out.ndim == 2:
+            # Pan the echoes
+            angle = (pan_lr + 1) / 2 * np.pi / 2
+            out[write_pos:write_end, 0] += (
+                echo[:, 0] * math.cos(angle) if echo.ndim == 2 else echo * math.cos(angle)
+            )
+            out[write_pos:write_end, 1] += (
+                echo[:, 1] * math.sin(angle) if echo.ndim == 2 else echo * math.sin(angle)
+            )
+        else:
+            out[write_pos:write_end] += echo if echo.ndim == 1 else echo[:, 0]
+
+    return np.clip(out, -1.0, 1.0).astype(np.float64)
+
+
+def stereo_rotate(
+    samples: FloatArray,
+    angle_degrees: float = 0.0,
+) -> FloatArray:
+    """Rotate the stereo field by an angle.
+
+    0 degrees = no change. 90 degrees = swap L and R. 45 degrees = equal
+    mix of both channels in both outputs. Useful for correcting stereo
+    image issues or creating movement when automated over time.
+
+    Args:
+        angle_degrees: Rotation angle (-180 to +180).
+    """
+    if samples.ndim != 2:
+        return samples.copy()
+
+    rad = angle_degrees * np.pi / 180.0
+    cos_a = np.cos(rad)
+    sin_a = np.sin(rad)
+
+    left = samples[:, 0] * cos_a - samples[:, 1] * sin_a
+    right = samples[:, 0] * sin_a + samples[:, 1] * cos_a
+
+    return np.column_stack([left, right]).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
