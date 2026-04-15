@@ -569,7 +569,12 @@ ALBUM = {
             "bpm": 130,
             "group": 13,
             "genre": "ska",
-            "notes": "Most abundant metal in Earth's crust. Lightweight. Cans, foil, aircraft. "
+            "origin": "Carbon/neon burning in massive stars + supernova nucleosynthesis",
+            "stability": "Stable. Al-27 (100%). Only one stable isotope.",
+            "binding_energy": "8.33 MeV/nucleon",
+            "notes": "Most abundant metal in Earth's crust (8.1% by mass). Third most abundant element "
+            "overall. Lightweight (2.7 g/cm3). Cans, foil, aircraft, power lines. "
+            "Only one stable isotope = one key, no modulation, straightforward. "
             "Ska because aluminum is light, recyclable, everywhere. "
             "The upbeat of metals. Horn stabs. Walking bass.",
         },
@@ -580,8 +585,14 @@ ALBUM = {
             "bpm": 128,
             "group": 14,
             "genre": "electronic",
-            "notes": "Semiconductor. Every computer chip. Solar panels. Glass. "
+            "origin": "Oxygen burning in massive stars (28Si is the primary product of O+O fusion)",
+            "stability": "Stable. Si-28 (92.2%). 3 stable isotopes. Si-28 is doubly magic-adjacent.",
+            "binding_energy": "8.45 MeV/nucleon (climbing toward the iron peak)",
+            "notes": "Semiconductor. Every computer chip. Solar panels. Glass (SiO2). "
+            "Second most abundant element in Earth's crust (27.7%). "
+            "Silicon burning is the LAST fusion stage before iron core collapse and supernova. "
             "Electronic. 128 BPM four-on-the-floor. Binary rhythm patterns. "
+            "3 stable isotopes = verse/chorus/bridge structure. "
             "Silicon runs the digital world. This track runs on silicon.",
         },
         {
@@ -591,8 +602,13 @@ ALBUM = {
             "bpm": 148,
             "group": 15,
             "genre": "jazz",
-            "notes": "Glows in the dark (white form). DNA backbone. Matches. Fertilizer. "
-            "Two allotropes = two contrasting jazz sections. "
+            "origin": "Neon burning in massive stars + neutron capture processes",
+            "stability": "Stable. P-31 (100%). Only one stable isotope.",
+            "binding_energy": "8.48 MeV/nucleon",
+            "notes": "Glows in the dark (white form, chemiluminescence from slow oxidation in air). "
+            "DNA backbone (phosphodiester bonds). Matches (P4S3 strikes). Fertilizer. ATP. "
+            "Two allotropes: white P4 (tetrahedral, pyrophoric, toxic) and red (amorphous, stable). "
+            "One stable isotope = one underlying key. Two allotropes = two contrasting jazz sections. "
             "White phosphorus = fast, dangerous. Red phosphorus = controlled, warm.",
         },
         {
@@ -602,7 +618,13 @@ ALBUM = {
             "bpm": 92,
             "group": 16,
             "genre": "blues",
-            "notes": "Brimstone. Volcanoes. Hot springs. Rotten egg smell. Gunpowder. "
+            "origin": "Oxygen burning in massive stars (32S is a direct O+O fusion product)",
+            "stability": "Stable. S-32 (94.9%). 4 stable isotopes. S-32 has magic N=16.",
+            "binding_energy": "8.49 MeV/nucleon",
+            "notes": "Brimstone. Volcanoes (SO2, H2S). Hot springs. Rotten egg smell (H2S). "
+            "Gunpowder component. Vulcanized rubber. Amino acids (cysteine, methionine). "
+            "S-32 has a magic neutron number (16) = extra nuclear stability. "
+            "4 stable isotopes = 4 blues verses. "
             "Dirty delta blues. Slide guitar. The devil's element needs "
             "the devil's music. Low, rumbling, sulfurous.",
         },
@@ -613,7 +635,12 @@ ALBUM = {
             "bpm": 178,
             "group": 17,
             "genre": "punk",
-            "notes": "Pool water smell. Bleach. WWI chemical weapon. Water purifier. "
+            "origin": "Oxygen burning in massive stars + supernova nucleosynthesis",
+            "stability": "Stable. Cl-35 (75.8%) and Cl-37 (24.2%). 2 stable isotopes.",
+            "binding_energy": "8.52 MeV/nucleon",
+            "notes": "Pool water smell. Bleach (NaClO). WWI chemical weapon. Water purifier. "
+            "Stomach acid (HCl). PVC plastic. Table salt partner (Cl- in NaCl). "
+            "2 stable isotopes = verse/chorus call-and-response punk structure. "
             "Punk. Cleans AND destroys. The element of contradictions "
             "at maximum tempo. Essential for survival, lethal in concentration.",
         },
@@ -624,7 +651,13 @@ ALBUM = {
             "bpm": 62,
             "group": 18,
             "genre": "ambient",
-            "notes": "Noble gas. 1 percent of the atmosphere. Welding shield. Light bulbs. "
+            "origin": "Stellar nucleosynthesis (40Ar from 40K decay; 36Ar from silicon burning)",
+            "stability": "Stable. Ar-40 (99.6%) from K-40 decay. Ar-36 (0.33%) primordial. 3 stable isotopes.",
+            "binding_energy": "8.60 MeV/nucleon",
+            "notes": "Noble gas. 0.93% of the atmosphere (third most abundant gas after N2 and O2). "
+            "Ar-40 is produced by radioactive decay of K-40 in Earth's crust - most atmospheric "
+            "argon is radiogenic, not primordial. Welding shield gas. Incandescent light bulb fill. "
+            "3 stable isotopes = 3 layered ambient textures. "
             "Ambient. Warm, protective glow. Prevents oxidation. "
             "The invisible shield. A blanket of inert sound.",
         },
@@ -639,7 +672,13 @@ ALBUM = {
             "bpm": 108,
             "group": 1,
             "genre": "blues",
-            "notes": "Alkali metal. Bananas. Nerve impulses. Explodes in water (violet). "
+            "origin": "Oxygen burning in massive stars (39K) + s-process",
+            "stability": "Stable. K-39 (93.3%). 3 isotopes (K-40 is radioactive, t1/2=1.25 billion years, "
+            "0.012% natural abundance - used for K-Ar radiometric dating of rocks).",
+            "binding_energy": "8.56 MeV/nucleon",
+            "notes": "Alkali metal. Bananas. Nerve impulses (Na+/K+ pump in every neuron). "
+            "K-40 is naturally radioactive - your body contains about 0.01 microcuries of it. "
+            "Explodes in water (violet flame). K-Ar dating determines the age of rocks. "
             "Blues with violet-lit fills. Essential for every heartbeat.",
         },
         {
@@ -649,7 +688,13 @@ ALBUM = {
             "bpm": 105,
             "group": 2,
             "genre": "country",
-            "notes": "Bones. Teeth. Limestone. Chalk. Marble. Shells. "
+            "origin": "Silicon burning + oxygen burning in massive stars",
+            "stability": "Stable. Ca-40 (96.9%). 6 stable isotopes. Ca-40 is doubly magic (20p, 20n).",
+            "binding_energy": "8.55 MeV/nucleon",
+            "notes": "Bones. Teeth. Limestone. Chalk. Marble. Seashells. Eggshells. Cement. "
+            "Fifth most abundant element in Earth's crust. Ca-40 is doubly magic (20 protons, "
+            "20 neutrons, both magic numbers) = exceptionally stable. "
+            "6 stable isotopes = 6 verse structure. "
             "Country with backbone. Structural, dependable, the skeleton of life.",
         },
         {
@@ -659,7 +704,12 @@ ALBUM = {
             "bpm": 142,
             "group": 3,
             "genre": "prog_metal",
-            "notes": "First transition metal. Rare. Aerospace alloys. Lightweight strength. "
+            "origin": "Silicon burning + s-process in massive stars",
+            "stability": "Stable. Sc-45 (100%). Only one stable isotope.",
+            "binding_energy": "8.62 MeV/nucleon",
+            "notes": "First transition metal. Rare (22 ppm in crust). Aerospace alloys (Sc-Al). "
+            "Scandium lights (metal halide lamps, stadium lighting). "
+            "Named for Scandinavia. One stable isotope = one rhythmic pulse. "
             "Prog metal. Odd time signatures. Technical playing. Flying.",
         },
         {
@@ -686,9 +736,13 @@ ALBUM = {
             "bpm": 160,
             "group": 5,
             "genre": "nwoahm",
-            "notes": "Strengthens steel. Named for Vanadis (Norse beauty goddess). "
-            "Vanadium steel in cars, tools, springs. NWOAHM groove. "
-            "Lamb of God energy. Strength through alloy.",
+            "origin": "Silicon burning + explosive nucleosynthesis in supernovae",
+            "stability": "Stable. V-51 (99.75%). 2 isotopes (V-50 is radioactive, t1/2=1.4x10^17 years).",
+            "binding_energy": "8.74 MeV/nucleon (closing in on the iron peak)",
+            "notes": "Strengthens steel. Named for Vanadis (Norse goddess of beauty and fertility). "
+            "Vanadium redox flow batteries (grid-scale energy storage). Vanadium steel in cars, "
+            "tools, springs. V-50 is very slightly radioactive (one of the rarest natural decays). "
+            "NWOAHM groove. Lamb of God energy. Strength through alloy.",
         },
         {
             "n": 24,
@@ -812,7 +866,12 @@ ALBUM = {
             "bpm": 140,
             "group": 12,
             "genre": "ska",
-            "notes": "Galvanizes steel (protective coating). Sunscreen. Pennies. Immune system. "
+            "origin": "s-process in AGB stars (slow neutron capture)",
+            "stability": "Stable. Zn-64 (49.2%). 5 stable isotopes.",
+            "binding_energy": "8.76 MeV/nucleon (near the iron peak)",
+            "notes": "Galvanizes steel (protective coating, prevents rust). Sunscreen (ZnO). "
+            "Pennies (97.5% zinc since 1982). Immune system essential. Brass alloy (Cu + Zn). "
+            "5 stable isotopes = 5 horn voices in the ska section. "
             "Ska because zinc protects and energizes. Upbeat, bouncing, defensive. "
             "Horn stabs. The bodyguard element.",
         },
@@ -823,7 +882,12 @@ ALBUM = {
             "bpm": 78,
             "group": 13,
             "genre": "lofi",
-            "notes": "Melts in your hand (29.7C melting point). Liquid metal at body temp. "
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. Ga-69 (60.1%). 2 stable isotopes.",
+            "binding_energy": "8.73 MeV/nucleon",
+            "notes": "Melts in your hand (29.76C melting point - body temperature liquefies it). "
+            "GaAs semiconductors (faster than silicon for RF and LEDs). Blue LEDs use GaN. "
+            "2 stable isotopes = two-part lofi structure. "
             "Lofi. Everything dissolving. Warm, soft, barely holding together. "
             "The element that melts when you touch it.",
         },
@@ -834,7 +898,12 @@ ALBUM = {
             "bpm": 128,
             "group": 14,
             "genre": "electronic",
-            "notes": "Semiconductor. Early transistors before silicon took over. Fiber optics. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Ge-74 (36.5%). 5 stable isotopes.",
+            "binding_energy": "8.71 MeV/nucleon",
+            "notes": "Semiconductor. Early transistors before silicon took over (first transistor 1947 "
+            "used germanium). Fiber optics (GeO2 dopant). Infrared optics (transparent to IR). "
+            "5 stable isotopes = 5-part arrangement. "
             "Retro electronic. The proto-digital element. Germanium diode warmth.",
         },
         {
@@ -844,7 +913,12 @@ ALBUM = {
             "bpm": 155,
             "group": 15,
             "genre": "jazz",
-            "notes": "The poison. Murder mystery staple. Also in semiconductors and pesticides. "
+            "origin": "s-process in AGB stars",
+            "stability": "Stable. As-75 (100%). Only one stable isotope.",
+            "binding_energy": "8.70 MeV/nucleon",
+            "notes": "The poison. Murder mystery staple (Napoleon, Medici, Marsh test 1836). "
+            "Also in semiconductors (GaAs) and CCA wood preservative. Metalloid. "
+            "One stable isotope = one dark key throughout. "
             "Dark jazz. Film noir saxophone. Suspenseful, dangerous, beautiful. "
             "The cocktail you should not have ordered.",
         },
@@ -855,9 +929,14 @@ ALBUM = {
             "bpm": 90,
             "group": 16,
             "genre": "neo_soul",
-            "notes": "Named for the Moon (Selene). Photovoltaic. Photocopiers. Antioxidant. "
-            "Neo-soul with lunar quality. Soft, reflective, light-sensitive. "
-            "The moon goddess element.",
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Se-80 (49.6%). 6 stable isotopes.",
+            "binding_energy": "8.69 MeV/nucleon",
+            "notes": "Named for the Moon (Selene). Photovoltaic (CdSe solar cells). "
+            "Photocopiers (photoconductor drums). Essential trace element (selenocysteine, "
+            "the 21st amino acid). Toxic in excess, essential in trace amounts. "
+            "6 stable isotopes = 6 sections with lunar phases as structure. "
+            "Neo-soul with lunar quality. Soft, reflective, light-sensitive.",
         },
         {
             "n": 35,
@@ -866,8 +945,13 @@ ALBUM = {
             "bpm": 170,
             "group": 17,
             "genre": "punk",
-            "notes": "Only nonmetal liquid at room temperature. Red-brown. Stinks. "
-            "Named from Greek bromos (stench). Punk. Aggressive. "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Br-79 (50.7%) and Br-81 (49.3%). 2 stable isotopes.",
+            "binding_energy": "8.68 MeV/nucleon",
+            "notes": "Only nonmetal liquid at room temperature (MP -7.2C, BP 58.8C). Red-brown. "
+            "Named from Greek bromos (stench). Flame retardants. Photography (AgBr). "
+            "One of only two elements liquid at room temperature (the other is mercury). "
+            "2 stable isotopes = verse/chorus punk. Aggressive. "
             "The element that smells like trouble.",
         },
         {
@@ -877,8 +961,13 @@ ALBUM = {
             "bpm": 68,
             "group": 18,
             "genre": "ambient",
-            "notes": "Noble gas. White-green glow. Used to define the meter (1960-1983). "
-            "Not Superman's planet (that is Krypton with a capital K and it is fictional). "
+            "origin": "s-process in AGB stars + r-process in supernovae",
+            "stability": "Stable. Kr-84 (57.0%). 6 stable isotopes.",
+            "binding_energy": "8.68 MeV/nucleon",
+            "notes": "Noble gas. White-green glow. Used to define the meter (1960-1983, Kr-86 "
+            "emission line). Insulating window fill. Flash photography fill gas. "
+            "Not Superman's planet (that is Krypton-with-a-K and it is fictional). "
+            "6 stable isotopes = 6 layered ambient textures. "
             "Ambient. The measurement element. Precise and glowing.",
         },
         # ══════════════════════════════════════════════════════════════
