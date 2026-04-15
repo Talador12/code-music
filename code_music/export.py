@@ -19,31 +19,72 @@ from numpy.typing import NDArray
 FloatArray = NDArray[np.float64]
 
 
-def _float_to_int16(samples: FloatArray) -> NDArray[np.int16]:
-    """Clip and convert float64 [-1, 1] to int16."""
+def _tpdf_dither(samples: FloatArray, bit_depth: int = 24) -> FloatArray:
+    """Apply TPDF (Triangular Probability Density Function) dithering.
+
+    Dithering adds a tiny amount of shaped noise before quantization.
+    This converts the harsh quantization distortion (correlated with the
+    signal) into uncorrelated noise floor (which sounds natural). TPDF
+    is the standard for professional audio - it completely linearizes
+    the quantization error.
+
+    Without dithering, quiet passages in 16-bit audio have audible
+    stepping artifacts. With TPDF dithering, they fade smoothly into
+    a noise floor that is inaudible at normal listening levels.
+    """
+    quant_step = 2.0 / (2**bit_depth)
+    rng = np.random.default_rng(42)
+    # TPDF: sum of two uniform distributions = triangular distribution
+    dither = (
+        rng.uniform(-0.5, 0.5, samples.shape) + rng.uniform(-0.5, 0.5, samples.shape)
+    ) * quant_step
+    return samples + dither
+
+
+def _float_to_int16(samples: FloatArray, dither: bool = True) -> NDArray[np.int16]:
+    """Clip, dither, and convert float64 [-1, 1] to int16."""
     clipped = np.clip(samples, -1.0, 1.0)
+    if dither:
+        clipped = _tpdf_dither(clipped, bit_depth=16)
+        clipped = np.clip(clipped, -1.0, 1.0)
     return (clipped * 32767).astype(np.int16)
 
 
-def _float_to_int24_bytes(samples: FloatArray) -> bytes:
-    """Convert float64 [-1,1] to raw 24-bit PCM bytes (little-endian)."""
+def _float_to_int24_bytes(samples: FloatArray, dither: bool = True) -> bytes:
+    """Convert float64 [-1,1] to raw 24-bit PCM bytes (little-endian) with TPDF dithering."""
     clipped = np.clip(samples, -1.0, 1.0)
+    if dither:
+        clipped = _tpdf_dither(clipped, bit_depth=24)
+        clipped = np.clip(clipped, -1.0, 1.0)
     ints = (clipped * 8388607).astype(np.int32)
-    # Pack each int32 as 3 bytes LE
     flat = ints.flatten()
-    buf = bytearray()
-    for v in flat:
-        buf += v.to_bytes(3, byteorder="little", signed=True)
+    buf = bytearray(len(flat) * 3)
+    for i in range(len(flat)):
+        v = int(flat[i])
+        b = v.to_bytes(3, byteorder="little", signed=True)
+        buf[i * 3] = b[0]
+        buf[i * 3 + 1] = b[1]
+        buf[i * 3 + 2] = b[2]
     return bytes(buf)
 
 
-def export_wav(samples: FloatArray, path: str | Path, sample_rate: int = 44100) -> Path:
+def export_wav(
+    samples: FloatArray,
+    path: str | Path,
+    sample_rate: int = 44100,
+    bit_depth: int = 24,
+) -> Path:
     """Write stereo float64 samples to a WAV file.
 
+    Default is 24-bit for maximum quality. 24-bit WAV has 144 dB of
+    dynamic range vs 96 dB for 16-bit. TPDF dithering is applied
+    automatically when reducing bit depth from float64.
+
     Args:
-        samples: Shape (N, 2) float64 array in range [-1, 1].
-        path: Output file path (will create directories).
+        samples:     Shape (N, 2) float64 array in range [-1, 1].
+        path:        Output file path (will create directories).
         sample_rate: Sample rate in Hz.
+        bit_depth:   16 or 24 (default 24 for maximum quality).
 
     Returns:
         Resolved Path of the written file.
@@ -51,13 +92,20 @@ def export_wav(samples: FloatArray, path: str | Path, sample_rate: int = 44100) 
     out = Path(path).with_suffix(".wav")
     out.parent.mkdir(parents=True, exist_ok=True)
 
-    int_samples = _float_to_int16(samples)
-
-    with wave.open(str(out), "w") as wf:
-        wf.setnchannels(2)
-        wf.setsampwidth(2)  # 16-bit = 2 bytes
-        wf.setframerate(sample_rate)
-        wf.writeframes(int_samples.tobytes())
+    if bit_depth == 24:
+        raw_bytes = _float_to_int24_bytes(samples)
+        with wave.open(str(out), "w") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(3)  # 24-bit = 3 bytes
+            wf.setframerate(sample_rate)
+            wf.writeframes(raw_bytes)
+    else:
+        int_samples = _float_to_int16(samples)
+        with wave.open(str(out), "w") as wf:
+            wf.setnchannels(2)
+            wf.setsampwidth(2)  # 16-bit = 2 bytes
+            wf.setframerate(sample_rate)
+            wf.writeframes(int_samples.tobytes())
 
     return out
 

@@ -227,20 +227,48 @@ def chorus(
 
 def distortion(
     samples: FloatArray,
+    sample_rate: int = 44100,
     drive: float = 3.0,
     tone: float = 0.5,
     wet: float = 0.6,
 ) -> FloatArray:
-    """Soft-clip overdrive with 1-pole tone control via scipy lfilter."""
-    driven = np.tanh(samples * drive)
-    # 1-pole LP IIR tone control: y[n] = alpha*x[n] + (1-alpha)*y[n-1]
+    """Oversampled soft-clip overdrive with tone control.
+
+    Distortion generates new harmonics. At 44.1kHz, those harmonics can
+    alias (fold back below Nyquist as inharmonic garbage). 2x oversampling
+    pushes the aliasing threshold to 44.1kHz (inaudible), then we
+    low-pass and downsample back. The result is warm saturation without
+    the fizzy digital artifacts that make cheap plugins sound cheap.
+    """
+    n = len(samples)
+
+    # 2x oversample: upsample, distort, downsample
+    up_l = sig.resample(samples[:, 0], n * 2)
+    up_r = sig.resample(samples[:, 1], n * 2)
+    up = np.column_stack([up_l, up_r])
+
+    # Saturation (at 2x sample rate, harmonics up to 2*Nyquist are safe)
+    driven = np.tanh(up * drive)
+
+    # Anti-aliasing low-pass before downsample (cut at original Nyquist)
+    aa_freq = min(sample_rate / 2 - 100, sample_rate * 0.45)
+    sos_aa = sig.butter(4, aa_freq, btype="low", fs=sample_rate * 2, output="sos")
+    driven[:, 0] = sig.sosfilt(sos_aa, driven[:, 0])
+    driven[:, 1] = sig.sosfilt(sos_aa, driven[:, 1])
+
+    # Downsample back to original rate
+    down_l = sig.resample(driven[:, 0], n)
+    down_r = sig.resample(driven[:, 1], n)
+
+    # Tone control (1-pole LP)
     alpha = 0.1 + tone * 0.85
     b_lp = [alpha]
     a_lp = [1.0, -(1.0 - alpha)]
-    toned_l = sig.lfilter(b_lp, a_lp, driven[:, 0])
-    toned_r = sig.lfilter(b_lp, a_lp, driven[:, 1])
+    toned_l = sig.lfilter(b_lp, a_lp, down_l)
+    toned_r = sig.lfilter(b_lp, a_lp, down_r)
     toned = np.column_stack([toned_l, toned_r])
-    return (samples * (1 - wet) + toned * wet).astype(np.float64)
+    result = samples * (1 - wet) + toned * wet
+    return np.clip(result, -1.0, 1.0).astype(np.float64)
 
 
 # ---------------------------------------------------------------------------

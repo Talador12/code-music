@@ -533,36 +533,64 @@ class Synth:
         cls._custom_instruments[name] = designer
 
     def _wave(self, wave: str, freq: float, n_samples: int) -> FloatArray:
-        """Generate waveform using additive/spectral synthesis (fully vectorised)."""
+        """Generate waveform using band-limited additive synthesis.
+
+        Harmonic count is dynamically calculated per note: we use as many
+        harmonics as will fit below the Nyquist frequency. A 100 Hz saw at
+        44.1 kHz gets 220 harmonics (rich, full). A 4000 Hz saw gets 5
+        harmonics (still band-limited, no aliasing). This is the key to
+        both clarity and warmth - maximum harmonic content without aliasing.
+        """
         t = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
-        # Cache harmonics lookup per wave type (called ~1000x per render)
+        # Cache preset harmonics as the MINIMUM (floor) count
         if wave not in self._harmonics_cache:
             self._harmonics_cache[wave] = next(
                 (p["harmonics"] for p in self.PRESETS.values() if p.get("wave") == wave),
                 8,
             )
-        harmonics = self._harmonics_cache[wave]
+        preset_harmonics = self._harmonics_cache[wave]
+
+        # Dynamic harmonic count: fill up to Nyquist for maximum richness
+        nyquist = self.sample_rate / 2.0
+        if freq > 0:
+            max_safe = max(1, int(nyquist / freq) - 1)
+        else:
+            max_safe = preset_harmonics
+        harmonics = min(max_safe, max(preset_harmonics, max_safe))
 
         if wave == "sine":
             return np.sin(2 * np.pi * freq * t)
 
         elif wave == "square":
-            ks = np.arange(1, harmonics + 1, 2)
+            n_odd = max(1, (harmonics + 1) // 2)
+            ks = np.arange(1, 2 * n_odd, 2)
+            # Only keep harmonics below Nyquist
+            ks = ks[ks * freq < nyquist]
+            if len(ks) == 0:
+                return np.sin(2 * np.pi * freq * t)
             return (4 / np.pi) * np.sum(
                 (1 / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t), axis=0
             )
 
         elif wave == "sawtooth":
             ks = np.arange(1, harmonics + 1)
+            ks = ks[ks * freq < nyquist]
+            if len(ks) == 0:
+                return np.sin(2 * np.pi * freq * t)
             signs = (-1) ** (ks + 1)
             return (2 / np.pi) * np.sum(
                 (signs / ks)[:, None] * np.sin(2 * np.pi * freq * ks[:, None] * t), axis=0
             )
 
         elif wave == "triangle":
-            ks = np.arange(0, harmonics)
-            ns = 2 * ks + 1
-            signs = (-1) ** ks
+            ks_base = np.arange(0, harmonics)
+            ns = 2 * ks_base + 1
+            mask = ns * freq < nyquist
+            ns = ns[mask]
+            ks_base = ks_base[mask]
+            if len(ns) == 0:
+                return np.sin(2 * np.pi * freq * t)
+            signs = (-1) ** ks_base
             return (8 / np.pi**2) * np.sum(
                 (signs / ns**2)[:, None] * np.sin(2 * np.pi * freq * ns[:, None] * t), axis=0
             )
@@ -1597,10 +1625,25 @@ class Synth:
             pass
 
         # Soft clip / normalize master bus
+        # Use a smooth polynomial soft-clipper instead of tanh. tanh is
+        # harsh at the knee - it introduces odd-harmonic distortion abruptly.
+        # This curve is flatter in the passband and gentler at the clip point,
+        # preserving dynamics better while still preventing overs.
         peak = np.max(np.abs(stereo_mix))
         if peak > 0:
             stereo_mix /= peak
-        stereo_mix = np.tanh(stereo_mix * 0.95)
+        x = stereo_mix * 0.95
+        # Smooth soft clip: y = x - (x^3)/3 for |x| < 1, clamped otherwise
+        # (softer than tanh, preserves more of the original dynamic shape)
+        stereo_mix = np.where(
+            np.abs(x) < 1.0,
+            x - (x**3) / 3.0,
+            np.sign(x) * 2.0 / 3.0,
+        )
+        # Renormalize to use full range
+        clip_peak = np.max(np.abs(stereo_mix))
+        if clip_peak > 0:
+            stereo_mix /= clip_peak
 
         # Apply master chain if set: EQ → compress → limit
         master = getattr(song, "_master_chain", None)
