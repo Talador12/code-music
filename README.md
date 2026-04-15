@@ -1,8 +1,13 @@
 # code-music
 
+[![PyPI version](https://img.shields.io/pypi/v/code-music)](https://pypi.org/project/code-music/)
+[![Python 3.11+](https://img.shields.io/pypi/pyversions/code-music)](https://pypi.org/project/code-music/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Talador12/code-music/ci.yml?label=tests)](https://github.com/Talador12/code-music/actions)
+
 Code-generated music. Write Python, hear sound, export to Spotify.
 
-**[Try it in your browser](https://talador12.github.io/code-music/playground.html)** — no install needed.
+**[Try it in your browser](https://talador12.github.io/code-music/playground.html)** -- no install needed.
 
 ---
 
