@@ -219,12 +219,17 @@ from .midi import export_midi, import_midi
 from .effects import (
     amp_cabinet,
     console_warmth,
+    filter_envelope,
+    impact,
     multiband_compress,
     noise_gate,
+    noise_riser,
     sidechain,
     stereo_width,
+    stutter,
     tape_emulation,
     transient_shaper,
+    volume_shaper,
 )
 from .integrations import (
     ai_generate_melody,

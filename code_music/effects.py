@@ -817,6 +817,356 @@ def tape_emulation(
     return np.clip(result, -1.0, 1.0).astype(np.float64)
 
 
+def volume_shaper(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bpm: float = 128.0,
+    shape: str = "pump",
+    depth: float = 0.8,
+    rate: float = 1.0,
+) -> FloatArray:
+    """Tempo-synced volume shaper - the modern EDM sidechain pump.
+
+    NOT compression. A shaped volume envelope synced to the BPM. Every
+    beat, the volume dips and recovers in a specific curve. This is what
+    LFOTool, VolumeShaper, and Kickstart do. The pump that makes EDM
+    breathe. Deadmau5 runs this on literally everything except the kick.
+
+    Shapes:
+        pump:      Classic sidechain pump (fast dip, slow recovery)
+        gate:      Hard on/off rhythmic gate (trance gate)
+        sine:      Smooth sine wave volume modulation
+        saw_up:    Volume ramps up each beat (builds energy)
+        saw_down:  Volume ramps down each beat (fades between hits)
+        half:      Pump on every other beat (half-time feel)
+
+    Args:
+        bpm:    Song tempo for sync.
+        shape:  Curve shape name.
+        depth:  How deep the pump goes (0.0=none, 1.0=full silence at dip).
+        rate:   Rate multiplier (0.5=half speed, 1.0=per beat, 2.0=per 8th note).
+    """
+    n = len(samples)
+    beat_samples = int(60.0 / bpm * sample_rate / rate)
+    if beat_samples < 2:
+        return samples.copy()
+
+    # Build one cycle of the shape
+    t_cycle = np.linspace(0, 1, beat_samples)
+
+    if shape == "pump":
+        # Fast attack to minimum, exponential recovery
+        curve = 1.0 - depth * np.exp(-6.0 * t_cycle)
+    elif shape == "gate":
+        # Hard gate: on for first half, off for second half
+        curve = np.where(t_cycle < 0.5, 1.0, 1.0 - depth)
+    elif shape == "sine":
+        curve = 1.0 - depth * 0.5 * (1.0 - np.cos(2 * np.pi * t_cycle))
+    elif shape == "saw_up":
+        curve = (1.0 - depth) + depth * t_cycle
+    elif shape == "saw_down":
+        curve = 1.0 - depth * t_cycle
+    elif shape == "half":
+        # Pump every other beat
+        half_cycle = np.ones(beat_samples * 2)
+        half_cycle[:beat_samples] = 1.0 - depth * np.exp(-6.0 * t_cycle)
+        curve = half_cycle
+        beat_samples = len(curve)
+    else:
+        curve = 1.0 - depth * np.exp(-6.0 * t_cycle)
+
+    # Tile the curve across the full signal
+    n_repeats = n // beat_samples + 2
+    full_curve = np.tile(curve, n_repeats)[:n]
+
+    if samples.ndim == 2:
+        return (samples * full_curve[:, np.newaxis]).astype(np.float64)
+    return (samples * full_curve).astype(np.float64)
+
+
+def filter_envelope(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    cutoff_start: float = 200.0,
+    cutoff_end: float = 8000.0,
+    attack: float = 0.01,
+    decay: float = 0.3,
+    sustain_cutoff: float = 2000.0,
+    release: float = 0.5,
+    resonance: float = 2.0,
+) -> FloatArray:
+    """Filter with its own ADSR envelope - independent from amplitude.
+
+    Every EDM pluck, bass stab, and "wub" sound uses this. The filter
+    cutoff sweeps: opens fast on attack (bright transient), decays to a
+    sustain frequency (body of the sound), then closes on release.
+    The amplitude ADSR controls volume. This ADSR controls brightness.
+    Two independent envelopes = the sound of modern synthesis.
+
+    Serum, Massive, Vital - they all have this as a core feature.
+
+    Args:
+        cutoff_start:    Filter frequency at note start (Hz).
+        cutoff_end:      Filter frequency at peak of attack (Hz).
+        attack:          Time to sweep from start to end (seconds).
+        decay:           Time to decay from end to sustain (seconds).
+        sustain_cutoff:  Filter frequency during sustain (Hz).
+        release:         Time to close filter at note end (seconds).
+        resonance:       Filter Q (1=gentle, 5=aggressive, 10=screaming).
+    """
+    n = len(samples)
+    sr = sample_rate
+    nyq = sr / 2 - 1
+
+    # Build the filter cutoff envelope
+    a_s = int(attack * sr)
+    d_s = int(decay * sr)
+    r_s = int(release * sr)
+    s_s = max(0, n - a_s - d_s - r_s)
+
+    cutoff_env = np.zeros(n)
+    pos = 0
+
+    # Attack: sweep from start to end
+    if a_s > 0:
+        cutoff_env[pos : pos + a_s] = np.linspace(cutoff_start, cutoff_end, a_s)
+        pos += a_s
+
+    # Decay: sweep from end to sustain
+    if d_s > 0:
+        end_pos = min(pos + d_s, n)
+        cutoff_env[pos:end_pos] = np.linspace(cutoff_end, sustain_cutoff, end_pos - pos)
+        pos = end_pos
+
+    # Sustain: hold at sustain cutoff
+    if s_s > 0:
+        end_pos = min(pos + s_s, n)
+        cutoff_env[pos:end_pos] = sustain_cutoff
+        pos = end_pos
+
+    # Release: close filter
+    if r_s > 0 and pos < n:
+        end_pos = min(pos + r_s, n)
+        cutoff_env[pos:end_pos] = np.linspace(sustain_cutoff, cutoff_start, end_pos - pos)
+        pos = end_pos
+
+    # Fill any remainder
+    cutoff_env[pos:] = cutoff_start
+
+    # Clamp
+    cutoff_env = np.clip(cutoff_env, 20.0, nyq)
+
+    # Apply time-varying filter in blocks
+    block_size = 128
+    out = np.zeros_like(samples)
+    for start in range(0, n, block_size):
+        end = min(start + block_size, n)
+        cutoff = float(np.mean(cutoff_env[start:end]))
+        cutoff = max(20.0, min(cutoff, nyq))
+        try:
+            sos = sig.butter(2, cutoff, btype="low", fs=sr, output="sos")
+            if samples.ndim == 2:
+                out[start:end, 0] = sig.sosfilt(sos, samples[start:end, 0])
+                out[start:end, 1] = sig.sosfilt(sos, samples[start:end, 1])
+            else:
+                out[start:end] = sig.sosfilt(sos, samples[start:end])
+        except Exception:
+            out[start:end] = samples[start:end]
+
+    # Add resonance peak
+    if resonance > 1.0:
+        peak_cutoff = float(np.mean(cutoff_env))
+        bw = peak_cutoff / max(resonance, 0.5)
+        lo = max(20.0, peak_cutoff - bw / 2)
+        hi = min(nyq, peak_cutoff + bw / 2)
+        if lo < hi:
+            sos_peak = sig.butter(2, [lo, hi], btype="band", fs=sr, output="sos")
+            res_amount = min((resonance - 1.0) * 0.2, 1.5)
+            if samples.ndim == 2:
+                out[:, 0] += sig.sosfilt(sos_peak, samples[:, 0]) * res_amount
+                out[:, 1] += sig.sosfilt(sos_peak, samples[:, 1]) * res_amount
+            else:
+                out += sig.sosfilt(sos_peak, samples) * res_amount
+
+    return np.clip(out, -1.0, 1.0).astype(np.float64)
+
+
+def stutter(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    bpm: float = 128.0,
+    divisions: int = 8,
+    bars: float = 1.0,
+    ramp: bool = True,
+) -> FloatArray:
+    """Stutter/beat repeat/glitch - chop and rapid-fire repeat.
+
+    Madeon's signature move. Takes a slice of audio and repeats it
+    faster and faster. 1/4 note repeats -> 1/8 -> 1/16 -> 1/32.
+    The "machine gun" buildup effect. Also used as a glitch effect
+    when applied to random positions.
+
+    Args:
+        bpm:        Song tempo for sync.
+        divisions:  How many repeats (4=quarter notes, 8=8ths, 16=16ths, 32=32nds).
+        bars:       How many bars to apply the stutter over.
+        ramp:       If True, divisions increase over time (buildup). If False, constant.
+    """
+    n = len(samples)
+    beat_sec = 60.0 / bpm
+    bar_samples = int(beat_sec * 4 * sample_rate)
+    total_stutter = int(bars * bar_samples)
+    total_stutter = min(total_stutter, n)
+
+    if total_stutter < 100:
+        return samples.copy()
+
+    out = samples.copy()
+    stutter_region = out[:total_stutter].copy()
+
+    if ramp:
+        # Divisions increase over time: 2 -> 4 -> 8 -> 16 -> 32
+        div_sequence = []
+        current_div = max(2, divisions // 8)
+        while current_div <= divisions:
+            div_sequence.append(current_div)
+            current_div *= 2
+        if not div_sequence:
+            div_sequence = [divisions]
+
+        # Split the stutter region into sections, one per division level
+        section_len = total_stutter // len(div_sequence)
+        pos = 0
+        for div in div_sequence:
+            slice_len = max(1, int(beat_sec * 4 / div * sample_rate))
+            # Grab the first slice at this position
+            source_end = min(pos + slice_len, total_stutter)
+            grain = stutter_region[pos:source_end]
+            if len(grain) == 0:
+                break
+            # Repeat the grain to fill the section
+            section_end = min(pos + section_len, total_stutter)
+            write_pos = pos
+            while write_pos < section_end:
+                copy_len = min(len(grain), section_end - write_pos)
+                if copy_len > 0:
+                    out[write_pos : write_pos + copy_len] = grain[:copy_len]
+                write_pos += len(grain)
+            pos = section_end
+    else:
+        # Constant division
+        slice_len = max(1, int(beat_sec * 4 / divisions * sample_rate))
+        grain = stutter_region[:slice_len]
+        pos = 0
+        while pos < total_stutter:
+            copy_len = min(len(grain), total_stutter - pos)
+            if copy_len > 0:
+                out[pos : pos + copy_len] = grain[:copy_len]
+            pos += len(grain)
+
+    return out.astype(np.float64)
+
+
+def noise_riser(
+    sample_rate: int = 44100,
+    duration_sec: float = 4.0,
+    start_freq: float = 200.0,
+    end_freq: float = 12000.0,
+    noise_type: str = "white",
+) -> FloatArray:
+    """Generate a noise sweep riser - the tension builder before a drop.
+
+    Filtered noise with a rising cutoff frequency. Starts dark and low,
+    sweeps up to bright and intense. The sound that tells the crowd
+    "something is about to happen." Every EDM buildup uses one.
+
+    Returns a stereo array that can be added to a mix or used as a
+    sample.
+
+    Args:
+        duration_sec:  Length of the riser.
+        start_freq:    Starting filter cutoff (Hz, low = dark).
+        end_freq:      Ending filter cutoff (Hz, high = bright/intense).
+        noise_type:    "white" (harsh), "pink" (warmer).
+    """
+    n = int(duration_sec * sample_rate)
+    nyq = sample_rate / 2 - 1
+    rng = np.random.default_rng(42)
+
+    if noise_type == "pink":
+        # Approximate pink noise via filtered white
+        white = rng.standard_normal(n)
+        sos_pink = sig.butter(1, min(1000.0, nyq), btype="low", fs=sample_rate, output="sos")
+        noise = sig.sosfilt(sos_pink, white) * 2
+    else:
+        noise = rng.standard_normal(n)
+
+    # Sweep filter cutoff from start to end (exponential for perceptual linearity)
+    cutoffs = np.exp(np.linspace(np.log(max(start_freq, 20)), np.log(min(end_freq, nyq)), n))
+
+    # Apply time-varying filter in blocks
+    block = 256
+    out = np.zeros(n)
+    for s in range(0, n, block):
+        e = min(s + block, n)
+        cutoff = float(np.clip(np.mean(cutoffs[s:e]), 20.0, nyq))
+        sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+        out[s:e] = sig.sosfilt(sos, noise[s:e])
+
+    # Volume ramps up
+    out *= np.linspace(0.1, 1.0, n)
+
+    # Return as stereo with slight L/R decorrelation
+    out_r = np.roll(out, int(0.003 * sample_rate))
+    return np.column_stack([out, out_r]).astype(np.float64)
+
+
+def impact(
+    sample_rate: int = 44100,
+    duration_sec: float = 2.0,
+    sub_freq: float = 40.0,
+    brightness: float = 0.5,
+) -> FloatArray:
+    """Generate a drop impact / downlifter - the BOOM at the start of a drop.
+
+    Sub bass hit + noise burst + reverse crash character. The sound that
+    shakes the venue when the beat drops back in. Every EDM drop starts
+    with one. Usually a sub sine hit with a fast pitch drop plus a burst
+    of filtered noise.
+
+    Returns a stereo array.
+
+    Args:
+        duration_sec:  Total impact length.
+        sub_freq:      Sub bass fundamental (30-60 Hz typical).
+        brightness:    Noise brightness (0=dark rumble, 1=bright crash).
+    """
+    n = int(duration_sec * sample_rate)
+    t = np.linspace(0, duration_sec, n, endpoint=False)
+    nyq = sample_rate / 2 - 1
+
+    # Sub hit: pitch-dropping sine
+    freq_env = sub_freq * np.exp(-8.0 * t)
+    sub = np.sin(2 * np.pi * np.cumsum(freq_env) / sample_rate)
+    sub *= np.exp(-3.0 * t)  # fast decay
+
+    # Noise burst: filtered, fast decay
+    rng = np.random.default_rng(42)
+    noise = rng.standard_normal(n)
+    cutoff = min(1000.0 + brightness * 8000.0, nyq)
+    sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+    noise = sig.sosfilt(sos, noise)
+    noise *= np.exp(-5.0 * t) * 0.4
+
+    out = sub * 0.7 + noise
+    # Normalize
+    pk = np.max(np.abs(out))
+    if pk > 0:
+        out /= pk
+
+    return np.column_stack([out, out]).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2

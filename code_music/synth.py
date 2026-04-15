@@ -511,7 +511,23 @@ class Synth:
         # ── EDM synths ────────────────────────────────────────────────────────
         "bass": {"wave": "sawtooth", "harmonics": 6, "A": 0.02, "D": 0.2, "S": 0.6, "R": 0.3},
         "pad": {"wave": "sine", "harmonics": 3, "A": 0.3, "D": 0.0, "S": 1.0, "R": 0.8},
-        "pluck": {"wave": "sawtooth", "harmonics": 8, "A": 0.001, "D": 0.4, "S": 0.1, "R": 0.5},
+        "pluck": {
+            "wave": "sawtooth",
+            "harmonics": 8,
+            "filter_env": {
+                "start": 200,
+                "peak": 10000,
+                "sustain": 1500,
+                "end": 200,
+                "attack": 0.005,
+                "decay": 0.15,
+                "release": 0.3,
+            },
+            "A": 0.001,
+            "D": 0.4,
+            "S": 0.1,
+            "R": 0.5,
+        },
         # Karplus-Strong physical models — most realistic plucked/struck sounds
         "guitar_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 1.2},
         "banjo_ks": {"wave": "karplus", "harmonics": 1, "A": 0.001, "D": 0.0, "S": 1.0, "R": 0.6},
@@ -1348,11 +1364,56 @@ class Synth:
             "fm_pad",
         }
         if inst in _PAD_INSTRUMENTS and n_samples > 100:
-            # Map velocity 0.0-1.0 to cutoff 800-12000 Hz
             vel_cutoff = 800.0 + note.velocity * 11200.0
             vel_cutoff = min(vel_cutoff, self.sample_rate / 2 - 1)
             sos_vf = _sig.butter(2, vel_cutoff, btype="low", fs=self.sample_rate, output="sos")
             raw = _sig.sosfilt(sos_vf, raw)
+
+        # Per-note filter envelope (separate ADSR on cutoff, EDM essential)
+        # Presets can define filter_env with start/peak/sustain/end frequencies
+        if "filter_env" in preset and n_samples > 200:
+            fe = preset["filter_env"]
+            nyq_fe = self.sample_rate / 2 - 1
+            fe_start = min(fe.get("start", 200), nyq_fe)
+            fe_peak = min(fe.get("peak", 8000), nyq_fe)
+            fe_sustain = min(fe.get("sustain", 2000), nyq_fe)
+            fe_end = min(fe.get("end", 200), nyq_fe)
+            fe_attack = int(fe.get("attack", 0.01) * self.sample_rate)
+            fe_decay = int(fe.get("decay", 0.2) * self.sample_rate)
+            fe_release = int(fe.get("release", 0.3) * self.sample_rate)
+            fe_sustain_len = max(0, n_samples - fe_attack - fe_decay - fe_release)
+
+            cutoff_curve = np.zeros(n_samples)
+            p = 0
+            if fe_attack > 0:
+                end_a = min(p + fe_attack, n_samples)
+                cutoff_curve[p:end_a] = np.linspace(fe_start, fe_peak, end_a - p)
+                p = end_a
+            if fe_decay > 0:
+                end_d = min(p + fe_decay, n_samples)
+                cutoff_curve[p:end_d] = np.linspace(fe_peak, fe_sustain, end_d - p)
+                p = end_d
+            if fe_sustain_len > 0:
+                end_s = min(p + fe_sustain_len, n_samples)
+                cutoff_curve[p:end_s] = fe_sustain
+                p = end_s
+            if fe_release > 0:
+                end_r = min(p + fe_release, n_samples)
+                cutoff_curve[p:end_r] = np.linspace(fe_sustain, fe_end, end_r - p)
+                p = end_r
+            cutoff_curve[p:] = fe_end
+            cutoff_curve = np.clip(cutoff_curve, 20.0, nyq_fe)
+
+            # Apply in blocks
+            block_fe = 128
+            filtered_fe = np.zeros(n_samples)
+            for s_fe in range(0, n_samples, block_fe):
+                e_fe = min(s_fe + block_fe, n_samples)
+                c_fe = float(np.mean(cutoff_curve[s_fe:e_fe]))
+                c_fe = max(20.0, min(c_fe, nyq_fe))
+                sos_fe = _sig.butter(2, c_fe, btype="low", fs=self.sample_rate, output="sos")
+                filtered_fe[s_fe:e_fe] = _sig.sosfilt(sos_fe, raw[s_fe:e_fe])
+            raw = filtered_fe
 
         # ── Per-note LFO filter (wobble bass + formant) ──────────────────
 
