@@ -3481,6 +3481,308 @@ def parallel_distortion(
     return result.astype(np.float64)
 
 
+def glue_compressor(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    threshold: float = 0.5,
+    ratio: float = 4.0,
+    attack_ms: float = 10.0,
+    release_ms: float = 100.0,
+    makeup: float = 0.0,
+    mix: float = 1.0,
+) -> FloatArray:
+    """SSL-style bus compressor: the "glue" that holds a mix together.
+
+    The SSL 4000 G Bus Compressor is on more hit records than any other
+    single piece of gear. It does not just compress - it makes all the
+    tracks feel like they belong together. The specific attack/release
+    behavior creates a pumping, breathing character that is musical
+    rather than transparent. This is what makes a mix sound like a
+    record instead of a collection of tracks.
+
+    Slower attack (10-30ms) lets transients punch through.
+    Fast release (100-300ms) creates the pump.
+    2-4:1 ratio keeps it gentle.
+
+    Args:
+        threshold:  Compression threshold.
+        ratio:      Compression ratio (2-4 for glue, 10+ for limiting).
+        attack_ms:  Attack time (10-30ms for musical pumping).
+        release_ms: Release time (100-300ms for bounce).
+        makeup:     Makeup gain (0=auto).
+        mix:        Wet/dry mix (allows parallel compression built-in).
+    """
+    # Use the main compressor but with SSL-specific behavior
+    compressed = compress(
+        samples,
+        sample_rate,
+        threshold=threshold,
+        ratio=ratio,
+        attack_ms=attack_ms,
+        release_ms=release_ms,
+        makeup_gain=makeup,
+        knee_db=6.0,
+        lookahead_ms=0.0,
+    )
+
+    if mix < 1.0:
+        return (samples * (1 - mix) + compressed * mix).astype(np.float64)
+    return compressed
+
+
+def multiband_saturate(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    low_drive: float = 1.5,
+    mid_drive: float = 1.0,
+    high_drive: float = 1.2,
+    low_model: str = "tube",
+    mid_model: str = "tape",
+    high_model: str = "tube",
+    crossover_low: float = 250.0,
+    crossover_high: float = 4000.0,
+) -> FloatArray:
+    """Multiband saturation: different saturation character per frequency band.
+
+    Warm tube saturation on the lows for weight. Clean tape compression
+    on the mids for body. Sparkly tube harmonics on the highs for air.
+    Each band gets its own saturation model and drive amount. This is
+    how mastering engineers add analog character without muddying the
+    mix - you can push the bass hard without affecting vocal clarity.
+
+    Args:
+        low_drive:      Saturation drive for low band (1.0=subtle, 3.0=heavy).
+        mid_drive:      Drive for mid band.
+        high_drive:     Drive for high band.
+        low_model:      Saturation model for lows ("tube", "tape", "transistor").
+        mid_model:      Model for mids.
+        high_model:     Model for highs.
+        crossover_low:  Low/mid split frequency.
+        crossover_high: Mid/high split frequency.
+    """
+    nyq = sample_rate / 2 - 1
+    xlo = min(crossover_low, nyq)
+    xhi = min(crossover_high, nyq)
+
+    sos_lo = sig.butter(4, xlo, btype="low", fs=sample_rate, output="sos")
+    sos_hi = sig.butter(4, xhi, btype="high", fs=sample_rate, output="sos")
+    if xlo < xhi:
+        sos_mid = sig.butter(4, [xlo, xhi], btype="band", fs=sample_rate, output="sos")
+    else:
+        sos_mid = sos_lo
+
+    if samples.ndim == 2:
+        lo = np.column_stack(
+            [sig.sosfilt(sos_lo, samples[:, 0]), sig.sosfilt(sos_lo, samples[:, 1])]
+        )
+        mid = np.column_stack(
+            [sig.sosfilt(sos_mid, samples[:, 0]), sig.sosfilt(sos_mid, samples[:, 1])]
+        )
+        hi = np.column_stack(
+            [sig.sosfilt(sos_hi, samples[:, 0]), sig.sosfilt(sos_hi, samples[:, 1])]
+        )
+    else:
+        lo = sig.sosfilt(sos_lo, samples)
+        mid = sig.sosfilt(sos_mid, samples)
+        hi = sig.sosfilt(sos_hi, samples)
+
+    lo_sat = saturator(lo, sample_rate, model=low_model, drive=low_drive, wet=1.0)
+    mid_sat = saturator(mid, sample_rate, model=mid_model, drive=mid_drive, wet=1.0)
+    hi_sat = saturator(hi, sample_rate, model=high_model, drive=high_drive, wet=1.0)
+
+    result = lo_sat + mid_sat + hi_sat
+    pk = np.max(np.abs(result))
+    if pk > 0:
+        result *= np.max(np.abs(samples)) / pk
+    return result.astype(np.float64)
+
+
+def sample_rate_crush(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    target_rate: float = 8000.0,
+    wet: float = 1.0,
+) -> FloatArray:
+    """Sample rate reduction: retro digital artifacts.
+
+    Reduce the effective sample rate without actually changing it.
+    Holds each sample for N samples (zero-order hold). Creates the
+    staircase waveform and aliasing of early digital gear. SP-1200,
+    Fairlight CMI, 8-bit video game consoles.
+
+    Different from bitcrush (which reduces amplitude resolution).
+    This reduces temporal resolution. Both together = full retro.
+
+    Args:
+        target_rate: Effective sample rate (200=extreme, 8000=retro, 22050=lo-fi).
+        wet: Wet/dry mix.
+    """
+    if target_rate >= sample_rate:
+        return samples.copy()
+
+    hold = max(1, int(sample_rate / target_rate))
+    out = samples.copy()
+
+    if samples.ndim == 2:
+        for i in range(0, len(samples), hold):
+            end = min(i + hold, len(samples))
+            out[i:end, 0] = samples[i, 0]
+            out[i:end, 1] = samples[i, 1]
+    else:
+        for i in range(0, len(samples), hold):
+            end = min(i + hold, len(samples))
+            out[i:end] = samples[i]
+
+    return (samples * (1 - wet) + out * wet).astype(np.float64)
+
+
+def feedback_loop(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    delay_ms: float = 100.0,
+    feedback: float = 0.7,
+    process_fn: str = "distort",
+    iterations: int = 5,
+    wet: float = 0.3,
+) -> FloatArray:
+    """Feedback loop: feed output back into input with processing each time.
+
+    Creative chaos tool. The signal passes through a process, then the
+    output feeds back to the input, gets processed again, feeds back
+    again. With distortion in the loop, it builds into screaming
+    feedback. With a filter, it creates resonant build-ups. With
+    pitch shift, it creates cascading harmonies.
+
+    Warning: high feedback + iterations = LOUD. Keep wet low.
+
+    Args:
+        delay_ms:    Delay before each feedback pass.
+        feedback:    How much feeds back (0.0-0.9).
+        process_fn:  What to apply each loop: "distort", "filter", "crush".
+        iterations:  How many feedback passes.
+        wet:         Wet/dry mix (keep low, this gets intense).
+    """
+    n = len(samples)
+    d = int(delay_ms * sample_rate / 1000)
+    out = np.zeros_like(samples)
+    buf = samples.copy()
+
+    for rep in range(iterations):
+        gain = feedback ** (rep + 1)
+        if gain < 0.01:
+            break
+
+        # Apply the process
+        if process_fn == "distort":
+            processed = np.tanh(buf * 2.0)
+        elif process_fn == "filter":
+            nyq = sample_rate / 2 - 1
+            cutoff = min(2000.0 / (rep + 1), nyq)
+            if cutoff > 20:
+                sos = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+                if processed.ndim == 2:
+                    processed = np.column_stack(
+                        [
+                            sig.sosfilt(sos, buf[:, 0]),
+                            sig.sosfilt(sos, buf[:, 1]),
+                        ]
+                    )
+                else:
+                    processed = sig.sosfilt(sos, buf)
+            else:
+                processed = buf * 0.5
+        elif process_fn == "crush":
+            # Bitcrush in the loop
+            bits = max(2, 8 - rep)
+            scale = 2**bits
+            processed = np.round(buf * scale) / scale
+        else:
+            processed = buf
+
+        # Delay and accumulate
+        delayed = np.zeros_like(processed)
+        offset = d * (rep + 1)
+        if offset < n:
+            remaining = n - offset
+            delayed[offset:] = processed[:remaining]
+            out += delayed * gain
+            buf = delayed * gain
+
+    return np.clip(samples * (1 - wet) + out * wet, -1.0, 1.0).astype(np.float64)
+
+
+def drum_room(
+    samples: FloatArray,
+    sample_rate: int = 44100,
+    room: str = "tight",
+    wet: float = 0.3,
+) -> FloatArray:
+    """Drum room simulation: synthetic room impulse responses for drums.
+
+    Drums without a room sound flat and lifeless. Real drum recordings
+    always include room microphones that capture the space. This
+    generates room character without needing actual IR files.
+
+    Rooms:
+        tight:  Small recording booth, controlled, punchy (pop/hip-hop)
+        live:   Medium live room, natural, balanced (rock/jazz)
+        large:  Large studio room, spacious, lush (orchestral/film)
+        arena:  Large reverberant space, epic, huge (stadium rock/trailer)
+
+    Args:
+        room:  Room type name.
+        wet:   Room mic level (0.0-0.5 typical, higher = more distant sound).
+    """
+    room_params = {
+        # (room_size, damping, predelay_ms, hf_rolloff)
+        "tight": (0.2, 0.6, 2.0, 0.5),
+        "live": (0.4, 0.4, 8.0, 0.3),
+        "large": (0.6, 0.3, 15.0, 0.2),
+        "arena": (0.85, 0.2, 30.0, 0.15),
+    }
+    size, damp, predelay, hf_roll = room_params.get(room, room_params["live"])
+
+    ir = _make_reverb_ir(sample_rate, size, damp)
+
+    # Add predelay
+    pd_samples = int(predelay * sample_rate / 1000)
+    if pd_samples > 0:
+        ir = np.concatenate([np.zeros(pd_samples), ir])
+
+    # Apply HF rolloff to the room (rooms absorb highs)
+    nyq = sample_rate / 2 - 1
+    cutoff = min(nyq, max(2000.0, 12000.0 * (1.0 - hf_roll)))
+    sos_hf = sig.butter(2, cutoff, btype="low", fs=sample_rate, output="sos")
+    ir = sig.sosfilt(sos_hf, ir)
+
+    pk = np.max(np.abs(ir))
+    if pk > 0:
+        ir /= pk
+
+    n = len(samples)
+    if samples.ndim == 2:
+        room_l = sig.fftconvolve(samples[:, 0], ir, mode="full")[:n]
+        room_r = sig.fftconvolve(samples[:, 1], ir * 0.95, mode="full")[:n]
+        for ch in (room_l, room_r):
+            p = np.max(np.abs(ch))
+            if p > 0:
+                ch /= p
+            ch *= np.max(np.abs(samples))
+        return np.column_stack(
+            [
+                samples[:, 0] * (1 - wet) + room_l * wet,
+                samples[:, 1] * (1 - wet) + room_r * wet,
+            ]
+        ).astype(np.float64)
+    else:
+        room_mono = sig.fftconvolve(samples, ir, mode="full")[:n]
+        p = np.max(np.abs(room_mono))
+        if p > 0:
+            room_mono /= p
+        room_mono *= np.max(np.abs(samples))
+        return (samples * (1 - wet) + room_mono * wet).astype(np.float64)
+
+
 def pan(samples: FloatArray, position: float = 0.0) -> FloatArray:
     """Equal-power stereo pan. position: -1.0 (L) ... 0.0 (C) ... 1.0 (R)."""
     angle = (position + 1) / 2 * math.pi / 2
