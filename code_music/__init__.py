@@ -179,6 +179,10 @@ from .engine import (
     turn,
     upper_mordent,
     voice_lead,
+    # v170 composition intelligence
+    auto_harmonize,
+    embellish,
+    rhythmic_variation,
     # v170 ornaments, theory, and advanced rhythm
     acciaccatura,
     anticipation,

@@ -2227,6 +2227,301 @@ def swing_tuplet(
     return result
 
 
+def auto_harmonize(
+    melody: list[Note],
+    key: str = "C",
+    scale_name: str = "major",
+    interval: str = "thirds",
+) -> list[Note]:
+    """Auto-harmonize a melody in parallel diatonic intervals.
+
+    Takes a melody and generates a harmony voice at a diatonic interval
+    below (or above). The interval follows the scale so major thirds
+    become minor thirds where the scale demands it. The simplest way
+    to make a melody sound fuller.
+
+    Different from harmonize_lead (in rhythm.py) in that this works
+    purely from engine types without needing theory imports, and it
+    handles both above and below.
+
+    Args:
+        melody:     Input melody.
+        key:        Key signature.
+        scale_name: Scale type.
+        interval:   "thirds" (below), "sixths" (below), "thirds_above",
+                    "sixths_above", "octave_below", "octave_above".
+
+    Returns:
+        Harmony voice as a list of Notes.
+    """
+    interval_map = {
+        "thirds": -2,
+        "sixths": -5,
+        "thirds_above": 2,
+        "sixths_above": 5,
+        "octave_below": -7,
+        "octave_above": 7,
+    }
+    degrees = interval_map.get(interval, -2)
+    scale_intervals = SCALES.get(scale_name, SCALES.get("major", [0, 2, 4, 5, 7, 9, 11]))
+    key_midi = note_name_to_midi(key, 0)
+
+    result = []
+    for n in melody:
+        if n.pitch is None:
+            result.append(n)
+            continue
+        midi = n.midi
+        if midi is None:
+            result.append(n)
+            continue
+        # Find closest scale degree
+        pc = (midi - key_midi) % 12
+        best_deg = 0
+        best_dist = 99
+        for i, s in enumerate(scale_intervals):
+            dist = min(abs(pc - s), 12 - abs(pc - s))
+            if dist < best_dist:
+                best_dist = dist
+                best_deg = i
+        # Shift by scale degrees
+        target_deg = best_deg + degrees
+        octave_shift = 0
+        while target_deg < 0:
+            target_deg += len(scale_intervals)
+            octave_shift -= 12
+        while target_deg >= len(scale_intervals):
+            target_deg -= len(scale_intervals)
+            octave_shift += 12
+        base_oct = ((midi - key_midi) // 12) * 12
+        new_midi = key_midi + base_oct + scale_intervals[target_deg] + octave_shift
+        result.append(
+            Note(
+                pitch=new_midi,
+                duration=n.duration,
+                velocity=n.velocity * 0.85,
+                articulation=n.articulation,
+            )
+        )
+    return result
+
+
+def embellish(
+    notes: list[Note],
+    style: str = "classical",
+    density: float = 0.3,
+    seed: int | None = None,
+) -> list[Note]:
+    """Auto-embellish a melody with ornaments appropriate to the style.
+
+    Takes a plain melody and sprinkles ornaments on it. Classical gets
+    turns and mordents. Jazz gets grace notes and bends. Blues gets
+    bends and scoops. The density controls how many notes get decorated.
+
+    Styles:
+        classical: turns, mordents, trills, appoggiaturas
+        jazz:      grace notes, scoops, falls, ghost notes
+        blues:     bends, scoops, vibrato markings, slides
+        baroque:   trills, mordents, turns (heavy ornamentation)
+        minimal:   occasional neighbor tones only
+
+    Args:
+        notes:   Input melody.
+        style:   Embellishment style.
+        density: Fraction of notes to embellish (0.0-1.0).
+        seed:    Random seed.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    result = []
+
+    for i, n in enumerate(notes):
+        if n.pitch is None or rng.random() > density:
+            result.append(n)
+            continue
+
+        if style == "classical":
+            choice = rng.choice(["turn", "mordent", "appoggiatura", "plain"])
+            if choice == "turn":
+                result.extend(turn(n))
+            elif choice == "mordent":
+                result.extend(mordent(n))
+            elif choice == "appoggiatura":
+                result.extend(appoggiatura(n, approach_from=rng.choice([-1, 1])))
+            else:
+                result.append(n)
+
+        elif style == "jazz":
+            choice = rng.choice(["grace", "scoop", "fall", "ghost", "plain"])
+            if choice == "grace":
+                result.extend(acciaccatura(n, approach_from=rng.choice([-1, -2, 1])))
+            elif choice == "scoop":
+                result.extend(flip(n, semitones=rng.choice([1, 2])))
+            elif choice == "fall":
+                result.extend(fall(n, semitones=rng.choice([2, 3])))
+            elif choice == "ghost":
+                ghost = Note(
+                    n.pitch,
+                    n.octave,
+                    n.duration,
+                    velocity=n.velocity * 0.3,
+                    articulation=n.articulation,
+                )
+                result.append(ghost)
+            else:
+                result.append(n)
+
+        elif style == "blues":
+            choice = rng.choice(["bend", "scoop", "slide", "plain"])
+            if choice == "bend":
+                result.extend(bend(n, semitones=rng.choice([1.0, 2.0])))
+            elif choice == "scoop":
+                result.extend(flip(n, semitones=rng.choice([2, 3])))
+            elif choice == "slide" and i + 1 < len(notes) and notes[i + 1].pitch is not None:
+                result.extend(glissando(n, notes[i + 1].pitch, notes[i + 1].octave))
+            else:
+                result.append(n)
+
+        elif style == "baroque":
+            choice = rng.choice(["trill", "mordent", "turn", "mordent"])
+            if choice == "trill":
+                result.extend(trill(n))
+            elif choice == "mordent":
+                result.extend(mordent(n))
+            elif choice == "turn":
+                result.extend(turn(n))
+            else:
+                result.append(n)
+
+        else:  # minimal
+            if rng.random() > 0.7:
+                result.extend(neighbor_tone(n, direction=rng.choice([-1, 1])))
+            else:
+                result.append(n)
+
+    return result
+
+
+def rhythmic_variation(
+    notes: list[Note],
+    style: str = "syncopate",
+    amount: float = 0.3,
+    seed: int | None = None,
+) -> list[Note]:
+    """Add rhythmic variation to a pattern.
+
+    Takes a rhythmically straight melody and makes it groove. Syncopation
+    shifts notes off the beat. Displacement moves notes early or late.
+    Ghost notes add quiet in-between hits. Swing adjusts long-short ratios.
+
+    Styles:
+        syncopate:   Shift some notes to offbeats (anticipation/delay)
+        ghost:       Insert quiet ghost notes between main hits
+        displace:    Randomly shift note timing slightly
+        double:      Double-time some notes (split into two fast notes)
+        simplify:    Remove some notes for a sparser feel
+
+    Args:
+        notes:   Input notes.
+        style:   Variation type.
+        amount:  How much variation (0.0=none, 1.0=maximum).
+        seed:    Random seed.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    result = []
+
+    for n in notes:
+        if n.pitch is None:
+            result.append(n)
+            continue
+
+        if style == "syncopate" and rng.random() < amount:
+            # Anticipate: shorten current, add tiny rest, then the note
+            antic = n.duration * 0.25
+            result.append(Note.rest(antic))
+            result.append(
+                Note(
+                    n.pitch,
+                    n.octave,
+                    n.duration - antic,
+                    velocity=n.velocity,
+                    articulation=n.articulation,
+                )
+            )
+
+        elif style == "ghost" and rng.random() < amount:
+            # Insert a ghost note before the main note
+            ghost_dur = n.duration * 0.2
+            result.append(
+                Note(
+                    n.pitch,
+                    n.octave,
+                    ghost_dur,
+                    velocity=n.velocity * 0.25,
+                    articulation=n.articulation,
+                )
+            )
+            result.append(
+                Note(
+                    n.pitch,
+                    n.octave,
+                    n.duration - ghost_dur,
+                    velocity=n.velocity,
+                    articulation=n.articulation,
+                )
+            )
+
+        elif style == "displace" and rng.random() < amount:
+            # Tiny timing shift (expressed as rest before/after)
+            shift = n.duration * rng.uniform(-0.1, 0.1) * amount
+            if shift > 0:
+                result.append(Note.rest(abs(shift)))
+                result.append(
+                    Note(
+                        n.pitch,
+                        n.octave,
+                        n.duration - abs(shift),
+                        velocity=n.velocity,
+                        articulation=n.articulation,
+                    )
+                )
+            else:
+                result.append(
+                    Note(
+                        n.pitch,
+                        n.octave,
+                        n.duration - abs(shift),
+                        velocity=n.velocity,
+                        articulation=n.articulation,
+                    )
+                )
+                result.append(Note.rest(abs(shift)))
+
+        elif style == "double" and rng.random() < amount:
+            # Split into two fast notes
+            half = n.duration / 2
+            result.append(
+                Note(n.pitch, n.octave, half, velocity=n.velocity, articulation=n.articulation)
+            )
+            result.append(
+                Note(
+                    n.pitch, n.octave, half, velocity=n.velocity * 0.7, articulation=n.articulation
+                )
+            )
+
+        elif style == "simplify" and rng.random() < amount:
+            # Replace with a rest (thin it out)
+            result.append(Note.rest(n.duration))
+
+        else:
+            result.append(n)
+
+    return result
+
+
 def con_sordino(notes: list[Note]) -> list[Note]:
     """Apply mute (con sordino) to notes. Darker, softer timbre."""
     return [
