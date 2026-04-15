@@ -85,7 +85,17 @@ class Synth:
             "R": 0.3,
         },
         # ── Brass ─────────────────────────────────────────────────────────────
-        "trumpet": {"wave": "square", "harmonics": 12, "A": 0.04, "D": 0.05, "S": 0.85, "R": 0.15},
+        "trumpet": {
+            "wave": "square",
+            "harmonics": 12,
+            "vibrato_rate": 5.5,
+            "vibrato_depth": 15,
+            "vibrato_delay": 0.35,
+            "A": 0.04,
+            "D": 0.05,
+            "S": 0.85,
+            "R": 0.15,
+        },
         "trombone": {"wave": "square", "harmonics": 10, "A": 0.06, "D": 0.04, "S": 0.85, "R": 0.2},
         "french_horn": {
             "wave": "sawtooth",
@@ -105,13 +115,46 @@ class Synth:
             "R": 0.18,
         },
         # ── Woodwinds ─────────────────────────────────────────────────────────
-        "flute": {"wave": "sine", "harmonics": 2, "A": 0.06, "D": 0.02, "S": 0.9, "R": 0.2},
-        "oboe": {"wave": "square", "harmonics": 8, "A": 0.04, "D": 0.02, "S": 0.88, "R": 0.15},
-        "clarinet": {"wave": "square", "harmonics": 6, "A": 0.05, "D": 0.02, "S": 0.9, "R": 0.18},
+        "flute": {
+            "wave": "sine",
+            "harmonics": 2,
+            "vibrato_rate": 5.0,
+            "vibrato_depth": 15,
+            "vibrato_delay": 0.2,
+            "A": 0.06,
+            "D": 0.02,
+            "S": 0.9,
+            "R": 0.2,
+        },
+        "oboe": {
+            "wave": "square",
+            "harmonics": 8,
+            "vibrato_rate": 5.2,
+            "vibrato_depth": 18,
+            "vibrato_delay": 0.2,
+            "A": 0.04,
+            "D": 0.02,
+            "S": 0.88,
+            "R": 0.15,
+        },
+        "clarinet": {
+            "wave": "square",
+            "harmonics": 6,
+            "vibrato_rate": 5.0,
+            "vibrato_depth": 12,
+            "vibrato_delay": 0.3,
+            "A": 0.05,
+            "D": 0.02,
+            "S": 0.9,
+            "R": 0.18,
+        },
         "bassoon": {"wave": "sawtooth", "harmonics": 8, "A": 0.06, "D": 0.03, "S": 0.85, "R": 0.2},
         "saxophone": {
             "wave": "sawtooth",
             "harmonics": 10,
+            "vibrato_rate": 5.3,
+            "vibrato_depth": 22,
+            "vibrato_delay": 0.2,
             "A": 0.04,
             "D": 0.03,
             "S": 0.88,
@@ -519,6 +562,24 @@ class Synth:
             "R": 0.25,
             "formant": "e",
         },
+        "formant_i": {
+            "wave": "formant",
+            "harmonics": 8,
+            "A": 0.05,
+            "D": 0.04,
+            "S": 0.92,
+            "R": 0.25,
+            "formant": "i",
+        },
+        "formant_u": {
+            "wave": "formant",
+            "harmonics": 8,
+            "A": 0.07,
+            "D": 0.05,
+            "S": 0.88,
+            "R": 0.35,
+            "formant": "u",
+        },
         # taiko: deep pitched drum for cinematic trailer hits
         "taiko": {"wave": "sine", "harmonics": 2, "A": 0.001, "D": 0.3, "S": 0.05, "R": 0.4},
         # ethnic percussion
@@ -554,6 +615,7 @@ class Synth:
             "D": 0.1,
             "S": 0.0,
             "R": 0.08,
+            "_snare_pitch_drop": True,
         },
         "drums_hat": {
             "wave": "noise",
@@ -669,17 +731,29 @@ class Synth:
             )
 
         elif wave == "supersaw":
-            # Detune 7 sawtooths ±25 cents around centre freq for the Zedd/trance wall sound
+            # JP-8000 supersaw: 7 detuned sawtooths. Center voice louder than
+            # detuned voices for clear pitch with width. Weights from Roland docs.
             detune_cents = np.array([-25, -17, -8, 0, 8, 17, 25])
+            weights = np.array([0.5, 0.6, 0.8, 1.0, 0.8, 0.6, 0.5])
+            total_weight = np.sum(weights)
+            nyq = self.sample_rate / 2.0
             result = np.zeros(n_samples)
-            for dc in detune_cents:
+            for dc, w in zip(detune_cents, weights):
                 f_det = freq * (2 ** (dc / 1200))
-                ks = np.arange(1, harmonics + 1)
-                result += (2 / np.pi) * np.sum(
-                    ((-1) ** (ks + 1) / ks)[:, None] * np.sin(2 * np.pi * f_det * ks[:, None] * t),
-                    axis=0,
+                max_k = max(1, int(nyq / f_det) - 1)
+                ks = np.arange(1, min(harmonics + 1, max_k + 1))
+                if len(ks) == 0:
+                    continue
+                result += (
+                    w
+                    * (2 / np.pi)
+                    * np.sum(
+                        ((-1) ** (ks + 1) / ks)[:, None]
+                        * np.sin(2 * np.pi * f_det * ks[:, None] * t),
+                        axis=0,
+                    )
                 )
-            return result / len(detune_cents)
+            return result / total_weight
 
         elif wave == "reese":
             # Two slightly detuned sawtooths — classic DnB/techno Reese bass
@@ -871,7 +945,12 @@ class Synth:
     # ------------------------------------------------------------------
 
     def _render_note(
-        self, note: Note, n_samples: int, preset: dict, instrument_name: str = ""
+        self,
+        note: Note,
+        n_samples: int,
+        preset: dict,
+        instrument_name: str = "",
+        prev_freq: float = 0.0,
     ) -> FloatArray:
         freq = note.freq
         if freq is None or freq <= 0:
@@ -902,6 +981,58 @@ class Synth:
                 click = rng.standard_normal(click_len) * 0.3
                 click *= np.linspace(1.0, 0.0, click_len)
                 raw[:click_len] += click
+        # Snare pitch-drop: tone body drops slightly in pitch (like real snare head)
+        if preset.get("_snare_pitch_drop") and not is_pitch_drop:
+            t_sn = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+            freq_env_sn = freq * np.exp(-15.0 * t_sn)  # gentle drop
+            tone = np.sin(2 * np.pi * np.cumsum(freq_env_sn) / self.sample_rate)
+            # Will be mixed with filtered noise later in the noise_presets section
+            raw = tone
+
+        # Clap multi-transient: 3-4 rapid hits (real handclap is multiple fingers landing)
+        if "clap" in str(instrument_name).lower() and n_samples > 200:
+            rng_clap = np.random.default_rng(int(freq * 55) % (2**31))
+            clap_noise = rng_clap.standard_normal(n_samples)
+            # 3 rapid transients at 0ms, 10ms, 20ms
+            multi = np.zeros(n_samples)
+            for delay_ms, gain in [(0, 0.6), (10, 0.8), (20, 1.0)]:
+                pos = int(delay_ms * self.sample_rate / 1000)
+                if pos < n_samples:
+                    attack_len = min(int(0.005 * self.sample_rate), n_samples - pos)
+                    if attack_len > 0:
+                        env_hit = np.exp(-np.linspace(0, 8, attack_len))
+                        multi[pos : pos + attack_len] += (
+                            clap_noise[pos : pos + attack_len] * env_hit * gain
+                        )
+            raw = multi
+
+        if wave_type == "porta" and prev_freq > 0 and abs(prev_freq - freq) > 0.5:
+            # Portamento: smooth glide from previous note's frequency to this note.
+            # The glide takes ~50ms then holds at the target. Uses exponential
+            # interpolation (sounds more natural than linear for pitch).
+            t = np.linspace(0, n_samples / self.sample_rate, n_samples, endpoint=False)
+            glide_time = preset.get("porta_time", 0.05)
+            glide_samples = min(int(glide_time * self.sample_rate), n_samples)
+            freq_curve = np.full(n_samples, freq)
+            if glide_samples > 1:
+                # Exponential interpolation from prev_freq to freq
+                glide_t = np.linspace(0, 1, glide_samples)
+                # Log-space interpolation (pitch is logarithmic)
+                log_start = np.log2(max(prev_freq, 20.0))
+                log_end = np.log2(max(freq, 20.0))
+                log_curve = log_start + (log_end - log_start) * (1 - np.exp(-5 * glide_t))
+                log_curve[-1] = log_end
+                freq_curve[:glide_samples] = 2**log_curve
+            # Generate waveform with time-varying frequency via phase accumulation
+            phase = np.cumsum(freq_curve / self.sample_rate) * 2 * np.pi
+            harmonics = self._harmonics_cache.get(wave_type, 8)
+            nyq = self.sample_rate / 2.0
+            # Sawtooth with gliding fundamental
+            ks = np.arange(1, min(harmonics + 1, max(2, int(nyq / max(freq, 20)))))
+            raw = np.zeros(n_samples)
+            for k in ks:
+                raw += ((-1) ** (k + 1) / k) * np.sin(k * phase)
+            raw *= 2 / np.pi
         else:
             # Pass FM ratio hint from preset (fm_keys uses 3.0, fm_bell uses 1.414, etc.)
             self._fm_ratio_hint = preset.get("mod_ratio", None)
@@ -1628,6 +1759,7 @@ class Synth:
         cursor = 0
         beat_idx = 0  # counts 8th-note grid steps for swing
         cumulative_beat = 0.0
+        prev_freq = 0.0  # for portamento glide between notes
         for beat in track.beats:
             # Use per-beat BPM from map if available
             if bpm_map:
@@ -1670,8 +1802,14 @@ class Synth:
             mixed = np.zeros(n_samples)
             for note in notes:
                 mixed += self._render_note(
-                    note, n_samples, preset, instrument_name=track.instrument
+                    note,
+                    n_samples,
+                    preset,
+                    instrument_name=track.instrument,
+                    prev_freq=prev_freq,
                 )
+                if note.freq and note.freq > 0:
+                    prev_freq = note.freq
             if len(notes) > 1:
                 mixed /= len(notes) ** 0.5  # RMS normalization
 
