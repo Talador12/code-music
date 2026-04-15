@@ -1803,9 +1803,16 @@ ALBUM = {
             "bpm": 95,
             "group": 1,
             "genre": "blues",
-            "notes": "Most unstable naturally occurring element. 22-minute half-life. "
-            "Most electropositive. Would explode harder than any alkali metal "
-            "if you could collect enough. Blues that decays in real time.",
+            "origin": "Radioactive decay of Ac-227 (in the U-235 decay chain). "
+            "At any moment, ~30g exists in the entire Earth's crust.",
+            "stability": "NO stable isotopes. Fr-223 has longest half-life (22 minutes). "
+            "Most unstable of the first 101 elements.",
+            "binding_energy": "~7.69 MeV/nucleon (estimated)",
+            "notes": "Most unstable naturally occurring element. Fr-223 half-life: 22 minutes. "
+            "Most electropositive element (even more than cesium). Would explode in water more "
+            "violently than any other alkali metal - but nobody has ever collected enough to try. "
+            "~30g on Earth at any moment. Discovered by Marguerite Perey (1939). "
+            "Blues that decays in real time.",
         },
         {
             "n": 88,
@@ -1814,7 +1821,14 @@ ALBUM = {
             "bpm": 100,
             "group": 2,
             "genre": "country",
-            "notes": "Marie Curie's element. Glows blue-green. Watch dials (Radium Girls). "
+            "origin": "Radioactive decay of U-238 and Th-232 chains. Discovered by "
+            "Marie and Pierre Curie (1898), isolated from pitchblende.",
+            "stability": "NO stable isotopes. Ra-226 has longest half-life (1600 years).",
+            "binding_energy": "~7.67 MeV/nucleon (estimated)",
+            "notes": "Marie Curie's element (she died from aplastic anemia caused by Ra exposure). "
+            "Glows blue-green (radioluminescence). Radium Girls (1920s watch dial painters, "
+            "licked brushes to sharpen points, developed radiation sickness). "
+            "Ra-226 was used in cancer treatment (brachytherapy) before being replaced by Co-60. "
             "Country with a glow-in-the-dark quality. Beautiful, deadly history.",
         },
         # Actinides 89-103: orchestral/epic suite
@@ -1825,7 +1839,12 @@ ALBUM = {
             "bpm": 108,
             "group": "actinide",
             "genre": "orchestral",
-            "notes": "First actinide. Glows blue (Cherenkov radiation). Cancer therapy. "
+            "origin": "Radioactive decay of U-235. Trace amounts in uranium ores.",
+            "stability": "NO stable isotopes. Ac-227 has longest half-life (21.77 years).",
+            "binding_energy": "~7.66 MeV/nucleon",
+            "notes": "First actinide. Glows blue (Cherenkov radiation from intense radioactivity). "
+            "Ac-225 targeted alpha therapy for cancer (promising clinical trials). "
+            "Named from Greek aktinos (ray). 150x more radioactive than radium. "
             "Orchestral overture for the radioactive suite. Blue glow. Powerful.",
         },
         {
@@ -1835,7 +1854,15 @@ ALBUM = {
             "bpm": 120,
             "group": "actinide",
             "genre": "orchestral",
-            "notes": "Named for Thor. Proposed nuclear fuel (safer than uranium). "
+            "origin": "r-process in supernovae. Th-232 (t1/2=14.05 billion years) is "
+            "older than the Earth itself - primordial, present since the solar system formed.",
+            "stability": "NO stable isotopes but Th-232 has a half-life longer than the age of "
+            "the universe (14.05 Gyr vs 13.8 Gyr). Effectively primordial.",
+            "binding_energy": "7.60 MeV/nucleon",
+            "notes": "Named for Thor. Proposed nuclear fuel (thorium fuel cycle: Th-232 + n -> U-233, "
+            "theoretically safer than U-235 because it cannot sustain a weapons chain reaction). "
+            "India's 3-stage nuclear program is built around thorium (they have 25% of world reserves). "
+            "Th-232 half-life is LONGER than the age of the universe. Primordial survivor. "
             "Orchestral. Thunder god energy. Power waiting to be harnessed.",
         },
         {
@@ -1845,7 +1872,13 @@ ALBUM = {
             "bpm": 115,
             "group": "actinide",
             "genre": "orchestral",
-            "notes": "Rare, radioactive, toxic. Proto-actinium. The precursor. "
+            "origin": "Radioactive decay of U-235 (Pa-231, t1/2=32,760 years) and "
+            "U-238 (Pa-234, t1/2=6.7 hours). Named proto-actinium (parent of actinium).",
+            "stability": "NO stable isotopes. Pa-231 has longest half-life (32,760 years).",
+            "binding_energy": "7.59 MeV/nucleon",
+            "notes": "Named proto-actinium (parent of actinium - Pa-231 decays to Ac-227). "
+            "One of the rarest and most expensive natural elements (~$280K per gram). "
+            "Extremely radioactive and toxic. Pa-231/U-235 ratio used for ocean sediment dating. "
             "Orchestral building tension. Something bigger is coming.",
         },
         {
@@ -1877,7 +1910,14 @@ ALBUM = {
             "bpm": 130,
             "group": "actinide",
             "genre": "orchestral",
-            "notes": "First transuranic element. Nuclear waste. Named for Neptune. "
+            "origin": "Artificial: first transuranic element, produced by McMillan and Abelson "
+            "(1940) by bombarding U-238 with neutrons at Berkeley.",
+            "stability": "NO stable isotopes. Np-237 has longest half-life (2.14 million years). "
+            "Primary component of long-lived nuclear waste.",
+            "binding_energy": "7.57 MeV/nucleon",
+            "notes": "First transuranic element (1940). Named for Neptune (follows uranium = Uranus). "
+            "Np-237 is the most problematic long-lived nuclear waste isotope (2.14 Myr half-life, "
+            "long enough to be dangerous, short enough to be intensely radioactive). "
             "Orchestral with oceanic depth. The byproduct nobody wanted.",
         },
         {
@@ -1904,9 +1944,15 @@ ALBUM = {
             "bpm": 120,
             "group": "actinide",
             "genre": "country",
-            "notes": "In every smoke detector. Named for America. "
-            "Country because it is in every American home. "
-            "Quietly saving lives from your ceiling.",
+            "origin": "Artificial: produced in nuclear reactors. Am-241 is the isotope in "
+            "every ionization smoke detector (alpha particles ionize air in the chamber).",
+            "stability": "NO stable isotopes. Am-243 has longest half-life (7,370 years). "
+            "Am-241 (t1/2=432 years) is in every smoke detector.",
+            "binding_energy": "7.55 MeV/nucleon",
+            "notes": "In every smoke detector worldwide (Am-241, ~0.3 micrograms per unit, "
+            "alpha particles ionize the air gap - smoke disrupts the current). Named for America "
+            "(follows europium = Europe in the lanthanide row above). "
+            "Country because it is in every American home. Quietly saving lives from your ceiling.",
         },
         {
             "n": 96,
@@ -1915,7 +1961,13 @@ ALBUM = {
             "bpm": 110,
             "group": "actinide",
             "genre": "classical",
-            "notes": "Named for Marie and Pierre Curie. Glows purple. Mars rovers. "
+            "origin": "Artificial: first produced in 1944 by Seaborg at Berkeley. "
+            "Cm-244 is the alpha power source in Mars rovers (Curiosity, Perseverance).",
+            "stability": "NO stable isotopes. Cm-247 has longest half-life (15.6 million years).",
+            "binding_energy": "7.54 MeV/nucleon",
+            "notes": "Named for Marie and Pierre Curie. Cm-244 alpha decay generates the "
+            "electricity that powers Mars rovers (radioisotope thermoelectric generators). "
+            "Glows purple from self-irradiation. So radioactive it boils water by contact. "
             "Classical tribute to the Curies. Purple glow. Scientific nobility.",
         },
         {
@@ -1925,7 +1977,12 @@ ALBUM = {
             "bpm": 125,
             "group": "actinide",
             "genre": "funk",
-            "notes": "Named for Berkeley, California. Produced in microgram quantities. "
+            "origin": "Artificial: first produced at UC Berkeley (1949) by bombarding "
+            "Am-241 with alpha particles in the 60-inch cyclotron.",
+            "stability": "NO stable isotopes. Bk-247 has longest half-life (1380 years).",
+            "binding_energy": "7.53 MeV/nucleon",
+            "notes": "Named for Berkeley, California (where it was made). Only produced in "
+            "microgram quantities. Bk-249 is the starting material for making californium. "
             "Bay Area funk. Atomic 510 area code energy.",
         },
         {
@@ -1935,8 +1992,15 @@ ALBUM = {
             "bpm": 128,
             "group": "actinide",
             "genre": "electronic",
-            "notes": "Named for California. Neutron source. Portable nuclear reactor. "
-            "West coast electronic. Gold Rush energy. Expensive ($27M per gram).",
+            "origin": "Artificial: first produced at UC Berkeley (1950) by bombarding "
+            "Cm-242 with alpha particles.",
+            "stability": "NO stable isotopes. Cf-251 has longest half-life (898 years). "
+            "Cf-252 is the most important isotope (spontaneous fission neutron source).",
+            "binding_energy": "7.52 MeV/nucleon",
+            "notes": "Named for California and the University of California. "
+            "Cf-252 is a portable neutron source (used for starting nuclear reactors, "
+            "neutron radiography, cancer treatment, and detecting gold and silver ores). "
+            "~$27 million per gram. West coast electronic. Gold Rush energy.",
         },
         {
             "n": 99,
@@ -1945,7 +2009,12 @@ ALBUM = {
             "bpm": 140,
             "group": "actinide",
             "genre": "prog_metal",
-            "notes": "Named for Einstein. Discovered in nuclear fallout (H-bomb debris). "
+            "origin": "Discovered in the fallout of Ivy Mike (first H-bomb test, 1952). "
+            "Identified by Albert Ghiorso at Berkeley. Named for Einstein.",
+            "stability": "NO stable isotopes. Es-252 has longest half-life (471.7 days).",
+            "binding_energy": "7.51 MeV/nucleon",
+            "notes": "Named for Einstein. Discovered in debris of the first thermonuclear explosion "
+            "(Ivy Mike, Eniwetok Atoll, 1952). The discovery was classified for 3 years. "
             "Genius forged in destruction. Prog metal. Complex, brilliant, born from violence.",
         },
         {
@@ -1955,7 +2024,14 @@ ALBUM = {
             "bpm": 135,
             "group": "actinide",
             "genre": "fusion",
-            "notes": "Named for Enrico Fermi. Also discovered in H-bomb debris. "
+            "origin": "Discovered in Ivy Mike fallout alongside einsteinium (1952). "
+            "Named for Enrico Fermi (built the first nuclear reactor, Chicago Pile-1, 1942).",
+            "stability": "NO stable isotopes. Fm-257 has longest half-life (100.5 days). "
+            "Fermium is the heaviest element that can be produced by neutron bombardment.",
+            "binding_energy": "7.50 MeV/nucleon",
+            "notes": "Named for Enrico Fermi (first controlled nuclear chain reaction, 1942). "
+            "Also discovered in H-bomb debris. Fm-257 is the heaviest element producible by "
+            "neutron capture - beyond this, you need particle accelerators. "
             "Fusion (genre and nuclear). The father of the reactor.",
         },
         {
@@ -1965,9 +2041,13 @@ ALBUM = {
             "bpm": 110,
             "group": "actinide",
             "genre": "classical",
-            "notes": "Named for Mendeleev (periodic table creator). "
-            "Classical. THE element that honors the man who organized all the others. "
-            "A theme that references every previous track.",
+            "origin": "Artificial: first produced at Berkeley (1955) by bombarding Es-253 "
+            "with alpha particles. Only 17 atoms were made in the first experiment.",
+            "stability": "NO stable isotopes. Md-258 has longest half-life (51.5 days).",
+            "binding_energy": "~7.49 MeV/nucleon (estimated)",
+            "notes": "Named for Mendeleev (created the periodic table in 1869). "
+            "Only 17 atoms in the first experiment. THE element that honors the man who "
+            "organized all the others. Classical. A theme that references every previous track.",
         },
         {
             "n": 102,
@@ -1976,9 +2056,14 @@ ALBUM = {
             "bpm": 100,
             "group": "actinide",
             "genre": "ambient",
-            "notes": "Named for Alfred Nobel. Half-life: 58 minutes. "
-            "Ambient. Peaceful. The dynamite inventor's redemption. "
-            "The Nobel Peace Prize as music.",
+            "origin": "Artificial: first produced at Dubna (1966) by bombarding U-238 "
+            "with neon ions. Disputed discovery between US and USSR teams.",
+            "stability": "NO stable isotopes. No-259 has longest half-life (58 minutes).",
+            "binding_energy": "~7.48 MeV/nucleon (estimated)",
+            "notes": "Named for Alfred Nobel (dynamite inventor who created the Nobel Prize to "
+            "redeem his legacy). Half-life: 58 minutes. One of the most disputed discoveries "
+            "in chemistry (US vs USSR, resolved decades later). "
+            "Ambient. Peaceful. The dynamite inventor's redemption.",
         },
         {
             "n": 103,
@@ -1987,7 +2072,12 @@ ALBUM = {
             "bpm": 105,
             "group": "actinide",
             "genre": "orchestral",
-            "notes": "Last actinide. Named for Ernest Lawrence (cyclotron inventor). "
+            "origin": "Artificial: first produced at Berkeley (1961) by bombarding Cf "
+            "with boron ions. Named for Ernest Lawrence (cyclotron inventor, Nobel 1939).",
+            "stability": "NO stable isotopes. Lr-266 has longest half-life (~11 hours).",
+            "binding_energy": "~7.47 MeV/nucleon (estimated)",
+            "notes": "Last actinide. Named for Ernest Lawrence (invented the cyclotron, the machine "
+            "that made most transuranic elements possible). Nobel Prize 1939. "
             "Orchestral finale for the actinide suite. The particle accelerator closes.",
         },
         # Transactinides 104-118: increasingly unstable, tracks get shorter
@@ -1998,8 +2088,11 @@ ALBUM = {
             "bpm": 160,
             "group": 4,
             "genre": "metal",
-            "notes": "Named for Rutherford. Half-life: 1.3 hours. Synthetic. "
-            "Metal that decays. 90 seconds long. Fading.",
+            "origin": "Artificial: Dubna (1964) and Berkeley (1969). 261Rf from 242Pu + 22Ne.",
+            "stability": "NO stable isotopes. Rf-267 has longest half-life (~1.3 hours).",
+            "binding_energy": "~7.40 MeV/nucleon (estimated)",
+            "notes": "Named for Ernest Rutherford (discovered the nucleus). First transactinide. "
+            "Half-life: ~1.3 hours. Track length: 90 seconds. Fading.",
         },
         {
             "n": 105,
@@ -2008,8 +2101,12 @@ ALBUM = {
             "bpm": 155,
             "group": 5,
             "genre": "metal",
-            "notes": "Named for Dubna, Russia. Half-life: 28 hours. Cold War element. "
-            "Soviet-American metal. 80 seconds.",
+            "origin": "Artificial: Dubna (1968) from 243Am + 22Ne. Named for Dubna, Russia "
+            "(site of the Joint Institute for Nuclear Research).",
+            "stability": "NO stable isotopes. Db-268 has longest half-life (~28 hours).",
+            "binding_energy": "~7.38 MeV/nucleon (estimated)",
+            "notes": "Named for Dubna, Russia. Half-life: ~28 hours. Cold War element "
+            "(naming dispute between US and USSR lasted decades). Track: 80 seconds.",
         },
         {
             "n": 106,
@@ -2018,8 +2115,13 @@ ALBUM = {
             "bpm": 150,
             "group": 6,
             "genre": "metal",
-            "notes": "Named for Glenn Seaborg (only living person with an element). "
-            "Half-life: 2.4 minutes. Metal tribute. 70 seconds.",
+            "origin": "Artificial: Berkeley (1974) from 249Cf + 18O. Named for Glenn Seaborg "
+            "(co-discovered 10 elements, only person to have element named while alive).",
+            "stability": "NO stable isotopes. Sg-269 has longest half-life (~2.4 minutes).",
+            "binding_energy": "~7.36 MeV/nucleon (estimated)",
+            "notes": "Named for Glenn Seaborg (only living person to have element named after them). "
+            "Seaborg co-discovered Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Sg - TEN elements. "
+            "Half-life: ~2.4 minutes. Track: 70 seconds.",
         },
         {
             "n": 107,
@@ -2028,8 +2130,11 @@ ALBUM = {
             "bpm": 165,
             "group": 7,
             "genre": "metal",
-            "notes": "Named for Niels Bohr. Half-life: 61 seconds. "
-            "Quantum metal. 60 seconds. Probability cloud riff.",
+            "origin": "Artificial: Dubna (1981) from 209Bi + 54Cr.",
+            "stability": "NO stable isotopes. Bh-270 has longest half-life (~61 seconds).",
+            "binding_energy": "~7.34 MeV/nucleon (estimated)",
+            "notes": "Named for Niels Bohr (quantum mechanics, atomic model). "
+            "Half-life: ~61 seconds. Track: 60 seconds. Probability cloud riff.",
         },
         {
             "n": 108,
@@ -2038,8 +2143,12 @@ ALBUM = {
             "bpm": 170,
             "group": 8,
             "genre": "metal",
-            "notes": "Named for Hesse, Germany. Half-life: 16 seconds. "
-            "Metal. 45 seconds. Accelerating decay.",
+            "origin": "Artificial: Darmstadt, Germany (1984) from 208Pb + 58Fe.",
+            "stability": "NO stable isotopes. Hs-269 has longest half-life (~16 seconds).",
+            "binding_energy": "~7.32 MeV/nucleon (estimated)",
+            "notes": "Named for Hesse (German state where Darmstadt is located). "
+            "Predicted to be the densest element if enough could be made (41 g/cm3). "
+            "Half-life: ~16 seconds. Track: 45 seconds. Accelerating decay.",
         },
         {
             "n": 109,
@@ -2048,7 +2157,12 @@ ALBUM = {
             "bpm": 175,
             "group": 9,
             "genre": "metal",
-            "notes": "Named for Lise Meitner (nuclear fission, robbed of Nobel Prize). "
+            "origin": "Artificial: Darmstadt (1982) from 209Bi + 58Fe.",
+            "stability": "NO stable isotopes. Mt-278 has longest half-life (~4.5 seconds).",
+            "binding_energy": "~7.30 MeV/nucleon (estimated)",
+            "notes": "Named for Lise Meitner (co-discovered nuclear fission with Hahn, 1938). "
+            "Hahn received the Nobel Prize alone - Meitner was overlooked because she was a "
+            "Jewish woman who had fled Nazi Germany. One of the greatest injustices in science. "
             "Metal tribute to an overlooked genius. 40 seconds. Justice unserved.",
         },
         {
@@ -2058,8 +2172,11 @@ ALBUM = {
             "bpm": 180,
             "group": 10,
             "genre": "metal",
-            "notes": "Half-life: 14 seconds. Named for Darmstadt. "
-            "Speed metal. 35 seconds. Fragmenting.",
+            "origin": "Artificial: Darmstadt (1994) from 208Pb + 62Ni.",
+            "stability": "NO stable isotopes. Ds-281 has longest half-life (~14 seconds).",
+            "binding_energy": "~7.28 MeV/nucleon (estimated)",
+            "notes": "Named for Darmstadt, Germany (GSI Helmholtz Centre). "
+            "Half-life: ~14 seconds. Speed metal. 35 seconds. Fragmenting.",
         },
         {
             "n": 111,
@@ -2068,8 +2185,11 @@ ALBUM = {
             "bpm": 185,
             "group": 11,
             "genre": "metal",
-            "notes": "Named for Roentgen (X-rays). Half-life: 26 seconds. "
-            "Metal that sees through you. 30 seconds. X-ray vision.",
+            "origin": "Artificial: Darmstadt (1994) from 209Bi + 64Ni.",
+            "stability": "NO stable isotopes. Rg-282 has longest half-life (~26 seconds).",
+            "binding_energy": "~7.26 MeV/nucleon (estimated)",
+            "notes": "Named for Wilhelm Roentgen (discovered X-rays, 1895, first Nobel in Physics). "
+            "Half-life: ~26 seconds. Metal that sees through you. 30 seconds. X-ray vision.",
         },
         {
             "n": 112,
@@ -2078,7 +2198,12 @@ ALBUM = {
             "bpm": 190,
             "group": 12,
             "genre": "electronic",
-            "notes": "Named for Copernicus. Half-life: 29 seconds. "
+            "origin": "Artificial: Darmstadt (1996) from 208Pb + 70Zn.",
+            "stability": "NO stable isotopes. Cn-285 has longest half-life (~29 seconds).",
+            "binding_energy": "~7.24 MeV/nucleon (estimated)",
+            "notes": "Named for Copernicus (heliocentric model, 1543). Predicted to be a liquid "
+            "or gas at room temperature (relativistic effects contract the 7s orbital so much "
+            "it behaves like a noble gas rather than a metal like its group 12 neighbors). "
             "Electronic. The heliocentric element. Everything revolves. 28 seconds.",
         },
         {
@@ -2088,9 +2213,12 @@ ALBUM = {
             "bpm": 180,
             "group": 13,
             "genre": "electronic",
-            "notes": "Named for Japan (Nihon). Half-life: 20 seconds. "
-            "First element named for an East Asian country. "
-            "J-electronic. Precision. 25 seconds.",
+            "origin": "Artificial: RIKEN, Japan (2004) from 209Bi + 70Zn. First element "
+            "discovered in Asia.",
+            "stability": "NO stable isotopes. Nh-286 has longest half-life (~20 seconds).",
+            "binding_energy": "~7.22 MeV/nucleon (estimated)",
+            "notes": "Named for Japan (Nihon). First element discovered in East Asia (RIKEN, 2004). "
+            "Half-life: ~20 seconds. J-electronic. Precision. 25 seconds.",
         },
         {
             "n": 114,
@@ -2099,8 +2227,15 @@ ALBUM = {
             "bpm": 185,
             "group": 14,
             "genre": "electronic",
-            "notes": "Named for Flerov. Half-life: 2.1 seconds. Island of stability candidate. "
-            "Electronic pulse. 20 seconds. Barely stable.",
+            "origin": "Artificial: Dubna (1999) from 244Pu + 48Ca. Candidate for the "
+            "Island of Stability (predicted region around Z=114, N=184 with longer half-lives).",
+            "stability": "NO stable isotopes. Fl-289 has longest half-life (~2.1 seconds). "
+            "The Island of Stability prediction gives Fl slightly longer half-lives than neighbors.",
+            "binding_energy": "~7.20 MeV/nucleon (estimated)",
+            "notes": "Named for Georgy Flerov (discovered spontaneous fission). "
+            "Island of Stability candidate - Fl-298 (with 184 neutrons) is predicted to have "
+            "half-lives of minutes to hours, a massive increase over its neighbors. "
+            "We have not made Fl-298 yet. Electronic pulse. 20 seconds. A brief rally.",
         },
         {
             "n": 115,
@@ -2109,8 +2244,11 @@ ALBUM = {
             "bpm": 190,
             "group": 15,
             "genre": "electronic",
-            "notes": "Named for Moscow. Half-life: 0.65 seconds. "
-            "Electronic burst. 15 seconds. Disintegrating.",
+            "origin": "Artificial: Dubna (2003) from 243Am + 48Ca.",
+            "stability": "NO stable isotopes. Mc-290 has longest half-life (~0.65 seconds).",
+            "binding_energy": "~7.18 MeV/nucleon (estimated)",
+            "notes": "Named for Moscow (Moscow Oblast, location of Dubna). "
+            "Half-life: ~0.65 seconds. Electronic burst. 15 seconds. Disintegrating.",
         },
         {
             "n": 116,
@@ -2119,8 +2257,11 @@ ALBUM = {
             "bpm": 195,
             "group": 16,
             "genre": "electronic",
-            "notes": "Named for Livermore, California. Half-life: 57 milliseconds. "
-            "Electronic glitch. 10 seconds. Almost gone.",
+            "origin": "Artificial: Dubna (2000) from 248Cm + 48Ca.",
+            "stability": "NO stable isotopes. Lv-293 has longest half-life (~57 milliseconds).",
+            "binding_energy": "~7.16 MeV/nucleon (estimated)",
+            "notes": "Named for Lawrence Livermore National Laboratory, California. "
+            "Half-life: ~57 milliseconds. Electronic glitch. 10 seconds. Almost gone.",
         },
         {
             "n": 117,
@@ -2129,7 +2270,12 @@ ALBUM = {
             "bpm": 200,
             "group": 17,
             "genre": "punk",
-            "notes": "Named for Tennessee. Half-life: 51 milliseconds. Halogen that barely exists. "
+            "origin": "Artificial: Dubna (2010) from 249Bk + 48Ca. Named for Tennessee "
+            "(home of ORNL which produced the berkelium target).",
+            "stability": "NO stable isotopes. Ts-294 has longest half-life (~51 milliseconds).",
+            "binding_energy": "~7.14 MeV/nucleon (estimated)",
+            "notes": "Named for Tennessee. Half-life: ~51 milliseconds. Halogen that barely exists. "
+            "The berkelium target had to be produced at ORNL over 2 years, then shipped to Dubna. "
             "5-second punk blast. The fastest, shortest track. "
             "Blink and you missed it. The decay catches the sound.",
         },
