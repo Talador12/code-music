@@ -1,0 +1,177 @@
+samples/mood/lofi_chill.py
+  eba092333af17222 4,7-9,11,13-15
+songs/industrial_grind.py
+  eba092333af17222 32-43,47-57,64-69
+albums/jazz_neosoul.py
+  eba092333af17222 27-29
+scales/phrygian_dominant.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+songs/shifting_ground.py
+  eba092333af17222 82-97,100-112
+albums/hiphop_lofi.py
+  eba092333af17222 27-28
+songs/acid_house.py
+  eba092333af17222 21-38
+albums/edm_festival.py
+  eba092333af17222 27-28
+albums/metal.py
+  eba092333af17222 27-29
+albums/world_experimental.py
+  eba092333af17222 27-29
+scales/persian.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+albums/classical_orchestral.py
+  eba092333af17222 27-30
+albums/cosmic_electro.py
+  eba092333af17222 25-28
+albums/videogame_anime.py
+  eba092333af17222 28-30
+songs/dream_pop.py
+  eba092333af17222 21-28,36-45,52-55
+scales/mixolydian.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+albums/ambient_cinematic.py
+  eba092333af17222 29,31-32
+samples/jazz/big_band_swing.py
+  eba092333af17222 7-13,16
+samples/symphony/symphony_sketch.py
+  eba092333af17222 4,6-7,9-10,13,15
+scales/diminished_hw.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+songs/dark_ambient.py
+  eba092333af17222 35-37,45-47
+scales/melodic_minor.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+albums/drum_and_bass.py
+  eba092333af17222 26-29
+samples/jazz/latin_jazz_fire.py
+  eba092333af17222 4-6,9,11-12,14,17-18,20
+songs/motown_groove.py
+  eba092333af17222 24-35,43-53,57-59
+albums/funk_disco.py
+  eba092333af17222 27-29
+scales/phrygian.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+albums/latin.py
+  eba092333af17222 26-28
+songs/new_wave.py
+  eba092333af17222 24-35,44-54,57-59
+scales/augmented.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scales/bebop_major.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/in_sen.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/lydian_augmented.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/bebop_minor.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+albums/rock_prog.py
+  eba092333af17222 27-29
+scales/lydian.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+albums/edm_progressive.py
+  eba092333af17222 25-26
+songs/electro_swing.py
+  eba092333af17222 18-44,51-86,90-97,102-104
+Makefile
+  eba092333af17222 268,272-273
+albums/country_americana.py
+  eba092333af17222 33-35
+scales/pentatonic_major.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/bebop_dominant.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scales/major.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+songs/prog_metal.py
+  eba092333af17222 16-31,33-50,55-66,69-88,92-98,104-106
+samples/jazz/bossa_nova_groove.py
+  eba092333af17222 4-5,8-10,12-13,15,49
+scales/chromatic.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/diminished.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scales/hungarian_minor.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+samples/instruments/metalcore_2004.py
+  eba092333af17222 9-12,15-17,22,24
+samples/instruments/ska_showcase.py
+  eba092333af17222 8,11-12,18,20
+scales/locrian.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+songs/dub_reggae.py
+  eba092333af17222 28-39,43-54,57-59
+scales/harmonic_minor.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scales/dorian.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/whole_tone.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+songs/bluegrass_picking.py
+  eba092333af17222 15-34,39-50,54-69,73-78
+albums/rnb_soul.py
+  eba092333af17222 27-29
+scales/japanese.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+songs/math_rock.py
+  eba092333af17222 19-29,34-51,56-65,68-70
+samples/drums/funk_pocket.py
+  eba092333af17222 4-5,8-11,15
+albums/folk_acoustic.py
+  eba092333af17222 27,29
+albums/techno.py
+  eba092333af17222 26-28
+songs/ragtime_rag.py
+  eba092333af17222 15-62,65-112
+albums/dubstep.py
+  eba092333af17222 26-28
+scales/blues_minor.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+albums/pop.py
+  eba092333af17222 28,30
+scales/super_locrian.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scripts/midi_to_song.py
+  eba092333af17222 320
+scales/lydian_dominant.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+scales/pentatonic_minor.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+albums/indie_alternative.py
+  eba092333af17222 27-30
+songs/ambient_techno.py
+  eba092333af17222 42-45
+songs/afrobeat_groove.py
+  eba092333af17222 21-35,39-48,54-64,71-73
+scales/natural_minor.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/arabic.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+songs/garage_rock.py
+  eba092333af17222 24-29,33-42,46-63,66-71
+scales/blues_major.py
+  eba092333af17222 3-4,6-7,9,11-12,14
+scales/enigmatic.py
+  eba092333af17222 3-5,7-8,10,12-13,15
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "8037988947234fa9091816af4cd2438783917be7",
+  "prompts": {
+    "eba092333af17222": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2020cbc7affeG90ZlAUVRLp6Mq",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Keith Adler",
+      "messages": [],
+      "total_additions": 1004,
+      "total_deletions": 576,
+      "accepted_lines": 1004,
+      "overriden_lines": 0
+    }
+  }
+}
