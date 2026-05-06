@@ -317,7 +317,7 @@ def midi_to_script(
         var = f"tr{t_idx}"
         track_vars.append(var)
         lines.append(
-            f'{var} = song.add_track('
+            f"{var} = song.add_track("
             f'Track(name="{track_name}", instrument="{instrument}", volume=0.8))'
         )
 

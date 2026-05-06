@@ -24,8 +24,8 @@ ALBUM = {
     "tracks": [
         {"title": "Fault Line", "song": "prog_rock", "bpm": 140},
         {"title": "Oblique", "song": "trance_odyssey", "bpm": 145},
-        {"title": "Fault Lines",      "song": "fault_lines",    "bpm": 152},
-        {"title": "Mosh Pit",       "song": "mosh_pit",     "bpm": 168},
-        {"title": "Eleven Eight",    "song": "eleven_eight",    "bpm": 155},
+        {"title": "Fault Lines", "song": "fault_lines", "bpm": 152},
+        {"title": "Mosh Pit", "song": "mosh_pit", "bpm": 168},
+        {"title": "Eleven Eight", "song": "eleven_eight", "bpm": 155},
     ],
 }

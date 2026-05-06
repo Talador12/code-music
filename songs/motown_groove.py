@@ -21,8 +21,18 @@ for _ in range(16):
 
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.6))
 for _ in range(16):
-    bass.extend([Note("G", 2, 0.5), Note("B", 2, 0.5), Note("D", 3, 0.5), Note("G", 3, 0.5),
-                 Note("D", 3, 0.5), Note("B", 2, 0.5), Note("G", 2, 0.5), Note("D", 2, 0.5)])
+    bass.extend(
+        [
+            Note("G", 2, 0.5),
+            Note("B", 2, 0.5),
+            Note("D", 3, 0.5),
+            Note("G", 3, 0.5),
+            Note("D", 3, 0.5),
+            Note("B", 2, 0.5),
+            Note("G", 2, 0.5),
+            Note("D", 2, 0.5),
+        ]
+    )
 
 keys = song.add_track(Track(name="keys", instrument="piano", volume=0.45, pan=0.15))
 for _ in range(8):
@@ -30,11 +40,21 @@ for _ in range(8):
 
 lead = song.add_track(Track(name="lead", instrument="sawtooth", volume=0.5, pan=-0.15))
 for _ in range(8):
-    lead.extend([Note("B", 4, 0.5), Note("D", 5, 0.5), Note("G", 5, 1.0),
-                 Note("F#", 5, 0.5), Note("D", 5, 0.5), Note("B", 4, 1.0),
-                 r(4.0)])
+    lead.extend(
+        [
+            Note("B", 4, 0.5),
+            Note("D", 5, 0.5),
+            Note("G", 5, 1.0),
+            Note("F#", 5, 0.5),
+            Note("D", 5, 0.5),
+            Note("B", 4, 1.0),
+            r(4.0),
+        ]
+    )
 
 song.effects = {
     "keys": EffectsChain().add(reverb, room_size=0.4, wet=0.15),
-    "lead": EffectsChain().add(reverb, room_size=0.45, wet=0.2).add(compress, threshold=0.5, ratio=3.0),
+    "lead": EffectsChain()
+    .add(reverb, room_size=0.45, wet=0.2)
+    .add(compress, threshold=0.5, ratio=3.0),
 }

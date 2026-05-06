@@ -1,20 +1,18 @@
 """Bossa nova groove - Jobim-style with Rhodes and nylon guitar feel."""
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    scale,
-    reverb,
-    chorus,
-    delay,
-    MP,
-    P,
     MF,
+    MP,
+    Chord,
+    EffectsChain,
+    Note,
+    Song,
+    Track,
+    chorus,
+    reverb,
+    scale,
 )
-from code_music.theory.rhythm import bossa_nova_pattern, apply_groove, groove_template
+from code_music.theory.rhythm import apply_groove, bossa_nova_pattern, groove_template
 
 song = Song(title="Bossa Nova Groove", bpm=140, key_sig="F", time_sig=(4, 4))
 
@@ -48,7 +46,7 @@ bass = song.add_track(Track(name="bass", instrument="bass", volume=0.5, pan=0.1)
 for root, shape in prog:
     bass.add(Note(root, 2, 2.0, velocity=MF))
     fifth_map = {"maj7": 7, "min7": 7, "dom7": 7}
-    from code_music.engine import note_name_to_midi, midi_to_note_name
+    from code_music.engine import midi_to_note_name, note_name_to_midi
 
     root_midi = note_name_to_midi(root, 2)
     fifth_midi = root_midi + fifth_map.get(shape, 7)

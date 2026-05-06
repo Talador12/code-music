@@ -1,17 +1,18 @@
 """scales/hungarian_minor.py — Hungarian Minor (Gypsy Minor)
 
-    Natural minor with raised 4th AND raised 7th. Two augmented 2nds.
-        Dramatic, exotic, Eastern European. Liszt, Romani music.
-        Used in: klezmer, metal, jazz, Hungarian traditional.
+Natural minor with raised 4th AND raised 7th. Two augmented 2nds.
+    Dramatic, exotic, Eastern European. Liszt, Romani music.
+    Used in: klezmer, metal, jazz, Hungarian traditional.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/hungarian_minor.py -o /tmp/hungarian_minor.wav
+Run:
+    code-music scales/hungarian_minor.py -o /tmp/hungarian_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "hungarian_minor"

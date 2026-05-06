@@ -1,17 +1,18 @@
 """scales/phrygian_dominant.py — Phrygian Dominant
 
-    Phrygian with a major 3rd. The Spanish/Flamenco scale.
-        Also called: Spanish Gypsy, Jewish, Ahava Raba.
-        Used in: flamenco, Middle Eastern music, klezmer, metal.
+Phrygian with a major 3rd. The Spanish/Flamenco scale.
+    Also called: Spanish Gypsy, Jewish, Ahava Raba.
+    Used in: flamenco, Middle Eastern music, klezmer, metal.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/phrygian_dominant.py -o /tmp/phrygian_dominant.wav
+Run:
+    code-music scales/phrygian_dominant.py -o /tmp/phrygian_dominant.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "phrygian_dominant"

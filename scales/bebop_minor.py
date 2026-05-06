@@ -1,17 +1,18 @@
 """scales/bebop_minor.py — Bebop Minor
 
-    Dorian + major 3rd passing tone. 8 notes.
-        Bridges minor and major sounds.
-        Used in: bebop minor ii-V-i lines, modern jazz.
+Dorian + major 3rd passing tone. 8 notes.
+    Bridges minor and major sounds.
+    Used in: bebop minor ii-V-i lines, modern jazz.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/bebop_minor.py -o /tmp/bebop_minor.wav
+Run:
+    code-music scales/bebop_minor.py -o /tmp/bebop_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "bebop_minor"

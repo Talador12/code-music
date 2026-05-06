@@ -265,12 +265,12 @@ test-fast: ## [Dev] Run tests with no render (skip slow integration tests)
 	$(BIN)/pytest tests/ -v -k "not integration and not render and not full_song"
 
 check: ## [Dev] Lint + test in one command (run before every PR)
-	$(BIN)/ruff check code_music tests songs examples
+	$(BIN)/ruff check code_music tests songs samples scales scripts albums
 	$(BIN)/pytest tests/ -q
 
 ci: ## [Dev] Full CI pipeline: format check + lint + test (mirrors what CI runs)
-	$(BIN)/ruff format --check code_music tests
-	$(BIN)/ruff check code_music tests songs examples
+	$(BIN)/ruff format --check code_music tests songs samples scales scripts albums
+	$(BIN)/ruff check code_music tests songs samples scales scripts albums
 	$(BIN)/pytest tests/ -q --tb=short
 
 release: ## [Dev] Tag + push a release (CI-only — fails if not in GitHub Actions)

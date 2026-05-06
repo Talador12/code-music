@@ -18,12 +18,24 @@ for _ in range(24):
     hat.extend([r(0.5), Note("F#", 6, 0.5)] * 4)
 
 acid_bar = Track(name="acid", instrument="sawtooth", volume=0.55)
-acid_bar.extend([
-    Note("A", 2, 0.25), Note("A", 2, 0.25), Note("C", 3, 0.25), Note("A", 2, 0.25),
-    Note("E", 3, 0.25), Note("A", 2, 0.25), Note("C", 3, 0.25), Note("E", 3, 0.25),
-    Note("A", 2, 0.25), Note("G", 2, 0.25), Note("A", 2, 0.25), Note("C", 3, 0.25),
-    Note("A", 2, 0.5), Note("E", 2, 0.5),
-])
+acid_bar.extend(
+    [
+        Note("A", 2, 0.25),
+        Note("A", 2, 0.25),
+        Note("C", 3, 0.25),
+        Note("A", 2, 0.25),
+        Note("E", 3, 0.25),
+        Note("A", 2, 0.25),
+        Note("C", 3, 0.25),
+        Note("E", 3, 0.25),
+        Note("A", 2, 0.25),
+        Note("G", 2, 0.25),
+        Note("A", 2, 0.25),
+        Note("C", 3, 0.25),
+        Note("A", 2, 0.5),
+        Note("E", 2, 0.5),
+    ]
+)
 song.add_track(acid_bar.loop(24))
 
 pad = song.add_track(Track(name="pad", instrument="pad", volume=0.2))

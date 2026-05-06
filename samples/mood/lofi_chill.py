@@ -1,19 +1,18 @@
 """Lofi chill - midnight study session vibes. Dusty Rhodes, vinyl crackle, Dilla drums."""
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    reverb,
-    chorus,
-    MP,
-    P,
     PP,
+    Chord,
+    EffectsChain,
+    Note,
+    Song,
+    Track,
+    chorus,
+    reverb,
 )
-from code_music.effects import lofi_vinyl, tape_wow_flutter, tape_sat
-from code_music.theory.rhythm import lofi_drum_pattern, apply_groove, groove_template
+from code_music.effects import lofi_vinyl, tape_sat
+from code_music.theory import bass_line_lofi
+from code_music.theory.rhythm import apply_groove, groove_template, lofi_drum_pattern
 
 song = Song(title="Lofi Chill", bpm=75, key_sig="D", time_sig=(4, 4))
 
@@ -32,8 +31,6 @@ for root, shape in prog * 2:
     rhodes.add(Note.rest(4.0))
 
 # Lofi bass - sparse and deep
-from code_music.theory import bass_line_lofi
-
 bass = song.add_track(Track(name="bass", instrument="sub_bass", volume=0.5, pan=0.0))
 simple_prog = [("D", "maj7"), ("F#", "min7"), ("G", "maj7"), ("E", "min7")]
 bass.extend(bass_line_lofi(simple_prog * 2, octave=2, seed=42))

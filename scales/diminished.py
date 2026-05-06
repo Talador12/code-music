@@ -1,17 +1,18 @@
 """scales/diminished.py — Diminished (Half-Whole)
 
-    Alternating half and whole steps. 8 notes, fully symmetric.
-        Only 3 unique diminished scales exist.
-        Used in: bebop, jazz tension, classical, Stravinsky.
+Alternating half and whole steps. 8 notes, fully symmetric.
+    Only 3 unique diminished scales exist.
+    Used in: bebop, jazz tension, classical, Stravinsky.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/diminished.py -o /tmp/diminished.wav
+Run:
+    code-music scales/diminished.py -o /tmp/diminished.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "diminished"

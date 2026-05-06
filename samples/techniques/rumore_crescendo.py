@@ -1,6 +1,5 @@
 """Noise sweep build: white noise filtered sweep for EDM drop tension."""
 
-
 from code_music import Chord, Song, Track
 
 # This sample demonstrates noise_sweep() applied directly to a rendered mix.

@@ -1,16 +1,17 @@
 """scales/blues_major.py — Blues (Major)
 
-    Major pentatonic + b3. Lighter than minor blues, still bluesy.
-        Used in: country, gospel, Southern rock, Eric Clapton.
+Major pentatonic + b3. Lighter than minor blues, still bluesy.
+    Used in: country, gospel, Southern rock, Eric Clapton.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/blues_major.py -o /tmp/blues_major.wav
+Run:
+    code-music scales/blues_major.py -o /tmp/blues_major.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "blues_major"

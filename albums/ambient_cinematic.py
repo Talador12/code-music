@@ -26,9 +26,9 @@ ALBUM = {
     "tracks": [
         {"title": "Carrier", "song": "deep_space_drift", "bpm": 60},
         {"title": "Weight", "song": "cinematic_rise", "bpm": 100},
-        {"title": "Drift State",  "song": "drift_state",  "bpm": 50},
+        {"title": "Drift State", "song": "drift_state", "bpm": 50},
         {"title": "Open Circuit", "song": "open_circuit", "bpm": 65},
-        {"title": "Neon Cathedral",    "song": "neon_cathedral",   "bpm": 88},
-        {"title": "Hollow Ground",  "song": "hollow_ground",   "bpm": 72},
+        {"title": "Neon Cathedral", "song": "neon_cathedral", "bpm": 88},
+        {"title": "Hollow Ground", "song": "hollow_ground", "bpm": 72},
     ],
 }

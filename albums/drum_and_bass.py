@@ -23,9 +23,9 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Upstream", "song": "liquid_dnb", "bpm": 174},
-        {"title": "Upstream II",      "song": "upstream_two",   "bpm": 174},
-        {"title": "Signal Loss",     "song": "signal_loss",  "bpm": 174},
-        {"title": "Neuromancer",    "song": "neuromancer",   "bpm": 174},
-        {"title": "Lagos Nights",  "song": "lagos_nights",     "bpm": 108},
+        {"title": "Upstream II", "song": "upstream_two", "bpm": 174},
+        {"title": "Signal Loss", "song": "signal_loss", "bpm": 174},
+        {"title": "Neuromancer", "song": "neuromancer", "bpm": 174},
+        {"title": "Lagos Nights", "song": "lagos_nights", "bpm": 108},
     ],
 }

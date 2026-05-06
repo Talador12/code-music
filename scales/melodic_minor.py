@@ -1,17 +1,18 @@
 """scales/melodic_minor.py — Melodic Minor
 
-    Minor with raised 6th AND 7th. Smoother voice leading than harmonic minor.
-        Classical descends as natural minor. Jazz stays raised both ways.
-        Used in: jazz, classical violin writing.
+Minor with raised 6th AND 7th. Smoother voice leading than harmonic minor.
+    Classical descends as natural minor. Jazz stays raised both ways.
+    Used in: jazz, classical violin writing.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/melodic_minor.py -o /tmp/melodic_minor.wav
+Run:
+    code-music scales/melodic_minor.py -o /tmp/melodic_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "melodic_minor"

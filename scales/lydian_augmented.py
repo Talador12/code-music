@@ -1,16 +1,17 @@
 """scales/lydian_augmented.py — Lydian Augmented
 
-    3rd mode of melodic minor. Lydian with a sharp 5. Very floating.
-        Used in: jazz (Maj7#5 chords), film scores, Coltrane.
+3rd mode of melodic minor. Lydian with a sharp 5. Very floating.
+    Used in: jazz (Maj7#5 chords), film scores, Coltrane.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/lydian_augmented.py -o /tmp/lydian_augmented.wav
+Run:
+    code-music scales/lydian_augmented.py -o /tmp/lydian_augmented.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "lydian_augmented"

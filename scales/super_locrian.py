@@ -1,17 +1,18 @@
 """scales/super_locrian.py — Super Locrian (Altered Scale)
 
-    7th mode of melodic minor. b9, #9, b5/#11, b13 — every alteration.
-        The jazz altered scale for V7alt chords.
-        Used in: jazz (Parker, Coltrane, Hancock), fusion.
+7th mode of melodic minor. b9, #9, b5/#11, b13 — every alteration.
+    The jazz altered scale for V7alt chords.
+    Used in: jazz (Parker, Coltrane, Hancock), fusion.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/super_locrian.py -o /tmp/super_locrian.wav
+Run:
+    code-music scales/super_locrian.py -o /tmp/super_locrian.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "super_locrian"

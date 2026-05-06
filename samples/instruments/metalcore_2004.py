@@ -6,29 +6,24 @@ If this does not make you want to windmill headbang, the gain is not high enough
 """
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    scale,
-    distortion,
-    reverb,
-    delay,
-    compress,
-    F,
     FF,
     MF,
-    MP,
-    P,
+    EffectsChain,
+    F,
+    Note,
+    Song,
+    Track,
+    compress,
+    delay,
+    distortion,
+    reverb,
 )
 from code_music.theory.rhythm import (
-    harmonize_lead,
-    dual_guitar,
+    clean_arpeggio,
     drop_tuning,
+    dual_guitar,
     metal_drum_pattern,
     palm_mute_chug,
-    clean_arpeggio,
 )
 
 song = Song(title="The End of Ascendancy (2004 Metalcore)", bpm=160, key_sig="E", time_sig=(4, 4))

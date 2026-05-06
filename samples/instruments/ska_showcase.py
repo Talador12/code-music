@@ -5,28 +5,19 @@ Prince Buster into The Specials into Reel Big Fish in one continuous groove.
 """
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    scale,
-    reverb,
-    compress,
-    delay,
-    spring_reverb,
-    F,
-    MF,
     MP,
-    P,
+    Chord,
+    EffectsChain,
+    Song,
+    Track,
+    compress,
+    spring_reverb,
 )
 from code_music.theory.rhythm import (
-    ska_drum_pattern,
-    skank_pattern,
     ska_bass_line,
+    ska_drum_pattern,
     ska_horn_riff,
-    apply_groove,
-    groove_template,
+    skank_pattern,
 )
 
 song = Song(title="Pick It Up (Ska Showcase)", bpm=168, key_sig="C", time_sig=(4, 4))
