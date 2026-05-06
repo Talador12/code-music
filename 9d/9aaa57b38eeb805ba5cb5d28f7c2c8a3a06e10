@@ -1,0 +1,23 @@
+claude.md
+  d4d4e8f647fef114 3-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "9d9aaa57b38eeb805ba5cb5d28f7c2c8a3a06e10",
+  "prompts": {
+    "d4d4e8f647fef114": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2020d7ba3ffeccjeSVsUDgEIVx",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Keith Adler",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 1,
+      "accepted_lines": 10,
+      "overriden_lines": 0
+    }
+  }
+}
