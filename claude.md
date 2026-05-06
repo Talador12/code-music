@@ -5,11 +5,12 @@
 ## Current Work — Hook-First Generation
 
 - Open PR: [#2](https://github.com/Talador12/code-music/pull/2) `theory: add hook-first song generator`.
-- Adds `hook_progression`, `generate_hook`, and `generate_hook_song` in `code_music.theory`.
+- Adds `hook_progression`, `generate_hook`, `generate_hook_song`, `concept_palette`, and `generate_concept_suite` in `code_music.theory`.
 - The generator turns circle-of-fifths / ii-V-I gravity, short repeated motifs, and genre-specific arrangement defaults into runnable hooks.
 - Styles covered in this first slice: `zedd` / EDM, `coltrane`, and `symphonic`.
-- New sample: `samples/chords/hook_circle.py`, rendered successfully to `/tmp/hook_circle.wav`.
-- Validation: targeted Ruff checks, `tests/test_hooks.py`, related generator tests, examples smoke tests, and full pytest (`3716 passed, 3 skipped, 2 warnings`) passed using the existing venv.
+- Concept-suite layer maps album ideas (`Rasputin`, planets, constellations, Fibonacci, elements, time) to deterministic style/key/BPM palettes and produces multiple runnable sketch Songs.
+- New samples: `samples/chords/hook_circle.py` and `samples/chords/concept_suite.py`, rendered successfully to `/tmp/hook_circle.wav` and `/tmp/concept_suite.wav`.
+- Validation: targeted Ruff checks, `tests/test_hooks.py`, `tests/test_concept_suite.py`, related generator tests, examples smoke tests, and full pytest (`3804 passed, 3 skipped, 2 warnings`) passed using the existing venv.
 
 ## Current Work — Terminal Visualizer
 
