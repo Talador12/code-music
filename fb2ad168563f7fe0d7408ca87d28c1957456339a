@@ -1,0 +1,23 @@
+tests/test_makefile.py
+  eba092333af17222 40-43,71,102,118,132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "fb2ad168563f7fe0d7408ca87d28c1957456339a",
+  "prompts": {
+    "eba092333af17222": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2020cbc7affeG90ZlAUVRLp6Mq",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Keith Adler",
+      "messages": [],
+      "total_additions": 8,
+      "total_deletions": 4,
+      "accepted_lines": 8,
+      "overriden_lines": 0
+    }
+  }
+}
