@@ -1674,6 +1674,120 @@ def generate_hook_song(
     return song
 
 
+_CONCEPT_PALETTES: dict[str, dict] = {
+    "rasputin": {
+        "title": "Rasputin Studies",
+        "styles": ["zedd", "coltrane", "symphonic", "dance"],
+        "keys": ["E", "A", "C", "F#"],
+        "bpms": [128, 210, 132, 100],
+        "bars": [8, 6, 8, 8],
+    },
+    "planets": {
+        "title": "Planetary Sketches",
+        "styles": ["symphonic", "zedd", "coltrane", "symphonic"],
+        "keys": ["C", "G", "Bb", "E"],
+        "bpms": [96, 128, 180, 72],
+        "bars": [8, 8, 6, 8],
+    },
+    "constellations": {
+        "title": "Constellation Maps",
+        "styles": ["symphonic", "zedd", "coltrane"],
+        "keys": ["F", "D", "Ab"],
+        "bpms": [88, 124, 196],
+        "bars": [8, 8, 6],
+    },
+    "fibonacci": {
+        "title": "Fibonacci Spirals",
+        "styles": ["symphonic", "zedd", "coltrane", "edm"],
+        "keys": ["C", "D", "G", "A"],
+        "bpms": [89, 144, 233, 144],
+        "bars": [5, 8, 13, 8],
+    },
+    "elements": {
+        "title": "Elemental Sketches",
+        "styles": ["zedd", "symphonic", "coltrane", "edm"],
+        "keys": ["C", "F", "B", "Eb"],
+        "bpms": [128, 84, 204, 110],
+        "bars": [8, 8, 6, 8],
+    },
+    "time": {
+        "title": "Time Periods",
+        "styles": ["symphonic", "coltrane", "zedd"],
+        "keys": ["D", "Bb", "F#"],
+        "bpms": [72, 180, 128],
+        "bars": [8, 6, 8],
+    },
+}
+
+
+def concept_palette(concept: str) -> dict:
+    """Return a deterministic musical palette for an album concept.
+
+    Known concepts map to curated style/key/tempo arcs. Unknown concepts still
+    get a stable palette derived from the text so a title can become runnable
+    code immediately instead of waiting for a hand-authored album file.
+    """
+    import hashlib
+
+    normalized = concept.lower().replace("_", " ").replace("-", " ")
+    for token, palette in _CONCEPT_PALETTES.items():
+        if token in normalized:
+            return {**palette, "concept": concept}
+
+    digest = hashlib.sha256(normalized.encode("utf-8")).digest()
+    styles = ["zedd", "coltrane", "symphonic", "edm"]
+    keys = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+    return {
+        "concept": concept,
+        "title": concept.title(),
+        "styles": [styles[digest[i] % len(styles)] for i in range(4)],
+        "keys": [keys[digest[i + 4] % len(keys)] for i in range(4)],
+        "bpms": [84 + digest[i + 8] % 90 for i in range(4)],
+        "bars": [6 + (digest[i + 12] % 4) * 2 for i in range(4)],
+    }
+
+
+def generate_concept_suite(
+    concept: str,
+    tracks: int = 4,
+    seed: int | None = None,
+) -> list["Song"]:
+    """Turn an album idea into multiple runnable hook sketches.
+
+    Each sketch uses the concept palette to pick style, key, BPM, and phrase
+    length, then delegates to ``generate_hook_song`` for the actual music.
+    The result is intentionally lightweight: enough to render, audition, and
+    decide which direction deserves full arrangement work.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    palette = concept_palette(concept)
+    result = []
+    styles = palette["styles"]
+    keys = palette["keys"]
+    bpms = palette["bpms"]
+    bars = palette["bars"]
+
+    for i in range(max(0, tracks)):
+        style = styles[i % len(styles)]
+        key = keys[i % len(keys)]
+        bpm = bpms[i % len(bpms)]
+        n_bars = bars[i % len(bars)]
+        song = generate_hook_song(
+            style=style,
+            key=key,
+            bpm=bpm,
+            bars=n_bars,
+            seed=rng.randint(0, 2**31),
+        )
+        song.title = f"{palette['title']} {i + 1}: {style.title()} in {key}"
+        song.key_sig = key
+        song.composer = "code-music"
+        result.append(song)
+    return result
+
+
 def extend_progression(
     existing: list[tuple[str, str]],
     bars: int = 4,
