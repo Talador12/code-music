@@ -1,0 +1,29 @@
+samples/chords/concept_suite.py
+  d4d4e8f647fef114 1-9
+code_music/theory/generation.py
+  d4d4e8f647fef114 1677-1790
+code_music/theory/__init__.py
+  d4d4e8f647fef114 106,121,438,494
+tests/test_concept_suite.py
+  d4d4e8f647fef114 1-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "4499a14af2b5a941f28a82d07ab2095e21cc7be5",
+  "prompts": {
+    "d4d4e8f647fef114": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_2020d7ba3ffeccjeSVsUDgEIVx",
+        "model": "openai/gpt-5.5"
+      },
+      "human_author": "Keith Adler",
+      "messages": [],
+      "total_additions": 160,
+      "total_deletions": 0,
+      "accepted_lines": 160,
+      "overriden_lines": 0
+    }
+  }
+}
