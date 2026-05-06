@@ -31,10 +31,8 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Sequence
 
-from .engine import Beat, Chord, Note, Song, Track
-
+from .engine import Chord, Note, Song
 
 # ---------------------------------------------------------------------------
 # Onset extraction - find where the notes are
@@ -224,17 +222,17 @@ def export_stepmania(
         f"#TITLE:{song.title};",
         f"#ARTIST:{getattr(song, 'composer', 'code-music')};",
         f"#MUSIC:{Path(path).stem}.ogg;",
-        f"#OFFSET:0.000;",
+        "#OFFSET:0.000;",
         f"#BPMS:0.000={song.bpm:.3f};",
-        f"#STOPS:;",
+        "#STOPS:;",
         "",
         "//--- {mode} - {sm_diff} ---",
-        f"#NOTES:",
+        "#NOTES:",
         f"     {mode}:",
-        f"     :",
+        "     :",
         f"     {sm_diff}:",
         f"     {_difficulty_to_meter(difficulty)}:",
-        f"     :",
+        "     :",
     ]
 
     # Write measures
@@ -305,7 +303,7 @@ def export_clone_hero(
         f'  Name = "{song.title}"',
         f'  Artist = "{getattr(song, "composer", "code-music")}"',
         f"  Resolution = {resolution}",
-        f"  Offset = 0",
+        "  Offset = 0",
         "}",
         "[SyncTrack]",
         "{",

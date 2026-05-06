@@ -2,6 +2,13 @@
 
 ## Status: v170.0.0 — 415 songs, 3705 tests, 98 effects, 171 presets, 595+ theory functions
 
+## Current Work — Terminal Visualizer
+
+- Added `code_music.visualizer.play_visual(song)` with ANSI real-time playback visuals: piano roll, sheet music staff, VU meters, live chord readout, and FFT spectrum.
+- Wired CLI flags: `code-music songs/foo.py --visualize` and `--fps`, including `--watch --visualize` live-coding mode.
+- Exported `play_visual` from `code_music.__init__` and documented it in README/listener docs.
+- Verification: `make ci` passes locally: Ruff format/check clean, full pytest passes (3798 tests, 2 pre-existing deprecation warnings).
+
 ## WHERE WE LEFT OFF (2026-04-15, continued)
 
 Massive quality + theory push across multiple sessions (35+ commits).

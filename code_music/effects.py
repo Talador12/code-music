@@ -2575,7 +2575,6 @@ def sub_harmonics(
     else:
         lo = sig.sosfilt(sos_lo, samples)
 
-    n = len(lo)
     out = samples.copy()
 
     # Generate sub one octave below via half-wave rectification + filtering

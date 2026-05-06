@@ -47,19 +47,15 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
-from typing import Sequence
 
 from .engine import (
+    CHORD_SHAPES,
     Beat,
     Chord,
-    CHORD_SHAPES,
     Note,
     Song,
     Track,
-    note_name_to_midi,
-    midi_to_note_name,
 )
-
 
 # ---------------------------------------------------------------------------
 # Genre profiles - full parameter sets for each target genre
@@ -1622,7 +1618,7 @@ def rhythm_transform(
     }.get(feel, "straight")
 
     try:
-        from .theory.rhythm import groove_template, apply_groove
+        from .theory.rhythm import apply_groove, groove_template
 
         template = groove_template(groove_name)
         for track in result.tracks:
@@ -1737,7 +1733,7 @@ def groove_transform(
     Returns:
         New Song with grooved timing.
     """
-    from .theory.rhythm import groove_template, apply_groove
+    from .theory.rhythm import apply_groove, groove_template
 
     result = _clone_song(song)
     template = groove_template(groove_name)
@@ -1991,7 +1987,6 @@ def apply_rhythm_pattern(
 
     result: list[Note] = []
     pitch_idx = 0
-    dur_idx = 0
 
     # Fill one bar at a time
     total_target = sum(durations)

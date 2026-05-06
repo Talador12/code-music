@@ -118,6 +118,9 @@ make play-scale-circle_of_fifths # key relationship reference run
 # Direct playback (no file written)
 code-music songs/trance_odyssey.py --play
 
+# Real-time terminal visualizer (piano roll + VU + spectrum)
+code-music songs/trance_odyssey.py --visualize
+
 # Live coding: auto-render + play on every save
 code-music songs/my_wip.py --watch --play
 

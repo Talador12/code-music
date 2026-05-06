@@ -94,13 +94,11 @@ class TestDensity:
 
     def test_density_half_less_energy(self):
         song_full = Song(bpm=120, sample_rate=SR)
-        tr = song_full.add_track(Track(instrument="sine", density=1.0,
-                                         density_seed=42))
+        tr = song_full.add_track(Track(instrument="sine", density=1.0, density_seed=42))
         tr.extend([Note("A", 4, 0.5)] * 16)
 
         song_half = Song(bpm=120, sample_rate=SR)
-        tr2 = song_half.add_track(Track(instrument="sine", density=0.5,
-                                          density_seed=42))
+        tr2 = song_half.add_track(Track(instrument="sine", density=0.5, density_seed=42))
         tr2.extend([Note("A", 4, 0.5)] * 16)
 
         full = Synth(SR).render_song(song_full)
@@ -111,8 +109,7 @@ class TestDensity:
     def test_density_seed_reproducible(self):
         def render(seed):
             song = Song(bpm=120, sample_rate=SR)
-            tr = song.add_track(Track(instrument="sine", density=0.5,
-                                        density_seed=seed))
+            tr = song.add_track(Track(instrument="sine", density=0.5, density_seed=seed))
             tr.extend([Note("A", 4, 0.5)] * 16)
             return Synth(SR).render_song(song)
 
@@ -120,4 +117,4 @@ class TestDensity:
         b = render(42)
         c = render(99)
         np.testing.assert_allclose(a, b)  # same seed = same output
-        assert not np.allclose(a, c)       # different seed = different output
+        assert not np.allclose(a, c)  # different seed = different output

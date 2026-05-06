@@ -2398,7 +2398,6 @@ class Synth:
             S = 0.2
             R = max(R, 0.8)
             # Filter to near-sine (kill most harmonics)
-            freq = 440.0  # approximate, the actual freq is in the waveform
             cutoff = min(nyq, 2000.0)
             sos = _sig.butter(4, cutoff, btype="low", fs=sr, output="sos")
             raw = _sig.sosfilt(sos, raw)

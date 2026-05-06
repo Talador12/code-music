@@ -78,6 +78,20 @@ def _play_once(script: Path, args) -> int:
     return 0
 
 
+def _visualize_once(script: Path, args) -> int:
+    """Load a song and play it with the real-time CLI visualizer."""
+    from .visualizer import play_visual
+
+    try:
+        song = _load_song(script)
+    except Exception as e:
+        print(f"error loading {script.name}: {e}", file=sys.stderr)
+        return 1
+
+    play_visual(song, bpm=args.bpm, fps=getattr(args, "fps", 30))
+    return 0
+
+
 def _render_once(script: Path, args) -> int:
     """Load, render, and export a single song. Returns exit code."""
     from .export import export_flac, export_mp3, export_ogg, export_wav
@@ -165,6 +179,7 @@ def main(argv: list[str] | None = None) -> int:
 examples:
   code-music my_song.py                 render to WAV
   code-music my_song.py --play          render + play immediately
+  code-music my_song.py --visualize     play with real-time CLI visualizer
   code-music my_song.py --flac          render to FLAC (Spotify-ready)
   code-music my_song.py --watch --play  live coding: auto-play on save
   code-music my_song.py --info          show metadata without rendering
@@ -270,6 +285,18 @@ examples:
         "--play",
         action="store_true",
         help="Play immediately (combinable with --watch for live coding)",
+    )
+    parser.add_argument(
+        "--visualize",
+        action="store_true",
+        help="Play with a real-time CLI visualizer (animated piano-roll, "
+        "VU meters, FFT spectrum). Implies --play.",
+    )
+    parser.add_argument(
+        "--fps",
+        type=int,
+        default=30,
+        help="Visualizer frame rate (default: 30, used with --visualize)",
     )
     parser.add_argument(
         "--import-midi",
@@ -722,7 +749,7 @@ examples:
 
     # ── Genre transform: convert before rendering ────────────────────────
     if args.genre_transform and args.script:
-        from .transform import genre_transform as _genre_transform, GENRE_PROFILES
+        from .transform import GENRE_PROFILES
 
         if args.genre_transform not in GENRE_PROFILES:
             from .transform import list_genres
@@ -891,11 +918,19 @@ examples:
         for k, v in info.items():
             print(f"  {k}: {v}")
         return 0
+    elif args.visualize and not args.watch:
+        print(f"Loading {script.name}...")
+        return _visualize_once(script, args)
     elif args.play and not args.watch:
         print(f"Loading {script.name}...")
         return _play_once(script, args)
     elif args.watch:
-        mode = "render + play" if args.play else "render"
+        if args.visualize:
+            mode = "render + visualize"
+        elif args.play:
+            mode = "render + play"
+        else:
+            mode = "render"
         print(f"Watching {script.name} ({mode}) — Ctrl+C to stop.")
         last_mtime = 0.0
         try:
@@ -904,7 +939,9 @@ examples:
                 if mtime != last_mtime:
                     last_mtime = mtime
                     print(f"\n[{time.strftime('%H:%M:%S')}] Change detected ...")
-                    if args.play:
+                    if args.visualize:
+                        _visualize_once(script, args)
+                    elif args.play:
                         _play_once(script, args)
                     else:
                         _render_once(script, args)

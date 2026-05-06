@@ -49,11 +49,11 @@ Example::
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 from typing import Any, Callable
 
-from .engine import Chord, Note, Song, Track
-
+from .engine import Note, Song, Track
 
 # ---------------------------------------------------------------------------
 # music21 integration
@@ -75,9 +75,7 @@ def from_music21(score: Any, bpm: float = 120.0) -> Song:
 
     Requires: pip install music21
     """
-    try:
-        import music21 as m21
-    except ImportError:
+    if importlib.util.find_spec("music21") is None:
         raise ImportError("music21 is required for this integration: pip install music21")
 
     song = Song(title=str(getattr(score, "metadata", {}).get("title", "Imported")), bpm=bpm)
@@ -512,7 +510,6 @@ def register_synth_plugin(name: str, render_fn: Callable) -> None:
         # Now use instrument="pyo_pad" in any Track
     """
     from .synth import Synth
-    from .sound_design import SoundDesigner
 
     class PluginDesigner:
         def render(self, freq, duration, sr):
@@ -543,7 +540,6 @@ def render_with_csound(
     """
     import subprocess
     import tempfile
-    import numpy as np
 
     with tempfile.NamedTemporaryFile(suffix=".orc", mode="w", delete=False) as f_orc:
         f_orc.write(orc)
@@ -586,22 +582,6 @@ def render_with_supercollider(
     import subprocess
     import tempfile
 
-    # Wrap the code in a render-to-file block
-    sc_render = f"""
-    Server.default = Server.internal;
-    s = Server.internal;
-    s.options.sampleRate = {sample_rate};
-    s.options.numOutputBusChannels = 1;
-    s.waitForBoot({{
-        Score.recordNRT(
-            [ [0.0, [ \\s_new, \\temp, 1000, 0, 0 ]] ],
-            "{output_path}",
-            sampleRate: {sample_rate},
-            duration: {duration},
-            action: {{ 0.exit }}
-        );
-    }});
-    """
     # This is simplified - real SC rendering is more involved
     with tempfile.NamedTemporaryFile(suffix=".scd", mode="w", delete=False) as f:
         f.write(sc_code + f'\nServer.default.record("{output_path}");\n')

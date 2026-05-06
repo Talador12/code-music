@@ -34,7 +34,6 @@ def tone_row(pitches: list[str] | None = None, seed: int | None = None) -> list[
     return row
 
 
-
 def row_transforms(row: list[int]) -> dict[str, list[int]]:
     """Generate the four standard transforms of a 12-tone row.
 
@@ -60,7 +59,6 @@ def row_transforms(row: list[int]) -> dict[str, list[int]]:
         "inversion": inversion,
         "retrograde_inversion": retrograde_inversion,
     }
-
 
 
 def interval_vector(pitch_set: list[int]) -> list[int]:
@@ -89,7 +87,6 @@ def interval_vector(pitch_set: list[int]) -> list[int]:
     return vector
 
 
-
 # ---------------------------------------------------------------------------
 # Pitch set operations (v104.0)
 # ---------------------------------------------------------------------------
@@ -107,7 +104,6 @@ def pc_set(pitches: list[str]) -> set[int]:
     return {_semi(p) for p in pitches}
 
 
-
 def pc_union(set_a: list[str], set_b: list[str]) -> list[str]:
     """Union of two pitch-class collections.
 
@@ -120,7 +116,6 @@ def pc_union(set_a: list[str], set_b: list[str]) -> list[str]:
     """
     pcs = pc_set(set_a) | pc_set(set_b)
     return sorted([_NOTE_NAMES[pc] for pc in pcs], key=lambda n: _semi(n))
-
 
 
 def pc_intersection(set_a: list[str], set_b: list[str]) -> list[str]:
@@ -137,7 +132,6 @@ def pc_intersection(set_a: list[str], set_b: list[str]) -> list[str]:
     return sorted([_NOTE_NAMES[pc] for pc in pcs], key=lambda n: _semi(n))
 
 
-
 def pc_complement(pitches: list[str]) -> list[str]:
     """Return all pitch classes NOT in the given set.
 
@@ -151,7 +145,6 @@ def pc_complement(pitches: list[str]) -> list[str]:
     return sorted([_NOTE_NAMES[i] for i in range(12) if i not in pcs], key=lambda n: _semi(n))
 
 
-
 def transpose_set(pitches: list[str], semitones: int) -> list[str]:
     """Transpose a pitch-class set by a number of semitones.
 
@@ -163,4 +156,3 @@ def transpose_set(pitches: list[str], semitones: int) -> list[str]:
         Transposed pitch names.
     """
     return [_NOTE_NAMES[(_semi(p) + semitones) % 12] for p in pitches]
-

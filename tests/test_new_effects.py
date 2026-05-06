@@ -136,6 +136,7 @@ class TestConvReverbIRFile:
     def _make_ir_wav(self, path, sr=22050, dur_sec=0.5):
         """Create a simple impulse WAV file for testing."""
         import wave as _wave
+
         n = int(sr * dur_sec)
         rng = np.random.default_rng(42)
         ir = rng.standard_normal(n).astype(np.float64)
@@ -150,6 +151,7 @@ class TestConvReverbIRFile:
     def test_ir_file_loads_and_applies(self):
         import tempfile
         from pathlib import Path
+
         s = _sine(SR)
         with tempfile.TemporaryDirectory() as tmp:
             ir_path = Path(tmp) / "test_ir.wav"
@@ -161,6 +163,7 @@ class TestConvReverbIRFile:
     def test_ir_file_wet_zero_passthrough(self):
         import tempfile
         from pathlib import Path
+
         s = _sine(SR)
         with tempfile.TemporaryDirectory() as tmp:
             ir_path = Path(tmp) / "test_ir.wav"
@@ -170,6 +173,7 @@ class TestConvReverbIRFile:
 
     def test_ir_file_not_found_raises(self):
         import pytest
+
         s = _sine(SR)
         with pytest.raises(FileNotFoundError):
             conv_reverb(s, SR, ir_file="/nonexistent/ir.wav", wet=0.3)
@@ -177,6 +181,7 @@ class TestConvReverbIRFile:
     def test_ir_file_output_clamped(self):
         import tempfile
         from pathlib import Path
+
         s = _sine(SR) * 0.9
         with tempfile.TemporaryDirectory() as tmp:
             ir_path = Path(tmp) / "test_ir.wav"
@@ -188,6 +193,7 @@ class TestConvReverbIRFile:
         """IR at different sample rate should be resampled automatically."""
         import tempfile
         from pathlib import Path
+
         s = _sine(SR)
         with tempfile.TemporaryDirectory() as tmp:
             ir_path = Path(tmp) / "test_ir_44k.wav"
@@ -201,6 +207,7 @@ class TestFingerprint:
     def _make_wav(self, path, freq=440.0, dur=1.0, sr=22050):
         """Write a sine WAV for fingerprint testing."""
         import wave as _wave
+
         n = int(sr * dur)
         t = np.linspace(0, dur, n, endpoint=False)
         mono = (np.sin(2 * np.pi * freq * t) * 0.5 * 32767).astype(np.int16)
@@ -216,6 +223,7 @@ class TestFingerprint:
         from pathlib import Path
 
         from scripts.fingerprint import fingerprint_wav
+
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "test.wav"
             self._make_wav(wav)
@@ -228,6 +236,7 @@ class TestFingerprint:
         from pathlib import Path
 
         from scripts.fingerprint import fingerprint_wav
+
         with tempfile.TemporaryDirectory() as tmp:
             wav_a = Path(tmp) / "a.wav"
             wav_b = Path(tmp) / "b.wav"
@@ -242,6 +251,7 @@ class TestFingerprint:
         from pathlib import Path
 
         from scripts.fingerprint import fingerprint_wav
+
         with tempfile.TemporaryDirectory() as tmp:
             wav = Path(tmp) / "test.wav"
             self._make_wav(wav)
@@ -254,18 +264,21 @@ class TestFingerprint:
 class TestSlapback:
     def test_output_shape(self):
         from code_music.effects import slapback
+
         s = _sine(SR)
         out = slapback(s, SR)
         assert out.shape == s.shape
 
     def test_level_zero_passthrough(self):
         from code_music.effects import slapback
+
         s = _sine(SR)
         out = slapback(s, SR, level=0.0)
         np.testing.assert_allclose(out, s, atol=1e-9)
 
     def test_adds_echo(self):
         from code_music.effects import slapback
+
         # Impulse test: echo should appear after the delay
         n = SR
         impulse = np.zeros((n, 2))
@@ -277,12 +290,14 @@ class TestSlapback:
 
     def test_output_clamped(self):
         from code_music.effects import slapback
+
         s = _sine(SR) * 0.9
         out = slapback(s, SR, level=0.9)
         assert np.max(np.abs(out)) <= 1.0 + 1e-6
 
     def test_single_echo_no_feedback(self):
         from code_music.effects import slapback
+
         # Create an impulse — single spike then silence
         n = SR
         impulse = np.zeros((n, 2))
@@ -290,6 +305,6 @@ class TestSlapback:
         out = slapback(impulse, SR, delay_ms=100.0, level=0.5)
         d = int(0.1 * SR)
         # Should have original spike at 0 and one echo at d, nothing after
-        assert np.max(np.abs(out[0])) > 0.5       # original
-        assert np.max(np.abs(out[d])) > 0.2        # echo
-        assert np.max(np.abs(out[d*2:])) < 0.01    # no second echo
+        assert np.max(np.abs(out[0])) > 0.5  # original
+        assert np.max(np.abs(out[d])) > 0.2  # echo
+        assert np.max(np.abs(out[d * 2 :])) < 0.01  # no second echo

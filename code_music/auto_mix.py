@@ -18,14 +18,9 @@ Example::
 
 from __future__ import annotations
 
-import math
-from typing import Sequence
-
 import numpy as np
-from scipy import signal as sig
 
-from .engine import Note, Chord, Song, Track
-
+from .engine import Song, Track
 
 # ---------------------------------------------------------------------------
 # Track analysis helpers

@@ -1,6 +1,5 @@
 """Tests for form generators: generate_canon, generate_sonata_form, generate_rondo."""
 
-
 from code_music import Note, Song, generate_canon, generate_rondo, generate_sonata_form
 
 # ---------------------------------------------------------------------------

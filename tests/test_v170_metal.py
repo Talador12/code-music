@@ -2,16 +2,16 @@
 
 import pytest
 
-from code_music.engine import Note, Chord, Song, Track, scale
+from code_music.engine import Chord, Note, Song, Track, scale
 from code_music.theory.rhythm import (
-    harmonize_lead,
-    dual_guitar,
+    clean_arpeggio,
     drop_tuning,
+    dual_guitar,
+    harmonize_lead,
     metal_drum_pattern,
     palm_mute_chug,
-    clean_arpeggio,
 )
-from code_music.transform import genre_transform, GENRE_PROFILES
+from code_music.transform import GENRE_PROFILES, genre_transform
 
 
 class TestMetalGenreProfiles:
@@ -189,7 +189,6 @@ class TestMetalDrumPattern:
     def test_breakdown(self):
         drums = metal_drum_pattern(bars=1, style="breakdown")
         kick = drums["kick"]
-        snare = drums["snare"]
         # Breakdown is sparse
         kick_hits = sum(1 for n in kick if n.pitch is not None)
         assert kick_hits <= 8

@@ -4,11 +4,11 @@ import pytest
 
 from code_music.engine import Chord, Note, Song, Track, scale
 from code_music.rhythm_game import (
-    export_stepmania,
-    export_clone_hero,
-    list_difficulties,
     _extract_onsets,
     _filter_onsets_by_difficulty,
+    export_clone_hero,
+    export_stepmania,
+    list_difficulties,
 )
 
 
@@ -116,7 +116,7 @@ class TestStepManiaExport:
     def test_all_difficulties(self, tmp_path, difficulty):
         song = _make_test_song()
         path = str(tmp_path / f"test_{difficulty}.sm")
-        result = export_stepmania(song, path, difficulty=difficulty)
+        export_stepmania(song, path, difficulty=difficulty)
         assert (tmp_path / f"test_{difficulty}.sm").exists()
 
     def test_single_track_chart(self, tmp_path):
@@ -133,7 +133,7 @@ class TestStepManiaExport:
         content = (tmp_path / "test.sm").read_text()
         lines = content.split("\n")
         # Arrow rows should be exactly 4 characters (dance-single)
-        arrow_lines = [l for l in lines if len(l) == 4 and all(c in "01" for c in l)]
+        arrow_lines = [line for line in lines if len(line) == 4 and all(c in "01" for c in line)]
         assert len(arrow_lines) > 0
 
 
@@ -205,10 +205,10 @@ class TestCloneHeroExport:
         export_clone_hero(song, path, difficulty="expert")
         content = open(path).read()
         # A chord should produce 2+ N lines at the same tick
-        lines = [l.strip() for l in content.split("\n") if "= N " in l]
+        lines = [line.strip() for line in content.split("\n") if "= N " in line]
         if len(lines) >= 2:
             # Check if any two lines share the same tick
-            ticks = [l.split("=")[0].strip() for l in lines]
+            ticks = [line.split("=")[0].strip() for line in lines]
             assert len(ticks) != len(set(ticks)), "Chords should map to multiple frets"
 
 

@@ -2,8 +2,7 @@
 
 import pytest
 
-from code_music.engine import CHORD_SHAPES, Note, Chord, Song, Track, scale
-
+from code_music.engine import CHORD_SHAPES, Chord, Note, scale
 
 # ---------------------------------------------------------------------------
 # Genre-specific chord shapes
