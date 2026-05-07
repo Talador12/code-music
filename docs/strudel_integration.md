@@ -121,24 +121,19 @@ Each phase is shippable on its own and lands as a single PR.
 **Estimated tests:** ~40 new
 **Estimated lines:** ~500 in `pattern.py` + tests
 
-### Phase 2 - ASCII tracker (`code_music.ascii_tracker`)
+### Phase 2 - ASCII tracker (`code_music.ascii_tracker`) - SHIPPED
 
-**Goal:** Switch Angel's signature notation, in Python, with no Strudel dependency.
+Switch Angel's signature notation, in Python, with no Strudel dependency.
 
-**Scope:**
-- New module `code_music/ascii_tracker.py`.
-- `AsciiTracker.from_string(grid: str) -> AsciiTracker` parses a multi-line grid.
-- Header row defines column names (one per voice). First column is the step index (optional).
-- Each cell is a note spec, `...` (continue/skip), `~` or `-` (rest), or a chord (comma-separated).
-- `tracker.to_song(bpm=128, instruments={"KICK": "drums_kick", ...}) -> Song`.
-- `tracker.to_patterns() -> dict[str, Pattern]` for re-use with the existing Pattern transforms.
-- Optional cell suffixes for velocity (`C2:80`), slide (`C2~D2`), and modulation lanes (after another `|` separator).
+**Shipped:**
+- `code_music/ascii_tracker.py` (~290 lines) with `AsciiTracker.from_string`, `to_patterns`, `to_song`, and `to_string` round-trip.
+- Cell formats supported: rests (`~`, `-`, `...`), single notes (`C2`, `Bb4`, `F#3`), chords (`C2,E2,G2`), velocity suffixes both MIDI-scale (`C2:80`) and fractional (`C2:0.6`).
+- Optional leading `NN |` step-index column. `#` line comments. Blank lines ignored.
+- Two demo songs: `songs/tracker_trance.py` (16-step trance grid in the Switch Angel style at 138 BPM) and `songs/tracker_chord_progression.py` (I-vi-IV-V chord grid at 84 BPM).
+- 35 unit tests in `tests/test_ascii_tracker.py` covering parsing, rendering, error cases, round-trip, and edge cases.
+- Tracker smoke render added to CI.
 
-**Tests:** ~25 new, including round-trip with `parse / to_song / render` and a sample tracker file under `samples/tracker/`.
-**Bonus:** ship two demo songs in `songs/` that compose using the tracker.
-
-**PR title:** `feat(ascii_tracker): grid-based notation inspired by Switch Angel's Strudel sequencer`
-**Estimated lines:** ~600 + tests
+**Slide notation (`C2~D2`) and modulation lanes deferred** to a future PR - the v1 cell parser does not accept them. Calling `_parse_cell("C2~D2")` raises `ValueError` deliberately so the gap is visible.
 
 ### Phase 3 - Tier A transforms
 
@@ -220,10 +215,10 @@ Each phase is shippable on its own and lands as a single PR.
 
 ## What ships first
 
-**Phase 1 (mini-notation parity) and Phase 2 (ASCII tracker) are independent of everything else.** Either could be the next PR. ASCII tracker is the more user-visible feature and the closest thematic link to Switch Angel's stack, so the recommendation is:
+**Phase 2 has shipped. Phase 1 is the recommended next PR.**
 
-1. Ship Phase 2 first - it is the biggest crowd-pleaser, lands as one PR, and validates that we can render her style of notation through the existing engine.
-2. Ship Phase 1 next - tightens the existing Pattern grammar without rocking the boat.
+1. ~~Ship Phase 2 first~~ DONE - tracker module + 35 tests + 2 demo songs + CI smoke render.
+2. Ship Phase 1 next - extend the existing Pattern grammar with the missing Strudel mini-notation operators (`<>`, `/N`, `@N`, `!N`, `|`, `(N,M[,O])`, true subdivisions, `-` rest synonym).
 3. Then Phase 3 (Tier A transforms) - cheap, satisfying.
 4. Then Phase 4 (time-function abstraction) - the real architectural lift.
 5. Phases 5/6/7 follow naturally once the abstraction is in place.

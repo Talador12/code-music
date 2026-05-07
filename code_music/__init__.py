@@ -7,6 +7,7 @@ try:
 except PackageNotFoundError:
     __version__ = "0.0.0-dev"
 
+from .ascii_tracker import AsciiTracker, Cell, tracker
 from .auto_mix import (
     auto_eq_carve,
     auto_level,
@@ -750,8 +751,11 @@ __all__ = [
     "crescendo",
     "decrescendo",
     "euclid",
+    "AsciiTracker",
+    "Cell",
     "Pattern",
     "SoundDesigner",
+    "tracker",
     "Timbre",
     "Wavetable",
     "detect_key",

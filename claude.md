@@ -1,6 +1,31 @@
 # code-music — project state
 
-## Status: v170.1.0 — hook-first generator PR open (#2), 415 songs, 3716+ tests, 98 effects, 171 presets, 598+ theory functions
+## Status: v170.1.0 — hook generator + terminal visualizer + Strudel plan all merged. 415 songs, 3716+ tests, 98 effects, 171 presets, 598+ theory functions
+
+## What's next: Strudel integration plan, Phase 2
+
+Three PRs landed this week ([#1 visualizer + lint](https://github.com/Talador12/code-music/pull/1), [#4 hook generator](https://github.com/Talador12/code-music/pull/4), [#3 Strudel integration plan](https://github.com/Talador12/code-music/pull/3)). Branch protection is on with `test (3.11)` and `test (3.12)` as required checks plus 1 approval (Talador12 bypass).
+
+Next concrete work is **Phase 2 from `docs/strudel_integration.md`: the `code_music.ascii_tracker` module.** This ports the style of notation that Switch Angel uses live in Strudel into Python.
+
+**Scope:**
+- New module `code_music/ascii_tracker.py`.
+- `AsciiTracker.from_string(grid: str) -> AsciiTracker` parses a multi-line text grid where rows are time steps and columns are voices. Header row defines column names; first column is the step index (optional).
+- Cell formats: note spec (`C2`, `Bb4`), `...` (skip/continue), `~` or `-` (rest), comma-separated chord (`C2,E2,G2`), optional velocity suffix (`C2:80`), optional slide (`C2~D2`).
+- `tracker.to_song(bpm=128, instruments={"KICK": "drums_kick", ...}) -> Song`.
+- `tracker.to_patterns() -> dict[str, Pattern]` for re-use with the existing Pattern transforms.
+- Round-trip parser: `tracker.to_string()` produces a normalised grid that re-parses.
+- ~25 tests covering parsing, rendering, error cases, and end-to-end render of a sample tracker.
+- Two demo songs in `songs/` that use the tracker as their composition input.
+
+**Out of scope for this PR:** Strudel mini-notation parity (Phase 1), Tier A transforms (Phase 3), time-function abstraction (Phase 4), and the live-coding REPL (Phase 6). Those land as separate PRs.
+
+After Phase 2 merges, the recommended next-shippable PRs in order:
+1. Phase 1 (mini-notation parity) - extend the existing Pattern parser with the missing Strudel grammar (`<>`, `/N`, `@N`, `!N`, `|`, true subdivisions).
+2. Phase 3 (Tier A transforms) - `rev, palindrome, ply, swing, struct, mask, ...`.
+3. Phase 4 (time-function abstraction) - the architectural lift that unlocks everything after.
+
+Plan reference: `docs/strudel_integration.md`. Full feature gap audit, rationale, non-goals, and open questions are in that doc.
 
 ## Current Work — Hook-First Generation
 
