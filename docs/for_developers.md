@@ -180,6 +180,10 @@ make test                      # full suite
 
 Tests use `sample_rate=22050` for speed. Production renders use 44100.
 
+## Roadmap docs
+
+- [Strudel + algorave integration plan](strudel_integration.md) - phased plan to bring Strudel mini-notation parity, an ASCII tracker (inspired by Switch Angel's live-coding setup), a time-function Pattern abstraction, and a live-coding REPL into code-music.
+
 ## Lint
 
 ```bash
