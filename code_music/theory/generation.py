@@ -1461,6 +1461,333 @@ def generate_progression(
     return result
 
 
+def hook_progression(
+    key: str = "C",
+    steps: int = 4,
+    direction: str = "fifths",
+    minor: bool = False,
+    cadential: bool = True,
+) -> list[tuple[str, str]]:
+    """Generate functional harmony moving around the circle of fifths.
+
+    The circle gives progressions a strong sense of inevitability: each tonal
+    center points at the next one through dominant gravity. With ``cadential``
+    enabled, every center is stated as a ii-V-I cell, which is the backbone of
+    jazz standards, classical sequences, and pop pre-chorus lift.
+
+    Args:
+        key:        Starting tonal center.
+        steps:      Number of tonal centers to visit.
+        direction:  ``"fifths"``/``"clockwise"`` or ``"fourths"``/``"counterclockwise"``.
+        minor:      If True, use minor-key iiø-V-i cells.
+        cadential:  If True, emit ii-V-I cells; otherwise emit one chord per center.
+
+    Returns:
+        List of (root, shape) tuples.
+
+    Example::
+
+        >>> hook_progression("C", steps=2)
+        [('D', 'min7'), ('G', 'dom7'), ('C', 'maj7'), ('A', 'min7'), ('D', 'dom7'), ('G', 'maj7')]
+    """
+    if steps < 1:
+        return []
+
+    step = 5 if direction in {"fourths", "counterclockwise", "left"} else 7
+    current = _semi(key)
+    result: list[tuple[str, str]] = []
+
+    for _ in range(steps):
+        center = _NOTE_NAMES[current]
+        if cadential:
+            ii = _NOTE_NAMES[(current + 2) % 12]
+            v = _NOTE_NAMES[(current + 7) % 12]
+            result.extend(
+                [(ii, "min7b5"), (v, "dom7"), (center, "min")]
+                if minor
+                else [(ii, "min7"), (v, "dom7"), (center, "maj7")]
+            )
+        else:
+            result.append((center, "min" if minor else "maj7"))
+        current = (current + step) % 12
+
+    return result
+
+
+def generate_hook(
+    key: str = "C",
+    scale_name: str = "major",
+    bars: int = 4,
+    octave: int = 5,
+    motif: list[int] | None = None,
+    progression: list[tuple[str, str]] | None = None,
+    seed: int | None = None,
+) -> list[Note]:
+    """Generate a memorable hook from repetition plus small variation.
+
+    Memorable hooks usually are not random long melodies. They are short cells
+    that return, mutate, and land on chord tones at phrase edges. This generator
+    builds an 8-note motif, repeats it by bar, nudges the last two notes toward
+    the current chord, and adds tiny rhythmic gaps so the phrase can breathe.
+
+    Args:
+        key:         Tonic for scale degrees.
+        scale_name:  Scale atlas name.
+        bars:        Number of 4/4 bars to generate.
+        octave:      Lead octave.
+        motif:       Scale-degree motif, default is a singable 1-2-3-2-5-3-2-1 cell.
+        progression: Optional chord progression used for phrase-ending targets.
+        seed:        Random seed.
+
+    Returns:
+        List of Notes, mostly eighth notes with repeated motif identity.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    scale = _SCALE_INTERVALS.get(scale_name, _SCALE_INTERVALS["major"])
+    motif = motif or [0, 1, 2, 1, 4, 2, 1, 0]
+    progression = progression or hook_progression(key, steps=max(1, bars // 2))
+    notes: list[Note] = []
+    tonic = _semi(key)
+
+    for bar in range(bars):
+        root, shape = progression[bar % len(progression)]
+        chord_tones = _CHORD_SEMI.get(shape, _CHORD_SEMI["maj"])
+        target_pc = (
+            _semi(root) + chord_tones[min(bar % len(chord_tones), len(chord_tones) - 1)]
+        ) % 12
+
+        for i, degree in enumerate(motif):
+            if i == len(motif) - 1:
+                pitch = _NOTE_NAMES[target_pc]
+            else:
+                variation = 0
+                if bar % 2 == 1 and i in {2, 5}:
+                    variation = rng.choice([-1, 1])
+                scale_degree = (degree + variation) % len(scale)
+                pitch = _NOTE_NAMES[(tonic + scale[scale_degree]) % 12]
+
+            velocity = 0.88 if i in {0, 4, len(motif) - 1} else 0.68
+            if bar % 4 == 3 and i == 6:
+                notes.append(Note.rest(0.5))
+            else:
+                notes.append(Note(pitch, octave, 0.5, velocity=velocity))
+
+    return notes
+
+
+def generate_hook_song(
+    style: str = "zedd",
+    key: str = "C",
+    bpm: int | None = None,
+    bars: int = 8,
+    seed: int | None = None,
+) -> "Song":
+    """Generate a hook-first demo song with strong harmonic identity.
+
+    Styles are deliberately archetypal:
+    ``"zedd"`` uses EDM four-on-floor energy and a bright repeated hook,
+    ``"coltrane"`` uses major-third key centers and jazz harmony, and
+    ``"symphonic"`` uses circle-of-fifths cadence chains with orchestral color.
+
+    Args:
+        style: ``"zedd"``, ``"coltrane"``, or ``"symphonic"``.
+        key:   Starting key.
+        bpm:   Optional tempo override.
+        bars:  Number of bars for the lead hook.
+        seed:  Random seed.
+
+    Returns:
+        A runnable Song with chords, bass, rhythm where appropriate, and hook.
+    """
+    from ..engine import Chord, Song, Track
+
+    style = style.lower()
+    if style in {"edm", "zedd", "dance"}:
+        bpm = bpm or 128
+        progression = [
+            (key, "maj"),
+            (_NOTE_NAMES[(_semi(key) + 7) % 12], "maj"),
+            (_NOTE_NAMES[(_semi(key) + 9) % 12], "min"),
+            (_NOTE_NAMES[(_semi(key) + 5) % 12], "maj"),
+        ]
+        scale_name = "major"
+        instruments = {"chords": "pad", "bass": "bass", "hook": "sawtooth", "drums": "drums_kick"}
+        title = f"Hook EDM in {key}"
+    elif style in {"jazz", "coltrane", "giant_steps"}:
+        bpm = bpm or 210
+        progression = coltrane_changes(key)
+        scale_name = "bebop_major"
+        instruments = {"chords": "piano", "bass": "bass", "hook": "sawtooth", "drums": "drums_hat"}
+        title = f"Hook Coltrane in {key}"
+    elif style in {"symphonic", "orchestral", "symphony"}:
+        bpm = bpm or 96
+        progression = hook_progression(key, steps=max(2, bars // 2))
+        scale_name = "major"
+        instruments = {"chords": "pad", "bass": "bass", "hook": "triangle", "drums": None}
+        title = f"Hook Symphony in {key}"
+    else:
+        bpm = bpm or 120
+        progression = generate_progression(key=key, length=4, genre="pop", seed=seed)
+        scale_name = "major"
+        instruments = {"chords": "piano", "bass": "bass", "hook": "sawtooth", "drums": "drums_hat"}
+        title = f"Hook {style.title()} in {key}"
+
+    expanded_progression = list(progression)
+    while len(expanded_progression) < bars:
+        expanded_progression.extend(progression)
+    expanded_progression = expanded_progression[:bars]
+
+    song = Song(title=title, bpm=bpm)
+    chord_track = song.add_track(
+        Track(name="chords", instrument=instruments["chords"], volume=0.45, pan=-0.15)
+    )
+    for root, shape in expanded_progression:
+        chord_track.add(Chord(root, shape, 3, duration=4.0, velocity=0.62))
+
+    bass_track = song.add_track(Track(name="bass", instrument=instruments["bass"], volume=0.58))
+    bass_track.extend(
+        generate_bass_line(expanded_progression, style="root_fifth", octave=2, duration=1.0)
+    )
+
+    drum_inst = instruments.get("drums")
+    if drum_inst:
+        drum_track = song.add_track(Track(name="pulse", instrument=drum_inst, volume=0.5, pan=0.05))
+        drum_genre = "electronic" if style in {"edm", "zedd", "dance"} else "jazz"
+        drums = generate_drums(drum_genre, bars=bars, duration=0.5, seed=seed)
+        drum_track.extend(drums["kick"] if drum_inst == "drums_kick" else drums["hat"])
+
+    hook_track = song.add_track(
+        Track(name="hook", instrument=instruments["hook"], volume=0.72, pan=0.2)
+    )
+    hook_track.extend(
+        generate_hook(
+            key=key,
+            scale_name=scale_name,
+            bars=bars,
+            octave=5,
+            progression=expanded_progression,
+            seed=seed,
+        )
+    )
+    return song
+
+
+_CONCEPT_PALETTES: dict[str, dict] = {
+    "rasputin": {
+        "title": "Rasputin Studies",
+        "styles": ["zedd", "coltrane", "symphonic", "dance"],
+        "keys": ["E", "A", "C", "F#"],
+        "bpms": [128, 210, 132, 100],
+        "bars": [8, 6, 8, 8],
+    },
+    "planets": {
+        "title": "Planetary Sketches",
+        "styles": ["symphonic", "zedd", "coltrane", "symphonic"],
+        "keys": ["C", "G", "Bb", "E"],
+        "bpms": [96, 128, 180, 72],
+        "bars": [8, 8, 6, 8],
+    },
+    "constellations": {
+        "title": "Constellation Maps",
+        "styles": ["symphonic", "zedd", "coltrane"],
+        "keys": ["F", "D", "Ab"],
+        "bpms": [88, 124, 196],
+        "bars": [8, 8, 6],
+    },
+    "fibonacci": {
+        "title": "Fibonacci Spirals",
+        "styles": ["symphonic", "zedd", "coltrane", "edm"],
+        "keys": ["C", "D", "G", "A"],
+        "bpms": [89, 144, 233, 144],
+        "bars": [5, 8, 13, 8],
+    },
+    "elements": {
+        "title": "Elemental Sketches",
+        "styles": ["zedd", "symphonic", "coltrane", "edm"],
+        "keys": ["C", "F", "B", "Eb"],
+        "bpms": [128, 84, 204, 110],
+        "bars": [8, 8, 6, 8],
+    },
+    "time": {
+        "title": "Time Periods",
+        "styles": ["symphonic", "coltrane", "zedd"],
+        "keys": ["D", "Bb", "F#"],
+        "bpms": [72, 180, 128],
+        "bars": [8, 6, 8],
+    },
+}
+
+
+def concept_palette(concept: str) -> dict:
+    """Return a deterministic musical palette for an album concept.
+
+    Known concepts map to curated style/key/tempo arcs. Unknown concepts still
+    get a stable palette derived from the text so a title can become runnable
+    code immediately instead of waiting for a hand-authored album file.
+    """
+    import hashlib
+
+    normalized = concept.lower().replace("_", " ").replace("-", " ")
+    for token, palette in _CONCEPT_PALETTES.items():
+        if token in normalized:
+            return {**palette, "concept": concept}
+
+    digest = hashlib.sha256(normalized.encode("utf-8")).digest()
+    styles = ["zedd", "coltrane", "symphonic", "edm"]
+    keys = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"]
+    return {
+        "concept": concept,
+        "title": concept.title(),
+        "styles": [styles[digest[i] % len(styles)] for i in range(4)],
+        "keys": [keys[digest[i + 4] % len(keys)] for i in range(4)],
+        "bpms": [84 + digest[i + 8] % 90 for i in range(4)],
+        "bars": [6 + (digest[i + 12] % 4) * 2 for i in range(4)],
+    }
+
+
+def generate_concept_suite(
+    concept: str,
+    tracks: int = 4,
+    seed: int | None = None,
+) -> list["Song"]:
+    """Turn an album idea into multiple runnable hook sketches.
+
+    Each sketch uses the concept palette to pick style, key, BPM, and phrase
+    length, then delegates to ``generate_hook_song`` for the actual music.
+    The result is intentionally lightweight: enough to render, audition, and
+    decide which direction deserves full arrangement work.
+    """
+    import random as _rng
+
+    rng = _rng.Random(seed)
+    palette = concept_palette(concept)
+    result = []
+    styles = palette["styles"]
+    keys = palette["keys"]
+    bpms = palette["bpms"]
+    bars = palette["bars"]
+
+    for i in range(max(0, tracks)):
+        style = styles[i % len(styles)]
+        key = keys[i % len(keys)]
+        bpm = bpms[i % len(bpms)]
+        n_bars = bars[i % len(bars)]
+        song = generate_hook_song(
+            style=style,
+            key=key,
+            bpm=bpm,
+            bars=n_bars,
+            seed=rng.randint(0, 2**31),
+        )
+        song.title = f"{palette['title']} {i + 1}: {style.title()} in {key}"
+        song.key_sig = key
+        song.composer = "code-music"
+        result.append(song)
+    return result
+
+
 def extend_progression(
     existing: list[tuple[str, str]],
     bars: int = 4,
