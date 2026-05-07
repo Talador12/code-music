@@ -24,6 +24,12 @@ Then use `--play` on any song:
 code-music songs/trance_odyssey.py --play
 ```
 
+For a live terminal display while the song plays, use `--visualize`:
+
+```bash
+code-music songs/trance_odyssey.py --visualize
+```
+
 ## Start here (60 seconds)
 
 If you only run a few commands, use these:

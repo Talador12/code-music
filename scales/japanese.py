@@ -1,17 +1,18 @@
 """scales/japanese.py — Japanese (Hirajoshi)
 
-    5-note koto scale. Alternating large and small intervals.
-        Sparse, pentatonic, meditative.
-        Used in: Japanese traditional, ambient, film.
+5-note koto scale. Alternating large and small intervals.
+    Sparse, pentatonic, meditative.
+    Used in: Japanese traditional, ambient, film.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/japanese.py -o /tmp/japanese.wav
+Run:
+    code-music scales/japanese.py -o /tmp/japanese.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "japanese"

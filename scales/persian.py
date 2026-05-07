@@ -1,17 +1,18 @@
 """scales/persian.py — Persian
 
-    root b2 3 4 b5 b6 7. Similar to double harmonic but with b5.
-        Very tense and exotic.
-        Used in: experimental, film, Middle Eastern fusion.
+root b2 3 4 b5 b6 7. Similar to double harmonic but with b5.
+    Very tense and exotic.
+    Used in: experimental, film, Middle Eastern fusion.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/persian.py -o /tmp/persian.wav
+Run:
+    code-music scales/persian.py -o /tmp/persian.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "persian"

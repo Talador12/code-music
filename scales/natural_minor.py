@@ -1,16 +1,17 @@
 """scales/natural_minor.py — Natural Minor (Aeolian)
 
-    The most common minor scale. Darker than major, not as tense as harmonic minor.
-        Used in: rock, metal, pop ballads, folk.
+The most common minor scale. Darker than major, not as tense as harmonic minor.
+    Used in: rock, metal, pop ballads, folk.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/natural_minor.py -o /tmp/natural_minor.wav
+Run:
+    code-music scales/natural_minor.py -o /tmp/natural_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "minor"

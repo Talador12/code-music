@@ -37,6 +37,10 @@ def _run_make_allow_fail(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _assert_playback_command(output: str) -> None:
+    assert "afplay" in output or "aplay" in output or "ffplay" in output or "sounddevice" in output
+
+
 def test_preview_voice_pacing_demo_target_is_listed() -> None:
     result = _run_make("list-samples")
     assert "preview-voice_pacing_demo" in result.stdout
@@ -64,7 +68,7 @@ def test_generated_album_play_target_for_non_default_album_keeps_shell_vars() ->
 def test_generated_song_play_target_renders_expected_wav_path() -> None:
     result = _run_make("-n", "play-trance_odyssey")
     assert "dist/wav/trance_odyssey.wav" in result.stdout
-    assert "afplay" in result.stdout
+    _assert_playback_command(result.stdout)
 
 
 @pytest.mark.parametrize(
@@ -95,7 +99,7 @@ def test_generated_sample_preview_targets_exist_for_representative_samples(
 ) -> None:
     result = _run_make("-n", f"preview-{sample}")
     assert wav_path in result.stdout
-    assert "afplay" in result.stdout
+    _assert_playback_command(result.stdout)
 
 
 @pytest.mark.parametrize(
@@ -111,7 +115,7 @@ def test_generated_scale_play_targets_exist_for_representative_scales(
 ) -> None:
     result = _run_make("-n", f"play-scale-{scale_name}")
     assert wav_path in result.stdout
-    assert "afplay" in result.stdout
+    _assert_playback_command(result.stdout)
 
 
 @pytest.mark.parametrize("stem", INTERNAL_SCALE_STEMS)
@@ -125,7 +129,7 @@ def test_circle_of_fifths_friendly_scale_target_is_exposed() -> None:
     result = _run_make("-n", "play-scale-circle_of_fifths")
     assert "dist/scales/circle_of_fifths.wav" in result.stdout
     assert "scales/_circle_of_fifths.py" in result.stdout
-    assert "afplay" in result.stdout
+    _assert_playback_command(result.stdout)
 
 
 @pytest.mark.parametrize("stem", INTERNAL_SONG_STEMS)

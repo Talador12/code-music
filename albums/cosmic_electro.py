@@ -22,9 +22,9 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Lollipop Laser", "song": "lollipop_laser", "bpm": 128},
-        {"title": "Neon Grid",        "song": "neon_grid",      "bpm": 124},
-        {"title": "Neon Prayer",      "song": "neon_prayer",      "bpm": 145},
-        {"title": "Laser Tag",      "song": "laser_tag",    "bpm": 126},
-        {"title": "Slipstream",      "song": "slipstream",      "bpm": 118},
+        {"title": "Neon Grid", "song": "neon_grid", "bpm": 124},
+        {"title": "Neon Prayer", "song": "neon_prayer", "bpm": 145},
+        {"title": "Laser Tag", "song": "laser_tag", "bpm": 126},
+        {"title": "Slipstream", "song": "slipstream", "bpm": 118},
     ],
 }

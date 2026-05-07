@@ -1,17 +1,18 @@
 """scales/enigmatic.py — Enigmatic Scale
 
-    Verdi's 'scala enigmatica' — bizarre interval structure.
-        Extremely rare, almost impossible to harmonize.
-        Used in: novelty, experimental.
+Verdi's 'scala enigmatica' — bizarre interval structure.
+    Extremely rare, almost impossible to harmonize.
+    Used in: novelty, experimental.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/enigmatic.py -o /tmp/enigmatic.wav
+Run:
+    code-music scales/enigmatic.py -o /tmp/enigmatic.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "enigmatic"

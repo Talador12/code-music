@@ -1,17 +1,18 @@
 """scales/harmonic_minor.py — Harmonic Minor
 
-    Natural minor with a raised 7th. Half-step pull to the root.
-        That augmented 2nd (b6 to 7) is the characteristic sound.
-        Used in: classical cadences, flamenco, metal, film scores.
+Natural minor with a raised 7th. Half-step pull to the root.
+    That augmented 2nd (b6 to 7) is the characteristic sound.
+    Used in: classical cadences, flamenco, metal, film scores.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/harmonic_minor.py -o /tmp/harmonic_minor.wav
+Run:
+    code-music scales/harmonic_minor.py -o /tmp/harmonic_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "harmonic_minor"

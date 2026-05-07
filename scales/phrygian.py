@@ -1,16 +1,17 @@
 """scales/phrygian.py — Phrygian
 
-    Minor scale with b2. Half-step from root = instant tension.
-        Used in: metal riffs, flamenco, Spanish classical, film suspense.
+Minor scale with b2. Half-step from root = instant tension.
+    Used in: metal riffs, flamenco, Spanish classical, film suspense.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/phrygian.py -o /tmp/phrygian.wav
+Run:
+    code-music scales/phrygian.py -o /tmp/phrygian.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "phrygian"

@@ -1,18 +1,18 @@
 """Funk pocket - Clyde Stubblefield ghost note groove with tight 16ths."""
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    compress,
-    distortion,
-    F,
     MF,
     MP,
+    Chord,
+    EffectsChain,
+    F,
+    Note,
+    Song,
+    Track,
+    compress,
+    distortion,
 )
-from code_music.theory.rhythm import funk_drum_pattern, apply_groove, groove_template
+from code_music.theory.rhythm import apply_groove, funk_drum_pattern, groove_template
 
 song = Song(title="Funk Pocket", bpm=98, key_sig="E", time_sig=(4, 4))
 

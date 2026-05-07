@@ -1,22 +1,18 @@
 """Symphony sketch - demonstrating the multi-movement orchestral system."""
 
 from code_music import (
-    Note,
-    Chord,
-    scale,
-    crescendo,
-    decrescendo,
-    PP,
-    P,
-    MP,
-    MF,
-    F,
     FF,
+    MF,
+    MP,
+    Chord,
+    F,
+    Note,
+    P,
     dynamics,
-    octave_up,
     octave_down,
+    scale,
 )
-from code_music.symphony import Symphony, orchestrate
+from code_music.symphony import Symphony
 
 # Create a three-movement symphony
 sym = Symphony(

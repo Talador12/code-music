@@ -44,15 +44,12 @@ from dataclasses import dataclass, field
 from typing import Sequence
 
 from .engine import (
-    Beat,
     Chord,
     Note,
     Song,
     Track,
-    note_name_to_midi,
     midi_to_note_name,
 )
-
 
 # ---------------------------------------------------------------------------
 # Orchestral family definitions and score ordering
@@ -622,7 +619,7 @@ class Symphony:
         Returns:
             Path of the written file.
         """
-        from .notation import export_musicxml, export_lilypond
+        from .notation import export_lilypond, export_musicxml
 
         # Build a Song containing only this part across all movements
         song = Song(title=f"{self.title} - {part_name}", composer=self.composer)
@@ -697,10 +694,8 @@ class Symphony:
                 current_family = family
 
             part_id = part_name.replace(" ", "_")
-            inst = "sine"
             for mvt in self.movements:
                 if part_name in mvt.parts:
-                    inst = mvt.parts[part_name].instrument
                     break
             lines += [
                 f'    <score-part id="{part_id}">',
@@ -713,7 +708,7 @@ class Symphony:
         lines.append("  </part-list>")
 
         # Write each part with notes from all movements
-        from .notation import _closest_xml, _XML_STEP, _XML_KEY_FIFTHS
+        from .notation import _XML_KEY_FIFTHS, _XML_STEP, _closest_xml
 
         for part_name in all_parts:
             part_id = part_name.replace(" ", "_")
@@ -838,7 +833,7 @@ class Symphony:
         out = _Path(path).with_suffix(".ly")
         out.parent.mkdir(parents=True, exist_ok=True)
 
-        from .notation import _note_to_lily, _chord_to_lily, _LILY_KEYS
+        from .notation import _LILY_KEYS, _chord_to_lily, _note_to_lily
 
         all_parts: list[str] = []
         for mvt in self.movements:
@@ -979,7 +974,7 @@ def orchestrate(
 
 def _orchestrate_romantic(mvt: Movement, melody: list[Note], key: str, rng) -> None:
     """Romantic-era orchestration: full strings, doubled winds, brass accents."""
-    from .engine import scale, transpose
+    from .engine import transpose
 
     # Strings carry the melody
     vln1 = mvt.add_part("violin_1", "violin", volume=0.65, pan=-0.3)
@@ -1095,10 +1090,10 @@ def orchestrate_big_band(
     Returns:
         A Movement with full big band parts.
     """
-    import random as _rng
-    from .engine import transpose, Note as _Note, Chord as _Chord
+    from .engine import Chord as _Chord
+    from .engine import Note as _Note
+    from .engine import transpose
 
-    rng = _rng.Random(seed)
     mvt = Movement(title=f"Big Band ({style.title()})", key=key)
 
     # Trumpets: lead carries melody, section harmonizes below

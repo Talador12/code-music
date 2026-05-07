@@ -1,24 +1,19 @@
 """Big band swing - Count Basie meets Thad Jones. Brass hits and walking bass."""
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    scale,
-    reverb,
-    compress,
-    F,
     FF,
     MF,
     MP,
-    P,
-    dynamics,
-    octave_down,
+    EffectsChain,
+    F,
+    Note,
+    Song,
+    Track,
+    compress,
+    reverb,
 )
 from code_music.symphony import orchestrate_big_band
-from code_music.theory.rhythm import big_band_drum_pattern, apply_groove, groove_template
+from code_music.theory.rhythm import big_band_drum_pattern, groove_template
 
 song = Song(title="Big Band Swing", bpm=160, key_sig="Bb", time_sig=(4, 4))
 

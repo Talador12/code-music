@@ -1,6 +1,5 @@
 """Tests for the Fugue Generator."""
 
-
 from code_music import Note, Song, generate_fugue
 
 

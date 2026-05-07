@@ -79,24 +79,37 @@ riff_78 = humanize(
 gtr.extend(riff_78)
 
 # 3/4 section (bars 13-16): waltz-ified, chords instead of riff
-gtr.extend([
-    Chord("E", "min", 3, duration=QUARTER, velocity=0.72),
-    Note("G", 3, QUARTER), Note("B", 3, QUARTER),
-    Chord("C", "maj", 3, duration=QUARTER, velocity=0.70),
-    Note("E", 3, QUARTER), Note("G", 3, QUARTER),
-    Chord("D", "maj", 3, duration=QUARTER, velocity=0.72),
-    Note("F#", 3, QUARTER), Note("A", 3, QUARTER),
-    Chord("B", "dom7", 3, duration=QUARTER, velocity=0.74),
-    Note("D#", 3, QUARTER), Note("F#", 3, QUARTER),
-])
+gtr.extend(
+    [
+        Chord("E", "min", 3, duration=QUARTER, velocity=0.72),
+        Note("G", 3, QUARTER),
+        Note("B", 3, QUARTER),
+        Chord("C", "maj", 3, duration=QUARTER, velocity=0.70),
+        Note("E", 3, QUARTER),
+        Note("G", 3, QUARTER),
+        Chord("D", "maj", 3, duration=QUARTER, velocity=0.72),
+        Note("F#", 3, QUARTER),
+        Note("A", 3, QUARTER),
+        Chord("B", "dom7", 3, duration=QUARTER, velocity=0.74),
+        Note("D#", 3, QUARTER),
+        Note("F#", 3, QUARTER),
+    ]
+)
 
 # Back to 4/4 (bars 17-20): full power
-gtr.extend(crescendo([
-    Chord("E", "min", 3, duration=HALF, velocity=0.78),
-    Chord("C", "maj", 3, duration=HALF, velocity=0.76),
-    Chord("G", "maj", 3, duration=HALF, velocity=0.78),
-    Chord("D", "maj", 3, duration=HALF, velocity=0.80),
-] * 2, 0.65, 0.95))
+gtr.extend(
+    crescendo(
+        [
+            Chord("E", "min", 3, duration=HALF, velocity=0.78),
+            Chord("C", "maj", 3, duration=HALF, velocity=0.76),
+            Chord("G", "maj", 3, duration=HALF, velocity=0.78),
+            Chord("D", "maj", 3, duration=HALF, velocity=0.80),
+        ]
+        * 2,
+        0.65,
+        0.95,
+    )
+)
 
 # Ritardando section (bars 21-24): same chords, slowing down
 # The BPM change is handled by the render engine via bpm_map;

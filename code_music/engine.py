@@ -2982,7 +2982,7 @@ def resolve_tendency_tones(
         if resolution_dir is None:
             continue
 
-        # Only resolve if this looks like a phrase ending (next note is longer, a rest, or last note)
+        # Only resolve if this looks like a phrase ending.
         is_phrase_end = (
             i == len(notes) - 1
             or notes[i + 1].pitch is None
@@ -3084,8 +3084,7 @@ def hemiola(
     if not notes:
         return []
 
-    # Standard hemiola: 6 beats regrouped as 2+2+2 instead of 3+3
-    group_dur = total_beats / 3  # from groups of 3...
+    # Standard hemiola: 6 beats regrouped from 3+3 to 2+2+2.
     new_group_dur = total_beats / 2  # ...to groups of 2
 
     pitched = [n for n in notes if n.pitch is not None]
@@ -3094,8 +3093,7 @@ def hemiola(
 
     result = []
     idx = 0
-    for group in range(2):  # 2 groups of new_group_dur
-        group_start = group * new_group_dur
+    for _group in range(2):  # 2 groups of new_group_dur
         notes_in_group = max(1, len(pitched) // 2)
         for j in range(notes_in_group):
             if idx >= len(pitched):

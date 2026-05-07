@@ -5,34 +5,31 @@ import pytest
 
 from code_music.engine import (
     CHORD_SHAPES,
-    PPPP,
-    PPP,
-    PP,
-    P,
-    MP,
-    MF,
-    F,
     FF,
     FFF,
     FFFF,
-    SFZ,
     FP,
+    MF,
+    MP,
+    PP,
+    PPP,
+    PPPP,
+    SFZ,
     VELOCITY_CURVES,
     Chord,
+    F,
     Note,
+    P,
     Song,
     Track,
-    crescendo,
     double_octave,
     dynamics,
     octave_down,
     octave_up,
     scale,
-    transpose,
     velocity_curve,
 )
 from code_music.synth import Synth
-
 
 # ---------------------------------------------------------------------------
 # New chord shapes

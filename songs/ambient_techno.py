@@ -39,6 +39,9 @@ for _ in range(16):
 song.add_track(pad.stretch(1.1).fade_in(beats=32.0).fade_out(beats=32.0))
 
 song.effects = {
-    "pad": EffectsChain().add(lfo_filter, rate=0.06, depth=0.5).add(reverb, room_size=0.8, wet=0.45).add(stereo_width, width=1.7),
+    "pad": EffectsChain()
+    .add(lfo_filter, rate=0.06, depth=0.5)
+    .add(reverb, room_size=0.8, wet=0.45)
+    .add(stereo_width, width=1.7),
     "bass": EffectsChain().add(lowpass, cutoff_hz=150),
 }

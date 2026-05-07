@@ -1,16 +1,17 @@
 """scales/bebop_major.py — Bebop Major
 
-    Major scale + chromatic passing tone between 5th and 6th. 8 notes.
-        Used in: bebop, swing, jazz improvisation.
+Major scale + chromatic passing tone between 5th and 6th. 8 notes.
+    Used in: bebop, swing, jazz improvisation.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/bebop_major.py -o /tmp/bebop_major.wav
+Run:
+    code-music scales/bebop_major.py -o /tmp/bebop_major.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "bebop_major"

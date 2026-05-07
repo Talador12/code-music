@@ -1,16 +1,17 @@
 """scales/chromatic.py — Chromatic
 
-    All 12 semitones. Not a tonal scale — a tool for passing tones and tuning.
-        Used in: serialism, bebop passing tones, atonal music.
+All 12 semitones. Not a tonal scale — a tool for passing tones and tuning.
+    Used in: serialism, bebop passing tones, atonal music.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/chromatic.py -o /tmp/chromatic.wav
+Run:
+    code-music scales/chromatic.py -o /tmp/chromatic.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "chromatic"

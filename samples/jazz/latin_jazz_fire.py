@@ -1,24 +1,23 @@
 """Latin jazz fire - Tito Puente meets Chucho Valdes. Clave-locked montuno madness."""
 
 from code_music import (
-    Note,
-    Chord,
-    Track,
-    Song,
-    EffectsChain,
-    reverb,
-    delay,
-    compress,
-    F,
     MF,
-    MP,
+    EffectsChain,
+    F,
+    Note,
+    Song,
+    Track,
+    compress,
+    euclid,
+    reverb,
 )
+from code_music.theory import bass_line_latin
 from code_music.theory.rhythm import (
-    clave_pattern,
-    cascara_pattern,
-    montuno_pattern,
     apply_groove,
+    cascara_pattern,
+    clave_pattern,
     groove_template,
+    montuno_pattern,
 )
 
 song = Song(title="Latin Jazz Fire", bpm=180, key_sig="D", time_sig=(4, 4))
@@ -49,8 +48,6 @@ for root, shape in prog:
     piano.extend(montuno_pattern(root, shape, octave=4, bars=1))
 
 # Bass: tumbao
-from code_music.theory import bass_line_latin
-
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.6, pan=0.0))
 bass.extend(bass_line_latin(prog, octave=2))
 
@@ -82,8 +79,6 @@ congas.extend(apply_groove(conga_notes, salsa_groove, strength=0.7))
 
 # Kick drum
 kick = song.add_track(Track(name="kick", instrument="drums_kick", volume=0.5))
-from code_music import euclid
-
 kick.extend(euclid(3, 8, "C", 2, 0.5) * 8)  # tresillo
 
 song.effects = {

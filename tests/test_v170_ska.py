@@ -2,14 +2,14 @@
 
 import pytest
 
-from code_music.engine import Note, Chord, Song, Track, scale
+from code_music.engine import Chord, Song, Track, scale
 from code_music.theory.rhythm import (
-    ska_drum_pattern,
-    skank_pattern,
     ska_bass_line,
+    ska_drum_pattern,
     ska_horn_riff,
+    skank_pattern,
 )
-from code_music.transform import genre_transform, GENRE_PROFILES
+from code_music.transform import GENRE_PROFILES, genre_transform
 
 
 class TestSkaGenreProfiles:

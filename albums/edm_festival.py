@@ -24,7 +24,7 @@ ALBUM = {
         {"title": "Offshore", "song": "clarity_drive", "bpm": 128},
         {"title": "Drop", "song": "trance_odyssey", "bpm": 138},
         {"title": "Between", "song": "future_bass", "bpm": 150},
-        {"title": "Slipstream",        "song": "slipstream",       "bpm": 118},
-        {"title": "Chromatic Bloom","song": "chromatic_bloom",  "bpm": 120},
+        {"title": "Slipstream", "song": "slipstream", "bpm": 118},
+        {"title": "Chromatic Bloom", "song": "chromatic_bloom", "bpm": 120},
     ],
 }

@@ -23,8 +23,8 @@ ALBUM = {
     "tracks": [
         {"title": "The Clave", "song": "tank_bebop", "bpm": 180},
         {"title": "Siesta", "song": "lo_fi_loop", "bpm": 95},
-        {"title": "Ipanema Hours",         "song": "ipanema_hours",           "bpm": 120},
-        {"title": "Clave Roja",     "song": "clave_roja",   "bpm": 190},
-        {"title": "Duende",          "song": "duende",          "bpm": 140},
+        {"title": "Ipanema Hours", "song": "ipanema_hours", "bpm": 120},
+        {"title": "Clave Roja", "song": "clave_roja", "bpm": 190},
+        {"title": "Duende", "song": "duende", "bpm": 140},
     ],
 }

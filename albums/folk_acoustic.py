@@ -24,8 +24,8 @@ ALBUM = {
     "tracks": [
         {"title": "Open Tuning", "song": "lo_fi_loop", "bpm": 72},
         {"title": "Porch", "song": "deep_space_drift", "bpm": 58},
-        {"title": "Porch Song",           "song": "porch_song",              "bpm": 84},
+        {"title": "Porch Song", "song": "porch_song", "bpm": 84},
         {"title": "Mountain Road", "song": "mountain_road", "bpm": 96},
-        {"title": "Campfire",          "song": "campfire",         "bpm": 76},
+        {"title": "Campfire", "song": "campfire", "bpm": 76},
     ],
 }

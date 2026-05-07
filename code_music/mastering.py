@@ -326,8 +326,14 @@ def master_audio(
     """
     from .effects import (
         console_warmth as _warmth,
-        multiband_stereo as _mb_stereo,
+    )
+    from .effects import (
         multiband_compress as _mb_comp,
+    )
+    from .effects import (
+        multiband_stereo as _mb_stereo,
+    )
+    from .effects import (
         parametric_eq as _peq,
     )
 

@@ -21,8 +21,18 @@ for _ in range(16):
 
 bass = song.add_track(Track(name="bass", instrument="bass", volume=0.6))
 for _ in range(16):
-    bass.extend([Note("D", 2, 0.5), Note("D", 2, 0.5), Note("F", 2, 0.5), Note("A", 2, 0.5),
-                 Note("G", 2, 0.5), Note("F", 2, 0.5), Note("D", 2, 0.5), Note("A", 1, 0.5)])
+    bass.extend(
+        [
+            Note("D", 2, 0.5),
+            Note("D", 2, 0.5),
+            Note("F", 2, 0.5),
+            Note("A", 2, 0.5),
+            Note("G", 2, 0.5),
+            Note("F", 2, 0.5),
+            Note("D", 2, 0.5),
+            Note("A", 1, 0.5),
+        ]
+    )
 
 arp = song.add_track(Track(name="arp", instrument="triangle", volume=0.35, pan=0.25))
 arp_bar = [Note("D", 4, 0.25), Note("F", 4, 0.25), Note("A", 4, 0.25), Note("D", 5, 0.25)] * 4
@@ -31,10 +41,21 @@ for _ in range(16):
 
 lead = song.add_track(Track(name="lead", instrument="sawtooth", volume=0.45, pan=-0.15))
 for _ in range(8):
-    lead.extend([Note("A", 5, 0.5), Note("G", 5, 0.5), Note("F", 5, 0.5), Note("D", 5, 0.5),
-                 Note("C", 5, 1.0), Note("D", 5, 1.0), r(4.0)])
+    lead.extend(
+        [
+            Note("A", 5, 0.5),
+            Note("G", 5, 0.5),
+            Note("F", 5, 0.5),
+            Note("D", 5, 0.5),
+            Note("C", 5, 1.0),
+            Note("D", 5, 1.0),
+            r(4.0),
+        ]
+    )
 
 song.effects = {
-    "arp": EffectsChain().add(chorus, rate=2.0, depth=0.3, wet=0.25).add(delay, delay_ms=227, feedback=0.25, wet=0.15),
+    "arp": EffectsChain()
+    .add(chorus, rate=2.0, depth=0.3, wet=0.25)
+    .add(delay, delay_ms=227, feedback=0.25, wet=0.15),
     "lead": EffectsChain().add(reverb, room_size=0.5, wet=0.2),
 }

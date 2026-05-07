@@ -1,16 +1,17 @@
 """scales/blues_minor.py — Blues (Minor)
 
-    Minor pentatonic + the blue note (b5). That tritone is blues tension.
-        Every blues solo since 1920. Used in: blues, jazz, rock, soul.
+Minor pentatonic + the blue note (b5). That tritone is blues tension.
+    Every blues solo since 1920. Used in: blues, jazz, rock, soul.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/blues_minor.py -o /tmp/blues_minor.wav
+Run:
+    code-music scales/blues_minor.py -o /tmp/blues_minor.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "blues"

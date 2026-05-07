@@ -1,6 +1,5 @@
 """Tests for PolyphonicTrack and remix()."""
 
-
 import numpy as np
 import pytest
 

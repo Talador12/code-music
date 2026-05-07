@@ -1,16 +1,17 @@
 """scales/pentatonic_major.py — Major Pentatonic
 
-    5 notes — removes the 4th and 7th. Every note consonant with every other.
-        The universal scale: folk, country, blues, rock, Celtic.
+5 notes — removes the 4th and 7th. Every note consonant with every other.
+    The universal scale: folk, country, blues, rock, Celtic.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/pentatonic_major.py -o /tmp/pentatonic_major.wav
+Run:
+    code-music scales/pentatonic_major.py -o /tmp/pentatonic_major.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "pentatonic"

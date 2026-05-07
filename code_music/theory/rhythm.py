@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from ._core import (
-    _GROOVE_TEMPLATES,
-    _CLAVE_PATTERNS,
     _CASCARA_PATTERNS,
-    _CONGA_PATTERNS,
+    _CLAVE_PATTERNS,
+    _GROOVE_TEMPLATES,
     Note,
 )
 
@@ -1312,14 +1311,12 @@ def funk_drum_pattern(
 
     rng = _rng.Random(seed)
 
-    steps = 16 * bars
     kick: list[Note] = []
     snare: list[Note] = []
     hat: list[Note] = []
 
     for bar in range(bars):
         for step in range(16):
-            abs_step = bar * 16 + step
             # Kick: beat 1, "and" of 2, beat 3 with variation
             is_kick = step in (0, 6, 8) or (step == 10 and rng.random() > 0.5)
             if is_kick:
@@ -1366,7 +1363,6 @@ def shuffle_drum_pattern(
         Dict with "kick", "snare", "hat" keys.
     """
     steps_per_bar = 12  # 4 beats x 3 triplet subdivisions
-    total = steps_per_bar * bars
     kick: list[Note] = []
     snare: list[Note] = []
     hat: list[Note] = []
@@ -1420,7 +1416,6 @@ def big_band_drum_pattern(
     Returns:
         Dict with "ride", "hat_foot", "kick", "snare" keys.
     """
-    steps = 8 * bars  # 8th notes
     ride: list[Note] = []
     hat_foot: list[Note] = []
     kick: list[Note] = []
@@ -1669,7 +1664,6 @@ def skank_pattern(
     Returns:
         List of Notes (chords and rests) forming the skank pattern.
     """
-    from ..engine import Chord as _Chord
 
     result: list[Note] = []
 
@@ -1740,7 +1734,8 @@ def ska_bass_line(
         List of Notes.
     """
     import random as _rng
-    from ._core import _semi, _NOTE_NAMES
+
+    from ._core import _NOTE_NAMES, _semi
 
     rng = _rng.Random(seed)
     result: list[Note] = []
@@ -1748,8 +1743,6 @@ def ska_bass_line(
     for root_name, shape in progression:
         k = _semi(root_name)
         fifth = (k + 7) % 12
-        octave_up = (k + 12) % 12  # same note, will use octave+1
-
         if style == "ska_punk":
             # Driving 8th notes: root root fifth fifth root root fifth root
             pattern = [k, k, fifth, fifth, k, k, fifth, k]
@@ -1811,6 +1804,7 @@ def ska_horn_riff(
         List of Notes.
     """
     import random as _rng
+
     from ..engine import CHORD_SHAPES, note_name_to_midi
 
     rng = _rng.Random(seed)
@@ -1893,7 +1887,7 @@ def harmonize_lead(
         # Track("guitar_L", pan=-0.8).extend(lead)
         # Track("guitar_R", pan=0.8).extend(harmony)
     """
-    from ..engine import SCALES, note_name_to_midi, midi_to_note_name
+    from ..engine import SCALES, note_name_to_midi
 
     scale_intervals = SCALES.get(scale_name, SCALES.get("minor", [0, 2, 3, 5, 7, 8, 10]))
     key_midi = note_name_to_midi(key, 0)

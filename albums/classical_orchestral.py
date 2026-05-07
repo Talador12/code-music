@@ -24,9 +24,9 @@ ALBUM = {
     ],
     "tracks": [
         {"title": "Symphony No. 1 in C Minor", "song": "symphony_no1", "bpm": 108},
-        {"title": "Cathedral",       "song": "cathedral",      "bpm": 84},
-        {"title": "Still Water",    "song": "still_water",   "bpm": 66},
-        {"title": "Nocturne Op. 2",  "song": "nocturne_op2",  "bpm": 56},
-        {"title": "Conversations", "song": "conversations",    "bpm": 80},
+        {"title": "Cathedral", "song": "cathedral", "bpm": 84},
+        {"title": "Still Water", "song": "still_water", "bpm": 66},
+        {"title": "Nocturne Op. 2", "song": "nocturne_op2", "bpm": 56},
+        {"title": "Conversations", "song": "conversations", "bpm": 80},
     ],
 }

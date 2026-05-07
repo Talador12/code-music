@@ -1,17 +1,18 @@
 """scales/lydian_dominant.py — Lydian Dominant
 
-    Mixolydian with a sharp 4. Bright + bluesy + floating.
-        Used on dominant 7th chords resolving up a half step or tritone.
-        Used in: jazz fusion, film (John Williams), Bartok.
+Mixolydian with a sharp 4. Bright + bluesy + floating.
+    Used on dominant 7th chords resolving up a half step or tritone.
+    Used in: jazz fusion, film (John Williams), Bartok.
 
-    All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
-    Each key: ascending then descending.
+All 12 keys in circle of fifths order: C G D A E B F# C# G# D# A# F
+Each key: ascending then descending.
 
-    To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
+To play 2 octaves: change octaves=1 to octaves=2 (or 3, etc.)
 
-    Run:
-        code-music scales/lydian_dominant.py -o /tmp/lydian_dominant.wav
+Run:
+    code-music scales/lydian_dominant.py -o /tmp/lydian_dominant.wav
 """
+
 from code_music import Note, Song, Track, scale
 
 SCALE_TYPE = "lydian_dominant"

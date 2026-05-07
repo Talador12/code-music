@@ -1,6 +1,5 @@
 """Tests for Song Builder DSL v2 - full song definition language."""
 
-
 from code_music import Song, parse_song_dsl, song_from_dsl_v2
 
 
